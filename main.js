@@ -13,6 +13,10 @@
  * https://github.com/showdownjs/showdown
  */
 
+/* TODO: use points from TAS9000
+ * http://metaserv.tasbot.net:25000/dbquery?table=points&getData=<user-lowercase>&webauth=<auth>
+ */
+
 var EscapeCharsList = ['&', '"', "'", '<', '>'];
 var EscapeChars = {
     '&': '&amp;',
@@ -98,6 +102,7 @@ function onLoadCheerEmotes(json) {
                 txtChannel.value = config.Channel;
                 txtNick.value = config.Nick;
                 txtPass.value = config.Pass;
+                txtWebAuth.value = config.WebAuth;
             }
         }
     }
@@ -234,6 +239,7 @@ function UpdateChannel() {
     config.Channel = txtChannel.value.toLowerCase();
     config.Nick = txtNick.value;
     config.Pass = txtPass.value;
+    config.WebAuth = txtWebAuth.value;
 
     //client.JoinChannels(txtChannel.value.toLowerCase());
     localStorage.setItem('config', JSON.stringify(config));
@@ -278,12 +284,14 @@ function InitClient() {
         client = new TwitchClient({
             Nick: txtNick.value,
             Pass: txtPass.value,
+            BotAuth: txtWebAuth.value,
             Channels: txtChannel.value,
             Debug: debug
         });
     } else {
         client = new TwitchClient({
             Channels: txtChannel.value,
+            BotAuth: txtWebAuth.value,
             Debug: debug
         });
     }
@@ -451,7 +459,7 @@ function ParseMessage(user, message, userData) {
 
     // Allow super-users to bypass escaping
     var noesc = false;
-    if (userData["display-name"] in super_users) {
+    if (super_users.hasOwnProperty(userData["display-name"])) {
         if (message.split(' ')[0] == 'force') {
             noesc = true;
         }
