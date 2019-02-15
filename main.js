@@ -102,7 +102,7 @@ function onLoadCheerEmotes(json) {
                 txtChannel.value = config.Channel;
                 txtNick.value = config.Nick;
                 txtPass.value = config.Pass;
-                txtWebAuth.value = config.WebAuth;
+                //txtWebAuth.value = config.WebAuth;
             }
         }
     }
@@ -239,7 +239,7 @@ function UpdateChannel() {
     config.Channel = txtChannel.value.toLowerCase();
     config.Nick = txtNick.value;
     config.Pass = txtPass.value;
-    config.WebAuth = txtWebAuth.value;
+    //config.WebAuth = txtWebAuth.value;
 
     //client.JoinChannels(txtChannel.value.toLowerCase());
     localStorage.setItem('config', JSON.stringify(config));
@@ -284,14 +284,14 @@ function InitClient() {
         client = new TwitchClient({
             Nick: txtNick.value,
             Pass: txtPass.value,
-            BotAuth: txtWebAuth.value,
+            //BotAuth: txtWebAuth.value,
             Channels: txtChannel.value,
             Debug: debug
         });
     } else {
         client = new TwitchClient({
             Channels: txtChannel.value,
-            BotAuth: txtWebAuth.value,
+            //BotAuth: txtWebAuth.value,
             Debug: debug
         });
     }
