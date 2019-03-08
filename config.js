@@ -15,7 +15,8 @@ var valid_styles = {
     subscript: {cost: 1, value: ['<sub>', '</sub>']},
     superscript: {cost: 1, value: ['<sup>', '</sup>']},
     big: {cost: 1, value: ['<span style="font-size: larger">', '</span>']},
-    small: {cost: 1, value: ['<span style="font-size: smaller">', '</span>']}
+    small: {cost: 1, value: ['<span style="font-size: smaller">', '</span>']},
+    rainbow: {cost: 1, value: ['<span style="background-image: linear-gradient(to right, red, orange, yellow, blue, violet); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">', '</span>']}
 };
 
 /* Users allowed to use "force" */
