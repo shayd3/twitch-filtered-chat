@@ -254,3 +254,41 @@ var colors = {
 
 };
 
+
+function calcLuminance(color) {
+    var R = parseInt(color.substring(1, 3), 16) / 255;
+    var G = parseInt(color.substring(3, 5), 16) / 255;
+    var B = parseInt(color.substring(5, 7), 16) / 255;
+
+    // Weighted parts based on perceived brightness effect per color channel
+    return 0.299 * R + 0.587 * G + 0.114 * B;
+}
+
+function changeBrightness(color, amount) {
+    var R = parseInt(color.substring(1, 3), 16) + amount;
+    var G = parseInt(color.substring(3, 5), 16) + amount;
+    var B = parseInt(color.substring(5, 7), 16) + amount;
+
+    // Clamp values between 0 and 255
+    R = R < 0 ? 0 : R > 255 ? 255 : R;
+    G = G < 0 ? 0 : G > 255 ? 255 : G;
+    B = B < 0 ? 0 : B > 255 ? 255 : B;
+
+    return `rgb(${R},${G},${B})`;
+}
+
+// Calculate stroke color based on contrast between foreground and background
+function GetStrokeColor(foreground, background) {
+    var foregroundL = calcLuminance(foreground);
+    var backgroundL = calcLuminance(background);
+    var relativeL = (foregroundL + 0.05) / (backgroundL + 0.05);
+    var change = relativeL <= 4.5 ? 50 : -200;
+
+    // If background is brighter
+    if (backgroundL > foregroundL) {
+        relativeL = (backgroundL + 0.05) / (foregroundL + 0.05);
+        change = relativeL <= 4.5 ? -50 : 200;
+    }
+
+    return changeBrightness(foreground, change);
+}
