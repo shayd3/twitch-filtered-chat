@@ -43,7 +43,7 @@ var client //twitch irc client
     , user_undefined_colors = {} //list of users with no defined color, to store a randomly chosen color
     , message_history = []
     , message_history_length = 500
-    , debug=(document.location.protocol == "file:")
+    , debug = (document.location.protocol == "file:")
     ;
 
 var _emoteReq,
@@ -106,7 +106,7 @@ function onLoadCheerEmotes(json) {
             }
         }
     }
-    catch{}
+    catch{ }
 
     $('.module').each(function () {
         var id = $(this).attr('id');
@@ -376,7 +376,7 @@ function InitClient() {
     };
 
     function _build_callback(name) {
-        return function() {
+        return function () {
             console.log(name, arguments);
         };
     }
@@ -456,7 +456,7 @@ function ParseMessage(user, message, userData) {
         }
         user_col = user_undefined_colors[user];
     }
-
+    var stroke_col = GetStrokeColor(user_col, "#000000");
     var message_col = '';
     if (message.indexOf('ACTION') == 0) {
         message_col = `color: ${user_col}`;
@@ -542,7 +542,7 @@ function ParseMessage(user, message, userData) {
                             sdef = valid_styles[msgWords[wi]];
                         } else if (msgWords[wi] in colors) {
                             // hard-coded: colors cost 1 bit
-                            sdef = {cost: 1, value: [`<span style="color:${colors[msgWords[wi]]};">`, `</span>`]};
+                            sdef = { cost: 1, value: [`<span style="color:${colors[msgWords[wi]]};">`, `</span>`] };
                         } else {
                             break;
                         }
@@ -584,9 +584,13 @@ function ParseMessage(user, message, userData) {
         startIdx = message.indexOf(' ', startIdx + 1);
     }
     message = message.trim();
-
+    var text_shadow = `text-shadow:
+    1px 1px 0 ${stroke_col},
+    -1px 1px 0 ${stroke_col},
+    1px -1px 0 ${stroke_col},
+    -1px -1px 0 ${stroke_col}`;
     //create the message html
-    var p = `<p>${badge_text} <span class="username" style="color: ${user_col}">${userData["display-name"]}</span>${message_col == '' ? ":" : ""} <span style="${message_col}">${message_pre}${message}${message_post}</span>`;
+    var p = `<p>${badge_text} <span class="username" style="color: ${user_col}; ${text_shadow};">${userData["display-name"]}</span>${message_col == '' ? ":" : ""} <span style="${message_col}">${message_pre}${message}${message_post}</span>`;
 
     return p;
 }
