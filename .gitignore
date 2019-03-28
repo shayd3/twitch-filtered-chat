@@ -3,6 +3,9 @@
 # Ignore reference material
 ref/
 
+# Ignore old material I'm holding onto for reference
+old/
+
 # Ignore swap files
 .*.swp
 .*.swo
