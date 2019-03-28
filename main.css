@@ -172,6 +172,11 @@ body {
     margin-right:3px;
 }
 
+.module .content p.sub {
+    background-color:#404040;
+    color: #999999;
+}
+
 .module .content a {
     color:#999;
     text-decoration:none;

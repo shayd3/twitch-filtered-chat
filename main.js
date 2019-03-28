@@ -389,7 +389,16 @@ function InitClient() {
     client.onMessage = _build_callback('client.onMessage');
 
     // onSub(line) callbacks
-    client.onSub = _build_callback('client.onSub');
+    client.onSub = (function(line) {
+        var msg = EscapeString(line);
+        var $content = $('.content');
+        for (var $c of $content) {
+            var $e = document.createElement('p');
+            $e.class = "sub";
+            $e.innerHTML = msg;
+            $c.appendChild($e);
+        }
+    });
     client.onReSub = _build_callback('client.onReSub');
     client.onGiftSub = _build_callback('client.onGiftSub');
 
@@ -487,8 +496,8 @@ function ParseMessage(user, message, userData) {
 
     // get badges from channel list if it exists; if not, use global list
     var badge_text = '';
-    if (userData['@badges'] != "") {
-        var badges = userData["@badges"].split(',');
+    if (userData['badges'] != "") {
+        var badges = userData["badges"].split(',');
         for (i in badges) {
             if (channel_badges[badges[i]])
                 badge_text += `<img src="${channel_badges[badges[i]]}" />`;
