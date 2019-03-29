@@ -156,7 +156,7 @@ body {
     padding:4px;
 }
 
-.module .content p:nth-child(2n) {
+.module .content .line-wrapper:nth-child(2n) {
     background-color:#303030;
 }
 
@@ -288,4 +288,87 @@ body {
         border-bottom-left-radius: 6px;
     }
 }
+
+/* BEGIN: CSS rules for custom cheer effects */
+
+.effect-marquee {
+  overflow: hidden;
+  position: absolute;
+  text-align: left;
+  height: 1.3em;
+  -moz-transform: translateX(100%);
+  -webkit-transform: translateX(100%);
+  transform: translateX(100%);
+  -moz-animation: marquee 15s linear infinite;
+  -webkit-animation: marquee 15s linear infinite;
+  animation: marquee 10s linear infinite;
+}
+
+@-moz-keyframes marquee {
+  0% { -moz-transform: translateX(100%); }
+  100% { -moz-transform: translateX(-100%); }
+}
+
+@-webkit-keyframes marquee {
+  0% { -webkit-transform: translateX(100%); }
+  100% { -webkit-transform: translateX(-100%); }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.effect-bold {
+  font-weight: bold;
+}
+
+.effect-italic {
+  font-style: italic;
+}
+
+.effect-underline {
+  text-decoration: underline;
+}
+
+.effect-upsidedown {
+  display: block;
+  float: right;
+  transform: rotate(180deg);
+  text-align: left;
+}
+
+.effect-inverted {
+  filter: invert(100%);
+}
+
+.effect-strikethrough {
+  text-decoration: line-through;
+}
+
+.effect-subscript {
+  font-size: smaller;
+  vertical-align: sub;
+}
+
+.effect-superscript {
+  font-size: smaller;
+  vertical-align: super;
+}
+
+.effect-big {
+  font-size: large;
+}
+
+.effect-small {
+  font-size: small;
+}
+
+.effect-rainbow {
+  background-image: linear-gradient(to right, red, orange, yellow, blue, violet);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* END: CSS for custom cheer effects */
 

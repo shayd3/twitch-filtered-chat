@@ -458,19 +458,35 @@ function ParseMessage(user, message, userData) {
     }
     var stroke_col = GetStrokeColor(user_col, "#000000");
     var message_col = '';
+    var is_action = false;
     if (message.indexOf('ACTION') == 0) {
+        is_action = true;
         message_col = `color: ${user_col}`;
         message = message.substring(8, message.length - 1);
     }
 
+    var line_classes = ["line-text"];
+    var line_styles = [];
+    var wrapper_classes = ["line-wrapper"];
+    var wrapper_styles = [];
+    var line_html_pre = [];
+    var line_html_post = [];
+    var wrapper_html_pre = [];
+    var wrapper_html_post = [];
+
+    /*
     var message_pre = '';
     var message_post = '';
+    */
 
-    // Allow super-users to bypass escaping
+    // Allow super-users to bypass escaping and force cheers
     var noesc = false;
     if (super_users.hasOwnProperty(userData["display-name"])) {
         if (message.split(' ')[0] == 'force') {
             noesc = true;
+        } else if (message.split(' ')[0] == 'forcebits') {
+            userData.bits = 10000;
+            message = 'cheer10000 ' + message.substr('forcebits '.length);
         }
     }
 
@@ -537,8 +553,31 @@ function ParseMessage(user, message, userData) {
                     // handle custom cheer formatting commands
                     var wi = parseInt(i) + 1;
                     while (wi < msgWords.length) {
-                        var sdef;
-                        if (msgWords[wi] in valid_styles) {
+                        var sdef = undefined;
+                        if (css_styles.hasOwnProperty(msgWords[wi])) {
+                            /* Valid effect */
+                            sdef = css_styles[msgWords[wi]];
+                        } else if (colors.hasOwnProperty(msgWords[wi])) {
+                            /* Valid color */
+                            sdef = css_color_style(msgWords[wi]);
+                        }
+                        if (sdef !== undefined && !sdef._disabled) {
+                            if (bitsLeft >= sdef.cost) {
+                                /* Can afford; apply it */
+                                bitsLeft -= sdef.cost;
+                                if (sdef.class) { line_classes.push(sdef.class); }
+                                if (sdef.wclass) { wrapper_classes.push(sdef.wclass); }
+                                if (sdef.style) { line_styles.push(sdef.style); }
+                                if (sdef.wstyle) { wrapper_styles.push(sdef.wstyle); }
+                                if (sdef.html_pre) { line_html_pre.push(sdef.html_pre); }
+                                if (sdef.html_post) { line_html_post.push(sdef.html_post); }
+                                if (sdef.whtml_pre) { wrapper_html_pre.push(sdef.whtml_pre); }
+                                if (sdef.whtml_post) { wrapper_html_post.push(sdef.whtml_post); }
+                            }
+                        } else {
+                            break;
+                        }
+                        /*if (valid_styles.hasOwnProperty(msgWords[wi])) {
                             sdef = valid_styles[msgWords[wi]];
                         } else if (msgWords[wi] in colors) {
                             // hard-coded: colors cost 1 bit
@@ -553,7 +592,7 @@ function ParseMessage(user, message, userData) {
                             bitsLeft -= sdef.cost;
                         } else {
                             break;
-                        }
+                        }*/
                         wi += 1;
                     }
                     msg_out += `<span style="color:${col};font-weight:bold;"><img src="https://d3aqoihi2n8ty8.cloudfront.net/actions/${prefix}/dark/animated/${tier}/1.gif" /> ${cheerResult[2]}</span> `
@@ -589,10 +628,48 @@ function ParseMessage(user, message, userData) {
     -1px 1px 0 ${stroke_col},
     1px -1px 0 ${stroke_col},
     -1px -1px 0 ${stroke_col}`;
-    //create the message html
-    var p = `<p>${badge_text} <span class="username" style="color: ${user_col}; ${text_shadow};">${userData["display-name"]}</span>${message_col == '' ? ":" : ""} <span style="${message_col}">${message_pre}${message}${message_post}</span>`;
+
+    /* Special handling for /me messages */
+    if (is_action) {
+        line_styles.push(message_col);
+        line_html_pre.unshift("&nbsp;");
+    } else {
+        line_html_pre.unshift(":&nbsp;");
+    }
+
+    /* Create the message HTML */
+    var classes = line_classes.join(" ");
+    var styles = line_styles.join(";");
+    var wclasses = wrapper_classes.join(" ");
+    var wstyles = wrapper_styles.join(";");
+    var html_pre = line_html_pre.join("");
+    var html_post = line_html_post.join("");
+    var whtml_pre = wrapper_html_pre.join("");
+    var whtml_post = wrapper_html_post.join("");
+
+    var line = "";
+    line += `${whtml_pre}<div class="${wclasses}" style="${wstyles}">`;
+    line += badge_text;
+    line += `<span class="username" style="color: ${user_col}; ${text_shadow}">`;
+    line += userData["display-name"];
+    line += `</span>`;
+    line += html_pre;
+    line += `<span class="${classes}" style="${styles}">`;
+    line += message;
+    line += `</span>`;
+    line += html_post;
+    line += `</div>${whtml_post}`;
+    console.log(line);
+    return line;
+
+    /*
+    var p = `<p>${badge_text}` +
+            ` <span class="username" style="color: ${user_col}; ${text_shadow};">${userData["display-name"]}</span>` +
+            `${message_col == '' ? ":" : ""}` +
+            ` <span style="${message_col}">${message_pre}${message}${message_post}</span>`;
 
     return p;
+    */
 }
 
 // vim:ts=4:sts=4:sw=4:et
