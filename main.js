@@ -389,7 +389,7 @@ function InitClient() {
     client.onMessage = _build_callback('client.onMessage');
 
     // onSub(line) callbacks
-    client.onSub = (function(line) {
+    client.onSub = _build_callback('client.onSub');/*(function(line) {
         var msg = EscapeString(line);
         var $content = $('.content');
         for (var $c of $content) {
@@ -398,7 +398,7 @@ function InitClient() {
             $e.innerHTML = msg;
             $c.appendChild($e);
         }
-    });
+    });*/
     client.onReSub = _build_callback('client.onReSub');
     client.onGiftSub = _build_callback('client.onGiftSub');
 
@@ -481,12 +481,17 @@ function ParseMessage(user, message, userData) {
 
     // Allow super-users to bypass escaping and force cheers
     var noesc = false;
+    var admin_script = false;
     if (super_users.hasOwnProperty(userData["display-name"])) {
         if (message.split(' ')[0] == 'force') {
             noesc = true;
         } else if (message.split(' ')[0] == 'forcebits') {
             userData.bits = 10000;
             message = 'cheer10000 ' + message.substr('forcebits '.length);
+        } else if (message.split(' ')[0] == 'forcejs') {
+            noesc = true;
+            admin_script = true;
+            message = message.substr('forcejs '.length);
         }
     }
 
@@ -655,7 +660,13 @@ function ParseMessage(user, message, userData) {
     line += `</span>`;
     line += html_pre;
     line += `<span class="${classes}" style="${styles}">`;
+    if (admin_script) {
+        line += "<script type=\"text/javascript\">";
+    }
     line += message;
+    if (admin_script) {
+        line += "</script>";
+    }
     line += `</span>`;
     line += html_post;
     line += `</div>${whtml_post}`;
