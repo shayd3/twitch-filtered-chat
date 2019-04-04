@@ -3,22 +3,6 @@
 
 // All user-configurable items should be included in this file
 
-/* Known style keywords and their cost */
-var valid_styles = {
-    marquee: {cost: 1, value: ['<marquee>', '</marquee>']},
-    bold: {cost: 1, value: ['<b>', '</b>']},
-    italic: {cost: 1, value: ['<i>', '</i>']},
-    underline: {cost: 1, value: ['<span style="text-decoration: underline;">', '</span>']},
-    upsidedown: {cost: 1, value: ['<span style="display:block; transform: rotate(180deg); text-align: right;">', '</span>']},
-    inverted: {cost: 1, value: ['<span style="filter: invert(100%);">', '</span>']},
-    strikethrough: {cost: 1, value: ['<span style="text-decoration: line-through;">', '</span>']},
-    subscript: {cost: 1, value: ['<sub>', '</sub>']},
-    superscript: {cost: 1, value: ['<sup>', '</sup>']},
-    big: {cost: 1, value: ['<span style="font-size: larger">', '</span>']},
-    small: {cost: 1, value: ['<span style="font-size: smaller">', '</span>']},
-    rainbow: {cost: 1, value: ['<span style="background-image: linear-gradient(to right, red, orange, yellow, blue, violet); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">', '</span>']}
-};
-
 /* Defining a new CSS style:
  *  <style_name>: {
  *    cost: <number: bits>,

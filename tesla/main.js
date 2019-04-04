@@ -1,18 +1,5 @@
 // Twitch Filtered Chat
-// Primary Script
-
-/* Hijacking fixes:
- *
- * HTML injection via nickname abuse "isPrototypeOf" etc
- * HTML injection: escape "<", ">", "\"", "'", "&"
- * URL attribute injection: via escaped "\""
-    www"style="position:fixed;bottom:0;left:0;top:0;right:0;opacity:1;background:#FFF;"onmouseover="window.location='https://www.twitch.tv/dwangoac';
- *
- */
-
-/* TODO: markdown
- * https://github.com/showdownjs/showdown
- */
+// Tesla variant
 
 var EscapeCharsList = ['&', '"', "'", '<', '>'];
 var EscapeChars = {
@@ -219,13 +206,6 @@ function onLoadCheerEmotes(json) {
             $(this).val('');
         }
     });
-
-    $('#txtChat').on('keyup', function (e) {
-        if (e.keyCode == 13) {
-            client.SendMessage(txtChannel.value, txtChat.value);
-            txtChat.value = '';
-        }
-    })
 
     InitClient();
 })();

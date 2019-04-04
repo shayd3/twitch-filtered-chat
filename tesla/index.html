@@ -1,0 +1,72 @@
+<!DOCTYPE xhtml>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title></title>
+    <meta charset="utf-8" />
+    <link href="main.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="../twitch-events.js"></script>
+    <script type="text/javascript" src="../twitch-assets.js"></script>
+    <script type="text/javascript" src="../colors.js"></script>
+    <script type="text/javascript" src="../config.js"></script>
+</head>
+<body>
+    <div id="wrapper">
+        <div class="column">
+            <div class="module right full" id="p3">
+                <div class="header">
+                    <div class="menu">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                    <label class="name">Full chat</label>
+                    <input type="text" class="name" value="Full chat" />
+                </div>
+                <div class="settings">
+                    <p>Include:</p>
+                    <ul class="include">
+                        <li><label><input type="checkbox" class="pleb" checked />Non-subs</label></li>
+                        <li><label><input type="checkbox" class="sub" checked />Subscribers</label></li>
+                        <li><label><input type="checkbox" class="mod" checked />Moderators</label></li>
+                        <li><label><input type="checkbox" class="event" checked />Channel events</label></li>
+                        <li><label><input type="checkbox" class="bits" checked />Bit messages</label></li>
+                        <li class="textbox include_user"><label>From user:</label><input type="text" class="user" /></li>
+                        <li class="textbox include_keyword"><label>Contains:</label><input type="text" class="keyword" /></li>
+                    </ul>
+                    <p>Exclude:</p>
+                    <ul>
+                        <li><label><input type="checkbox" value="TAS9000" class="exclude_user" checked/>From user: TAS9000</label></li>
+                        <li class="textbox exclude_user"><label>From user:</label><input type="text" class="user"/></li>
+                        <li class="textbox exclude_startswith"><label>Starts with:</label><input type="text" class="keyword" /></li>
+                    </ul>
+                </div>
+                <div class="content">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="settings">
+        <header>Settings</header>
+        <ul>
+            <li>
+                <label>Channel:</label>
+                <input type="text" id="txtChannel"  />
+            </li>
+            <li>
+                <label>Nick:</label>
+                <input type="text" id="txtNick" />
+            </li>
+            <li>
+                <label>oauth:</label>
+                <input type="password" id="txtPass" />
+            </li>
+        </ul>
+        <footer>
+            <a onclick="$('#settings_button').click();">Close</a>
+        </footer>
+    </div>
+    <img id="settings_button" src="settings_white.png" alt="Settings" />
+    <script type="text/javascript" src="main.js"></script>
+</body>
+</html>
