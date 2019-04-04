@@ -94,6 +94,15 @@ function onLoadCheerEmotes(json) {
 }
 
 (function () {
+    if (window.location.search) {
+        var query = window.location.search;
+        var queryParts = query.substring(1).split('&');
+        for (var i = 0; i < queryParts.length; i++) {
+            var parts = queryParts[i].split('=');
+            queryList[parts[0].trim()] = parts[1].trim();
+        }
+    }
+
     try {
         var confStr = localStorage.getItem('config');
         if (confStr) {
@@ -107,6 +116,14 @@ function onLoadCheerEmotes(json) {
         }
     }
     catch{ }
+
+    /* Query String values override local storage for channel and username */
+    if (queryList.hasOwnProperty('channel')) {
+        txtChannel.value = queryList.channel;
+    }
+    if (queryList.hasOwnProperty('user')) {
+        txtNick.value = queryList.user;
+    }
 
     $('.module').each(function () {
         var id = $(this).attr('id');
@@ -165,16 +182,6 @@ function onLoadCheerEmotes(json) {
 
     LoadGlobalBadges(onLoadGlobalBadges);
     LoadCheerEmotes('254ae3otzi9r7ghkl56p8d8ijctwq5', onLoadCheerEmotes);
-
-    //create queryList array
-    if (window.location.search) {
-        var query = window.location.search;
-        var queryParts = query.substring(1).split('&');
-        for (var i = 0; i < queryParts.length; i++) {
-            var parts = queryParts[i].split('=');
-            queryList[parts[0].trim()] = parts[1].trim();
-        }
-    }
 
     $('#txtChannel').on('input', function () {
         if (txtNick.value == '' || txtChannel.value.indexOf(txtNick.value) == 0)
