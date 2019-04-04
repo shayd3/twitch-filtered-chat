@@ -99,7 +99,7 @@ function onLoadCheerEmotes(json) {
         var queryParts = query.substring(1).split('&');
         for (var i = 0; i < queryParts.length; i++) {
             var parts = queryParts[i].split('=');
-            queryList[parts[0].trim()] = parts[1].trim();
+            queryList[parts[0].trim()] = decodeURIComponent(parts[1].trim());
         }
     }
 
