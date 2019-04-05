@@ -264,6 +264,11 @@ function TwitchClient(opts) {
 
         }
     }
+    
+    /// Close the websocket forcefully
+    this.CloseConnection = function () {
+        _ws.close();
+    }
 
     ///Leave a single channel or an array of channel names
     this.LeaveChannels = function (channels) {
