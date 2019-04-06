@@ -15,10 +15,18 @@ localStorage.setItem("config", "");
     </script>
 </head>
 <body>
+    <div id="settings">
+        <ul>
+            <li>
+                <label>Channel:</label>
+                <input type="text" id="txtChannel" value="#dwangoac" />
+            </li>
+        </ul>
+    </div>
     <div id="wrapper">
         <div class="column">
-            <div class="module right full" id="p3">
-                <div class="header">
+            <div class="module full" id="mainmodule">
+                <div class="header" style="display: none">
                     <div class="menu">
                         <div></div>
                         <div></div>
@@ -27,7 +35,7 @@ localStorage.setItem("config", "");
                     <label class="name">Full chat</label>
                     <input type="text" class="name" value="Full chat" />
                 </div>
-                <div class="settings">
+                <div class="settings" style="display: none">
                     <p>Include:</p>
                     <ul class="include">
                         <li><label><input type="checkbox" class="pleb" checked />Non-subs</label></li>
@@ -46,30 +54,10 @@ localStorage.setItem("config", "");
                         <li class="textbox exclude_startswith"><label>Starts with:</label><input type="text" class="keyword" /></li>
                     </ul>
                 </div>
-                <div class="content">
+                <div class="content" style="height: 100%">
                 </div>
             </div>
         </div>
-    </div>
-    <div id="settings">
-        <header>Settings</header>
-        <ul>
-            <li>
-                <label>Channel:</label>
-                <input type="text" id="txtChannel" value="#dwangoac" />
-            </li>
-            <li>
-                <label>Nick:</label>
-                <input type="text" id="txtNick" />
-            </li>
-            <li>
-                <label>oauth:</label>
-                <input type="password" id="txtPass" />
-            </li>
-        </ul>
-        <footer>
-            <a onclick="$('#settings_button').click();">Close</a>
-        </footer>
     </div>
     <img id="settings_button" src="../settings_white.png" alt="Settings" />
     <script type="text/javascript" src="main.js"></script>
