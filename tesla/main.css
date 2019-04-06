@@ -196,7 +196,10 @@ body {
 }
 
 .module.full .settings {
-    max-height: 37.4%;
+    width: 0%;
+    height: 0%;
+    position: absolute;
+    display: hidden;
 }
 
 .module.full .content {
