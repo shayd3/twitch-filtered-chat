@@ -365,7 +365,7 @@ body {
 }
 
 .effect-rainbow {
-  background-image: linear-gradient(to right, red, orange, yellow, blue, violet);
+  background-image: linear-gradient(to right, #FF0000, #FFFF00, #00FF00, #00FFFF, #0000FF, #FF00FF, #FF0000);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
