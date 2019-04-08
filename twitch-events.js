@@ -9,6 +9,48 @@ opts =
     onConnect: f()
 }
 */
+
+/* Utilities */
+function ParseUSERNOTICE(line) {
+    var pat = /^@([^ ]+) :([^ ]+) USERNOTICE (\#[^ ]+)(?: :(.*))?(?:\r\n)?$/;
+    var match;
+    if ((match = line.match(pat)) == null) {
+        return null;
+    }
+    var flags_raw = match[1];
+    var server = match[2];
+    var channel = match[3];
+    var message = match[4];
+    var flags = {};
+    for (var item of flags_raw.split(';')) {
+        var [key, val] = item.split('=');
+        if (val.length == 0) {
+            val = null;
+        } else if (val.match(/^[0-9]+$/)) {
+            val = parseInt(val);
+        } else {
+            val = val.replace(/\\s/g, ' ');
+            val = val.replace(/\\:/g, ':');
+            val = val.replace(/\\r/g, '\r');
+            val = val.replace(/\\n/g, '\n');
+            val = val.replace(/\\\\/g, '\\');
+        }
+        flags[key] = val;
+    }
+    if (!!flags['msg-id']) {
+        if (flags['msg-id'] == 'sub') {
+            flags['sub'] = 'sub';
+        } else if (flags['msg-id'] == 'resub') {
+            flags['sub'] = 'resub';
+        } else if (flags['msg-id'] == 'subgift' || flags['msg-id'] == 'giftsub') {
+            flags['sub'] = 'subgift';
+        } else if (flags['msg-id'] == 'anonsubgift') {
+            flags['sub'] = 'anonsubgift';
+        }
+    }
+    return [flags, server, channel, message];
+}
+
 function TwitchClient(opts) {
 
     //privates
@@ -70,17 +112,13 @@ function TwitchClient(opts) {
 
     function OnWebsocketMessage(msgData) {
         var data = msgData.data.split('\r\n');
-
         for (line of data) {
-
             if (line.trim() == '') {
                 continue;
             }
-
             if (client.Debug) {
                 console.log('ws>', msgData);
             }
-
             if (client.onMessage)
                 client.onMessage(line);
 
@@ -88,20 +126,16 @@ function TwitchClient(opts) {
 
             if (parts[0] == 'PING') {
                 _ws.send(`PONG ${parts[1].substring(1)}`);
-            }
-            else if (parts[1] == 'JOIN') {
+            } else if (parts[1] == 'JOIN') {
                 if (client.onJoin)
                     client.onJoin(parts[0].split(':')[1].split('!')[0], parts[2]);
-            }
-            else if (parts[1] == 'PART') {
+            } else if (parts[1] == 'PART') {
                 if (client.onPart)
                     client.onPart(parts[0].split(':')[1].split('!')[0], parts[2]);
-            }
-            else if (parts[1] == 'MODE') {
+            } else if (parts[1] == 'MODE') {
                 if (client.onMode)
                     client.onMode(line);
-            }
-            else if (parts[2] == 'PRIVMSG') {
+            } else if (parts[2] == 'PRIVMSG') {
 /*
 @badges=broadcaster/1;color=#1E90FF;display-name=timeshifter08;emotes=;id=d653a0d0-1cd0-492e-ad6e-2de1940a8d16;mod=0;room-id=61927669;subscriber=0;tmi-sent-ts=1524771643982;turbo=0;user-id=61927669;user-type=
  :timeshifter08!timeshifter08@timeshifter08.tmi.twitch.tv PRIVMSG #timeshifter08 :asdf
@@ -127,34 +161,26 @@ function TwitchClient(opts) {
                 if (client.onPrivmsg)
                     client.onPrivmsg(user, channel.substring(1), msg, userdata_obj, line);
 
-            }
-            else if (parts[2] == 'ROOMSTATE') {
-                /*
-@broadcaster-lang=;emote-only=0;followers-only=-1;r9k=0;rituals=1;room-id=61927669;slow=0;subs-only=0 :tmi.twitch.tv ROOMSTATE #timeshifter08
-
-@badges=broadcaster/1;color=#1E90FF;display-name=timeshifter08;emotes=;id=377f9462-5f5e-4e5a-a3c5-13911dc7a623;mod=0;room-id=61927669;subscriber=0;tmi-sent-ts=1525115130064;turbo=0;user-id=61927669;user-type= :timeshifter08!timeshifter08@timeshifter08.tmi.twitch.tv PRIVMSG
- #chatrooms:61927669:a0c1e70d-7d52-491a-bcd5-6db6a5492d64 :alooooha
-                */
-
+            } else if (parts[2] == 'ROOMSTATE') {
                 var userdata = parts[0].split(';');
-
                 var userdata_obj = {};
-
                 for (s of userdata) {
                     var sides = s.split('=');
                     userdata_obj[sides[0]] = sides[1];
                 }
-
                 var channel = line.split(' ')[3].substring(1).trim().toLowerCase();
-
                 if (client.onRoomstate)
                     client.onRoomstate(channel, userdata_obj);
-
-            }
-            else if (parts[2] == 'USERNOTICE') {
+            } else if (parts[2] == 'USERNOTICE') {
                 client.onUsernotice(line);
-                if (!window.userNotices) { window.userNotices = []; }
-                window.userNotices.push(line);
+                var fscm = ParseUSERNOTICE(line);
+                if (fscm) {
+                    var [f, s, c, m] = fscm;
+                    if (f['sub'] == 'sub' && client.onSub) client.onSub(m, f);
+                    if (f['sub'] == 'resub' && client.onReSub) client.onReSub(m, f);
+                    if (f['sub'] == 'subgift' && client.onGiftSub) client.onGiftSub(m, f);
+                    if (f['sub'] == 'anonsubgift' && client.onAnonGiftSub) client.onAnonGiftSub(m, f);
+                }
                 var msgParts = parts[0].split(';');
                 var isSub = 0;
                 for (var i = 0; i < msgParts.length; i++) {
@@ -205,7 +231,6 @@ function TwitchClient(opts) {
     //public functions
 
     this.Connect = function () {
-
         for (c of client.Channels) {
             client.PendingChannels.push(c);
         }
@@ -235,33 +260,21 @@ function TwitchClient(opts) {
         var arr = [];
         if (!Array.isArray(channels)) {
             arr.push(channels);
-        }
-        else {
+        } else {
             arr = channels;
         }
 
         for (c of arr) {
             c = c.trim().toLowerCase();
-
-            //if (c.split(':').length == 3) {
-            //    throw 'Error: Chat rooms must be joined by <channel name>:<room name>.'
-            //    return;
-            //}
-            //else if (c.split(':').length == 2) {
-
-            //}
-
-            if (c[0] != '#')
+            if (c[0] != '#') {
                 c = '#' + c;
-
+            }
             if (_ws.readyState == 1) {
                 client.Channels.push(c);
-
                 _ws.send(`JOIN ${c}`);
-            }
-            else
+            } else {
                 client.PendingChannels.push(c);
-
+            }
         }
     }
     

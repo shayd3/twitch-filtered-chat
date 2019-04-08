@@ -389,21 +389,10 @@ function InitClient() {
     client.onMessage = _build_callback('client.onMessage');
 
     // onSub(line) callbacks
-    client.onSub = _build_callback('client.onSub');/*(function(line) {
-        var msg = EscapeString(line);
-        var $content = $('.content');
-        for (var $c of $content) {
-            var $e = document.createElement('p');
-            $e.class = "sub";
-            $e.innerHTML = msg;
-            $c.appendChild($e);
-        }
-    });*/
+    client.onSub = _build_callback('client.onSub');
     client.onReSub = _build_callback('client.onReSub');
     client.onGiftSub = _build_callback('client.onGiftSub');
-
-    // TODO: remove
-    window.client = client;
+    client.onAnonGiftSub = _build_callback('client.onAnonGiftSub');
 }
 
 function ParseEmotes(userData, message, force_start, noesc) {
@@ -582,22 +571,6 @@ function ParseMessage(user, message, userData) {
                         } else {
                             break;
                         }
-                        /*if (valid_styles.hasOwnProperty(msgWords[wi])) {
-                            sdef = valid_styles[msgWords[wi]];
-                        } else if (msgWords[wi] in colors) {
-                            // hard-coded: colors cost 1 bit
-                            sdef = { cost: 1, value: [`<span style="color:${colors[msgWords[wi]]};">`, `</span>`] };
-                        } else {
-                            break;
-                        }
-                        if (sdef.cost <= bitsLeft) {
-                            // can afford
-                            message_pre = message_pre + sdef.value[0];
-                            message_post = sdef.value[1] + message_post;
-                            bitsLeft -= sdef.cost;
-                        } else {
-                            break;
-                        }*/
                         wi += 1;
                     }
                     msg_out += `<span style="color:${col};font-weight:bold;"><img src="https://d3aqoihi2n8ty8.cloudfront.net/actions/${prefix}/dark/animated/${tier}/1.gif" /> ${cheerResult[2]}</span> `

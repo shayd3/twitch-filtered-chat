@@ -37,9 +37,7 @@ var _emoteReq,
 
 // Configuration object
 var config = {
-    Channel: '',
-    Nick: '',
-    Pass: ''
+    Channel: ''
 };
 
 function onLoadChannelBadges(json) {
@@ -77,7 +75,7 @@ function onLoadCheerEmotes(json) {
     }
 }
 
-(function () {
+(function() {
     if (window.location.search) {
         var query = window.location.search;
         var queryParts = query.substring(1).split('&');
@@ -93,8 +91,6 @@ function onLoadCheerEmotes(json) {
             config = JSON.parse(confStr);
             if (config) {
                 txtChannel.value = config.Channel;
-                txtNick.value = config.Nick;
-                txtPass.value = config.Pass;
             }
         }
     }
@@ -220,8 +216,6 @@ function UpdateChannel() {
     //client.LeaveChannels(client.Channels[0]);
 
     config.Channel = txtChannel.value.toLowerCase();
-    config.Nick = txtNick.value;
-    config.Pass = txtPass.value;
 
     //client.JoinChannels(txtChannel.value.toLowerCase());
     localStorage.setItem('config', JSON.stringify(config));
@@ -261,20 +255,10 @@ function UpdateConfig(module) {
 }
 
 function InitClient() {
-    client = null;
-    if (txtNick.value.trim() != '' && txtPass.value.trim() != '') {
-        client = new TwitchClient({
-            Nick: txtNick.value,
-            Pass: txtPass.value,
-            Channels: txtChannel.value,
-            Debug: debug
-        });
-    } else {
-        client = new TwitchClient({
-            Channels: txtChannel.value,
-            Debug: debug
-        });
-    }
+    client = new TwitchClient({
+        Channels: txtChannel.value,
+        Debug: debug
+    });
 
     client.onRoomstate = function (channel, settings) {
         console.log('Joined channel', channel, settings['room-id']);
@@ -369,21 +353,10 @@ function InitClient() {
     client.onMessage = _build_callback('client.onMessage');
 
     // onSub(line) callbacks
-    client.onSub = _build_callback('client.onSub');/*(function(line) {
-        var msg = EscapeString(line);
-        var $content = $('.content');
-        for (var $c of $content) {
-            var $e = document.createElement('p');
-            $e.class = "sub";
-            $e.innerHTML = msg;
-            $c.appendChild($e);
-        }
-    });*/
+    client.onSub = _build_callback('client.onSub');
     client.onReSub = _build_callback('client.onReSub');
     client.onGiftSub = _build_callback('client.onGiftSub');
-
-    // TODO: remove
-    window.client = client;
+    client.onAnonGiftSub = _build_callback('client.onAnonGiftSub');
 }
 
 function ParseEmotes(userData, message, force_start, noesc) {
