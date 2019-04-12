@@ -1,5 +1,7 @@
 /* Twitch Filtered Chat (v2) Main Module */
 
+"use strict";
+
 /* Objects:
  *
  *  div#wrapper
@@ -37,7 +39,9 @@ const CACHED_VALUE = "Cached";
 const AUTOGEN_VALUE = "Auto-Generated";
 var HTMLGen = {};
 HTMLGen._dflt_colors = {};
+HTMLGen.XML_NO_ENTRY = '&#x1f6ab;';
 
+/* Generate a random color for the given user */
 HTMLGen.getColorFor = function _HTMLGen_getColorFor(username) {
   if (!HTMLGen._dflt_colors.hasOwnProperty(username)) {
     var ci = Math.floor(Math.random() * default_colors.length);
@@ -46,6 +50,7 @@ HTMLGen.getColorFor = function _HTMLGen_getColorFor(username) {
   return HTMLGen._dflt_colors[username];
 }
 
+/* Ensure a channel starts with "#" */
 function sanitize_channel(ch) {
   if (!ch.startsWith('#')) {
     return `#${ch}`;
@@ -155,19 +160,6 @@ function get_config_object() {
       config[id] = get_module_settings(this);
     }
   });
-
-  /* Let the user know what settings we've decided to use */
-  $("#txtChannel").val(config.Channels.join(","));
-  $("#txtNick").val(!!config.Name ? config.Name : AUTOGEN_VALUE);
-  if (config.ClientID.length == 30) {
-    $("#txtClientID").attr("disabled", "disabled").val(CACHED_VALUE);
-  }
-  if (config.Pass.length > 0) {
-    $("#txtPass").attr("disabled", "disabled").val(CACHED_VALUE);
-  }
-  if (config.Debug >= 0) {
-    $("#selDebug").val(`${config.Debug}`);
-  }
 
   if (query_remove.length > 0) {
     /* The query string contains sensitive information; remove it */
@@ -361,15 +353,108 @@ function add_html(event) {
   });
 }
 
+/* Shortcut for adding a <div class="pre"> element */
+function add_pre(content) {
+  add_html(`<div class="pre">${content}</div>`);
+}
+
 /* Generate the message HTML for the given event */
 function chat_message_html(event, client) {
   var message = event.message.escape();
-  /* TODO: URL formatting */
-  /* TODO: @user highlighting */
+  /* Handle mod-only antics */
+  if (event.ismod && !$("#cbForce").is(":checked")) {
+    if (event.message.startsWith('force ')) {
+      message = event.message.replace('force ', '');
+    } else if (event.message.startsWith('forcejs ')) {
+      message = `<script>${event.message.replace('forcejs ', '')}</script>`;
+    } else if (event.message.startsWith('forcebits ')) {
+      message = `cheer1000 ${event.message.replace('forcebits ', '')}`;
+    }
+  }
+  /* URL formatting */
+  message = message.replace(Util.URL_REGEX, function(url) {
+    var u = new URL(url);
+    return `<a href="${u}" target="_blank">${u}</a>`;
+  });
+  /* @user highlighting */
+  message = message.replace(/(\b\s*)(@\w+)(\s*\b)/g, "$1<em>$2</em>$3");
   /* TODO: emotes */
   /* TODO: cheers */
   /* TODO: cheer effects */
   return message;
+}
+
+/* Handle a chat command */
+function handle_command(e, client, config) {
+  var tokens = e.target.value.split(" ");
+  var cmd = tokens.shift();
+  if (cmd == '//clear') {
+    for (var e of $("div.content")) {
+      e.html("");
+    }
+  } else if (cmd == "//config") {
+    /* TODO: nicer output, setting config values */
+    add_pre(`${JSON.stringify(config).escape()}`);
+  } else if (cmd == "//join") {
+    if (tokens.length > 0) {
+      var ch = sanitize_channel(tokens[0]);
+      if (!client.IsInChannel(ch)) {
+        client.JoinChannel(ch);
+        add_pre(`Joined ${ch}`);
+      } else {
+        add_pre(`Already in channel ${ch}`);
+      }
+    } else {
+      add_pre(`Usage: //join &lt;channel&gt;`);
+    }
+  } else if (cmd == "//part" || cmd == "//leave") {
+    if (tokens.length > 0) {
+      var ch = sanitize_channel(tokens[0]);
+      if (client.IsInChannel(ch)) {
+        client.LeaveChannel(ch);
+        add_pre(`Left ${ch}`);
+      } else {
+        add_pre(`Not in channel ${ch}`);
+      }
+    } else {
+      add_pre(`Usage: //leave &lt;channel&gt;`);
+    }
+  } else if (cmd == "//help") {
+    /* TODO: document additions to //config */
+    if (tokens.length == 0) {
+      var lines = [];
+      lines.push(["clear", "clears all chat windows of their contents"]);
+      lines.push(["config", "display current configuration, less ClientID and OAuth token"]);
+      lines.push(["join <ch>", "join channel <ch>"]);
+      lines.push(["part <ch>", "leave channel <ch>"]);
+      lines.push(["leave <ch>", "leave channel <ch>"]);
+      lines.push(["help", "this message"]);
+      lines.push(["help <cmd>", "help for a specific command"]);
+      add_pre(`<div class="help">Commands:</div>`);
+      for (var [c, m] of lines) {
+        add_pre(`<div class="helpline"><span class="help helpcmd">//${c.escape()}</span><span class="help helpmsg">${m.escape()}</span></div>`);
+      }
+    } else if (tokens[0] == "clear") {
+      add_pre(`<div class="help">//clear: Clears all chats</div>`);
+    } else if (tokens[0] == "config") {
+      add_pre(`<div class="help">//config: Display current configuration. Both ClientID and OAuth token are omitted for security reasons</div>`);
+    } else if (tokens[0] == "join") {
+      add_pre(`<div class="help">//join &lt;ch&gt;: Join the specified channel. Channel may or may not include leading #</div>`);
+    } else if (tokens[0] == "part" || tokens[0] == "leave") {
+      add_pre(`<div class="help">//part &lt;ch&gt;: Disconnect from the specified channel. Channel may or may not include leading #</div>`);
+      add_pre(`<div class="help">//leave &lt;ch&gt;: Disconnect from the specified channel. Channel may or may not include leading #</div>`);
+    } else if (tokens[0] == "help") {
+      add_pre(`<div class="help">//help: Displays a list of recognized commands and their usage</div>`);
+      add_pre(`<div class="help">//help &lt;cmd&gt;: Displays help for a specific command</div>`);
+    } else {
+      add_pre(`<div class="help">//help: No such command "${tokens[0].escape()}"</div>`);
+    }
+  } else if (cmd.startsWith('//')) {
+    add_html(`<div class="pre error">Unknown command "${cmd.escape()}"</div>`);
+  } else {
+    return false;
+  }
+  return true;
 }
 
 /* Called once when the document loads */
@@ -379,16 +464,27 @@ function client_main() {
   config.Name = config.ClientID = config.Pass = undefined;
   Util.DebugLevel = config.Debug;
 
-  $("#txtChat").keyup(function _txtChat_enter(e) {
+  /* Allow JS access if debugging is enabled */
+  if (Util.DebugLevel > 0) {
+    window.client = client;
+  }
+  if (Util.DebugLevel > 1) {
+    window.config = config;
+  }
+
+  /* Sending a chat message */
+  $("#txtChat").keydown(function _txtChat_enter(e) {
     if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
-      for (let ch of config.Channels) {
-        client.SendMessage(ch, e.target.value);
+      if (!handle_command(e, client, config)) {
+        client.SendMessageToAll(e.target.value);
       }
       e.target.value = "";
+      e.preventDefault(); /* prevent bubbling */
       return false; /* prevent bubbling */
     }
   });
 
+  /* Pressing enter while on the settings box */
   $("#settings").keyup(function _settings_enter(e) {
     if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
       update_settings();
@@ -397,7 +493,8 @@ function client_main() {
     }
   });
 
-  $("#settings_button").click(function _settings_button_keyup() {
+  /* Clicking the settings button */
+  $("#settings_button").click(function _settings_button_click() {
     if ($("#settings").is(':visible')) {
       $('#settings').fadeOut();
     } else {
@@ -409,18 +506,28 @@ function client_main() {
         $("#txtClientID").attr("disabled", "disabled").val(CACHED_VALUE);
       }
       if (config.Pass.length > 0) {
-        $("#txtPass").attr("disabled", "disabled").val(CACHED_VALUE);
+        $("#txtPass").attr("disabled", "disabled").hide();
+        $("#txtPassDummy").show();
       }
       $('#settings').fadeIn();
     }
   });
 
+  /* Clicking on a "Clear" link */
+  $(".clearChatLink").click(function _clear_click() {
+    var id = $(this).parent().parent().parent().attr("id");
+    console.log("Clearing module " + id);
+    $(`#${id} .content`).html("");
+  });
+
+  /* Pressing enter on the "Channels" text box */
   $("#txtChannel").keyup(function _cfg_channel_enter() {
     if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
       /* TODO: join/part channels as needed */
     }
   });
 
+  /* Changing the debug level */
   $("#selDebug").change(function _cfg_debug_change() {
     var v = parseInt($(this).val());
     var old = client.GetDebug();
@@ -428,6 +535,12 @@ function client_main() {
     client.SetDebug(v);
   });
 
+  /* Reconnect */
+  $("#reconnect").click(function _reconnect_click() {
+    client.Connect();
+  });
+
+  /* Opening one of the module menus */
   $(".menu").click(function _on_menu_click() {
     var $lbl = $(this).parent().children("label");
     var $tb = $(this).parent().children("input");
@@ -441,6 +554,7 @@ function client_main() {
     }
   });
 
+  /* Pressing enter on one of the module menu text boxes */
   $('.module .settings input[type="text"]').on('keyup', function _settings_input_keyup(e) {
     if ($(this).val().length > 0) {
       if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
@@ -453,6 +567,7 @@ function client_main() {
     }
   });
 
+  /* Changing a module's name */
   for (var m of $(".module")) {
     let id = $(m).attr("id");
     $(m).find("input.name").on('keyup', function _module_name_keyup(e) {
@@ -466,9 +581,34 @@ function client_main() {
     });
   }
 
-  client.bind('twitch-open', function _on_twitch_open(e) {
-    add_html('<p class="line">Connected</p>');
+  /* Clicking anywhere else on the document */
+  $(document).click(function(e) {
+    if (e.target.tagName == "A" && $(e.target).hasClass("reconnectLink")) {
+      add_html(`<div class="notice">Reconnecting...</div>`);
+      client.Connect();
+    }
+    /* TODO: clicking on a username: context window */
   });
+
+  /* Bind to the various Twitch events we're interested in */
+
+  client.bind('twitch-open', function _on_twitch_open(e) {
+    add_html('<div class="notice">Connected</div>');
+  });
+  
+  client.bind('twitch-close', function _on_twitch_close(e) {
+    var code = e.raw_line.code;
+    var reason = e.raw_line.reason;
+    var msg = "Connection closed";
+    if (reason) {
+      msg = `${msg} (code ${code}: ${reason})`;
+    } else {
+      msg = `${msg} (code ${code})`;
+    }
+    add_html(`<div class="error">${msg}<span class="reconnect"><a href="javascript:void(0)" class="reconnectLink">Reconnect</a></span></div>`);
+    console.log(e);
+  });
+  
   client.bind('twitch-notice', function _on_twitch_notice(e) {
     /* Some notices are benign */
     if (e.flag('msg-id') == 'host_on') { }
@@ -477,20 +617,23 @@ function client_main() {
     }
     let channel = Twitch.FormatChannel(e.channel);
     let message = e.message.escape();
-    add_html(`<span class="notice">Notice: ${channel}: ${message}</span>`);
+    add_html(`<div class="notice">Notice: ${channel}: ${message}</div>`);
   });
+  
   client.bind('twitch-error', function _on_twitch_error(e) {
     Util.Error(e);
     let user = e.user;
     let command = e.values.command;
     let message = e.message.escape();
-    add_html(`<span class="error">Error ${user}: ${command}: ${message}</span>`);
+    add_html(`<div class="error">Error ${user}: ${command}: ${message}</div>`);
   });
+  
   client.bind('twitch-message', function _on_twitch_message(e) {
-    if (Util.DebugLevel > 0) {
+    if (Util.DebugLevel > 1) {
       add_html(`<span class="pre">${e.values.toSource()}</span>`);
     }
   });
+  
   client.bind('twitch-chat', function _on_twitch_chat(e) {
     add_html(event);
   });
@@ -500,14 +643,10 @@ function client_main() {
     set_module_settings(this, config[$(this).attr('id')]);
   });
 
+  /* HTML generation functions (defined here to access the client object) */
+
+  /* Entry point: generate for an event (likely TwitchChatEvent) */
   HTMLGen.gen = function _HTMLGen_gen(e) {
-    /* TODO:
-     *  emotes
-     *  force
-     *  forcejs
-     *  forcebits
-     *  cheer effects
-     */
     let e_cont = document.createElement('div');
     e_cont.setAttribute('class', 'chat-line');
     e_cont.setAttribute("data-id", e.flags.id);
@@ -529,6 +668,8 @@ function client_main() {
     e_cont.appendChild(HTMLGen.genMsg(e));
     return e_cont.outerHTML;
   };
+
+  /* Generate HTML for a user's name */
   HTMLGen.genName = function _HTMLGen_genName(e) {
     let user = e.flag("display-name");
     if (!user) user = e.user;
@@ -542,12 +683,16 @@ function client_main() {
     e_name.innerHTML = user.escape();
     return e_name;
   };
+
+  /* Generate HTML for the message content (see chat_message_html above) */
   HTMLGen.genMsg = function _HTMLGen_genMsg(e) {
     let e_msg = document.createElement('span');
     e_msg.setAttribute('class', 'message');
     e_msg.innerHTML = chat_message_html(e, client);
     return e_msg;
   };
+
+  /* Generate HTML for the user's badges */
   HTMLGen.genBadges = function _HTMLGen_genBadges(e) {
     let e_badges = document.createElement('span');
     e_badges.setAttribute('class', 'badges');
@@ -580,5 +725,6 @@ function client_main() {
     return e_badges;
   };
 
+  /* Finally, connect */
   client.Connect();
 }

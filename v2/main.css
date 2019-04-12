@@ -23,9 +23,7 @@ body {
   background-color: #0E0E0E;
 }
 
-#wrapper {
-
-}
+#wrapper { }
 
 #wrapper .column {
   float: left;
@@ -93,6 +91,39 @@ body {
   font-size: 0.9em;
 }
 
+.module .header .clearChat {
+  position: relative;
+  vertical-align: top;
+  margin-right: 0.2em;
+  margin-bottom: 1em;
+  font-size: 1em;
+  top: -1pt;
+}
+
+.clearChatLink {
+  text-decoration: none;
+  background-color: transparent;
+  color: white;
+}
+
+.help {
+  font-size: 0.9em;
+  font-style: italic;
+}
+
+.helpline {
+  margin-left: 4em;
+}
+
+.helpcmd {
+  width: 10%;
+}
+
+.helpmsg {
+  float: right;
+  width: 80%;
+}
+
 .module .settings {
   position: absolute;
   top: 2.2em;
@@ -134,6 +165,10 @@ body {
   font-size: 0.9em;
 }
 
+input:disabled {
+  background-color: #dddddd;
+}
+
 .module .header.open label {
   display: none;
 }
@@ -163,6 +198,27 @@ body {
 
 .module .content p .username {
   font-weight: bold;
+}
+
+.module .content .message em {
+  font-weight: bold;
+}
+
+/* FIXME: Better colors */
+.module .content .line .notice {
+  border: 2px inset yellow;
+  font-weight: bold;
+}
+
+/* FIXME: Better colors */
+.module .content .line .error {
+  border: 2px inset red;
+  font-weight: bold;
+}
+
+.module .content .line .reconnect {
+  float: right;
+  margin-right: 2px;
 }
 
 .module .content p img {

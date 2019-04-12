@@ -5,7 +5,9 @@
   <meta charset="utf-8" />
   <link href="../assets/settings_white.png" rel="shortcut icon" type="image/png" />
   <link href="main.css" rel="stylesheet" type="text/css" />
-  <script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+  <!-- FIXME: uncomment -->
+  <!--<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.min.js"></script>-->
+  <script type="text/javascript" src="assets/jquery-3.3.1.min.js"></script>
   <script type="text/javascript" src="config.js"></script>
   <script type="text/javascript" src="../twitch-api/utility.js"></script>
   <script type="text/javascript" src="../twitch-api/twitch-utility.js"></script>
@@ -26,6 +28,7 @@ $(document).ready(client_main);
             <div></div>
             <div></div>
           </div>
+          <span class="clearChat"><a class="clearChatLink" href="javascript:void(0)" title="Clear" alt="Clear">&#x1f6ab;</a></span>
           <label class="name">Panel 1</label>
           <input type="text" class="name" value="Panel 1" />
         </div>
@@ -57,6 +60,7 @@ $(document).ready(client_main);
             <div></div>
             <div></div>
           </div>
+          <span class="clearChat"><a class="clearChatLink" href="javascript:void(0)" title="Clear" alt="Clear">&#x1f6ab;</a></span>
           <label class="name">Panel 2</label>
           <input type="text" class="name" value="Panel 2" />
         </div>
@@ -90,6 +94,7 @@ $(document).ready(client_main);
             <div></div>
             <div></div>
           </div>
+          <span class="clearChat"><a class="clearChatLink" href="javascript:void(0)" title="Clear" alt="Clear">&#x1f6ab;</a></span>
           <label class="name">Full chat</label>
           <input type="text" class="name" value="Full chat" />
         </div>
@@ -137,6 +142,7 @@ $(document).ready(client_main);
       <li>
         <label>OAuth:</label>
         <input type="password" id="txtPass" />
+        <input type="text" id="txtPassDummy" value="Cached" style="display: none" disabled />
       </li>
       <li>
         <label>Debugging:</label>
@@ -147,9 +153,14 @@ $(document).ready(client_main);
           <option value="2">Trace</option>
         </select>
       </li>
+      <li>
+        <label>No Force:</label>
+        <input type="checkbox" id="cbForce" />
+      </li>
     </ul>
     <footer>
-      <a onclick="$('#settings_button').click();">Close</a>
+      <span style="float:left"><a onclick="$('#settings_button').click();">Close</a></span>
+      <span id="reconnect" style="float:right"><a>Reconnect</a></span>
     </footer>
   </div>
   <img id="settings_button" src="settings_white.png" alt="Settings" />
