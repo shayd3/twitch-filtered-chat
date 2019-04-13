@@ -1,3 +1,0 @@
-[submodule "twitch-api"]
-	path = twitch-api
-	url = ./twitch-api/
