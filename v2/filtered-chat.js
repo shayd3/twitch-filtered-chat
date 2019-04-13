@@ -35,6 +35,18 @@
  *    img#settings_button
  */
 
+/* TODO:
+ * Implement CLEARCHAT "message deleted"
+ * Implement cheers
+ * Implement cheer effects
+ * If the message contains "@Kaedenn_" (for me) then add a border
+ * Implement context window for clicking on a username
+ *
+ * FIXME:
+ * Fix URL formatting with emotes (URLs in emotes are formatted)
+ * Fix emotes with escaping before the emote (escape sequences alter emote positions)
+ */
+
 const CACHED_VALUE = "Cached";
 const AUTOGEN_VALUE = "Auto-Generated";
 var HTMLGen = {};
@@ -728,9 +740,10 @@ function client_main() {
     let e_badges = document.createElement('span');
     e_badges.setAttribute('class', 'badges');
     if (e.flags.badges) {
+      let total_width = 18 * e.flags.badges.length;
+      e_badges.setAttribute("style", `overflow: hidden; width: ${total_width}px; max-width: ${total_width}px`);
       for (let [badge_name, badge_num] of e.flags.badges) {
         let e_badge = document.createElement('img');
-        e_badge.setAttribute('width', '18');
         if (client.IsGlobalBadge(badge_name, badge_num)) {
           let badge_info = client.GetGlobalBadge(badge_name, badge_num);
           e_badge.setAttribute('src', badge_info.image_url_1x);
@@ -749,6 +762,7 @@ function client_main() {
           console.warn('Unknown badge', badge_name, badge_num, 'for', e);
           continue;
         }
+        e_badge.setAttribute('width', '18px');
         e_badge.setAttribute('class', 'badge');
         e_badge.setAttribute('tw-badge-cause', JSON.stringify([badge_name, badge_num]));
         e_badges.appendChild(e_badge);
