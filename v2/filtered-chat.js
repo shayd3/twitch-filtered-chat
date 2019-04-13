@@ -170,7 +170,6 @@ function get_config_object() {
       delete old_query[e];
     }
     var new_qs = Util.FormatQueryString(old_query);
-    console.log(`Setting qs to ${new_qs}`);
     window.location.search = new_qs;
   }
 
@@ -346,7 +345,7 @@ function add_html(event) {
     let html = (event instanceof TwitchEvent) ? HTMLGen.gen(event) : event;
     let $c = $(this).find('.content');
     let $p = document.createElement('p');
-    $p.setAttribute('class', 'line');
+    $p.setAttribute('class', 'line line-wrapper');
     $p.innerHTML = html;
     $c.append($p);
     $c.scrollTop(2**31-1);
@@ -358,9 +357,43 @@ function add_pre(content) {
   add_html(`<div class="pre">${content}</div>`);
 }
 
+/* Place an emote in the message and return the result */
+function place_emote(message, emote_def) {
+  var msg_start = message.substr(0, emote_def.start);
+  var msg_end = message.substr(emote_def.end+1, message.length);
+  var emote_str = "";
+  if (emote_def.name === null) {
+    if (emote_def.id !== null) {
+      /* It's a Twitch emote */
+      var e = document.createElement('img');
+      $(e).addClass("emote")
+        .addClass("twitch-emote")
+        .attr("tw-emote-id", emote_def.id)
+        .attr("src", Twitch.URL.Emote(emote_def.id));
+      emote_str = e.outerHTML;
+    }
+  }
+  /* TODO: remove */
+  if (emote_str.length == 0) {
+    emote_str = JSON.stringify(emote_def);
+  }
+  return `${msg_start}${emote_str}${msg_end}`;
+}
+
 /* Generate the message HTML for the given event */
 function chat_message_html(event, client) {
   var message = event.message.escape();
+  /* emotes */
+  if (event.flag('emotes')) {
+    let emotes = $.map(event.flags.emotes, function(e) {
+      return {'id': e.id, 'name': e.name, 'start': e.start, 'end': e.end};
+    });
+    emotes.sort((a, b) => a.start - b.start);
+    while (emotes.length > 0) {
+      var emote = emotes.pop();
+      message = place_emote(message, emote);
+    }
+  }
   /* Handle mod-only antics */
   if (event.ismod && !$("#cbForce").is(":checked")) {
     if (event.message.startsWith('force ')) {
@@ -372,13 +405,13 @@ function chat_message_html(event, client) {
     }
   }
   /* URL formatting */
+  /* FIXME: url formatting breaks emotes, as URLs inside <img> elements are formatted
   message = message.replace(Util.URL_REGEX, function(url) {
     var u = new URL(url);
     return `<a href="${u}" target="_blank">${u}</a>`;
-  });
+  });*/
   /* @user highlighting */
   message = message.replace(/(\b\s*)(@\w+)(\s*\b)/g, "$1<em>$2</em>$3");
-  /* TODO: emotes */
   /* TODO: cheers */
   /* TODO: cheer effects */
   return message;
@@ -514,9 +547,8 @@ function client_main() {
   });
 
   /* Clicking on a "Clear" link */
-  $(".clearChatLink").click(function _clear_click() {
+  $(".clch_link").click(function _clear_click() {
     var id = $(this).parent().parent().parent().attr("id");
-    console.log("Clearing module " + id);
     $(`#${id} .content`).html("");
   });
 
@@ -595,7 +627,7 @@ function client_main() {
   client.bind('twitch-open', function _on_twitch_open(e) {
     add_html('<div class="notice">Connected</div>');
   });
-  
+
   client.bind('twitch-close', function _on_twitch_close(e) {
     var code = e.raw_line.code;
     var reason = e.raw_line.reason;
@@ -606,9 +638,8 @@ function client_main() {
       msg = `${msg} (code ${code})`;
     }
     add_html(`<div class="error">${msg}<span class="reconnect"><a href="javascript:void(0)" class="reconnectLink">Reconnect</a></span></div>`);
-    console.log(e);
   });
-  
+
   client.bind('twitch-notice', function _on_twitch_notice(e) {
     /* Some notices are benign */
     if (e.flag('msg-id') == 'host_on') { }
@@ -619,7 +650,7 @@ function client_main() {
     let message = e.message.escape();
     add_html(`<div class="notice">Notice: ${channel}: ${message}</div>`);
   });
-  
+
   client.bind('twitch-error', function _on_twitch_error(e) {
     Util.Error(e);
     let user = e.user;
@@ -627,13 +658,13 @@ function client_main() {
     let message = e.message.escape();
     add_html(`<div class="error">Error ${user}: ${command}: ${message}</div>`);
   });
-  
+
   client.bind('twitch-message', function _on_twitch_message(e) {
     if (Util.DebugLevel > 1) {
       add_html(`<span class="pre">${e.values.toSource()}</span>`);
     }
   });
-  
+
   client.bind('twitch-chat', function _on_twitch_chat(e) {
     add_html(event);
   });
@@ -699,6 +730,7 @@ function client_main() {
     if (e.flags.badges) {
       for (let [badge_name, badge_num] of e.flags.badges) {
         let e_badge = document.createElement('img');
+        e_badge.setAttribute('width', '18');
         if (client.IsGlobalBadge(badge_name, badge_num)) {
           let badge_info = client.GetGlobalBadge(badge_name, badge_num);
           e_badge.setAttribute('src', badge_info.image_url_1x);

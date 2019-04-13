@@ -106,7 +106,7 @@ body {
   vertical-align: middle;
 }
 
-.clchLink {
+.clch_link {
   text-decoration: none;
   background-color: transparent;
   color: white;
@@ -233,6 +233,11 @@ input:disabled {
 
 .module .content p span.badges img {
   margin-right: 3px;
+}
+
+img.badge {
+  width: 18px;
+  max-width: 18px;
 }
 
 .module .content p.sub {
