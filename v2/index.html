@@ -3,10 +3,8 @@
 <head>
   <title>Filtered Chat</title>
   <meta charset="utf-8" />
-  <link href="../assets/settings_white.png" rel="shortcut icon" type="image/png" />
+  <link href="assets/settings_white.png" rel="shortcut icon" type="image/png" />
   <link href="main.css" rel="stylesheet" type="text/css" />
-  <!-- FIXME: uncomment -->
-  <!--<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.min.js"></script>-->
   <script type="text/javascript" src="assets/jquery-3.3.1.min.js"></script>
   <script type="text/javascript" src="config.js"></script>
   <script type="text/javascript" src="../twitch-api/utility.js"></script>
@@ -15,12 +13,51 @@
   <script type="text/javascript" src="../twitch-api/client.js"></script>
   <script type="text/javascript" src="filtered-chat.js"></script>
   <script type="text/javascript">
-$(document).ready(client_main);
+$(document).ready(function() {
+  /* Templating: add settings and clear link to each module */
+  var $S = $(`
+<div class="settings">
+  <p>Include:</p>
+  <ul class="include">
+    <li><label><input type="checkbox" class="pleb" checked />Non-subs</label></li>
+    <li><label><input type="checkbox" class="sub" checked />Subscribers</label></li>
+    <li><label><input type="checkbox" class="vip" checked />VIPs</label></li>
+    <li><label><input type="checkbox" class="mod" checked />Moderators</label></li>
+    <li><label><input type="checkbox" class="event" checked />Channel events</label></li>
+    <li><label><input type="checkbox" class="bits" checked />Bit messages</label></li>
+    <li class="textbox include_user"><label>From user:</label><input type="text" class="user" /></li>
+    <li class="textbox include_keyword"><label>Contains:</label><input type="text" class="keyword" /></li>
+  </ul>
+  <p>Exclude:</p>
+  <ul>
+    <li class="textbox exclude_user"><label>From user:</label><input type="text" class="user" /></li>
+    <li class="textbox exclude_startswith"><label>Starts with:</label><input type="text" class="keyword" /></li>
+  </ul>
+</div>
+  `);
+
+  var $C = $(`
+<span class="clch">
+  <a class="clchLink" href="javascript:void(0)" title="Clear" alt="Clear">
+    <img class="clch_ico" src="assets/no-entry.svg" />
+  </a>
+</span>
+  `);
+
+  $(".module .header .menu").after($C);
+  $(".module .header").after($S);
+
+  /* Once rerendering is complete, start up the client */
+  $(document).ready(client_main);
+});
   </script>
 </head>
 <body>
+  <!-- Beginning of content -->
   <div id="wrapper">
+    <!-- Column 1 -->
     <div class="column">
+      <!-- Column 1 Top Left -->
       <div class="module tl" id="p1">
         <div class="header">
           <div class="menu">
@@ -28,31 +65,15 @@ $(document).ready(client_main);
             <div></div>
             <div></div>
           </div>
-          <span class="clearChat"><a class="clearChatLink" href="javascript:void(0)" title="Clear" alt="Clear">&#x1f6ab;</a></span>
           <label class="name">Panel 1</label>
+          <!-- Clear chat link added here -->
           <input type="text" class="name" value="Panel 1" />
         </div>
-        <div class="settings">
-          <p>Include:</p>
-          <ul class="include">
-            <li><label><input type="checkbox" class="pleb" checked />Non-subs</label></li>
-            <li><label><input type="checkbox" class="sub" checked />Subscribers</label></li>
-            <li><label><input type="checkbox" class="vip" checked />VIPs</label></li>
-            <li><label><input type="checkbox" class="mod" checked />Moderators</label></li>
-            <li><label><input type="checkbox" class="event" checked />Channel events</label></li>
-            <li><label><input type="checkbox" class="bits" checked />Bit messages</label></li>
-            <li class="textbox include_user"><label>From user:</label><input type="text" class="user" /></li>
-            <li class="textbox include_keyword"><label>Contains:</label><input type="text" class="keyword" /></li>
-          </ul>
-          <p>Exclude:</p>
-          <ul>
-            <li class="textbox exclude_user"><label>From user:</label><input type="text" class="user" /></li>
-            <li class="textbox exclude_startswith"><label>Starts with:</label><input type="text" class="keyword" /></li>
-          </ul>
-        </div>
+        <!-- <div class="settings"> added here -->
         <div class="content">
         </div>
       </div>
+      <!-- Column 1 Bottom Left -->
       <div class="module bl" id="p2">
         <div class="header">
           <div class="menu">
@@ -60,33 +81,18 @@ $(document).ready(client_main);
             <div></div>
             <div></div>
           </div>
-          <span class="clearChat"><a class="clearChatLink" href="javascript:void(0)" title="Clear" alt="Clear">&#x1f6ab;</a></span>
           <label class="name">Panel 2</label>
+          <!-- Clear chat link added here -->
           <input type="text" class="name" value="Panel 2" />
         </div>
-        <div class="settings">
-          <p>Include:</p>
-          <ul class="include">
-            <li><label><input type="checkbox" class="pleb" checked />Non-subs</label></li>
-            <li><label><input type="checkbox" class="sub" checked />Subscribers</label></li>
-            <li><label><input type="checkbox" class="vip" checked />VIPs</label></li>
-            <li><label><input type="checkbox" class="mod" checked />Moderators</label></li>
-            <li><label><input type="checkbox" class="event" checked />Channel events</label></li>
-            <li><label><input type="checkbox" class="bits" checked />Bit messages</label></li>
-            <li class="textbox include_user"><label>From user:</label><input type="text" class="user" /></li>
-            <li class="textbox include_keyword"><label>Contains:</label><input type="text" class="keyword" /></li>
-          </ul>
-          <p>Exclude:</p>
-          <ul>
-            <li class="textbox exclude_user"><label>From user:</label><input type="text" class="user" /></li>
-            <li class="textbox exclude_startswith"><label>Starts with:</label><input type="text" class="keyword" /></li>
-          </ul>
-        </div>
+        <!-- <div class="settings"> added here -->
         <div class="content">
         </div>
       </div>
     </div>
+    <!-- Column 2 -->
     <div class="column">
+      <!-- Column 2 Full -->
       <div class="module right full" id="p3">
         <div class="header">
           <div class="menu">
@@ -94,36 +100,22 @@ $(document).ready(client_main);
             <div></div>
             <div></div>
           </div>
-          <span class="clearChat"><a class="clearChatLink" href="javascript:void(0)" title="Clear" alt="Clear">&#x1f6ab;</a></span>
           <label class="name">Full chat</label>
+          <!-- Clear chat link added here -->
           <input type="text" class="name" value="Full chat" />
         </div>
-        <div class="settings">
-          <p>Include:</p>
-          <ul class="include">
-            <li><label><input type="checkbox" class="pleb" checked />Non-subs</label></li>
-            <li><label><input type="checkbox" class="sub" checked />Subscribers</label></li>
-            <li><label><input type="checkbox" class="vip" checked />VIPs</label></li>
-            <li><label><input type="checkbox" class="mod" checked />Moderators</label></li>
-            <li><label><input type="checkbox" class="event" checked />Channel events</label></li>
-            <li><label><input type="checkbox" class="bits" checked />Bit messages</label></li>
-            <li class="textbox include_user"><label>From user:</label><input type="text" class="user" /></li>
-            <li class="textbox include_keyword"><label>Contains:</label><input type="text" class="keyword" /></li>
-          </ul>
-          <p>Exclude:</p>
-          <ul>
-            <li class="textbox exclude_user"><label>From user:</label><input type="text" class="user" /></li>
-            <li class="textbox exclude_startswith"><label>Starts with:</label><input type="text" class="keyword" /></li>
-          </ul>
-        </div>
+        <!-- <div class="settings"> added here -->
         <div class="content">
         </div>
+        <!-- Column 2 Chat -->
         <div id="chat">
           <textarea id="txtChat" placeholder="Send a message"></textarea>
         </div>
       </div>
     </div>
   </div>
+  <!-- End of content -->
+  <!-- Beginning of settings -->
   <div id="settings">
     <header>Settings</header>
     <ul>
@@ -159,10 +151,11 @@ $(document).ready(client_main);
       </li>
     </ul>
     <footer>
-      <span style="float:left"><a onclick="$('#settings_button').click();">Close</a></span>
-      <span id="reconnect" style="float:right"><a>Reconnect</a></span>
+      <span class="fl"><a onclick="$('#settings_button').click();">Close</a></span>
+      <span class="fr" id="reconnect"><a>Reconnect</a></span>
     </footer>
   </div>
-  <img id="settings_button" src="settings_white.png" alt="Settings" />
+  <img id="settings_button" src="assets/settings_white.png" alt="Settings" />
+  <!-- End of settings -->
 </body>
 </html>

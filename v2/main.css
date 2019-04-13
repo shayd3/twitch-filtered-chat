@@ -91,7 +91,7 @@ body {
   font-size: 0.9em;
 }
 
-.module .header .clearChat {
+.module .header .clch {
   position: relative;
   vertical-align: top;
   margin-right: 0.2em;
@@ -100,7 +100,13 @@ body {
   top: -1pt;
 }
 
-.clearChatLink {
+.clch_ico {
+  width: 1.1em;
+  height: 1.1em; /* .header height 2.2em line-height 2em */
+  vertical-align: middle;
+}
+
+.clchLink {
   text-decoration: none;
   background-color: transparent;
   color: white;
@@ -323,6 +329,14 @@ input:disabled {
 
 #settings footer a {
   cursor: pointer;
+}
+
+footer span.fl {
+  float: left;
+}
+
+footer span.fr {
+  float: right;
 }
 
 #settings_button {
