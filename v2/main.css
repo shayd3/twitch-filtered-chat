@@ -39,7 +39,6 @@ body {
 .module.tl {
   border-right: 1px solid #aaa;
   border-bottom: 1px solid #aaa;
-  background-color: #202020;
 }
 
 .module.tl .header {
@@ -52,7 +51,6 @@ body {
 
 #wrapper .column .module.right {
   height: 100%;
-
 }
 
 #wrapper .column .module .header {
@@ -202,8 +200,18 @@ input:disabled {
   background-color: #303030;
 }
 
+.module .content .chat-line.client {
+  border: 2px solid #c03030;
+}
+
 .module .content p .username {
   font-weight: bold;
+}
+
+.module .content .message {
+}
+
+.module .content .message.highlight {
 }
 
 .module .content .message em {
@@ -357,6 +365,34 @@ footer span.fr {
 
 #settings_button:hover {
   opacity: 1.0;
+}
+
+#username_context {
+  display: none;
+  position: absolute;
+  width: 20%;
+  border: 10px black solid;
+  border-style: outset;
+  background: darkgray;
+  color: black;
+  font-weight: bold;
+}
+
+#username_context .cw-timeout:first-child {
+  margin-right: 2px;
+}
+
+#username_context a.cw-timeout-dur {
+  margin-left: 2px;
+  margin-right: 2px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+#username_context .timestamp {
+  position: relative;
+  float: right;
+  margin-right: 2px;
 }
 
 @media screen and (min-width:400px) {

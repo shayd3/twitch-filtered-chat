@@ -6,13 +6,101 @@
   <link href="assets/settings_white.png" rel="shortcut icon" type="image/png" />
   <link href="main.css" rel="stylesheet" type="text/css" />
   <script type="text/javascript" src="assets/jquery-3.3.1.min.js"></script>
-  <script type="text/javascript" src="https://kaedenn.github.io/twitch-api/utility.js"></script>
-  <script type="text/javascript" src="https://kaedenn.github.io/twitch-api/twitch-utility.js"></script>
-  <script type="text/javascript" src="https://kaedenn.github.io/twitch-api/colors.js"></script>
-  <script type="text/javascript" src="https://kaedenn.github.io/twitch-api/client.js"></script>
-  <script type="text/javascript" src="config.js"></script>
-  <script type="text/javascript" src="filtered-chat.js"></script>
   <script type="text/javascript">
+/* Function to generate a window */
+function make_window(id, classname, name) {
+  var $S = $(`
+<div class="settings">
+  <p>Include:</p>
+  <ul class="include">
+    <li><label><input type="checkbox" class="pleb" checked />Non-subs</label></li>
+    <li><label><input type="checkbox" class="sub" checked />Subscribers</label></li>
+    <li><label><input type="checkbox" class="vip" checked />VIPs</label></li>
+    <li><label><input type="checkbox" class="mod" checked />Moderators</label></li>
+    <li><label><input type="checkbox" class="event" checked />Channel events</label></li>
+    <li><label><input type="checkbox" class="bits" checked />Bit messages</label></li>
+    <li class="textbox include_user"><label>From user:</label><input type="text" class="user" /></li>
+    <li class="textbox include_keyword"><label>Contains:</label><input type="text" class="keyword" /></li>
+  </ul>
+  <p>Exclude:</p>
+  <ul>
+    <li class="textbox exclude_user"><label>From user:</label><input type="text" class="user" /></li>
+    <li class="textbox exclude_startswith"><label>Starts with:</label><input type="text" class="keyword" /></li>
+  </ul>
+</div>
+  `);
+  var $C = $(`
+<span class="clch">
+  <a class="clch_link" href="javascript:void(0)" title="Clear" alt="Clear">
+    <img class="clch_ico" src="assets/no-entry.svg" />
+  </a>
+</span>
+  `);
+  var $d = $(document.createElement("div"));
+  $d.addClass("module").addClass(classname).attr("id", id);
+  var $h = $(document.createElement("div"));
+  $h.addClass("header");
+  $h.append($(`<div class="menu"><div></div><div></div><div></div></div>`));
+  $h.append($S);
+  var $l = $(document.createElement("label"));
+  var $i = $(document.createElement("input"));
+  $l.addClass("name").val(name);
+  $i.attr("type", "text").addClass("name").attr("value", name);
+  $h.append($l);
+  $h.append($i);
+  $d.append($h);
+  $d.append($C);
+  $d.append($(`<div class="content"></div>`));
+  return $d;
+}
+
+/* Populate script assets */
+(function() {
+  function script(src) {
+    var s = document.createElement('script');
+    s.setAttribute('type', 'text/javascript');
+    s.setAttribute('src', src);
+    return s;
+  }
+  let ASSETS = [
+    ["twitch-api", "utility.js"],
+    ["twitch-api", "twitch-utility.js"],
+    ["twitch-api", "colors.js"],
+    ["twitch-api", "client.js"],
+    ["config.js"],
+    ["filtered-chat.js"]
+  ];
+  for (let asset of ASSETS) {
+    let twapi = "https://kaedenn.github.io/twitch-api";
+    if (window.location.protocol === 'file:') {
+      twapi = "../../twitch-api";
+    }
+    let s = null;
+    if (asset.length == 2) {
+      let [atyp, afile] = asset;
+      if (atyp === "twitch-api") {
+        s = script(`${twapi}/${afile}`);
+      } else {
+        console.error(`Unknown asset type "${atype}" for "${afile}"`);
+      }
+    } else {
+      s = script(asset[0]);
+    }
+    if (s === null) {
+      console.error("Failed to add script", asset);
+    } else {
+      console.log("Appending script", s);
+      document.head.appendChild(s);
+    }
+  }
+})();
+
+/* Focus on the textarea */
+$(function() {
+  $("#txtChat").focus();
+});
+
+/* Populate templates and load the client */
 $(document).ready(function() {
   /* Templating: add settings and clear link to each module */
   var $S = $(`
@@ -157,5 +245,10 @@ $(document).ready(function() {
   </div>
   <img id="settings_button" src="assets/settings_white.png" alt="Settings" />
   <!-- End of settings -->
+  <!-- Beginning of nickname context window -->
+  <div id="username_context" class="username_context">
+
+  </div>
+  <!-- End of nickname context window -->
 </body>
 </html>
