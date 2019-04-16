@@ -182,7 +182,7 @@ var css_styles = {
 function css_color_style(colorname) {
   return {
     cost: 1,
-    style: `color: ${colors[colorname]}`
+    style: `color: ${AllColors[colorname]}`
   };
 }
 

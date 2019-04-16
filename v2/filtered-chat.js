@@ -66,12 +66,13 @@ function get_config_object() {
 
   /* Query String object, parsed */
   let qs = Util.ParseQueryString();
-  console.log(qs);
-  if (qs.hasOwnProperty('wskey')) {
-    config_key = config_key + '-' + qs.wskey.replace(/[^a-z]/g, '');
+  if (qs.hasOwnProperty('config_key')) {
+    config_key = config_key + '-' + qs.config_key.replace(/[^a-z]/g, '');
   }
   Util.SetWebStorageKey(config_key);
-  console.log(`Using config key "${Util.GetWebStorageKey()}"`);
+  if (config_key !== "config") {
+    Util.Log(`Using custom config key "${Util.GetWebStorageKey()}"`);
+  }
   config.key = config_key;
 
   /* Items to remove from the query string */

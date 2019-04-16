@@ -31,22 +31,15 @@ body {
   height: 100%;
 }
 
+#wrapper .column.full {
+  width: 100%;
+  height: 100%;
+}
+
 #wrapper .column .module {
-  height: 50%;
+  height: 100%;
   position: relative;
-}
-
-.module.tl {
-  border-right: 1px solid #aaa;
-  border-bottom: 1px solid #aaa;
-}
-
-.module.tl .header {
-  background-color: #2b2b2b;
-}
-
-.module.bl {
-  border-right: 1px solid #aaa;
+  border: 2px solid #3c3c3c;
 }
 
 #wrapper .column .module.right {
@@ -141,7 +134,7 @@ body {
   overflow: auto;
 }
 
-.module.settings ul {
+.module .settings ul {
   margin-left: 0.8em;
 }
 

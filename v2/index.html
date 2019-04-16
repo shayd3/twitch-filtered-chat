@@ -9,6 +9,122 @@
   <script type="text/javascript" src="config.js"></script>
   <script type="text/javascript" src="filtered-chat.js"></script>
   <script type="text/javascript">
+"use strict";
+
+/** QUERY STRING USAGE
+ *
+ * The following are handled here in index.html:
+ *  layout      - Layout to use, explained below
+ *
+ * The following are handled in filtered-chat.js:
+ *  config_key  - Config key override (default: "config")
+ *  clientid    - ClientID to use for Twitch asset loading
+ *  user        - Username to use (for Twitch identification)
+ *  pass        - OAuth token to use (removed once parsed)
+ *  debug       - One of "true", "false", "debug", "trace" (default: "false")
+ *  channels    - Channels to join (without #), separated by commas
+ *  noassets    - Prevents loading of image (badge, emote, cheer) assets
+ *
+ * The following are handled by the client:
+ *  NoFFZ       - Disables FFZ support entirely
+ *  NoBTTV      - Disables BTTV support entirely
+ *
+ * EXAMPLE QUERY STRING USAGE
+ *
+ * Authenticated: index.html
+      ?clientid=<YOUR-CLIENTID>
+      &channels=dwangoAC,pangaeapanga
+      &user=<YOUR-TWITCH-USERNAME>
+      &pass=oauth:<YOUR-OAUTH>
+      &layout=single:chat
+ * Unauthenticated: index.html
+      ?channels=dwangoAC,pangaeapanga
+      &layout=double:nochat
+ */
+
+/** Layout option
+ *
+ * Usage:
+ *  layout=<keyword>[:<chat>]
+ *    <keyword>  ::= "single", "double"
+ *    <chat>     ::= "", "chat", "nochat"
+ * Default: layout=double:chat
+ *  Two columns, each with a content window. Chat is on second column.
+ * Keywords:
+ *  layout=single
+ *    Only give one large window
+ *  layout=double
+ *    Give two windows side-by-side
+ *  layout=single:nochat
+ *    Give one large window without a chat input textarea
+ *  layout=double:nochat
+ *    Give two windows side-by-side without a chat input textarea
+ */
+
+const IS_OBS = window.hasOwnProperty('obsstudio') || !!window.obsstudio;
+
+function ParseLayout(str) {
+  let layout = {Cols: null, Chat: true};
+  if (str.indexOf(':') > -1) {
+    let opt = str.substr(str.indexOf(':')+1);
+    str = str.substr(0, str.indexOf(':'));
+    if (opt == "nochat") {
+      layout.Chat = false;
+    } else if (opt != "chat") {
+      console.warn('Unknown layout option', opt);
+    }
+  }
+  if (str == "single") {
+    layout.Cols = "single";
+  } else if (str == "double") {
+    layout.Cols = "double";
+  } else {
+    console.warn("Unknown layout", str, "defaulting to double");
+    layout.Cols = "double";
+  }
+  return layout;
+}
+
+function AssetLoaded(asset) {
+  return (function() {
+    var loaded = false;
+    try {
+      if (eval(asset).API_Loaded) {
+        loaded = true;
+      }
+    }
+    catch (e) { }
+    return loaded;
+  });
+}
+
+let ASSETS = [
+  ["twitch-api", "utility.js", AssetLoaded('Util')],
+  ["twitch-api", "twitch-utility.js", AssetLoaded('Twitch')],
+  ["twitch-api", "colors.js", AssetLoaded('AllColors')],
+  ["twitch-api", "client.js", AssetLoaded('TwitchClient')]
+];
+
+function AreAllAssetsLoaded() {
+  for (let [lib, asset, func] of ASSETS) {
+    if (!func()) {
+      return false;
+    } else {
+      console.log(lib, asset, func, "loaded");
+    }
+  }
+  return true;
+}
+
+/* Waits for cond to be true, then calls callback */
+function wait_for_load(cond, callback) {
+  if (cond()) {
+    callback();
+  } else {
+    window.setTimeout(wait_for_load, 100);
+  }
+}
+
 /* Function to generate a window */
 function make_window(id, classname, name) {
   var $S = $(`
@@ -59,33 +175,16 @@ function make_window(id, classname, name) {
 /* Populate script assets */
 (function() {
   function script(src) {
-    var s = document.createElement('script');
-    s.setAttribute('type', 'text/javascript');
-    s.setAttribute('src', src);
-    return s;
+    return $(document.createElement('script'))
+      .attr("type", "text/javascript")
+      .attr("src", src)[0];
   }
-  let ASSETS = [
-    ["twitch-api", "utility.js"],
-    ["twitch-api", "twitch-utility.js"],
-    ["twitch-api", "colors.js"],
-    ["twitch-api", "client.js"]
-  ];
-  for (let asset of ASSETS) {
+  for (let [atyp, afile, afunc] of ASSETS) {
     let twapi = "https://kaedenn.github.io/twitch-api";
     if (window.location.protocol === 'file:') {
       twapi = "../../twitch-api";
     }
-    let s = null;
-    if (asset.length == 2) {
-      let [atyp, afile] = asset;
-      if (atyp === "twitch-api") {
-        s = script(`${twapi}/${afile}`);
-      } else {
-        console.error(`Unknown asset type "${atype}" for "${afile}"`);
-      }
-    } else {
-      s = script(asset[0]);
-    }
+    let s = script(`${twapi}/${afile}`);
     if (s === null) {
       console.error("Failed to add script", asset);
     } else {
@@ -101,7 +200,36 @@ $(function() {
 });
 
 /* Populate templates and load the client */
-$(document).ready(function() {
+function index_main(layout) {
+  /* Populate the page with the modules */
+  let modules = [];
+  if (layout.Cols == "single") {
+    modules.push(make_window("module1", "full", "Chat"));
+  } else if (layout.Cols == "double") {
+    modules.push(make_window("module1", "left", "Left Chat"));
+    modules.push(make_window("module2", "right", "Right Chat"));
+  }
+  let $Chat = $(`<div id="chat"><textarea id="txtChat" placeholder="Send a message"></textarea></div>`);
+  if (layout.Chat) {
+    $(modules[modules.length-1]).find('.content').after($($Chat));
+  }
+  if (modules.length == 1) {
+    /* Add a single column */
+    let $Col = $(`<div class="column full"></div>`);
+    $Col.append(modules[0]);
+    $("div#wrapper").append($Col);
+  } else {
+    /* Add both columns */
+    let $Col1 = $(`<div class="column left"></div>`);
+    $Col1.append(modules[0]);
+    let $Col2 = $(`<div class="column right"></div>`);
+    $Col2.append(modules[1]);
+    $Col1.after($Col2);
+    $("div#wrapper").append($Col1);
+  }
+  console.log($("div#wrapper"));
+
+
   /* Templating: add settings and clear link to each module */
   var $S = $(`
 <div class="settings">
@@ -137,70 +265,26 @@ $(document).ready(function() {
 
   /* Once rerendering is complete, start up the client */
   $(document).ready(client_main);
+}
+
+$(document).ready(function() {
+  /* Wait until everything is loaded */
+  let layout = {};
+  /* Get layout information from the query string */
+  let qs = document.location.search.substr(1).split('&').map((v) => v.split('='));
+  qs = qs.map(([k, v]) => [k, (!!v ? decodeURIComponent(v) : null)]);
+  for (let [k, v] of qs) {
+    if (k === "layout") {
+      layout = ParseLayout(v);
+    }
+  }
+  wait_for_load(AreAllAssetsLoaded, function() { index_main(layout); });
 });
   </script>
 </head>
 <body>
   <!-- Beginning of content -->
   <div id="wrapper">
-    <!-- Column 1 -->
-    <div class="column">
-      <!-- Column 1 Top Left -->
-      <div class="module tl" id="p1">
-        <div class="header">
-          <div class="menu">
-            <div></div>
-            <div></div>
-            <div></div>
-          </div>
-          <label class="name">Panel 1</label>
-          <!-- Clear chat link added here -->
-          <input type="text" class="name" value="Panel 1" />
-        </div>
-        <!-- <div class="settings"> added here -->
-        <div class="content">
-        </div>
-      </div>
-      <!-- Column 1 Bottom Left -->
-      <div class="module bl" id="p2">
-        <div class="header">
-          <div class="menu">
-            <div></div>
-            <div></div>
-            <div></div>
-          </div>
-          <label class="name">Panel 2</label>
-          <!-- Clear chat link added here -->
-          <input type="text" class="name" value="Panel 2" />
-        </div>
-        <!-- <div class="settings"> added here -->
-        <div class="content">
-        </div>
-      </div>
-    </div>
-    <!-- Column 2 -->
-    <div class="column">
-      <!-- Column 2 Full -->
-      <div class="module right full" id="p3">
-        <div class="header">
-          <div class="menu">
-            <div></div>
-            <div></div>
-            <div></div>
-          </div>
-          <label class="name">Full chat</label>
-          <!-- Clear chat link added here -->
-          <input type="text" class="name" value="Full chat" />
-        </div>
-        <!-- <div class="settings"> added here -->
-        <div class="content">
-        </div>
-        <!-- Column 2 Chat -->
-        <div id="chat">
-          <textarea id="txtChat" placeholder="Send a message"></textarea>
-        </div>
-      </div>
-    </div>
   </div>
   <!-- End of content -->
   <!-- Beginning of settings -->
