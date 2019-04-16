@@ -2,10 +2,83 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <title>OBS Identification for DwangoAC</title>
+  <meta charset="utf-8" />
   <script type="text/javascript" src="https://kaedenn.github.io/twitch-filtered-chat/v2/assets/jquery-3.3.1.min.js"></script>
+  <style type="text/css">
+.content {
+  counter-reset: line;
+}
+.line {
+  display: block;
+  line-height: 1em;
+}
+.line:before {
+  counter-increment: line;
+  content: counter(line);
+  display: inline-block;
+  border-right: 1px solid gray;
+  padding: 0 0.5em;
+  margin-right: 0.5em;
+}
+
+.line.im {
+  font-weight: bold;
+}
+
+pre {
+  display: inline;
+  margin-top: 0px;
+  margin-bottom: 0px;
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+  </style>
   <script type="text/javascript">
+window.DFLT_WINDOW_ATTRIBS = "undefined Array Boolean Date Math Number String RegExp Error InternalError EvalError RangeError ReferenceError SyntaxError TypeError URIError ArrayBuffer Int8Array Uint8Array Int16Array Uint16Array Int32Array Uint32Array Float32Array Float64Array Uint8ClampedArray Proxy WeakMap Map Set DataView Symbol Intl WeakSet ReadableStream ByteLengthQueuingStrategy CountQueuingStrategy WebAssembly NaN Infinity isNaN isFinite parseFloat parseInt escape unescape decodeURI encodeURI decodeURIComponent encodeURIComponent uneval MediaDevices CanvasGradient PerformanceObserverEntryList SVGUseElement CSSFontFaceRule SVGAnimatedLengthList AbortController SVGSwitchElement SVGTextContentElement SVGComponentTransferFunctionElement CSSStyleSheet TextTrackCueList Plugin PannerNode GamepadPose MediaStreamAudioSourceNode HTMLObjectElement SVGLineElement HTMLFormElement SharedWorker SVGPathSegList DOMMatrix HTMLParamElement MediaStreamEvent SVGAnimateMotionElement CSSKeyframeRule PerformanceMark SVGStyleElement DOMStringMap SVGAnimateTransformElement HTMLImageElement CSSMediaRule SVGFilterElement SVGMPathElement PerformanceServerTiming HTMLIFrameElement SpeechSynthesisVoice PopupBlockedEvent SVGNumber NodeFilter VTTRegion RTCCertificate CSSSupportsRule MediaRecorderErrorEvent IDBObjectStore SVGAnimatedString CSSFontFeatureValuesRule AudioBuffer TimeEvent StorageEvent HTMLTrackElement HTMLUListElement SVGAnimatedTransformList TextTrackCue PerformanceNavigation ServiceWorker BiquadFilterNode SVGGradientElement SVGFEConvolveMatrixElement HTMLOutputElement DataTransferItemList Crypto SVGEllipseElement SVGFECompositeElement OscillatorNode AnimationPlaybackEvent CSSStyleRule HTMLOptGroupElement DelayNode IDBRequest SVGFEFuncAElement HTMLStyleElement SVGImageElement HTMLLIElement HTMLBaseElement HTMLLabelElement SpeechSynthesisErrorEvent KeyframeEffect SVGFETurbulenceElement FileSystemDirectoryReader IdleDeadline WebGLActiveInfo HTMLCanvasElement CanvasRenderingContext2D MutationEvent AudioParam HTMLPreElement PopStateEvent Range CSSCounterStyleRule WebGLShader HTMLOptionsCollection MediaStreamTrackEvent DataTransferItem HTMLEmbedElement CryptoKey SVGPoint CSSMozDocumentRule CSSGroupingRule MessageChannel MediaStream PerformanceResourceTiming DOMParser IDBFileHandle Headers HTMLSourceElement SVGCircleElement SourceBuffer Screen AudioListener HTMLTitleElement HTMLOListElement AudioDestinationNode IDBFileRequest FontFaceSetLoadEvent HTMLSlotElement XMLHttpRequestUpload ServiceWorkerRegistration SVGLinearGradientElement IDBTransaction SVGLengthList HTMLPictureElement SVGPolygonElement Audio ServiceWorkerContainer SVGClipPathElement CSSKeyframesRule HTMLTemplateElement ProgressEvent MediaCapabilities WebGLVertexArrayObject SVGMaskElement SVGNumberList Worker RTCStatsReport HTMLProgressElement PerformanceNavigationTiming HTMLTableRowElement CSSNamespaceRule SVGTitleElement Credential HTMLAllCollection SVGAnimatedNumber AudioBufferSourceNode MediaList SVGTransformList WebGLBuffer PushManager AudioProcessingEvent SVGFEGaussianBlurElement SVGAnimatedBoolean DynamicsCompressorNode RTCIceCandidate PushSubscriptionOptions Image SVGSymbolElement IDBDatabase DOMRequest FileSystem IDBCursor RTCTrackEvent SVGFESpecularLightingElement HTMLLegendElement SpeechSynthesisEvent SVGFEDiffuseLightingElement HTMLDListElement RTCDataChannel CSSImportRule FormData MessagePort Notification PaintRequestList SVGTextPathElement AudioScheduledSourceNode ChannelSplitterNode SVGRectElement IntersectionObserverEntry MediaKeySession MediaDeviceInfo HTMLSpanElement ShadowRoot SVGMetadataElement TextTrackList MimeType HTMLVideoElement BarProp RTCDTMFSender SVGPreserveAspectRatio HTMLDirectoryElement BaseAudioContext HTMLHeadingElement WebGLRenderbuffer BlobEvent IIRFilterNode CustomElementRegistry FileReader SVGTextElement SVGTSpanElement SVGStopElement IDBMutableFile DeviceMotionEvent SVGAnimatedRect Directory PointerEvent RTCPeerConnectionIceEvent WebKitCSSMatrix TimeRanges IDBVersionChangeEvent CanvasPattern DOMQuad SourceBufferList XSLTProcessor SVGPathElement OfflineAudioCompletionEvent RTCDataChannelEvent ImageData SVGPolylineElement MediaQueryList SVGSVGElement Selection WebGLShaderPrecisionFormat StorageManager WebGLTransformFeedback HTMLMediaElement RadioNodeList ChannelMergerNode WebGLUniformLocation SVGAnimatedEnumeration MediaSource HTMLButtonElement mozRTCPeerConnection AudioNode HTMLParagraphElement SVGDefsElement ImageBitmap FileSystemDirectoryEntry CSSRuleList PerformanceMeasure PaintRequest HTMLAudioElement AuthenticatorAttestationResponse ValidityState MediaElementAudioSourceNode HTMLMenuElement DOMException FileList ImageBitmapRenderingContext HTMLQuoteElement HTMLBRElement SVGFESpotLightElement SVGFEFuncRElement BatteryManager SVGFETileElement SpeechSynthesisUtterance MediaCapabilitiesInfo Blob GainNode IDBFactory MediaKeyError AnimationEvent GamepadEvent SVGGElement XPathExpression VideoPlaybackQuality DOMPoint VisualViewport Response IDBKeyRange CacheStorage AuthenticatorResponse ScriptProcessorNode HTMLModElement TextTrack AudioContext MediaQueryListEvent MimeTypeArray SVGFEDropShadowElement SVGMarkerElement HTMLMarqueeElement Path2D SVGSetElement SVGMatrix mozRTCIceCandidate WebGLProgram WebGLSync CSSConditionRule SVGAnimatedPreserveAspectRatio DOMPointReadOnly SVGScriptElement History FileSystemFileEntry SVGViewElement RTCRtpSender SVGTextPositioningElement DOMError PerformanceEntry XMLDocument SVGRadialGradientElement SVGDescElement SVGAnimateElement SVGFEDistantLightElement InputEvent TreeWalker AbortSignal SVGFEMergeNodeElement HashChangeEvent SVGFEImageElement StyleSheet TextDecoder WaveShaperNode SecurityPolicyViolationEvent SVGForeignObjectElement CDATASection Animation HTMLMenuItemElement WebGL2RenderingContext HTMLTableCaptionElement SVGAnimatedAngle CompositionEvent WebGLContextEvent DOMStringList TextEncoder SVGFEMergeElement Storage CloseEvent MediaError ConvolverNode FontFace DOMMatrixReadOnly ConstantSourceNode ProcessingInstruction SubtleCrypto RTCRtpTransceiver SpeechSynthesis StereoPannerNode CSS SVGUnitTypes CredentialsContainer PluginArray DOMTokenList SVGFEPointLightElement SVGGeometryElement TextMetrics IDBOpenDBRequest IDBIndex MediaKeyStatusMap SVGFEColorMatrixElement WebGLFramebuffer HTMLFrameElement MessageEvent RTCRtpReceiver TrackEvent HTMLFrameSetElement SVGFEFuncBElement HTMLUnknownElement SVGFEComponentTransferElement AnimationEffect EventSource SVGElement SVGFEFuncGElement File BeforeUnloadEvent ScrollAreaEvent AnalyserNode GamepadButton SVGTransform SVGFEMorphologyElement OfflineAudioContext mozRTCSessionDescription HTMLTableCellElement SVGAnimatedNumberList HTMLTimeElement HTMLMeterElement CanvasCaptureMediaStream OfflineResourceList SVGPointList BroadcastChannel MediaStreamTrack PerformanceObserver FileSystemEntry SVGFEFloodElement GamepadHapticActuator HTMLTableSectionElement PeriodicWave MediaRecorder IDBCursorWithValue HTMLTableColElement IntersectionObserver PushSubscription VTTCue HTMLTableElement ClipboardEvent SVGStringList HTMLFontElement RTCSessionDescription MediaStreamAudioDestinationNode MediaEncryptedEvent TransitionEvent SVGAngle DragEvent PermissionStatus XMLSerializer MouseScrollEvent SVGRect CaretPosition SVGFEBlendElement Permissions RTCDTMFToneChangeEvent DeviceOrientationEvent HTMLDataListElement SVGFEDisplacementMapElement WheelEvent SVGFEOffsetElement SVGAnimationElement PublicKeyCredential SVGGraphicsElement RTCPeerConnection MediaKeys MediaKeySystemAccess WebGLRenderingContext HTMLMapElement SVGZoomAndPan HTMLFormControlsCollection SVGPatternElement ErrorEvent DataTransfer Request HTMLDetailsElement CSSRule SVGLength Gamepad HTMLHRElement SVGAnimatedInteger NodeIterator SVGAElement WebGLTexture CSSPageRule WebGLSampler SVGAnimatedLength URLSearchParams MediaKeyMessageEvent Cache HTMLDataElement AuthenticatorAssertionResponse WebGLQuery WebSocket ScreenOrientation FontFaceSet Function Object eval EventTarget Window close stop focus blur open alert confirm prompt print postMessage captureEvents releaseEvents getSelection getComputedStyle matchMedia moveTo moveBy resizeTo resizeBy scroll scrollTo scrollBy requestAnimationFrame cancelAnimationFrame getDefaultComputedStyle scrollByLines scrollByPages sizeToContent updateCommands find dump setResizable requestIdleCallback cancelIdleCallback btoa atob setTimeout clearTimeout setInterval clearInterval createImageBitmap fetch self name history customElements locationbar menubar personalbar scrollbars statusbar toolbar status closed event frames length opener parent frameElement navigator external applicationCache screen innerWidth innerHeight scrollX pageXOffset scrollY pageYOffset screenLeft screenTop screenX screenY outerWidth outerHeight performance mozInnerScreenX mozInnerScreenY devicePixelRatio scrollMaxX scrollMaxY fullScreen mozPaintCount ondevicemotion ondeviceorientation onabsolutedeviceorientation ondeviceproximity onuserproximity ondevicelight content InstallTrigger sidebar crypto onabort onblur onfocus onauxclick oncanplay oncanplaythrough onchange onclick onclose oncontextmenu ondblclick ondrag ondragend ondragenter ondragexit ondragleave ondragover ondragstart ondrop ondurationchange onemptied onended oninput oninvalid onkeydown onkeypress onkeyup onload onloadeddata onloadedmetadata onloadend onloadstart onmousedown onmouseenter onmouseleave onmousemove onmouseout onmouseover onmouseup onwheel onpause onplay onplaying onprogress onratechange onreset onresize onscroll onseeked onseeking onselect onshow onstalled onsubmit onsuspend ontimeupdate onvolumechange onwaiting onselectstart ontoggle onpointercancel onpointerdown onpointerup onpointermove onpointerout onpointerover onpointerenter onpointerleave ongotpointercapture onlostpointercapture onmozfullscreenchange onmozfullscreenerror onanimationcancel onanimationend onanimationiteration onanimationstart ontransitioncancel ontransitionend ontransitionrun ontransitionstart onwebkitanimationend onwebkitanimationiteration onwebkitanimationstart onwebkittransitionend onerror speechSynthesis onafterprint onbeforeprint onbeforeunload onhashchange onlanguagechange onmessage onmessageerror onoffline ononline onpagehide onpageshow onpopstate onstorage onunload localStorage origin isSecureContext indexedDB caches sessionStorage window document location top netscape Node Document HTMLDocument Performance Event XMLHttpRequestEventTarget XMLHttpRequest JSON Location KeyEvent Element HTMLCollection Navigator console Clipboard NodeList DocumentType HTMLElement HTMLHtmlElement HTMLFieldSetElement CharacterData Comment HTMLInputElement HTMLAnchorElement DocumentFragment HTMLDivElement HTMLTextAreaElement CSSStyleDeclaration CSS2Properties HTMLSelectElement HTMLOptionElement Option DOMImplementation HTMLBodyElement MutationObserver HTMLScriptElement Text CustomEvent MutationRecord HTMLMetaElement HTMLHeadElement Promise PageTransitionEvent StyleSheetList UIEvent FocusEvent URL XPathEvaluator XPathResult NotifyPaintEvent DOMRectList KeyboardEvent MouseEvent NamedNodeMap Attr DOMRectReadOnly DOMRect HTMLAreaElement HTMLLinkElement PerformanceTiming Reflect".split(" ");
+  </script>
+  <script type="text/javascript">
+
+function add_message(s, cls) {
+  let $d = $(`<div class="line"></div>`);
+  if (!!cls) {
+    $d.addClass(cls);
+  }
+  $("div.content")[0].appendChild($d.html(s)[0]);
+}
+
 function onready() {
-  $(".content").html($(`<span class="ua">${navigator.userAgent}</span>`));
+  add_message("Loaded");
+  add_message(navigator.userAgent);
+  if (typeof(window["obsstudio"]) != "undefined") {
+    add_message("window.obsstudio exists!", "im");
+  } else {
+    add_message("no window.obsstudio object");
+  }
+  if (window["Reflect"] && typeof(window["Reflect"]) == "object") {
+    add_message("Window has Reflect object");
+    let new_attrs = [];
+    let a;
+    for (a of window["Reflect"].ownKeys(window)) {
+      if (a == "DFLT_WINDOW_ATTRIBS") continue;
+      if (a == "add_message") continue;
+      if (a == "onready") continue;
+      if (a == "jQuery") continue;
+      if (a == "$") continue;
+      if (window.DFLT_WINDOW_ATTRIBS.indexOf(a) == -1) {
+        new_attrs.push(a);
+      }
+    }
+    if (new_attrs.length > 0) {
+      add_message(`New window objects: "<pre>${new_attrs.join('</pre>", "<pre>')}</pre>"`, "im");
+    }
+    for (k of Reflect.ownKeys(navigator.__proto__)) {
+      if (typeof(navigator[k]) == "string") {
+        add_message(`Navigator object <pre>${k}</pre>="<pre>${navigator[k]}</pre>"`);
+      }
+    }
+  } else {
+    add_message("Window does not have reflect object");
+  }
 }
 
 $(document).ready(onready);
@@ -13,6 +86,7 @@ $(document).ready(onready);
 </head>
 <body>
 <div class="content">
+  <div class="line" style="display: none">Browser Identification Study</div>
 </div>
 </body>
 </html>
