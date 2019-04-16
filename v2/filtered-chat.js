@@ -3,6 +3,7 @@
 "use strict";
 
 /* TODO:
+ * TOP PRIORITY: single-panel and double-panel configurability
  * Implement subs HTMLGen
  * Implement host/raid HTMLGen
  * Implement cheers
@@ -571,11 +572,16 @@ function client_main() {
   Util.DebugLevel = config.Debug;
 
   /* Change the document title to show our authentication state */
+  document.title += " -";
   if (config.ClientID && config.ClientID.length > 0) {
-    document.title += " Ident";
+    document.title += " Identified";
+  } else {
+    document.title += " Anonymous";
   }
   if (config.Pass && config.Pass.length > 0) {
-    document.title += " Auth";
+    document.title += " Authenticated";
+  } else {
+    document.title += " Read-Only";
   }
 
   /* Allow JS access if debugging is enabled */
@@ -866,15 +872,6 @@ function client_main() {
     e_msg.addClass('message');
     e_msg.attr('data-message', '1');
     var [message, map] = Util.EscapeWithMap(event.message);
-    /* cheers, cheer effects */
-    if (event.flag('bits') && event.flag("bits") > 0) {
-      let bits_left = event.flags.bits;
-      for (var word of message.split(" ")) {
-        if (client.IsCheer(e.channel.channel, word)) {
-
-        }
-      }
-    }
     /* emotes */
     if (event.flag('emotes')) {
       let emotes = $.map(event.flags.emotes, function(e) {
@@ -884,6 +881,15 @@ function client_main() {
       while (emotes.length > 0) {
         var emote = emotes.pop();
         message = place_emote(message, emote);
+      }
+    }
+    /* cheers, cheer effects */
+    if (event.flag('bits') && event.flag("bits") > 0) {
+      let bits_left = event.flags.bits;
+      for (var word of message.split(" ")) {
+        if (client.IsCheer(e.channel.channel, word)) {
+          /* TODO */
+        }
       }
     }
     /* @user highlighting */
@@ -919,6 +925,9 @@ function client_main() {
     e_badges.setAttribute('data-badges', '1');
     if (e.flags.badges) {
       let total_width = 18 * e.flags.badges.length;
+      if (e.flags['ffz-badges']) {
+        total_width += 18 * e.flags['ffz-badges'].length;
+      }
       e_badges.setAttribute("style", `overflow: hidden; width: ${total_width}px; max-width: ${total_width}px`);
       for (let [badge_name, badge_num] of e.flags.badges) {
         let e_badge = document.createElement('img');
@@ -949,6 +958,22 @@ function client_main() {
         e_badges.appendChild(e_badge);
       }
     }
+    /* Add FFZ badges */
+    if (e.flags['ffz-badges']) {
+      for (let badge of Object.values(e.flags['ffz-badges'])) {
+        let e_badge = $(document.createElement('img'));
+        e_badge.attr('width', '18');
+        e_badge.attr('height', '18');
+        e_badge.attr('data-badge', '1');
+        e_badge.attr('data-ffz-badge', '1');
+        e_badge.attr('src', Util.URL(badge.image));
+        e_badge.attr('alt', badge.name);
+        e_badge.attr('title', badge.title);
+        e_badges.appendChild(e_badge[0]);
+      }
+    }
+    /* TODO: add BTTV badges */
+
     return e_badges;
   };
 
