@@ -3,7 +3,6 @@
 "use strict";
 
 /* TODO:
- * (done) TOP PRIORITY: single-panel and double-panel configurability
  * Implement subs HTMLGen
  * Implement host/raid HTMLGen
  * Implement cheers
@@ -15,7 +14,6 @@
  * FIXME:
  * Fix formatting for "@user" (user @ highlights)
  * Fix URL formatting with emotes (URLs in emotes are formatted)
- * (done) Fix emotes with escaping before the emote (escape sequences alter emote positions)
  *
  * FIXME SECURITY:
  * Anyone can call get_config_object()
