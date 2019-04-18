@@ -3,7 +3,7 @@
 "use strict";
 
 /* TODO:
- * TOP PRIORITY: single-panel and double-panel configurability
+ * (done) TOP PRIORITY: single-panel and double-panel configurability
  * Implement subs HTMLGen
  * Implement host/raid HTMLGen
  * Implement cheers
@@ -13,9 +13,9 @@
  * Populate context window with more things
  *
  * FIXME:
- * Fix formatting for "@Kaedenn_" (for me)
+ * Fix formatting for "@user" (user @ highlights)
  * Fix URL formatting with emotes (URLs in emotes are formatted)
- * Fix emotes with escaping before the emote (escape sequences alter emote positions)
+ * (done) Fix emotes with escaping before the emote (escape sequences alter emote positions)
  *
  * FIXME SECURITY:
  * Anyone can call get_config_object()
@@ -24,6 +24,13 @@
  */
 
 /* TODO: REMOVE */
+var TEST_MESSAGES = {
+  'PRIVMSG': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;color=#0262C1;display-name=Kaedenn_;emotes=25:5-9/1:16-17/153556:32-39;flags=;id=daf83e35-1a26-4363-8d02-0b83a00e9288;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555546813016;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :test Kappa test :) test D: test BlessRNG test\r\n",
+  'CHEER': "",
+  'SUB': "",
+  'GIFTSUB': ""
+};
+
 function inject_message(msg) {
   var e = new Event('message');
   e.data = msg;
@@ -73,8 +80,6 @@ function get_config_object() {
   if (config_key !== "config") {
     Util.Log(`Using custom config key "${Util.GetWebStorageKey()}"`);
   }
-  config.key = config_key;
-
   /* Items to remove from the query string */
   var query_remove = [];
 
@@ -84,6 +89,10 @@ function get_config_object() {
     config = JSON.parse(config_str);
     config_str = null;
   }
+
+  /* Persist the config key */
+  config.key = Util.GetWebStorageKey();
+
   /* Certain unwanted items may be preserved */
   if (config.hasOwnProperty('NoAssets')) delete config["NoAssets"];
   if (config.hasOwnProperty('Debug')) delete config["Debug"];
@@ -373,13 +382,6 @@ function place_emote(message, emote_def) {
   var msg_start = message.substr(0, emote_def.start);
   var msg_end = message.substr(emote_def.end+1);
   var emote_str = "";
-  if (emote_def.name !== null) {
-    if (message.substring(emote_def.start, emote_def.end+1) !== emote_def.name) {
-      console.error("Emote name and message mismatch");
-      console.error(`"${message}"`, emote_def);
-      console.error(message.substring(emote_def.start, emote_def.end+1), "!==", emote_def.name);
-    }
-  }
   if (emote_def.id !== null) {
     /* It's a Twitch emote */
     var e = document.createElement('img');
@@ -401,13 +403,58 @@ function place_emote(message, emote_def) {
 function handle_command(e, client, config) {
   var tokens = e.target.value.split(" ");
   var cmd = tokens.shift();
+  /* Clear empty tokens at the end (\r\n related) */
+  while (tokens.length > 0 && tokens[tokens.length-1].length == 0) {
+    tokens.pop();
+  }
+
+  /* Shortcuts for usages/help messages */
+  function arg(s) {
+    return `<span class="arg">&lt;${s.escape()}&gt;</span>`;
+  }
+  function help(k, v) {
+    return `<div class="helpline"><span class="help helpcmd">${k}</span><span class="help helpmsg">${v}</span></div>`;
+  }
+
+  /* Handle each of the commands */
   if (cmd == '//clear') {
     for (var e of $("div.content")) {
       e.html("");
     }
   } else if (cmd == "//config") {
-    /* TODO: nicer output, setting config values */
-    add_pre(`${JSON.stringify(config).escape()}`);
+    add_pre(`<div class="help">Configuration:</div>`);
+    if (tokens.length > 0) {
+      if (tokens[0] == "clientid") {
+        add_pre(help("ClientID", config.ClientID));
+      } else if (tokens[0] == "pass") {
+        add_pre(help("Pass", config.Pass));
+      } else if (config.hasOwnProperty(tokens[0])) {
+        add_pre(help(tokens[0], JSON.stringify(config[tokens[0]])));
+      } else {
+        add_html(`<span class="pre error">Unknown config key &quot;${tokens[0]}&quot;</span>`);
+      }
+    } else {
+      let wincfgs = [];
+      for (let [k, v] of Object.entries(config)) {
+        if (typeof(v) == "object" && v.Name && v.Name.length > 1) {
+          /* It's a window configuration */
+          wincfgs.push([k, v]);
+        } else if (k == "ClientID" || k == "Pass") {
+          add_pre(help(k, `Omitted for security; use //config ${k.toLowerCase()} to show`));
+        } else {
+          add_pre(help(k, v));
+        }
+      }
+      add_pre(`<div class="help">Window Configurations:</div>`);
+      console.log(wincfgs);
+      for (let [k, v] of wincfgs) {
+        add_pre(`<div class="help">Module <span class="arg">${k}</span>: &quot;${v.Name}&quot;:</div>`);
+        for (let [cfgk, cfgv] of Object.entries(v)) {
+          if (cfgk === "Name") continue;
+          add_pre(help(cfgk, `&quot;${cfgv}&quot;`));
+        }
+      }
+    }
   } else if (cmd == "//join") {
     if (tokens.length > 0) {
       var ch = sanitize_channel(tokens[0]);
@@ -418,7 +465,7 @@ function handle_command(e, client, config) {
         add_pre(`Already in channel ${ch}`);
       }
     } else {
-      add_pre(`Usage: //join &lt;channel&gt;`);
+      add_pre(`Usage: //join ${arg('channel')}`);
     }
   } else if (cmd == "//part" || cmd == "//leave") {
     if (tokens.length > 0) {
@@ -430,7 +477,7 @@ function handle_command(e, client, config) {
         add_pre(`Not in channel ${ch}`);
       }
     } else {
-      add_pre(`Usage: //leave &lt;channel&gt;`);
+      add_pre(`Usage: //leave ${arg("channel")}`);
     }
   } else if (cmd == "//badges") {
     let all_badges = [];
@@ -444,30 +491,30 @@ function handle_command(e, client, config) {
     /* TODO: document additions to //config */
     if (tokens.length == 0) {
       var lines = [];
-      lines.push(["clear", "clears all chat windows of their contents"]);
-      lines.push(["config", "display current configuration, less ClientID and OAuth token"]);
-      lines.push(["join <ch>", "join channel <ch>"]);
-      lines.push(["part <ch>", "leave channel <ch>"]);
-      lines.push(["leave <ch>", "leave channel <ch>"]);
-      lines.push(["badges", "show the global badges"]);
-      lines.push(["help", "this message"]);
-      lines.push(["help <cmd>", "help for a specific command"]);
+      lines.push([`clear`, `clears all chat windows of their contents`]);
+      lines.push([`config`, `display current configuration, less ClientID and OAuth token`]);
+      lines.push([`join ${arg('ch')}`, `join channel ${arg('ch')}`]);
+      lines.push([`part ${arg('ch')}`, `leave channel ${arg('ch')}`]);
+      lines.push([`leave ${arg('ch')}`, `leave channel ${arg('ch')}`]);
+      lines.push([`badges`, `show the global badges`]);
+      lines.push([`help`, `this message`]);
+      lines.push([`help ${arg('cmd')}`, `help for a specific command`]);
       add_pre(`<div class="help">Commands:</div>`);
       for (var [c, m] of lines) {
-        add_pre(`<div class="helpline"><span class="help helpcmd">//${c.escape()}</span><span class="help helpmsg">${m.escape()}</span></div>`);
+        add_pre(`<div class="helpline"><span class="help helpcmd">//${c}</span><span class="help helpmsg">${m}</span></div>`);
       }
     } else if (tokens[0] == "clear") {
       add_pre(`<div class="help">//clear: Clears all chats</div>`);
     } else if (tokens[0] == "config") {
       add_pre(`<div class="help">//config: Display current configuration. Both ClientID and OAuth token are omitted for security reasons</div>`);
     } else if (tokens[0] == "join") {
-      add_pre(`<div class="help">//join &lt;ch&gt;: Join the specified channel. Channel may or may not include leading #</div>`);
+      add_pre(`<div class="help">//join ${arg("ch")}: Join the specified channel. Channel may or may not include leading #</div>`);
     } else if (tokens[0] == "part" || tokens[0] == "leave") {
-      add_pre(`<div class="help">//part &lt;ch&gt;: Disconnect from the specified channel. Channel may or may not include leading #</div>`);
-      add_pre(`<div class="help">//leave &lt;ch&gt;: Disconnect from the specified channel. Channel may or may not include leading #</div>`);
+      add_pre(`<div class="help">//part ${arg("ch")}: Disconnect from the specified channel. Channel may or may not include leading #</div>`);
+      add_pre(`<div class="help">//leave ${arg("ch")}: Disconnect from the specified channel. Channel may or may not include leading #</div>`);
     } else if (tokens[0] == "help") {
       add_pre(`<div class="help">//help: Displays a list of recognized commands and their usage</div>`);
-      add_pre(`<div class="help">//help &lt;cmd&gt;: Displays help for a specific command</div>`);
+      add_pre(`<div class="help">//help ${arg("cmd")}: Displays help for a specific command</div>`);
     } else {
       add_pre(`<div class="help">//help: No such command "${tokens[0].escape()}"</div>`);
     }
@@ -635,7 +682,7 @@ function client_main() {
   });
 
   /* Clicking on a "Clear" link */
-  $(".clch_link").click(function() {
+  $(".clear-chat-link").click(function() {
     var id = $(this).parent().parent().parent().attr("id");
     $(`#${id} .content`).html("");
   });
@@ -644,6 +691,29 @@ function client_main() {
   $("#txtChannel").keyup(function() {
     if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
       /* TODO: join/part channels as needed */
+    }
+  });
+
+  /* Changing the "stream is transparent" checkbox */
+  $("#cbTransparent").change(function() {
+    let ss = Util.CSS.GetSheet("main.css");
+    if (!ss) { Util.Error("Can't find main.css object"); return; }
+    let rule = Util.CSS.GetRule(ss, ":root");
+    if (!rule) { Util.Error("Can't find main.css :root rule"); return; }
+    let props = [];
+    for (let prop of Util.CSS.GetPropertyNames(rule)) {
+      if (prop.match(/^--[a-z-]+-color$/)) {
+        props.push(prop);
+      }
+    }
+    if ($(this).is(":checked")) {
+      for (let prop of props) {
+        document.documentElement.style.setProperty(prop, 'transparent');
+      }
+    } else {
+      for (let prop of props) {
+        document.documentElement.style.setProperty(prop, `var(${prop}-default)`);
+      }
     }
   });
 
@@ -662,15 +732,10 @@ function client_main() {
 
   /* Opening one of the module menus */
   $(".menu").click(function() {
-    var $lbl = $(this).parent().children("label");
-    var $tb = $(this).parent().children("input");
-    if ($(this).parent().hasClass('open')) {
-      $(this).parent().removeClass('open');
-      $lbl.html($tb.val());
+    let $settings = $(this).parent().children(".settings");
+    if (!$settings.fadeToggle().is(":visible")) {
+      /* Update config on close */
       update_module_config();
-    } else {
-      $(this).parent().addClass('open');
-      $tb.val($lbl.html());
     }
   });
 

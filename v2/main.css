@@ -1,3 +1,29 @@
+:root {
+  /* Default colors */
+  --body-color-default: #0E0E0E;
+  --header-color-default: #191919;
+  --menudiv-color-default: #f0f0f0;
+  --module-settings-color-default: #333333;
+  --disabled-color-default: #dddddd;
+  --odd-line-color-default: #303030;
+  --sub-color-default: #404040;
+  --chat-color-default: #0e0e0e;
+  --textarea-color-default: #1a1a1a;
+  --settings-color-default: #555555;
+
+  /* Configured colors (changed by JS) */
+  --body-color: var(--body-color-default);
+  --header-color: var(--header-color-default);
+  --menudiv-color: var(--menudiv-color-default);
+  --module-settings-color: var(--module-settings-color-default);
+  --disabled-color: var(--disabled-color-default);
+  --odd-line-color: var(--odd-line-color-default);
+  --sub-color: var(--sub-color-default);
+  --chat-color: var(--chat-color-default);
+  --textarea-color: var(--textarea-color-default);
+  --settings-color: var(--settings-color-default);
+}
+
 *, *:before, *:after {
   box-sizing: border-box;
   margin: 0;
@@ -20,7 +46,7 @@ input {
 }
 
 body {
-  background-color: #0E0E0E;
+  background-color: var(--body-color, '#0e0e0e');
 }
 
 #wrapper { }
@@ -54,7 +80,7 @@ body {
   width: 100%;
   top: 0;
   left: 0;
-  background-color: #191919;
+  background-color: var(--header-color, #191919);
 }
 
 .menu {
@@ -68,7 +94,7 @@ body {
   margin-top: 15%;
   height: 3px;
   border-radius: 2px;
-  background-color: #f0f0f0;
+  background-color: var(--menudiv-color, #f0f0f0);
 }
 
 .module .header label {
@@ -82,8 +108,9 @@ body {
   font-size: 0.9em;
 }
 
-.module .header .clch {
+.module .header .clear-chat {
   position: relative;
+  display: inline-block;
   vertical-align: top;
   margin-right: 0.2em;
   margin-bottom: 1em;
@@ -91,13 +118,13 @@ body {
   top: -1pt;
 }
 
-.clch_ico {
+.clear-chat-icon {
   width: 1.1em;
   height: 1.1em; /* .header height 2.2em line-height 2em */
   vertical-align: middle;
 }
 
-.clch_link {
+.clear-chat-link {
   text-decoration: none;
   background-color: transparent;
   color: white;
@@ -105,33 +132,38 @@ body {
 
 .help {
   font-size: 0.9em;
+  font-family: monospace;
+}
+
+.help .arg {
+  font-family: monospace;
   font-style: italic;
 }
 
 .helpline {
-  margin-left: 4em;
+  margin-left: 1em;
 }
 
 .helpcmd {
-  width: 10%;
+  width: 15%;
 }
 
 .helpmsg {
   float: right;
-  width: 80%;
+  width: 85%;
 }
 
 .module .settings {
   position: absolute;
   top: 2.2em;
-  background-color: #333;
+  background-color: var(--module-settings-color, #333333);
   width: 100%;
   line-height: 1.5em;
   padding: 0.5em;
   border-bottom: 2px ridge #666;
   display: none;
-  max-height: 75%;
-  overflow: auto;
+  /*max-height: 75%;
+  overflow: auto;*/
 }
 
 .module .settings ul {
@@ -162,8 +194,14 @@ body {
   font-size: 0.9em;
 }
 
+/*
+.module .settings {
+  max-height: 37.4%;
+}
+*/
+
 input:disabled {
-  background-color: #dddddd;
+  background-color: var(--disabled-color, #dddddd);
 }
 
 .module .header.open label {
@@ -190,7 +228,7 @@ input:disabled {
 }
 
 .module .content .line-wrapper:nth-child(2n) {
-  background-color: #303030;
+  background-color: var(--odd-line-color, #303030);
 }
 
 .module .content .chat-line.client {
@@ -242,7 +280,7 @@ img.badge {
 }
 
 .module .content p.sub {
-  background-color: #404040;
+  background-color: var(--sub-color, #404040);
   color: #999999;
 }
 
@@ -255,11 +293,11 @@ img.badge {
   text-decoration: underline;
 }
 
-.module.full .settings {
-  max-height: 37.4%;
+.module.full .content {
+  height: calc(100% - 6em);
 }
 
-.module.full .content {
+.module.has-chat .content {
   height: calc(100% - 6em);
 }
 
@@ -270,7 +308,7 @@ img.badge {
   border-top: 1px solid #666;
   padding: 10px;
   height: 6em;
-  background-color: #0E0E0E;
+  background-color: var(--chat-color, #0E0E0E);
 }
 
 #chat textarea {
@@ -278,7 +316,7 @@ img.badge {
   width: 100%;
   height: 100%;
   border: 2px ridge #444;
-  background-color: #1a1a1a;
+  background-color: var(--textarea-color, #1a1a1a);
   padding: 4px;
   color: #f0f0f0;
   font-size: 1em;
@@ -296,7 +334,7 @@ img.badge {
   right: 0;
   width: 100%;
   display: none;
-  background-color: #555;
+  background-color: var(--settings-color, #555555);
   padding: 10px;
   border-left: 1px solid #888;
   border-bottom: 1px solid #888;
@@ -319,12 +357,16 @@ img.badge {
 
 #settings ul li label {
   display: inline-block;
-  width: 100px;
+  width: 7em;
   font-size: 0.9em;
 }
 
 #settings ul li input {
 
+}
+
+#settings ul li input.middle {
+  vertical-align: text-bottom;
 }
 
 #settings footer {

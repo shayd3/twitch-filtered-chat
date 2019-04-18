@@ -8,6 +8,11 @@
   <script type="text/javascript" src="assets/jquery-3.3.1.min.js"></script>
   <script type="text/javascript" src="config.js"></script>
   <script type="text/javascript" src="filtered-chat.js"></script>
+<!--
+TODO:
+
+1) Implement cheers, cheermotes, and cheer effects
+-->
   <script type="text/javascript">
 "use strict";
 
@@ -61,8 +66,57 @@
  *    Give two windows side-by-side without a chat input textarea
  */
 
+/** PAGE LOAD SEQUENCE (in horrifying detail)
+
+**** index.html ****
+1) Inject and load each of the scripts defined in `ASSETS`
+2) On document.ready:
+  2.1) Parse the layout query string arg
+  2.2) Wait for script assets to finish loading
+  2.3) Call index_main with the parsed layout
+3) In index_main
+  3.1) Build the document based on the layout
+  3.2) Wait for the document to finish rendering
+  3.3) Call client_main from filtered_chat.js
+
+**** filtered_chat.js ****
+1) Load configuration object
+2) Construct the TwitchClient
+3) Adjust the document.title based on configuration
+4) Bind all of the things using jQuery:
+  a) Bind "return" keypress on #txtChat to send a message
+  b) Bind "return" keypress on #settings to cick the settings button
+  c) Bind settings button click to toggle settings visibility
+  d) Bind clear-chat button click to char the chat
+  e) Bind changing the debugging level to change the debugging level
+  f) Bind the reconnect button to reconnect the client
+  g) Bind clicking on the module settings to toggle the module settings window
+  h) Bind "return" on any of the module settings to update the settings
+  i) Bind changing a module's name
+  j) Bind clicks on the document to handle the following:
+    i) Clicking on the "reconnect" link reconnects the client
+    ii) Clicking on a username opens the username context window
+    iii) Clicking off of the username and username context window closes it
+5) Bind to the following chat events:
+  a) twitch-open
+  b) twitch-close
+  c) twitch-notice
+  d) twitch-error
+  e) twitch-message
+  f) twitch-chat
+  g) twitch-clearchat
+  h) twitch-clearmsg
+  i) twitch-sub
+  j) twitch-resub
+  k) twitch-giftsub
+  l) twitch-anongiftsub
+6) Store the computed settings in the modules' settings window
+
+ */
+
 const IS_OBS = window.hasOwnProperty('obsstudio') || !!window.obsstudio;
 
+/* Parse layout= query string value */
 function ParseLayout(str) {
   let layout = {Cols: null, Chat: true};
   if (str.indexOf(':') > -1) {
@@ -85,6 +139,7 @@ function ParseLayout(str) {
   return layout;
 }
 
+/* Return true if the given asset is loaded */
 function AssetLoaded(asset) {
   return (function() {
     var loaded = false;
@@ -105,6 +160,7 @@ let ASSETS = [
   ["twitch-api", "client.js", AssetLoaded('TwitchClient')]
 ];
 
+/* Return true if all assets defined in ASSETS are loaded */
 function AreAllAssetsLoaded() {
   for (let [lib, asset, func] of ASSETS) {
     if (!func()) {
@@ -127,52 +183,99 @@ function wait_for_load(cond, callback) {
 
 /* Function to generate a window */
 function make_window(id, classname, name) {
-  var $S = $(`
-<div class="settings">
-  <p>Include:</p>
-  <ul class="include">
-    <li><label><input type="checkbox" class="pleb" checked />Non-subs</label></li>
-    <li><label><input type="checkbox" class="sub" checked />Subscribers</label></li>
-    <li><label><input type="checkbox" class="vip" checked />VIPs</label></li>
-    <li><label><input type="checkbox" class="mod" checked />Moderators</label></li>
-    <li><label><input type="checkbox" class="event" checked />Channel events</label></li>
-    <li><label><input type="checkbox" class="bits" checked />Bit messages</label></li>
-    <li class="textbox include_user"><label>From user:</label><input type="text" class="user" /></li>
-    <li class="textbox include_keyword"><label>Contains:</label><input type="text" class="keyword" /></li>
-  </ul>
-  <p>Exclude:</p>
-  <ul>
-    <li class="textbox exclude_user"><label>From user:</label><input type="text" class="user" /></li>
-    <li class="textbox exclude_startswith"><label>Starts with:</label><input type="text" class="keyword" /></li>
-  </ul>
-</div>
-  `);
-  var $C = $(`
-<span class="clch">
-  <a class="clch_link" href="javascript:void(0)" title="Clear" alt="Clear">
-    <img class="clch_ico" src="assets/no-entry.svg" />
-  </a>
-</span>
-  `);
-  var $d = $(document.createElement("div"));
-  $d.addClass("module").addClass(classname).attr("id", id);
-  var $h = $(document.createElement("div"));
-  $h.addClass("header");
-  $h.append($(`<div class="menu"><div></div><div></div><div></div></div>`));
-  $h.append($S);
-  var $l = $(document.createElement("label"));
-  var $i = $(document.createElement("input"));
-  $l.addClass("name").val(name);
-  $i.attr("type", "text").addClass("name").attr("value", name);
-  $h.append($l);
-  $h.append($i);
-  $d.append($h);
-  $d.append($C);
-  $d.append($(`<div class="content"></div>`));
-  return $d;
+  return $(`
+<div id="${id}" class="module ${classname}">
+  <div class="header">
+    <div class="menu">
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
+    <span class="clear-chat">
+      <a class="clear-chat-link" href="javascript:void(0)" title="Clear" alt="Clear">
+        <img class="clear-chat-icon" src="assets/no-entry.svg" width="1.1em" height="1.1em" />
+      </a>
+    </span>
+    <div class="settings">
+      <p>Include:</p>
+      <ul class="include">
+        <li><label><input type="checkbox" class="pleb" checked />Non-subs</label></li>
+        <li><label><input type="checkbox" class="sub" checked />Subscribers</label></li>
+        <li><label><input type="checkbox" class="vip" checked />VIPs</label></li>
+        <li><label><input type="checkbox" class="mod" checked />Moderators</label></li>
+        <li><label><input type="checkbox" class="event" checked />Channel events</label></li>
+        <li><label><input type="checkbox" class="bits" checked />Bit messages</label></li>
+        <li class="textbox include_user"><label>From user:</label><input type="text" class="user" /></li>
+        <li class="textbox include_keyword"><label>Contains:</label><input type="text" class="keyword" /></li>
+      </ul>
+      <p>Exclude:</p>
+      <ul class="exclude">
+        <li class="textbox exclude_user"><label>From user:</label><input type="text" class="user" /></li>
+        <li class="textbox exclude_startswith"><label>Starts with:</label><input type="text" class="keyword" /></li>
+      </ul>
+    </div>
+    <label class="name">${name}</label>
+    <input type="text" class="name" value="${name}"></input>
+  </div>
+  <div class="content"></div>
+</div>`);
 }
 
-/* Populate script assets */
+/* Populate templates and load the client */
+function index_main(layout) {
+  /* Filter a few things out of the logger */
+  Util.Logger.add_filter(function(args) {
+    if (args.length > 0) {
+      if (typeof(args[0]) == "string") {
+        let pats = ["ws recv>", "ws open>", "ws close>"];
+        if (pats.any((p) => args[0].startsWith(p))) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }, "INFO");
+  /* Populate the page with the modules */
+  let $Chat = $(`
+<div id="chat">
+  <textarea id="txtChat" placeholder="Send a message">
+  </textarea>
+</div>`);
+  let $ChatScript = $(document.createElement('script'));
+  $ChatScript.attr('type', 'text/javascript').attr('id', 'txtChatFocus').text(`
+$("#txtChat").focus();
+$("#txtChatFocus").remove();
+`);
+  $Chat.append($ChatScript);
+  if (layout.Cols == "single") {
+    let $Col = $(`<div class="column full"></div>`);
+    let $Module = make_window('module1', 'full', 'Chat');
+    if (layout.Chat) {
+      $Module.addClass("has-chat");
+      $Module.find('.content').after($Chat);
+    }
+    $Col.append($Module);
+    $("div#wrapper").append($Col);
+  } else if (layout.Cols == "double") {
+    let $Col1 = $(`<div class="column left"></div>`);
+    let $Col2 = $(`<div class="column right"></div>`);
+    let $Module1 = make_window("module1", "left", "Left Chat");
+    let $Module2 = make_window("module2", "right", "Right Chat");
+    if (layout.Chat) {
+      $Module2.addClass("has-chat");
+      $Module2.find('.content').after($Chat);
+    }
+    $Col1.append($Module1);
+    $Col2.append($Module2);
+    $("div#wrapper").append($Col1);
+    $("div#wrapper").append($Col2);
+  }
+
+  /* Once rerendering is complete, start up the client */
+  $(document).ready(client_main);
+}
+
+/* Populate script assets immediately */
 (function() {
   function script(src) {
     return $(document.createElement('script'))
@@ -188,85 +291,12 @@ function make_window(id, classname, name) {
     if (s === null) {
       console.error("Failed to add script", asset);
     } else {
-      console.log("Appending script", s);
       document.head.appendChild(s);
     }
   }
 })();
 
-/* Focus on the textarea */
-$(function() {
-  $("#txtChat").focus();
-});
-
-/* Populate templates and load the client */
-function index_main(layout) {
-  /* Populate the page with the modules */
-  let modules = [];
-  if (layout.Cols == "single") {
-    modules.push(make_window("module1", "full", "Chat"));
-  } else if (layout.Cols == "double") {
-    modules.push(make_window("module1", "left", "Left Chat"));
-    modules.push(make_window("module2", "right", "Right Chat"));
-  }
-  let $Chat = $(`<div id="chat"><textarea id="txtChat" placeholder="Send a message"></textarea></div>`);
-  if (layout.Chat) {
-    $(modules[modules.length-1]).find('.content').after($($Chat));
-  }
-  if (modules.length == 1) {
-    /* Add a single column */
-    let $Col = $(`<div class="column full"></div>`);
-    $Col.append(modules[0]);
-    $("div#wrapper").append($Col);
-  } else {
-    /* Add both columns */
-    let $Col1 = $(`<div class="column left"></div>`);
-    $Col1.append(modules[0]);
-    let $Col2 = $(`<div class="column right"></div>`);
-    $Col2.append(modules[1]);
-    $Col1.after($Col2);
-    $("div#wrapper").append($Col1);
-  }
-  console.log($("div#wrapper"));
-
-
-  /* Templating: add settings and clear link to each module */
-  var $S = $(`
-<div class="settings">
-  <p>Include:</p>
-  <ul class="include">
-    <li><label><input type="checkbox" class="pleb" checked />Non-subs</label></li>
-    <li><label><input type="checkbox" class="sub" checked />Subscribers</label></li>
-    <li><label><input type="checkbox" class="vip" checked />VIPs</label></li>
-    <li><label><input type="checkbox" class="mod" checked />Moderators</label></li>
-    <li><label><input type="checkbox" class="event" checked />Channel events</label></li>
-    <li><label><input type="checkbox" class="bits" checked />Bit messages</label></li>
-    <li class="textbox include_user"><label>From user:</label><input type="text" class="user" /></li>
-    <li class="textbox include_keyword"><label>Contains:</label><input type="text" class="keyword" /></li>
-  </ul>
-  <p>Exclude:</p>
-  <ul>
-    <li class="textbox exclude_user"><label>From user:</label><input type="text" class="user" /></li>
-    <li class="textbox exclude_startswith"><label>Starts with:</label><input type="text" class="keyword" /></li>
-  </ul>
-</div>
-  `);
-
-  var $C = $(`
-<span class="clch">
-  <a class="clch_link" href="javascript:void(0)" title="Clear" alt="Clear">
-    <img class="clch_ico" src="assets/no-entry.svg" />
-  </a>
-</span>
-  `);
-
-  $(".module .header .menu").after($C);
-  $(".module .header").after($S);
-
-  /* Once rerendering is complete, start up the client */
-  $(document).ready(client_main);
-}
-
+/* Once the document is loaded, wait for the scripts, then do layout */
 $(document).ready(function() {
   /* Wait until everything is loaded */
   let layout = {};
@@ -309,9 +339,12 @@ $(document).ready(function() {
         <input type="text" id="txtPassDummy" value="Cached" style="display: none" disabled />
       </li>
       <li>
+        <label>Transparent:</label>
+        <input type="checkbox" id="cbTransparent" class="middle" />
+      </li>
+      <li>
         <label>Debugging:</label>
         <select id="selDebug">
-          <option disabled>Select...</option>
           <option value="0">Disabled</option>
           <option value="1">Debug</option>
           <option value="2">Trace</option>
@@ -319,7 +352,7 @@ $(document).ready(function() {
       </li>
       <li>
         <label>No Force:</label>
-        <input type="checkbox" id="cbForce" />
+        <input type="checkbox" id="cbForce" class="middle" />
       </li>
     </ul>
     <footer>
