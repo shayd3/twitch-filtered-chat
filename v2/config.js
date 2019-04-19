@@ -186,33 +186,22 @@ function css_color_style(colorname) {
   };
 }
 
-/* Users allowed to use "force" */
-var super_users = {
-    Kaedenn_: 1,
-    MediaMagnet: 1,
-    dwangoAC: 1
-};
-
 /* Colors to use for users without username colors specified */
 var default_colors = [
-    '#0000FF',
-    '#008000',
-    '#FF0000',
-    '#B22222',
-    '#FF7F50',
-    '#9ACD32',
-    '#FF4500',
-    '#2E8B57',
-    '#DAA520',
-    '#D2691E',
-    '#5F9EA0',
-    '#1E90FF',
-    '#FF69B4',
-    '#8A2BE2',
-    '#00FF7F'
+  '#0000FF',
+  '#008000',
+  '#FF0000',
+  '#B22222',
+  '#FF7F50',
+  '#9ACD32',
+  '#FF4500',
+  '#2E8B57',
+  '#DAA520',
+  '#D2691E',
+  '#5F9EA0',
+  '#1E90FF',
+  '#FF69B4',
+  '#8A2BE2',
+  '#00FF7F'
 ];
-
-function GetRandomColor() {
-    return default_colors[Math.floor(Math.random() * default_colors.length)];
-}
 
