@@ -9,19 +9,19 @@
   --sub-color-default: #404040;
   --chat-color-default: #0e0e0e;
   --textarea-color-default: #1a1a1a;
-  --settings-color-default: #555555;
+  /*--settings-color-default: #555555;*/
 
   /* Configured colors (changed by JS) */
   --body-color: var(--body-color-default);
   --header-color: var(--header-color-default);
   --menudiv-color: var(--menudiv-color-default);
-  --module-settings-color: var(--module-settings-color-default);
+  /*--module-settings-color: var(--module-settings-color-default);*/
   --disabled-color: var(--disabled-color-default);
   --odd-line-color: var(--odd-line-color-default);
   --sub-color: var(--sub-color-default);
   --chat-color: var(--chat-color-default);
   --textarea-color: var(--textarea-color-default);
-  --settings-color: var(--settings-color-default);
+  /*--settings-color: var(--settings-color-default);*/
 }
 
 *, *:before, *:after {
@@ -245,6 +245,10 @@ input:disabled {
 .module .content .message.highlight {
 }
 
+.module .content .message .cheer {
+  font-weight: bold;
+}
+
 .module .content .message em {
   font-weight: bold;
 }
@@ -411,6 +415,16 @@ footer span.fr {
   background: darkgray;
   color: black;
   font-weight: bold;
+}
+
+#username_context .item {
+  display: block;
+  font-weight: normal;
+}
+
+#username_context .item .em {
+  font-weight: bold;
+  margin-left: 0.5em;
 }
 
 #username_context .cw-timeout:first-child {
