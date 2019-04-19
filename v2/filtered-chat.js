@@ -23,8 +23,8 @@
 
 /* TODO: REMOVE */
 var TEST_MESSAGES = {
-  'PRIVMSG': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;color=#0262C1;display-name=Kaedenn_;emotes=25:5-9/1:16-17/153556:32-39;flags=;id=daf83e35-1a26-4363-8d02-0b83a00e9288;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555546813016;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :test Kappa test :) test D: test BlessRNG test\r\n",
-  'CHEER': "",
+  'PRIVMSG': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;color=#0262C1;display-name=Kaedenn_;emotes=25:5-9/1:16-17/153556:32-39;flags=;id=daf83e35-1a26-4363-8d02-0b83a00e9288;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555546813016;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :test Kappa abcd :) efgh D: ijkl BlessRNG mnop\r\n",
+  'CHEER': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;color=#0262C1;bits=400;display-name=Kaedenn_;emotes=;flags=;id=daf83e35-1a26-4363-8d02-0b83a00e9288;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555546813016;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :test 4Head100 Kappa ShowLove100 test :) test D: Cheer100 Cheer100 test BlessRNG test\r\n",
   'SUB': "",
   'GIFTSUB': ""
 };
@@ -50,13 +50,129 @@ HTMLGen.getColorFor = function _HTMLGen_getColorFor(username) {
   return HTMLGen._dflt_colors[username];
 }
 
-/* Ensure a channel starts with "#" */
-function sanitize_channel(ch) {
-  if (!ch.startsWith('#')) {
-    return `#${ch}`;
-  } else {
-    return ch;
-  }
+/* Format a cheer */
+/*
+{
+  "prefix": "4Head",
+  "scales": [
+    "1",
+    "1.5",
+    "2",
+    "3",
+    "4"
+  ],
+  "tiers": [
+    {
+      "min_bits": 1,
+      "id": "1",
+      "color": "#979797",
+      "images": {
+        "dark": {
+          "animated": {urls},
+          "static": {urls}
+        },
+        "light": {
+          "animated": {urls},
+          "static": {urls}
+        }
+      },
+      "can_cheer": true
+    },
+    {
+      "min_bits": 100,
+      "id": "100",
+      "color": "#9c3ee8",
+      "images": {
+        "dark": {
+          "animated": {urls},
+          "static": {urls}
+        },
+        "light": {
+          "animated": {urls},
+          "static": {urls}
+        }
+      },
+      "can_cheer": true
+    },
+    {
+      "min_bits": 1000,
+      "id": "1000",
+      "color": "#1db2a5",
+      "images": {
+        "dark": {
+          "animated": {urls},
+          "static": {urls}
+        },
+        "light": {
+          "animated": {urls},
+          "static": {urls}
+        }
+      },
+      "can_cheer": true
+    },
+    {
+      "min_bits": 5000,
+      "id": "5000",
+      "color": "#0099fe",
+      "images": {
+        "dark": {
+          "animated": {urls},
+          "static": {urls}
+        },
+        "light": {
+          "animated": {urls},
+          "static": {urls}
+        }
+      },
+      "can_cheer": true
+    },
+    {
+      "min_bits": 10000,
+      "id": "10000",
+      "color": "#f43021",
+      "images": {
+        "dark": {
+          "animated": {urls},
+          "static": {urls}
+        },
+        "light": {
+          "animated": {urls},
+          "static": {urls}
+        }
+      },
+      "can_cheer": true
+    }
+  ],
+  "backgrounds": [
+    "light",
+    "dark"
+  ],
+  "states": [
+    "static",
+    "animated"
+  ],
+  "type": "global_first_party",
+  "updated_at": "2018-05-22T00:06:05.046230566Z",
+  "priority": 18,
+  "word_pattern": {},
+  "line_pattern": {},
+  "split_pattern": {}
+}
+ */
+HTMLGen.cheer = function _HTMLGen_cheer(cheer, bits) {
+  /* Use the highest tier that doesn't exceed the cheered bits */
+  let t = cheer.tiers.filter((t) => bits >= t.min_bits).max((t) => t.min_bits);
+  let color = t.color;
+  /* Use the smallest scale available */
+  let url = t.images.dark.animated[cheer.scales.min((s) => +s)];
+  let $w = $(`<span class="cheer cheermote"></span>`);
+  $w.css('color', t.color);
+  let $img = $(`<img class="cheer-image" />`);
+  $img.attr('alt', cheer.prefix).attr('title', cheer.prefix);
+  $img.attr('src', url);
+  $w.append($img);
+  $w.append(bits);
+  return $w[0];
 }
 
 /* Obtain configuration:
@@ -106,7 +222,7 @@ function get_config_object() {
   let selDebug = $('select#selDebug')[0];
   if (txtChannel.value) {
     for (var ch of txtChannel.value.split(',')) {
-      var channel = sanitize_channel(ch);
+      var channel = Twitch.FormatChannel(ch);
       if (config.Channels.indexOf(channel) == -1) {
         config.Channels.push(channel);
       }
@@ -146,7 +262,7 @@ function get_config_object() {
     if (k == "pass") { key = "Pass"; query_remove.push(k); }
     if (k == "channels") {
       key = "Channels";
-      val = v.split(',').map(sanitize_channel);
+      val = v.split(',').map(Twitch.FormatChannel);
     }
     if (k == "debug") {
       key = "Debug";
@@ -355,12 +471,12 @@ function check_filtered(module, event) {
 
 /* Add either an event or direct HTML to all modules */
 function add_html(event) {
+  let html = (event instanceof TwitchEvent) ? HTMLGen.gen(event) : event;
   $(".module").each(function() {
     if (event instanceof TwitchEvent && !check_filtered($(this), event)) {
       /* Filtered out */
       return;
     }
-    let html = (event instanceof TwitchEvent) ? HTMLGen.gen(event) : event;
     let $c = $(this).find('.content');
     let $p = document.createElement('p');
     $p.setAttribute('class', 'line line-wrapper');
@@ -375,7 +491,8 @@ function add_pre(content) {
   add_html(`<div class="pre">${content}</div>`);
 }
 
-/* Place an emote in the message and return the result */
+/* Place an emote in the message and return the result.
+ * Places the final length of the inserted emote into emote_def.final_length */
 function place_emote(message, emote_def) {
   var msg_start = message.substr(0, emote_def.start);
   var msg_end = message.substr(emote_def.end+1);
@@ -394,6 +511,7 @@ function place_emote(message, emote_def) {
     console.warn(`Failed to place emote`, emote_def, `in "${message}"`)
     emote_str = JSON.stringify(emote_def);
   }
+  emote_def.final_length = emote_str.length;
   return `${msg_start}${emote_str}${msg_end}`;
 }
 
@@ -444,7 +562,6 @@ function handle_command(e, client, config) {
         }
       }
       add_pre(`<div class="help">Window Configurations:</div>`);
-      console.log(wincfgs);
       for (let [k, v] of wincfgs) {
         add_pre(`<div class="help">Module <span class="arg">${k}</span>: &quot;${v.Name}&quot;:</div>`);
         for (let [cfgk, cfgv] of Object.entries(v)) {
@@ -455,7 +572,7 @@ function handle_command(e, client, config) {
     }
   } else if (cmd == "//join") {
     if (tokens.length > 0) {
-      var ch = sanitize_channel(tokens[0]);
+      var ch = Twitch.FormatChannel(tokens[0]);
       if (!client.IsInChannel(ch)) {
         client.JoinChannel(ch);
         add_pre(`Joined ${ch}`);
@@ -467,7 +584,7 @@ function handle_command(e, client, config) {
     }
   } else if (cmd == "//part" || cmd == "//leave") {
     if (tokens.length > 0) {
-      var ch = sanitize_channel(tokens[0]);
+      var ch = Twitch.FormatChannel(tokens[0]);
       if (client.IsInChannel(ch)) {
         client.LeaveChannel(ch);
         add_pre(`Left ${ch}`);
@@ -553,8 +670,11 @@ function populate_username_context_window(client, cw, line) {
   for (let dur of "1s 10s 60s 10m 30m 1h 12h 24h".split(" ")) {
     let $ta = $(`<a class="cw-timeout-dur" id="cw-timeout-${d.user}-${dur}" href="javascript:void(0)" data-channel="${d.channel}" data-user="${d.user}" data-duration="${dur}">${dur}</a>`);
     $ta.click(function() {
-      client.Timeout($(this).attr('data-channel'), $(this).attr('data-user'), $(this).attr('data-duration'));
-      console.log('Timeout user', $(this).attr('data-user'), 'from', $(this).attr('data-channel'), 'for', $(this).attr('data-duration'));
+      let ch = $(this).attr('data-channel');
+      let u = $(this).attr('data-user');
+      let d = $(this).attr('data-duration');
+      client.Timeout(ch, u, d);
+      Util.Log('Timed out user', u, 'from', ch, 'for', d);
       $(cw).fadeOut();
     });
     $tl.append($ta);
@@ -562,6 +682,15 @@ function populate_username_context_window(client, cw, line) {
   $cw.append($tl);
   /* Add timestamp of when the message was sent */
   $cw.append($(`<span class="timestamp">${format_date(d.time)}</span>`));
+  /* Add user information */
+  $cw.append($(`<span class="item">User ID: ${d.userid}</span>`));
+  if (d.mod || d.vip || d.sub) {
+    let $role_line = $(`<span class="item">User Role:</span>`);
+    if (d.mod) { $role_line.append($(`<span class="em">Mod</span>`)); }
+    if (d.vip) { $role_line.append($(`<span class="em">VIP</span>`)); }
+    if (d.sub) { $role_line.append($(`<span class="em">Sub</span>`)); }
+    $cw.append($role_line);
+  }
   /*
 <div class="chat-line"
      data-id="2839621c-0f3c-4d46-947a-891297fcf68c"
@@ -687,8 +816,18 @@ function client_main() {
 
   /* Pressing enter on the "Channels" text box */
   $("#txtChannel").keyup(function() {
+    let fmt_ch = (ch) => Twitch.FormatChannel(Twitch.ParseChannel(ch));
     if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
-      /* TODO: join/part channels as needed */
+      let new_chs = $(this).val().split(",").map(fmt_ch);
+      let old_chs = client.GetJoinedChannels().map(fmt_ch);
+      let to_join = new_chs.filter((c) => old_chs.indexOf(c) == -1);
+      let to_part = old_chs.filter((c) => new_chs.indexOf(c) == -1);
+      for (let ch of to_join) {
+        client.JoinChannel(ch);
+      }
+      for (let ch of to_part) {
+        client.LeaveChannel(ch);
+      }
     }
   });
 
@@ -931,7 +1070,8 @@ function client_main() {
   };
 
   /* Generate HTML for the message content (see chat_message_html above) */
-  HTMLGen.genMsg = function _HTMLGen_genMsg(e) {
+  HTMLGen.genMsg = function _HTMLGen_genMsg(event) {
+    Util.Log('generating for', event);
     let e_msg = $(document.createElement('span'));
     e_msg.addClass('message');
     e_msg.attr('data-message', '1');
@@ -945,15 +1085,35 @@ function client_main() {
       while (emotes.length > 0) {
         var emote = emotes.pop();
         message = place_emote(message, emote);
+        /* Shift the entire map to keep track */
+        for (let idx = emote.start; idx < map.length; ++idx) {
+          if (map[idx] < emote.end) {
+            /* All characters within the emote point to the emote's end */
+            map[idx] = emote.final_length;
+          } else {
+            /* All characters after are shifted by the change in length */
+            map[idx] += emote.final_length - (emote.end - emote.start) - 1;
+          }
+        }
       }
     }
-    /* cheers, cheer effects */
-    if (event.flag('bits') && event.flag("bits") > 0) {
-      let bits_left = event.flags.bits;
-      for (var word of message.split(" ")) {
-        if (client.IsCheer(e.channel.channel, word)) {
-          /* TODO */
-        }
+    /* TODO: FFZ emotes */
+    /* TODO: BTTV emotes */
+    /* cheers */
+    /* TODO: fix, fix cheer formatting */
+    if (event.flag('bits') && event.flag('bits') > 0) {
+      let bits_left = event.flag('bits');
+      for (let match of client.FindCheers(event.channel.channel, event.message)) {
+        let cheer = match.cheer;
+        let bits = match.bits;
+        let start = map[match.start]+1;
+        let end = map[match.end]+1;
+        console.log('Cheer', bits, "from", start, "to", end, ":", cheer);
+        let $c = HTMLGen.cheer(cheer, bits).outerHTML;
+        let offset = $c.length;
+        message = message.substr(0, map[start]) + $c + message.substr(map[end]);
+        /* TODO: update the map  */
+        console.log("Generated cheer HTML", $c);
       }
     }
     /* @user highlighting */
