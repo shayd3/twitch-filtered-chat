@@ -1,4 +1,4 @@
-var colors = {
+var ColorNames = {
     "dust": "#b2996e",
     "tea": "#65ab7c",
     "cement": "#a5a391",
@@ -253,6 +253,8 @@ var colors = {
     "purple": "#7e1e9c"
 
 };
+
+window.ColorNames = ColorNames;
 
 
 function calcLuminance(color) {

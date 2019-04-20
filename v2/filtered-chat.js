@@ -21,10 +21,14 @@
  * Anyone who can execute JS can grab both authid and clientid
  */
 
-/* TODO: REMOVE */
+/* TODO: REMOVE {{{0 */
 var TEST_MESSAGES = {
-  'PRIVMSG': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;color=#0262C1;display-name=Kaedenn_;emotes=25:5-9/1:16-17/153556:32-39;flags=;id=daf83e35-1a26-4363-8d02-0b83a00e9288;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555546813016;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :test Kappa abcd :) efgh D: ijkl BlessRNG mnop\r\n",
-  'CHEER': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;color=#0262C1;bits=400;display-name=Kaedenn_;emotes=;flags=;id=daf83e35-1a26-4363-8d02-0b83a00e9288;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555546813016;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :test 4Head100 Kappa ShowLove100 test :) test D: Cheer100 Cheer100 test BlessRNG test\r\n",
+  'PRIVMSG': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;color=#0262C1;display-name=Kaedenn_;emotes=25:14-18/3:29-30/153556:41-48;flags=;id=6ba8dc82-000f-4da6-9131-d69233b14e41;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555701270187;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :test cheer100 Kappa cheer100 :D cheer100 BlessRNG cheer100 test\r\n",
+  'PRIVMSG2': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;color=#0262C1;display-name=Kaedenn_;emotes=25:14-18/3:29-30/153556:41-48;flags=;id=6ba8dc82-000f-4da6-9131-d69233b14e41;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555701270187;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :&&&& cheer100 Kappa cheer100 :D cheer100 BlessRNG cheer100 test\r\n",
+  'CHEER0': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;bits=1;color=#0262C1;display-name=Kaedenn_;flags=;id=6ba8dc82-000f-4da6-9131-d69233b14e41;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555701270187;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :cheer1\r\n",
+  'CHEER': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;bits=400;color=#0262C1;display-name=Kaedenn_;emotes=25:14-18/3:29-30/153556:41-48;flags=;id=6ba8dc82-000f-4da6-9131-d69233b14e41;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555701270187;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :test cheer100 Kappa cheer100 :D cheer100 BlessRNG cheer100 test\r\n",
+  'CHEER2': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;bits=400;color=#0262C1;display-name=Kaedenn_;emotes=25:14-18/3:29-30/153556:41-48;flags=;id=6ba8dc82-000f-4da6-9131-d69233b14e41;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555701270187;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :&&&& cheer100 Kappa cheer100 :D cheer100 BlessRNG cheer100 test\r\n",
+  'EFFECT': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;bits=100;color=#0262C1;display-name=Kaedenn_;flags=;id=6ba8dc82-000f-4da6-9131-d69233b14e41;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555701270187;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :cheer100 rainbow bold marquee Hi!\r\n",
   'SUB': "",
   'GIFTSUB': ""
 };
@@ -34,7 +38,7 @@ function inject_message(msg) {
   e.data = msg;
   client.OnWebsocketMessage(e);
 }
-/* END TODO: REMOVE */
+/* END TODO: REMOVE 0}}} */
 
 const CACHED_VALUE = "Cached";
 const AUTOGEN_VALUE = "Auto-Generated";
@@ -50,115 +54,21 @@ HTMLGen.getColorFor = function _HTMLGen_getColorFor(username) {
   return HTMLGen._dflt_colors[username];
 }
 
-/* Format a cheer */
-/*
-{
-  "prefix": "4Head",
-  "scales": [
-    "1",
-    "1.5",
-    "2",
-    "3",
-    "4"
-  ],
-  "tiers": [
-    {
-      "min_bits": 1,
-      "id": "1",
-      "color": "#979797",
-      "images": {
-        "dark": {
-          "animated": {urls},
-          "static": {urls}
-        },
-        "light": {
-          "animated": {urls},
-          "static": {urls}
-        }
-      },
-      "can_cheer": true
-    },
-    {
-      "min_bits": 100,
-      "id": "100",
-      "color": "#9c3ee8",
-      "images": {
-        "dark": {
-          "animated": {urls},
-          "static": {urls}
-        },
-        "light": {
-          "animated": {urls},
-          "static": {urls}
-        }
-      },
-      "can_cheer": true
-    },
-    {
-      "min_bits": 1000,
-      "id": "1000",
-      "color": "#1db2a5",
-      "images": {
-        "dark": {
-          "animated": {urls},
-          "static": {urls}
-        },
-        "light": {
-          "animated": {urls},
-          "static": {urls}
-        }
-      },
-      "can_cheer": true
-    },
-    {
-      "min_bits": 5000,
-      "id": "5000",
-      "color": "#0099fe",
-      "images": {
-        "dark": {
-          "animated": {urls},
-          "static": {urls}
-        },
-        "light": {
-          "animated": {urls},
-          "static": {urls}
-        }
-      },
-      "can_cheer": true
-    },
-    {
-      "min_bits": 10000,
-      "id": "10000",
-      "color": "#f43021",
-      "images": {
-        "dark": {
-          "animated": {urls},
-          "static": {urls}
-        },
-        "light": {
-          "animated": {urls},
-          "static": {urls}
-        }
-      },
-      "can_cheer": true
-    }
-  ],
-  "backgrounds": [
-    "light",
-    "dark"
-  ],
-  "states": [
-    "static",
-    "animated"
-  ],
-  "type": "global_first_party",
-  "updated_at": "2018-05-22T00:06:05.046230566Z",
-  "priority": 18,
-  "word_pattern": {},
-  "line_pattern": {},
-  "split_pattern": {}
+/* Format a Twitch-specific emote */
+HTMLGen.emote = function _HTMLGen_emote(emote) {
+  if (emote.id !== null) {
+    let $e = $(document.createElement('img'));
+    $e.addClass('emote').addClass('twitch-emote');
+    $e.attr('tw-emote-id', emote.id);
+    $e.attr('src', Twitch.URL.Emote(emote.id));
+    let html = $e[0].outerHTML;
+    emote.final_length = html.length;
+    return html;
+  }
+  return null;
 }
- */
+
+/* Format a cheer */
 HTMLGen.cheer = function _HTMLGen_cheer(cheer, bits) {
   /* Use the highest tier that doesn't exceed the cheered bits */
   let t = cheer.tiers.filter((t) => bits >= t.min_bits).max((t) => t.min_bits);
@@ -172,14 +82,17 @@ HTMLGen.cheer = function _HTMLGen_cheer(cheer, bits) {
   $img.attr('src', url);
   $w.append($img);
   $w.append(bits);
-  return $w[0];
+  return $w[0].outerHTML;
 }
 
-/* Obtain configuration:
- *  1) values from localStorage
- *  2) values from settings elements (overrides (1))
- *  3) values from query string (overrides (2))
- * Obtain per-module configuration
+/* Begin configuration section {{{0 */
+
+/* 1) Obtain configuration
+ *  a) values from localStorage
+ *  b) values from settings elements (overrides (a))
+ *  c) values from query string (overrides (b))
+ * 2) Store module configuration in each modules' settings window
+ * 3) Remove sensitive values from the query string, if present
  */
 function get_config_object() {
   let config = {};
@@ -257,24 +170,33 @@ function get_config_object() {
   for (var [k, v] of Object.entries(Util.ParseQueryString())) {
     let key = k; /* config key */
     let val = v; /* config value */
-    if (k == "clientid") { key = "ClientID"; query_remove.push(k); }
-    if (k == "user") { key = "Name"; }
-    if (k == "pass") { key = "Pass"; query_remove.push(k); }
-    if (k == "channels") {
+    if (k == "clientid") {
+      key = "ClientID";
+      query_remove.push(k);
+    } else if (k == "user") {
+      key = "Name";
+    } else if (k == "pass") {
+      key = "Pass";
+      query_remove.push(k);
+    } else if (k == "channels") {
       key = "Channels";
       val = v.split(',').map(Twitch.FormatChannel);
-    }
-    if (k == "debug") {
+    } else if (k == "debug") {
       key = "Debug";
       if (!val) { val = 0; }
       if (val == "true") { val = 1; }
       if (val == "false") { val = 0; }
       if (val == "debug") { val = 1; }
       if (val == "trace") { val = 2; }
-    }
-    if (k == "noassets") {
+    } else if (k == "noassets") {
       key = "NoAssets";
       val = !!v;
+    } else if (k == "noffz") {
+      key = "NoFFZ";
+    } else if (k == "nobttv") {
+      key = "NoBTTV";
+    } else if (k == "hmax") {
+      key = "HistorySize";
     }
     config[key] = val;
   }
@@ -431,6 +353,8 @@ function update_module_config() {
   localStorage.setItem(key, JSON.stringify(config));
 }
 
+/* End configuration section 0}}} */
+
 /* Return true if the event should be displayed on the module given */
 function check_filtered(module, event) {
   var rules = get_module_settings(module);
@@ -471,18 +395,21 @@ function check_filtered(module, event) {
 
 /* Add either an event or direct HTML to all modules */
 function add_html(event) {
+  /* Generate HTML if it's a TwitchEvent */
   let html = (event instanceof TwitchEvent) ? HTMLGen.gen(event) : event;
+  /* Add the html to each module */
   $(".module").each(function() {
+    /* Check the filters to see if this event should be displayed */
     if (event instanceof TwitchEvent && !check_filtered($(this), event)) {
       /* Filtered out */
       return;
     }
-    let $c = $(this).find('.content');
-    let $p = document.createElement('p');
-    $p.setAttribute('class', 'line line-wrapper');
-    $p.innerHTML = html;
-    $c.append($p);
-    $c.scrollTop(2**31-1);
+    /* Build the content element */
+    let $p = $(document.createElement('p')).addClass('line line-wrapper');
+    $p.html(html);
+    /* Append the content to the page */
+    /* FIXME: Scroll to element, not to max */
+    $(this).find('.content').append($p).scrollTop(2**31-1);;
   });
 }
 
@@ -494,25 +421,6 @@ function add_pre(content) {
 /* Place an emote in the message and return the result.
  * Places the final length of the inserted emote into emote_def.final_length */
 function place_emote(message, emote_def) {
-  var msg_start = message.substr(0, emote_def.start);
-  var msg_end = message.substr(emote_def.end+1);
-  var emote_str = "";
-  if (emote_def.id !== null) {
-    /* It's a Twitch emote */
-    var e = document.createElement('img');
-    $(e).addClass("emote")
-      .addClass("twitch-emote")
-      .attr("tw-emote-id", emote_def.id)
-      .attr("src", Twitch.URL.Emote(emote_def.id));
-    emote_str = e.outerHTML;
-  }
-  /* TODO: remove */
-  if (emote_str.length == 0) {
-    console.warn(`Failed to place emote`, emote_def, `in "${message}"`)
-    emote_str = JSON.stringify(emote_def);
-  }
-  emote_def.final_length = emote_str.length;
-  return `${msg_start}${emote_str}${msg_end}`;
 }
 
 /* Handle a chat command */
@@ -525,12 +433,11 @@ function handle_command(e, client, config) {
   }
 
   /* Shortcuts for usages/help messages */
-  function arg(s) {
-    return `<span class="arg">&lt;${s.escape()}&gt;</span>`;
-  }
-  function help(k, v) {
-    return `<div class="helpline"><span class="help helpcmd">${k}</span><span class="help helpmsg">${v}</span></div>`;
-  }
+  let arg = (s) => `<span class="arg">${s.escape()}</span>`;
+  let helpline = (k, v) => `<div class="helpline"><span class="help helpcmd">${k}</span><span class="help helpmsg">${v}</span></div>`;
+  let help = (s) => `<div class="help">${s}</div>`;
+  let add_helpline = (k, v) => add_pre(helpline(k, v));
+  let add_help = (s) => add_pre(help(s));
 
   /* Handle each of the commands */
   if (cmd == '//clear') {
@@ -538,14 +445,14 @@ function handle_command(e, client, config) {
       e.html("");
     }
   } else if (cmd == "//config") {
-    add_pre(`<div class="help">Configuration:</div>`);
+    add_help(`Configuration:`);
     if (tokens.length > 0) {
       if (tokens[0] == "clientid") {
-        add_pre(help("ClientID", config.ClientID));
+        add_helpline("ClientID", config.ClientID);
       } else if (tokens[0] == "pass") {
-        add_pre(help("Pass", config.Pass));
+        add_helpline("Pass", config.Pass);
       } else if (config.hasOwnProperty(tokens[0])) {
-        add_pre(help(tokens[0], JSON.stringify(config[tokens[0]])));
+        add_helpline(tokens[0], JSON.stringify(config[tokens[0]]));
       } else {
         add_html(`<span class="pre error">Unknown config key &quot;${tokens[0]}&quot;</span>`);
       }
@@ -556,17 +463,17 @@ function handle_command(e, client, config) {
           /* It's a window configuration */
           wincfgs.push([k, v]);
         } else if (k == "ClientID" || k == "Pass") {
-          add_pre(help(k, `Omitted for security; use //config ${k.toLowerCase()} to show`));
+          add_helpline(k, `Omitted for security; use //config ${k.toLowerCase()} to show`);
         } else {
-          add_pre(help(k, v));
+          add_helpline(k, v);
         }
       }
-      add_pre(`<div class="help">Window Configurations:</div>`);
+      add_help(`Window Configurations:`);
       for (let [k, v] of wincfgs) {
-        add_pre(`<div class="help">Module <span class="arg">${k}</span>: &quot;${v.Name}&quot;:</div>`);
+        add_help(`Module <span class="arg">${k}</span>: &quot;${v.Name}&quot;:`);
         for (let [cfgk, cfgv] of Object.entries(v)) {
           if (cfgk === "Name") continue;
-          add_pre(help(cfgk, `&quot;${cfgv}&quot;`));
+          add_helpline(cfgk, `&quot;${cfgv}&quot;`);
         }
       }
     }
@@ -580,7 +487,7 @@ function handle_command(e, client, config) {
         add_pre(`Already in channel ${ch}`);
       }
     } else {
-      add_pre(`Usage: //join ${arg('channel')}`);
+      add_pre(`Usage: //join &lt;${arg('channel')}&gt;`);
     }
   } else if (cmd == "//part" || cmd == "//leave") {
     if (tokens.length > 0) {
@@ -592,7 +499,7 @@ function handle_command(e, client, config) {
         add_pre(`Not in channel ${ch}`);
       }
     } else {
-      add_pre(`Usage: //leave ${arg("channel")}`);
+      add_pre(`Usage: //leave &lt;${arg("channel")}&gt;`);
     }
   } else if (cmd == "//badges") {
     let all_badges = [];
@@ -607,31 +514,35 @@ function handle_command(e, client, config) {
     if (tokens.length == 0) {
       var lines = [];
       lines.push([`clear`, `clears all chat windows of their contents`]);
-      lines.push([`config`, `display current configuration, less ClientID and OAuth token`]);
-      lines.push([`join ${arg('ch')}`, `join channel ${arg('ch')}`]);
-      lines.push([`part ${arg('ch')}`, `leave channel ${arg('ch')}`]);
-      lines.push([`leave ${arg('ch')}`, `leave channel ${arg('ch')}`]);
+      lines.push([`config`, `display configuration`]);
+      lines.push([`config [${arg('key')}]`, `display configuration for ${arg('key')}`]);
+      lines.push([`join &lt;${arg('ch')}&gt;`, `join channel &lt;${arg('ch')}&gt;`]);
+      lines.push([`part &lt;${arg('ch')}&gt;`, `leave channel &lt;${arg('ch')}&gt;`]);
+      lines.push([`leave &lt;${arg('ch')}&gt;`, `leave channel &lt;${arg('ch')}&gt;`]);
       lines.push([`badges`, `show the global badges`]);
       lines.push([`help`, `this message`]);
-      lines.push([`help ${arg('cmd')}`, `help for a specific command`]);
-      add_pre(`<div class="help">Commands:</div>`);
+      lines.push([`help &lt;${arg('cmd')}&gt;`, `help for a specific command`]);
+      add_help(`Commands:`);
       for (var [c, m] of lines) {
-        add_pre(`<div class="helpline"><span class="help helpcmd">//${c}</span><span class="help helpmsg">${m}</span></div>`);
+        add_helpline(`//${c}`, m);
       }
     } else if (tokens[0] == "clear") {
-      add_pre(`<div class="help">//clear: Clears all chats</div>`);
+      add_help(`//clear: Clears all chats`);
     } else if (tokens[0] == "config") {
-      add_pre(`<div class="help">//config: Display current configuration. Both ClientID and OAuth token are omitted for security reasons</div>`);
+      add_help(`//config: Display current configuration. Both ClientID and OAuth token are omitted for security reasons`);
+      add_help(`//config clientid: Display current ClientID`);
+      add_help(`//config oauth: Display current OAuth token`);
+      add_help(`//config &lt;${arg("key")}&gt;: Display configuration item &lt;${arg("key")}&gt;`);
     } else if (tokens[0] == "join") {
-      add_pre(`<div class="help">//join ${arg("ch")}: Join the specified channel. Channel may or may not include leading #</div>`);
+      add_help(`//join &lt;${arg("ch")}&gt;: Join the specified channel. Channel may or may not include leading #`);
     } else if (tokens[0] == "part" || tokens[0] == "leave") {
-      add_pre(`<div class="help">//part ${arg("ch")}: Disconnect from the specified channel. Channel may or may not include leading #</div>`);
-      add_pre(`<div class="help">//leave ${arg("ch")}: Disconnect from the specified channel. Channel may or may not include leading #</div>`);
+      add_help(`//part &lt;${arg("ch")}&gt;: Disconnect from the specified channel. Channel may or may not include leading #`);
+      add_help(`//leave &lt;${arg("ch")}&gt;: Disconnect from the specified channel. Channel may or may not include leading #`);
     } else if (tokens[0] == "help") {
-      add_pre(`<div class="help">//help: Displays a list of recognized commands and their usage</div>`);
-      add_pre(`<div class="help">//help ${arg("cmd")}: Displays help for a specific command</div>`);
+      add_help(`//help: Displays a list of recognized commands and their usage`);
+      add_help(`//help &lt;${arg("cmd")}&gt;: Displays help for a specific command`);
     } else {
-      add_pre(`<div class="help">//help: No such command "${tokens[0].escape()}"</div>`);
+      add_help(`//help: No such command "${tokens[0].escape()}"`);
     }
   } else if (cmd.startsWith('//')) {
     add_html(`<div class="pre error">Unknown command "${cmd.escape()}"</div>`);
@@ -641,6 +552,7 @@ function handle_command(e, client, config) {
   return true;
 }
 
+/* Format a date object to "%Y-%m-%d %H:%M:%S.<ms>" */
 function format_date(date) {
   let [y, m, d] = [date.getFullYear(), date.getMonth(), date.getDay()];
   let [h, mi, s] = [date.getHours(), date.getMinutes(), date.getSeconds()];
@@ -651,91 +563,102 @@ function format_date(date) {
   return `${p[0]}-${p[1]}-${p[2]} ${p[3]}:${p[4]}:${p[5]}.${p[6]}`;
 }
 
-function populate_username_context_window(client, cw, line) {
+/* Format an interval in seconds to "Xh Ym Zs" */
+function format_interval(time) {
+  let parts = [];
+  time = Math.round(time);
+  if (time < 0) {
+    parts.push('-');
+    time *= -1;
+  }
+  if (time % 60 != 0) { parts.unshift(`${time % 60}s`); }
+  time = Math.floor(time / 60);
+  if (time > 0) {
+    if (time % 60 != 0) { parts.unshift(`${time % 60}m`); }
+    time = Math.floor(time / 60);
+  }
+  if (time > 0) {
+    parts.unshift(`${time}h`);
+  }
+  return parts.join(" ");
+}
+
+function show_context_window(client, cw, line) {
   let $cw = $(cw);
   let $l = $(line);
   $(cw).html(""); /* Clear everything from the last time */
-  let d = {};
-  d.id = $l.attr("data-id");
-  d.user = $l.attr("data-user");
-  d.userid = $l.attr("data-user-id");
-  d.channel = `#${$l.attr("data-channel")}`;
-  d.chid = $l.attr("data-channelid");
-  d.sub = $l.attr("data-subscriber") === "1";
-  d.mod = $l.attr("data-mod") === "1";
-  d.vip = $l.attr("data-vip") === "1";
-  d.time = new Date(Number.parseInt($l.attr("data-sent-ts")));
+  /* Attributes of the host line */
+  let id = $l.attr("data-id");
+  let user = $l.attr("data-user");
+  let userid = $l.attr("data-user-id");
+  let channel = `#${$l.attr("data-channel")}`;
+  let chid = $l.attr("data-channelid");
+  let sub = $l.attr("data-subscriber") === "1";
+  let mod = $l.attr("data-mod") === "1";
+  let vip = $l.attr("data-vip") === "1";
+  let caster = $l.attr("data-caster") === "1";
+  let timestamp = Number.parseInt($l.attr("data-sent-ts"));
+  let time = new Date(timestamp);
+  /* Set the attributes for the context window */
+  $cw.attr("data-id", id);
+  $cw.attr("data-user", user);
+  $cw.attr("data-userid", userid);
+  $cw.attr("data-channel", channel);
+  $cw.attr("data-chid", chid);
+  $cw.attr("data-sub", sub);
+  $cw.attr("data-mod", mod);
+  $cw.attr("data-vip", vip);
+  $cw.attr("data-caster", caster);
+  $cw.attr("data-id", id);
+  /* Define line and link templates */
+  let Line = (s) => $(`<div class="item">${s}</div>`);
+  let Link = (id, text) => `<a id="${id}" class="cw-link" href="javascript:void(0)">${text.escape()}</a>`;
+  let Em = (t) => `<span class="em">${t}</span>`;
+  /* Add general user information */
+  $cw.append(Line(`${Em(user)} in ${Em(channel)}`));
   /* Add link to timeout user */
-  let $tl = $(`<div class="cw-timeout">Timeout</div>`);
+  let $tl = $(`<div class="cw-timeout">Timeout:</div>`);
   for (let dur of "1s 10s 60s 10m 30m 1h 12h 24h".split(" ")) {
-    let $ta = $(`<a class="cw-timeout-dur" id="cw-timeout-${d.user}-${dur}" href="javascript:void(0)" data-channel="${d.channel}" data-user="${d.user}" data-duration="${dur}">${dur}</a>`);
+    let $ta = $(Link(`cw-timeout-${user}-${dur}`, dur));
+    $ta.addClass("cw-timeout-dur");
+    $ta.attr("data-channel", channel);
+    $ta.attr("data-user", user);
+    $ta.attr("data-duration", dur);
     $ta.click(function() {
       let ch = $(this).attr('data-channel');
       let u = $(this).attr('data-user');
-      let d = $(this).attr('data-duration');
-      client.Timeout(ch, u, d);
-      Util.Log('Timed out user', u, 'from', ch, 'for', d);
+      let dur = $(this).attr('data-duration');
+      client.Timeout(ch, u, dur);
+      Util.Log('Timed out user', u, 'from', ch, 'for', dur);
       $(cw).fadeOut();
     });
     $tl.append($ta);
   }
   $cw.append($tl);
-  /* Add timestamp of when the message was sent */
-  $cw.append($(`<span class="timestamp">${format_date(d.time)}</span>`));
-  /* Add user information */
-  $cw.append($(`<span class="item">User ID: ${d.userid}</span>`));
-  if (d.mod || d.vip || d.sub) {
-    let $role_line = $(`<span class="item">User Role:</span>`);
-    if (d.mod) { $role_line.append($(`<span class="em">Mod</span>`)); }
-    if (d.vip) { $role_line.append($(`<span class="em">VIP</span>`)); }
-    if (d.sub) { $role_line.append($(`<span class="em">Sub</span>`)); }
+  /* Add other information */
+  let sent_ts = format_date(time);
+  let ago_ts = format_interval((Date.now() - timestamp) / 1000);
+  $cw.append(Line(`Sent: ${sent_ts} (${ago_ts} ago)`));
+  $cw.append(Line(`UserID: ${userid}`));
+  $cw.append(Line(`MsgUID: ${id}`));
+  /* Add roles (and ability to remove roles, for the caster) */
+  if (mod || vip || sub) {
+    let $role_line = Line(`User Role:`);
+    let EmItem = (s) => $(Em(s)).css('margin-left', '0.5em');
+    if (mod) { $role_line.append(EmItem('Mod')); }
+    if (vip) { $role_line.append(EmItem('VIP')); }
+    if (sub) { $role_line.append(EmItem('Sub')); }
     $cw.append($role_line);
+    if (client.IsCaster(channel) && !client.IsUIDSelf(user_id)) {
+      if (mod) { $cw.append(Line(Link('cw-unmod', 'Remove Mod'))); }
+      if (vip) { $cw.append(Line(Link('cw-unvip', 'Remove VIP'))); }
+    }
   }
-  /*
-<div class="chat-line"
-     data-id="2839621c-0f3c-4d46-947a-891297fcf68c"
-     data-user="kaedenn_"
-     data-user-id="175437030"
-     data-channel="dwangoac"
-     data-channelid="70067886"
-     data-subscriber="1"
-     data-mod="1"
-     data-vip="0"
-     data-sent-ts="1555205340901">
- <span class="badges"
-       data-badges="1"
-       style="overflow: hidden; width: 54px; max-width: 54px">
-  <img data-badge="1"
-       src="https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1"
-       tw-badge-scope="global"
-       alt="Moderator"
-       class="badge"
-       tw-badge-cause="[&quot;moderator&quot;,&quot;1&quot;]"
-       width="18px">
-  <img data-badge="1"
-       src="https://static-cdn.jtvnw.net/badges/v1/b809b308-dffd-42e7-8f19-65aa26193303/1"
-       tw-badge="{&quot;image&quot;:&quot;https://static-cdn.jtvnw.net/badges/v1/b809b308-dffd-42e7-8f19-65aa26193303/1&quot;}"
-       tw-badge-scope="channel"
-       tw-badge-channel="dwangoac"
-       class="badge"
-       tw-badge-cause="[&quot;subscriber&quot;,&quot;12&quot;]"
-       width="18px">
-  <img data-badge="1"
-       src="https://static-cdn.jtvnw.net/badges/v1/0d85a29e-79ad-4c63-a285-3acd2c66f2ba/1"
-       tw-badge-scope="global"
-       alt="cheer 1000"
-       class="badge"
-       tw-badge-cause="[&quot;bits&quot;,&quot;1000&quot;]"
-       width="18px">
- </span>
- <span class="username"
-       data-username="1"
-       style="color: #0262C1">Kaedenn_</span>
- :&nbsp;
- <span class="message"i
-       data-message="1">test</span>
-</div>
-*/
+  /* Add the ability to add roles (for the caster) */
+  if (client.IsCaster(channel) && !client.IsUIDSelf(user_id)) {
+    if (!mod) { $cw.append(Line(Link('cw-make-mod', 'Make Mod'))); }
+    if (!vip) { $cw.append(Line(Link('cw-make-vip', 'Make VIP'))); }
+  }
   var l_off = $l.offset();
   $cw.fadeIn().offset({top: l_off.top + $l.outerHeight() + 2, left: l_off.left});
 };
@@ -767,22 +690,47 @@ function client_main() {
     window.config = config;
   }
 
+  let is_up = (k) => (k == KeyEvent.DOM_VK_UP);
+  let is_down = (k) => (k == KeyEvent.DOM_VK_DOWN);
+
   /* Sending a chat message */
   $("#txtChat").keydown(function(e) {
     if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
-      if (!handle_command(e, client, config)) {
-        client.SendMessageToAll(e.target.value);
+      /* Prevent sending empty messages by mistake */
+      if (e.target.value.trim().length > 0) {
+        if (!handle_command(e, client, config)) {
+          client.SendMessageToAll(e.target.value);
+        }
+        client.AddHistory(e.target.value);
+        $(e.target).attr("histindex", "-1");
+        e.target.value = "";
       }
-      e.target.value = "";
       e.preventDefault(); /* prevent bubbling */
       return false; /* prevent bubbling */
+    } else if (is_up(e.keyCode) || is_down(e.keyCode)) {
+      /* Handle traversing message history */
+      let i = Number.parseInt($(e.target).attr("histindex"));
+      let l = client.GetHistoryLength();
+      if (is_up(e.keyCode)) {
+        /* Going up */
+        i = (i + 1 >= l - 1 ? l - 1 : i + 1);
+      } else if (is_down(e.keyCode)) {
+        /* Going down */
+        i = (i - 1 < 0 ? -1 : i - 1);
+      }
+      e.target.value = (i > -1 ? client.GetHistoryItem(i) : "");
+      $(e.target).attr("histindex", `${i}`);
+      /* Delay moving the cursor until after the text is updated */
+      requestAnimationFrame(() => {
+        e.target.selectionStart = e.target.value.length;
+        e.target.selectionEnd = e.target.value.length;
+      });
     }
   });
 
   /* Pressing enter while on the settings box */
   $("#settings").keyup(function(e) {
     if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
-      update_settings();
       update_module_config();
       $("#settings_button").click();
     }
@@ -815,7 +763,7 @@ function client_main() {
   });
 
   /* Pressing enter on the "Channels" text box */
-  $("#txtChannel").keyup(function() {
+  $("#txtChannel").keyup(function(e) {
     let fmt_ch = (ch) => Twitch.FormatChannel(Twitch.ParseChannel(ch));
     if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
       let new_chs = $(this).val().split(",").map(fmt_ch);
@@ -854,6 +802,13 @@ function client_main() {
     }
   });
 
+  /* Changing the value for "background image" */
+  $("#txtBGImage").keyup(function(e) {
+    if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
+      $(".module").css("background-image", $(this).val());
+    }
+  });
+
   /* Changing the debug level */
   $("#selDebug").change(function() {
     var v = parseInt($(this).val());
@@ -878,11 +833,13 @@ function client_main() {
 
   /* Pressing enter on one of the module menu text boxes */
   $('.module .settings input[type="text"]').on('keyup', function(e) {
-    if ($(this).val().length > 0) {
+    let v = $(this).val();
+    if (v.length > 0) {
       if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
-        var cls = $(this).closest('li').attr('class').replace('textbox', '').trim();
-        var $li = $(`<li><label><input type="checkbox" value="${$(this).val()}" class="${cls}" checked />${$(this).closest('li').find('label').html()} ${$(this).val()}</label></li>`);
-        $(this).closest('li').before($li);
+        let $cli = $(this).closest('li');
+        var cls = $cli.attr('class').replace('textbox', '').trim();
+        var $li = $(`<li><label><input type="checkbox" value="${v}" class="${cls}" checked />${$cli.find('label').html()} ${v}</label></li>`);
+        $cli.before($li);
         $(this).val('');
         update_module_config();
       }
@@ -906,20 +863,40 @@ function client_main() {
   /* Clicking anywhere else on the document: reconnect, username context window */
   $(document).click(function(e) {
     let $t = $(e.target);
-    let pos = {top: e.clientY, left: e.clientX};
     /* Clicking on a reconnect link */
     if ($t.attr("data-reconnect") == '1') {
       add_html(`<div class="notice">Reconnecting...</div>`);
       client.Connect();
     }
     /* Clicking on a username: context window */
-    let cw = document.getElementById("username_context");
-    var $cw = $(cw);
+    let $cw = $("#username_context");
     if ($t.attr('data-username') == '1') {
       /* Clicked on a username; open context window */
-      populate_username_context_window(client, $cw, $t.parent());
-    } else if (Util.PointIsOn(e.clientX, e.clientY, cw)) {
+      show_context_window(client, $cw, $t.parent());
+    } else if (Util.PointIsOn(e.clientX, e.clientY, $cw[0])) {
       /* Clicked on the context window */
+      let ch = $cw.attr("data-channel");
+      let user = $cw.attr("data-user");
+      let userid = $cw.attr("data-userid");
+      if (!client.IsUIDSelf(userid)) {
+        if ($t.attr("id") === "cw-unmod") {
+          /* Clicked on the "unmod" link */
+          Util.Log("Unmodding", user, "in", ch, ($t == $("a#cw-unmod")));
+          client.SendMessage(ch, `/unmod ${user}`);
+        } else if ($t.attr("id") === "cw-unvip") {
+          /* Clicked on the "unvip" link */
+          Util.Log("Removing VIP for", user, "in", ch);
+          client.SendMessage(ch, `/unvip ${user}`);
+        } else if ($t.attr("id") === "cw-make-mod") {
+          /* Clicked on the "mod" link */
+          Util.Log("Modding", user, "in", ch);
+          client.SendMessage(ch, `/mod ${user}`);
+        } else if ($t.attr("id") === "cw-make-vip") {
+          /* Clicked on the "vip" link */
+          Util.Log("VIPing", user, "in", ch);
+          client.SendMessage(ch, `/vip ${user}`);
+        }
+      }
     } else {
       /* Clicked somewhere else: close context window */
       $cw.fadeOut();
@@ -930,6 +907,7 @@ function client_main() {
 
   client.bind('twitch-open', function _on_twitch_open(e) {
     let notes = [];
+    $(".loading").remove();
     if (e.has_value('has-clientid') && e.value('has-clientid')) {
       notes.push("(with Client-ID)");
     } else {
@@ -952,7 +930,7 @@ function client_main() {
     } else {
       msg = `${msg} (code ${code})`;
     }
-    add_html(`<div class="error">${msg}<span class="reconnect"><a href="javascript:void(0)" class="reconnectLink" data-reconnect="1">Reconnect</a></span></div>`);
+    add_html(`<div class="error">${msg}<span class="reconnect"><a href="javascript:void(0)" data-reconnect="1">Reconnect</a></span></div>`);
   });
 
   client.bind('twitch-notice', function _on_twitch_notice(e) {
@@ -1025,68 +1003,90 @@ function client_main() {
   /* HTML generation functions (defined here to access the client object) */
 
   /* Entry point: generate for an event (likely TwitchChatEvent) */
-  HTMLGen.gen = function _HTMLGen_gen(e) {
-    let e_cont = document.createElement('div');
-    if (client.IsSelf(e.flags["user-id"])) {
-      e_cont.setAttribute('class', 'chat-line client');
+  HTMLGen.gen = function _HTMLGen_gen(event) {
+    let $e = $(document.createElement('div'));
+    if (client.IsUIDSelf(event.flags["user-id"])) {
+      $e.addClass('chat-line self');
     } else {
-      e_cont.setAttribute('class', 'chat-line');
+      $e.addClass('chat-line');
     }
-    e_cont.setAttribute("data-id", e.flags.id);
-    e_cont.setAttribute("data-user", e.user);
-    e_cont.setAttribute("data-user-id", e.flags["user-id"]);
-    e_cont.setAttribute("data-channel", e.channel.channel.lstrip('#'));
-    if (!!e.channel.room)
-      e_cont.setAttribute("data-room", e.channel.room);
-    if (!!e.channel.roomuid)
-      e_cont.setAttribute("data-roomuid", e.channel.roomuid);
-    e_cont.setAttribute("data-channelid", e.flags["room-id"]);
-    e_cont.setAttribute("data-subscriber", e.flags.subscriber);
-    e_cont.setAttribute("data-mod", e.flags.mod);
-    e_cont.setAttribute("data-vip", e.isvip ? "1" : "0");
-    e_cont.setAttribute("data-sent-ts", e.flags["tmi-sent-ts"]);
-    e_cont.setAttribute("data-recv-ts", Date.now());
-    e_cont.appendChild(HTMLGen.genBadges(e));
-    e_cont.appendChild(HTMLGen.genName(e));
-    e_cont.innerHTML += ":&nbsp";
-    e_cont.appendChild(HTMLGen.genMsg(e));
-    return e_cont.outerHTML;
+    $e.attr("data-id", event.flags.id);
+    $e.attr("data-user", event.user);
+    $e.attr("data-user-id", event.flags["user-id"]);
+    $e.attr("data-channel", event.channel.channel.lstrip('#'));
+    if (!!event.channel.room)
+      $e.attr("data-room", event.channel.room);
+    if (!!event.channel.roomuid)
+      $e.attr("data-roomuid", event.channel.roomuid);
+    $e.attr("data-channelid", event.flags["room-id"]);
+    $e.attr("data-subscriber", event.flags.subscriber);
+    $e.attr("data-mod", event.flags.mod);
+    $e.attr("data-vip", event.isvip ? "1" : "0");
+    $e.attr("data-caster", event.flags.broadcaster ? "1" : "0");
+    $e.attr("data-sent-ts", event.flags["tmi-sent-ts"]);
+    $e.attr("data-recv-ts", Date.now());
+    let badges_elem = $(HTMLGen.genBadges(event));
+    let name_elem = $(HTMLGen.genName(event));
+    let msg_def = HTMLGen.genMsgInfo(event);
+    $e.append(badges_elem);
+    $e.append(name_elem);
+    $e.html($e.html() + ":&nbsp");
+    let html_pre = [];
+    let html_post = [];
+    if (msg_def.effects.length > 0) {
+      for (let effect of msg_def.effects) {
+        if (effect.class) msg_def.e.addClass(effect.class);
+        if (effect.style) msg_def.e.attr("style", effect.style);
+        if (effect.wclass) $e.addClass(effect.wclass);
+        if (effect.wstyle) $e.attr("style", effect.wstyle);
+        if (effect.html_pre) html_pre.push(effect.html_pre);
+        if (effect.html_post) html_post.unshift(effect.html_post);
+      }
+    }
+    $e.append($(html_pre.join("") + msg_def.e[0].outerHTML + html_post.join("")));
+    return $e[0].outerHTML;
   };
 
   /* Generate HTML for a user's name */
-  HTMLGen.genName = function _HTMLGen_genName(e) {
-    let user = e.flag("display-name");
-    if (!user) user = e.user;
-    let e_name = document.createElement('span');
-    e_name.setAttribute('class', 'username');
-    e_name.setAttribute('data-username', '1');
-    if (!!e.flags.color) {
-      e_name.setAttribute("style", `color: ${e.flags.color}`);
+  HTMLGen.genName = function _HTMLGen_genName(event) {
+    let user = event.flag("display-name");
+    if (!user) user = event.user;
+    let $e = $(document.createElement('span'));
+    $e.addClass('username');
+    $e.attr('data-username', '1');
+    if (!!event.flags.color) {
+      $e.css('color', event.flags.color);
     } else {
-      e_name.setAttribute("style", `color: ${HTMLGen.getColorFor(user)}`);
+      $e.css("color", HTMLGen.getColorFor(user));
     }
-    e_name.innerHTML = user.escape();
-    return e_name;
+    $e.html(user.escape());
+    return $e[0].outerHTML;
   };
 
-  /* Generate HTML for the message content (see chat_message_html above) */
-  HTMLGen.genMsg = function _HTMLGen_genMsg(event) {
-    Util.Log('generating for', event);
+  /* Generate HTML for the message content */
+  HTMLGen.genMsgInfo = function _HTMLGen_genMsgInfo(event) {
+    let msg_def = {e: null, effects: []};
     let e_msg = $(document.createElement('span'));
     e_msg.addClass('message');
     e_msg.attr('data-message', '1');
     var [message, map] = Util.EscapeWithMap(event.message);
+    map.push(message.length); /* Prevent off-the-end mistakes */
     /* emotes */
     if (event.flag('emotes')) {
-      let emotes = $.map(event.flags.emotes, function(e) {
-        return {'id': e.id, 'name': e.name, 'start': map[e.start], 'end': map[e.end]};
+      let emotes = event.flags.emotes.map(function(e) {
+        return {'id': e.id, 'name': e.name,
+                'start': map[e.start], 'end': map[e.end],
+                'ostart': e.start, 'oend': e.end};
       });
       emotes.sort((a, b) => a.start - b.start);
       while (emotes.length > 0) {
         var emote = emotes.pop();
-        message = place_emote(message, emote);
+        var msg_start = message.substr(0, emote.start);
+        var msg_end = message.substr(emote.end+1);
+        var emote_str = HTMLGen.emote(emote);
+        message = `${msg_start}${emote_str}${msg_end}`;
         /* Shift the entire map to keep track */
-        for (let idx = emote.start; idx < map.length; ++idx) {
+        for (let idx = emote.ostart; idx < map.length; ++idx) {
           if (map[idx] < emote.end) {
             /* All characters within the emote point to the emote's end */
             map[idx] = emote.final_length;
@@ -1097,23 +1097,43 @@ function client_main() {
         }
       }
     }
-    /* TODO: FFZ emotes */
-    /* TODO: BTTV emotes */
+    /* TODO: FFZ emotes (dwango has none) */
+    /* TODO: BTTV emotes (dwango has none) */
     /* cheers */
-    /* TODO: fix, fix cheer formatting */
     if (event.flag('bits') && event.flag('bits') > 0) {
       let bits_left = event.flag('bits');
-      for (let match of client.FindCheers(event.channel.channel, event.message)) {
+      let matches = client.FindCheers(event.channel.channel, event.message);
+      matches.sort((a, b) => a.start - b.start);
+      while (matches.length > 0) {
+        let match = matches.pop();
         let cheer = match.cheer;
         let bits = match.bits;
-        let start = map[match.start]+1;
-        let end = map[match.end]+1;
-        console.log('Cheer', bits, "from", start, "to", end, ":", cheer);
-        let $c = HTMLGen.cheer(cheer, bits).outerHTML;
-        let offset = $c.length;
-        message = message.substr(0, map[start]) + $c + message.substr(map[end]);
-        /* TODO: update the map  */
-        console.log("Generated cheer HTML", $c);
+        let start = map[match.start];
+        let end = map[match.end];
+        let chtml = HTMLGen.cheer(cheer, bits);
+        /* Place the cheer HTML in the proper spot */
+        let msg_start = message.substr(0, start);
+        let msg_end = message.substr(end);
+        message = msg_start + chtml + msg_end;
+        let end_words = msg_end.trimStart().split(" ");
+        /* Scan words after the cheer for effects */
+        while (end_words.length > 0) {
+          let s = null;
+          /* css_styles and ColorNames have our valid styles */
+          if (css_styles.hasOwnProperty(end_words[0])) {
+            s = css_styles[end_words[0]];
+          } else if (ColorNames.hasOwnProperty(end_words[0])) {
+            s = css_color_style(ColorNames[end_words[0]]);
+          }
+          if (s == null) break;
+          if (!s._disabled) {
+            if (bits_left < s.cost) break;
+            Util.Log("Adding effect", s);
+            msg_def.effects.push(s);
+            bits_left -= s.cost;
+          }
+          end_words.shift();
+        }
       }
     }
     /* @user highlighting */
@@ -1139,66 +1159,70 @@ function client_main() {
       return `<a href="${u}" target="_blank">${u}</a>`;
     });*/
     e_msg.html(message);
-    return e_msg[0];
+    msg_def.e = e_msg;
+    return msg_def;
   };
 
   /* Generate HTML for the user's badges */
-  HTMLGen.genBadges = function _HTMLGen_genBadges(e) {
-    let e_badges = document.createElement('span');
-    e_badges.setAttribute('class', 'badges');
-    e_badges.setAttribute('data-badges', '1');
-    if (e.flags.badges) {
-      let total_width = 18 * e.flags.badges.length;
-      if (e.flags['ffz-badges']) {
-        total_width += 18 * e.flags['ffz-badges'].length;
+  HTMLGen.genBadges = function _HTMLGen_genBadges(event) {
+    let $bc = $(document.createElement('span'));
+    $bc.addClass('badges');
+    $bc.attr('data-badges', '1');
+    if (event.flags.badges) {
+      let total_width = 18 * event.flags.badges.length;
+      if (event.flags['ffz-badges']) {
+        total_width += 18 * event.flags['ffz-badges'].length;
       }
-      e_badges.setAttribute("style", `overflow: hidden; width: ${total_width}px; max-width: ${total_width}px`);
-      for (let [badge_name, badge_num] of e.flags.badges) {
-        let e_badge = document.createElement('img');
-        e_badge.setAttribute('width', '18');
-        e_badge.setAttribute('height', '18');
-        e_badge.setAttribute('data-badge', '1');
+      $bc.css("overflow", `hidden`);
+      $bc.css("width", `${total_width}px`);
+      $bc.css("max-width", `${total_width}px`);
+      for (let [badge_name, badge_num] of event.flags.badges) {
+        let $b = $(document.createElement('img'));
+        $b.addClass('badge');
+        $b.attr('width', '18px');
+        $b.attr('height', '18px');
+        $b.attr('tw-badge-cause', JSON.stringify([badge_name, badge_num]));
+        $b.attr('data-badge', '1');
+        $b.attr('data-badge-name', badge_name);
+        $b.attr('data-badge-num', badge_num);
         if (client.IsGlobalBadge(badge_name, badge_num)) {
           let badge_info = client.GetGlobalBadge(badge_name, badge_num);
-          e_badge.setAttribute('src', badge_info.image_url_1x);
-          e_badge.setAttribute('tw-badge-scope', 'global');
-          e_badge.setAttribute('alt', badge_info.title);
-        } else if (client.IsChannelBadge(e.channel, badge_name)) {
-          let badge_info = client.GetChannelBadge(e.channel, badge_name);
+          $b.attr('src', badge_info.image_url_1x);
+          $b.attr('tw-badge-scope', 'global');
+          $b.attr('alt', badge_info.title);
+        } else if (client.IsChannelBadge(event.channel, badge_name)) {
+          let badge_info = client.GetChannelBadge(event.channel, badge_name);
           let badge_src = !!badge_info.alpha ? badge_info.alpha : badge_info.image;
-          e_badge.setAttribute('src', badge_src);
-          e_badge.setAttribute('tw-badge', JSON.stringify(badge_info));
-          if (!!e.channel) {
-            e_badge.setAttribute('tw-badge-scope', 'channel');
-            e_badge.setAttribute('tw-badge-channel', e.channel.channel.lstrip('#'));
+          $b.attr('src', badge_src);
+          $b.attr('tw-badge', JSON.stringify(badge_info));
+          if (!!event.channel) {
+            $b.attr('tw-badge-scope', 'channel');
+            $b.attr('tw-badge-channel', event.channel.channel.lstrip('#'));
           }
         } else {
-          console.warn('Unknown badge', badge_name, badge_num, 'for', e);
+          console.warn('Unknown badge', badge_name, badge_num, 'for', event);
           continue;
         }
-        e_badge.setAttribute('width', '18px');
-        e_badge.setAttribute('class', 'badge');
-        e_badge.setAttribute('tw-badge-cause', JSON.stringify([badge_name, badge_num]));
-        e_badges.appendChild(e_badge);
+        $bc.append($b);
       }
     }
     /* Add FFZ badges */
-    if (e.flags['ffz-badges']) {
-      for (let badge of Object.values(e.flags['ffz-badges'])) {
-        let e_badge = $(document.createElement('img'));
-        e_badge.attr('width', '18');
-        e_badge.attr('height', '18');
-        e_badge.attr('data-badge', '1');
-        e_badge.attr('data-ffz-badge', '1');
-        e_badge.attr('src', Util.URL(badge.image));
-        e_badge.attr('alt', badge.name);
-        e_badge.attr('title', badge.title);
-        e_badges.appendChild(e_badge[0]);
+    if (event.flags['ffz-badges']) {
+      for (let badge of Object.values(event.flags['ffz-badges'])) {
+        let $b = $(document.createElement('img'));
+        $b.attr('width', '18');
+        $b.attr('height', '18');
+        $b.attr('data-badge', '1');
+        $b.attr('data-ffz-badge', '1');
+        $b.attr('src', Util.URL(badge.image));
+        $b.attr('alt', badge.name);
+        $b.attr('title', badge.title);
+        $bc.append($b);
       }
     }
     /* TODO: add BTTV badges */
 
-    return e_badges;
+    return $bc;
   };
 
   HTMLGen.sub = function _HTMLGen_sub(e) {
@@ -1228,6 +1252,13 @@ function client_main() {
     return `${e.command}: ${gifter} gifted to ${user} ${months}`;
   };
 
+  HTMLGen.badgeImage = function(badge_name, badge_num) {
+    let $i = $(`<img />`);
+    $i.attr("src", client.GetGlobalBadge(badge_name, badge_num).image_url_1x);
+    return $i;
+  };
+
   /* Finally, connect */
   client.Connect();
 }
+
