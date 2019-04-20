@@ -85,6 +85,49 @@ HTMLGen.cheer = function _HTMLGen_cheer(cheer, bits) {
 
 /* Begin configuration section {{{0 */
 
+/* Parse a module configuration from a query string key and value */
+function decode_module_config(key, value) {
+  let parts = value.split(',');
+  let UnEscComma = (s) => (s.replace(/%2c/g, ','));
+  let ParseSet = (p) => (p.split(',').map((e) => UnEscComma(e)).filter((e) => e.length > 0));
+  if (parts.length < 6) {
+    Util.Error("Failed to decode module config: not enough parts", value);
+    return null;
+  }
+  if (parts[1].length < 6) {
+    Util.Error("Module flags not long enough", part[1], value);
+  }
+  let config = {};
+  config[key] = {};
+  config[key].Name = UnEscComma(parts[0]);
+  config[key].Pleb = parts[1][0] == "1";
+  config[key].Sub = parts[1][1] == "1";
+  config[key].VIP = parts[1][2] == "1";
+  config[key].Mod = parts[1][3] == "1";
+  config[key].Event = parts[1][4] == "1";
+  config[key].Bits = parts[1][5] == "1";
+  config[key].IncludeKeyword = ParseSet(parts[2]);
+  config[key].IncludeUser = ParseSet(parts[3]);
+  config[key].ExcludeUser = ParseSet(parts[4]);
+  config[key].ExcludeStartsWith = ParseSet(parts[5]);
+  return config;
+}
+
+/* Encode a module configuration into a query string "key=value" */
+function encode_module_config(name, config) {
+  let cfg = config[name];
+  let parts = [];
+  let EscComma = (s) => (s.replace(/,/g, '%2c'));
+  let B = (b) => (b ? "1" : "0");
+  parts.push(EscComma(cfg.Name));
+  parts.push(B(cfg.Pleb) + B(cfg.Sub) + B(cfg.VIP) + B(cfg.Mod) + B(cfg.Event) + B(cfg.Bits));
+  parts.push(cfg.IncludeKeyword.map((e) => EscComma(e)).join(","));
+  parts.push(cfg.IncludeUser.map((e) => EscComma(e)).join(","));
+  parts.push(cfg.ExcludeUser.map((e) => EscComma(e)).join(","));
+  parts.push(cfg.ExcludeStartsWith.map((e) => EscComma(e)).join(","));
+  return `${name}=${encodeURIComponent(parts.join(","))}`;
+}
+
 /* 1) Obtain configuration
  *  a) values from localStorage
  *  b) values from settings elements (overrides (a))
@@ -191,6 +234,12 @@ function get_config_object() {
       key = "NoBTTV";
     } else if (k == "hmax") {
       key = "HistorySize";
+    } else if (k == "module1") {
+      val = decode_module_config(k, v).module1;
+      set_module_settings($("#" + k), val);
+    } else if (k == "module2") {
+      val = decode_module_config(k, v).module2;
+      set_module_settings($("#" + k), val);
     }
     config[key] = val;
   }
@@ -463,6 +512,8 @@ function handle_command(e, client, config) {
         if (config.NoFFZ) { qs_push('noffz', config.NoFFZ); }
         if (config.NoBTTV) { qs_push('nobttv', config.NoBTTV); }
         if (config.HistorySize) { qs_push('hmax', config.HistorySize); }
+        qs.push(encode_module_config('module1', config));
+        qs.push(encode_module_config('module2', config));
         url += qs.join("&");
         add_help(`<a href="${url}" target="_blank">${url.escape()}</a>`);
       } else if (config.hasOwnProperty(tokens[0])) {
