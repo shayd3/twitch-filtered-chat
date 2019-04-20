@@ -180,7 +180,7 @@ function get_config_object() {
       query_remove.push(k);
     } else if (k == "channels") {
       key = "Channels";
-      val = v.split(',').map(Twitch.FormatChannel);
+      val = v.split(',').map((c) => Twitch.FormatChannel(c));
     } else if (k == "debug") {
       key = "Debug";
       if (!val) { val = 0; }
