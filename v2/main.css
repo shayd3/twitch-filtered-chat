@@ -1,27 +1,23 @@
 :root {
-  /* Default colors */
+  /* Default colors (change here) */
   --body-color-default: #0E0E0E;
   --header-color-default: #191919;
   --menudiv-color-default: #f0f0f0;
-  --module-settings-color-default: #333333;
   --disabled-color-default: #dddddd;
   --odd-line-color-default: #303030;
   --sub-color-default: #404040;
   --chat-color-default: #0e0e0e;
   --textarea-color-default: #1a1a1a;
-  /*--settings-color-default: #555555;*/
 
   /* Configured colors (changed by JS) */
   --body-color: var(--body-color-default);
   --header-color: var(--header-color-default);
   --menudiv-color: var(--menudiv-color-default);
-  /*--module-settings-color: var(--module-settings-color-default);*/
   --disabled-color: var(--disabled-color-default);
   --odd-line-color: var(--odd-line-color-default);
   --sub-color: var(--sub-color-default);
   --chat-color: var(--chat-color-default);
   --textarea-color: var(--textarea-color-default);
-  /*--settings-color: var(--settings-color-default);*/
 }
 
 *, *:before, *:after {
@@ -37,7 +33,7 @@ html, body {
   width: 100%;
   height: 100%;
   font-size: 18px;
-  color: #ccc;
+  color: #cccccc;
 }
 
 input {
@@ -46,7 +42,7 @@ input {
 }
 
 body {
-  background-color: var(--body-color, '#0e0e0e');
+  background-color: var(--body-color, var(--body-color-default));
 }
 
 #wrapper { }
@@ -75,12 +71,12 @@ body {
 #wrapper .column .module .header {
   height: 2.2em;
   line-height: 2em;
-  border-bottom: 2px ridge #666;
+  border-bottom: 2px ridge #666666;
   position: absolute;
   width: 100%;
   top: 0;
   left: 0;
-  background-color: var(--header-color, #191919);
+  background-color: var(--header-color, var(--header-color-default));
 }
 
 .menu {
@@ -94,7 +90,7 @@ body {
   margin-top: 15%;
   height: 3px;
   border-radius: 2px;
-  background-color: var(--menudiv-color, #f0f0f0);
+  background-color: var(--menudiv-color, var(--menudiv-color-default));
 }
 
 .module .header label {
@@ -156,14 +152,12 @@ body {
 .module .settings {
   position: absolute;
   top: 2.2em;
-  background-color: var(--module-settings-color, #333333);
+  background-color: #333333;
   width: 100%;
   line-height: 1.5em;
   padding: 0.5em;
-  border-bottom: 2px ridge #666;
+  border-bottom: 2px ridge #666666;
   display: none;
-  /*max-height: 75%;
-  overflow: auto;*/
 }
 
 .module .settings ul {
@@ -194,29 +188,9 @@ body {
   font-size: 0.9em;
 }
 
-/*
-.module .settings {
-  max-height: 37.4%;
-}
-*/
-
 input:disabled {
-  background-color: var(--disabled-color, #dddddd);
+  background-color: var(--disabled-color, var(--disabled-color-default));
 }
-
-/*
-.module .header.open label.name {
-  display: none;
-}
-
-.module .header.open input.name {
-  display: inline-block;
-}
-
-.module .header.open ~ .settings {
-  display: block;
-}
-*/
 
 .module .content {
   padding: 2.2em 0 0 0;
@@ -240,7 +214,7 @@ input:disabled {
 }
 
 .module .content .line-wrapper:nth-child(2n) {
-  background-color: var(--odd-line-color, #303030);
+  background-color: var(--odd-line-color, var(--odd-line-color-default));
 }
 
 .module .content .chat-line.self {
@@ -265,15 +239,13 @@ input:disabled {
   font-weight: bold;
 }
 
-/* FIXME: Better colors */
 .module .content .line .notice {
-  border: 2px inset yellow;
+  border: 2px solid yellow;
   font-weight: bold;
 }
 
-/* FIXME: Better colors */
 .module .content .line .error {
-  border: 2px inset red;
+  border: 2px solid red;
   font-weight: bold;
 }
 
@@ -296,12 +268,12 @@ img.badge {
 }
 
 .module .content p.sub {
-  background-color: var(--sub-color, #404040);
+  background-color: var(--sub-color, var(--sub-color-default));
   color: #999999;
 }
 
 .module .content a {
-  color: #999;
+  color: #999999;
   text-decoration: none;
 }
 
@@ -321,18 +293,18 @@ img.badge {
   position: absolute;
   width: 100%;
   bottom: 0;
-  border-top: 1px solid #666;
+  border-top: 1px solid #666666;
   padding: 10px;
   height: 6em;
-  background-color: var(--chat-color, #0E0E0E);
+  background-color: var(--chat-color, var(--chat-color-default));
 }
 
 #chat textarea {
   display: block;
   width: 100%;
   height: 100%;
-  border: 2px ridge #444;
-  background-color: var(--textarea-color, #1a1a1a);
+  border: 2px ridge #444444;
+  background-color: var(--textarea-color, var(--textarea-color-default));
   padding: 4px;
   color: #f0f0f0;
   font-size: 1em;
@@ -344,23 +316,23 @@ img.badge {
 }
 
 #settings {
-  color: #ddd;
+  color: #dddddd;
   position: fixed;
   top: 0;
   right: 0;
   width: 100%;
   display: none;
-  background-color: var(--settings-color, #555555);
+  background-color: #555555;
   padding: 10px;
-  border-left: 1px solid #888;
-  border-bottom: 1px solid #888;
+  border-left: 1px solid #888888;
+  border-bottom: 1px solid #888888;
 }
 
 #settings header {
   line-height: 30px;
   font-size: 1.5em;
   padding-bottom: 0.2em;
-  border-bottom: solid 1px #aaa;
+  border-bottom: solid 1px #aaaaaa;
 }
 
 #settings ul {
@@ -388,7 +360,7 @@ img.badge {
 #settings footer {
   line-height: 30px;
   padding-top: 0.2em;
-  border-top: solid 1px #aaa;
+  border-top: solid 1px #aaaaaa;
 }
 
 #settings footer a {

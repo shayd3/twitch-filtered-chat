@@ -284,7 +284,7 @@ $("#txtChatFocus").remove();
 /* Once the document is loaded, wait for the scripts, then do layout */
 $(document).ready(function() {
   /* Wait until everything is loaded */
-  let layout = {};
+  let layout = null;
   /* Get layout information from the query string */
   let qs = document.location.search.substr(1).split('&').map((v) => v.split('='));
   qs = qs.map(([k, v]) => [k, (!!v ? decodeURIComponent(v) : null)]);
@@ -292,6 +292,9 @@ $(document).ready(function() {
     if (k === "layout") {
       layout = ParseLayout(v);
     }
+  }
+  if (layout == null) {
+    layout = ParseLayout("double:chat");
   }
   function wait_for_load() {
     if (AreAllAssetsLoaded()) {

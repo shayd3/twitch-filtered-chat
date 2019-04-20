@@ -5,8 +5,6 @@
 /* TODO:
  * Implement subs HTMLGen
  * Implement host/raid HTMLGen
- * Implement cheers
- * Implement cheer effects
  * Implement FFZ emotes
  * Implement BTTV emotes
  * Populate context window with more things
@@ -15,7 +13,7 @@
  * Fix formatting for "@user" (user @ highlights)
  * Fix URL formatting with emotes (URLs in emotes are formatted)
  *
- * FIXME SECURITY:
+ * XXX SECURITY (are we really okay with this?):
  * Anyone can call get_config_object()
  * Anyone can read localStorage.config
  * Anyone who can execute JS can grab both authid and clientid
@@ -131,7 +129,7 @@ function get_config_object() {
   let selDebug = $('select#selDebug')[0];
   if (txtChannel.value) {
     for (var ch of txtChannel.value.split(',')) {
-      var channel = Twitch.FormatChannel(ch);
+      var channel = Twitch.FormatChannel(ch.toLowerCase());
       if (config.Channels.indexOf(channel) == -1) {
         config.Channels.push(channel);
       }
@@ -437,7 +435,6 @@ function handle_command(e, client, config) {
       e.html("");
     }
   } else if (cmd == "//config") {
-    add_help(`Configuration:`);
     if (tokens.length > 0) {
       if (tokens[0] == "clientid") {
         add_helpline("ClientID", config.ClientID);
@@ -445,7 +442,29 @@ function handle_command(e, client, config) {
         add_helpline("Pass", config.Pass);
       } else if (tokens[0] == "purge") {
         Util.SetWebStorage({});
-        add_html(`<div class="notice">Purged local storage key "${Util.GetWebStorageKey()}"</div>`);
+        add_html(`<div class="notice">Purged storage"${Util.GetWebStorageKey()}"</div>`);
+      } else if (tokens[0] == "url") {
+        let url = location.protocol + '//' + location.hostname + location.pathname + "?";
+        if (tokens.length > 1) {
+          if (tokens[1].startsWith('git')) {
+            url = "https://kaedenn.github.io/twitch-filtered-chat/v2/index.html";
+          } else if (tokens[1].startsWith('file')) {
+            url = "file:///home/kaedenn/Programming/twitch-filtered-chat/v2/index.html";
+          }
+        }
+        let qs = [];
+        let qs_push = (k, v) => (qs.push(`${k}=${encodeURIComponent(v)}`));
+        if (config.Debug > 0) { qs_push('debug', config.Debug); }
+        if (config.ClientID.length == 30) { qs_push('clientid', config.ClientID); }
+        if (config.Channels.length > 0) { qs_push('channels', config.Channels.join(",")); }
+        if (config.Name.length > 0) { qs_push('user', config.Name); }
+        if (config.Pass.length > 0) { qs_push('pass', config.Pass); }
+        if (config.NoAssets) { qs_push('noassets', config.NoAssets); }
+        if (config.NoFFZ) { qs_push('noffz', config.NoFFZ); }
+        if (config.NoBTTV) { qs_push('nobttv', config.NoBTTV); }
+        if (config.HistorySize) { qs_push('hmax', config.HistorySize); }
+        url += qs.join("&");
+        add_help(`<a href="${url}" target="_blank">${url.escape()}</a>`);
       } else if (config.hasOwnProperty(tokens[0])) {
         add_helpline(tokens[0], JSON.stringify(config[tokens[0]]));
       } else {
@@ -505,6 +524,7 @@ function handle_command(e, client, config) {
     }
     add_html(`<div class="notice allbadges">${all_badges.join('&nbsp;')}</div>`);
   } else if (cmd == "//help") {
+    if (tokens.length > 0 && tokens[0].startsWith('//')) tokens[0] = tokens[0].substr(2);
     if (tokens.length == 0) {
       var lines = [];
       lines.push([`clear`, `clears all chat windows of their contents`]);
@@ -528,6 +548,9 @@ function handle_command(e, client, config) {
       add_help(`//config clientid: Display current ClientID`);
       add_help(`//config oauth: Display current OAuth token`);
       add_help(`//config purge: Purge the current key from localStorage`);
+      add_help(`//config url: Generate a URL from the current configuration (CONTAINS AUTHID)`);
+      add_help(`//config url git: As above, but target https://kaedenn.github.io`);
+      add_help(`//config url file: As above, but target file:///home/kaedenn`);
       add_help(`//config &lt;${arg("key")}&gt;: Display configuration item &lt;${arg("key")}&gt;`);
     } else if (tokens[0] == "join") {
       add_help(`//join &lt;${arg("ch")}&gt;: Join the specified channel. Channel may or may not include leading #`);
@@ -631,6 +654,14 @@ function show_context_window(client, cw, line) {
     $tl.append($ta);
   }
   $cw.append($tl);
+  /* Add link which populates "/ban <user>" into the chat */
+  let $ba = $(Link(`cw-ban-${user}`, "Ban"));
+  $ba.attr("data-channel", channel);
+  $ba.attr("data-user", user);
+  $ba.click(function() {
+    $("#txtChat").val(`/ban ${$(this).attr('data-user')}`);
+  });
+  $cw.append($ba);
   /* Add other information */
   let sent_ts = format_date(time);
   let ago_ts = format_interval((Date.now() - timestamp) / 1000);
@@ -918,7 +949,9 @@ function client_main() {
     } else {
       notes.push("(unauthenticated)");
     }
-    add_html(`<div class="notice">Connected ${notes.join(" ")}</div>`);
+    if (!Util.Browser.IsOBS) {
+      add_html(`<div class="notice">Connected ${notes.join(" ")}</div>`);
+    }
   });
 
   client.bind('twitch-close', function _on_twitch_close(e) {
