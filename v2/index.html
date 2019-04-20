@@ -172,15 +172,6 @@ function AreAllAssetsLoaded() {
   return true;
 }
 
-/* Waits for cond to be true, then calls callback */
-function wait_for_load(cond, callback) {
-  if (cond()) {
-    callback();
-  } else {
-    window.setTimeout(wait_for_load, 100);
-  }
-}
-
 /* Function to generate a window */
 function make_window(id, classname, name) {
   return $(`
@@ -307,7 +298,14 @@ $(document).ready(function() {
       layout = ParseLayout(v);
     }
   }
-  wait_for_load(AreAllAssetsLoaded, function() { index_main(layout); });
+  function wait_for_load() {
+    if (AreAllAssetsLoaded()) {
+      index_main(layout);
+    } else {
+      window.setTimeout(wait_for_load, 100);
+    }
+  }
+  window.setTimeout(wait_for_load, 100);
 });
   </script>
 </head>
