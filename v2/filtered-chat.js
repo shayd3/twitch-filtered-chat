@@ -514,6 +514,11 @@ function handle_command(e, client, config) {
         if (config.HistorySize) { qs_push('hmax', config.HistorySize); }
         qs.push(encode_module_config('module1', config));
         qs.push(encode_module_config('module2', config));
+        let layout = ["single", "chat"];
+        if (config.Layout.Cols == 2) layout[0] = "double";
+        if (config.Layout.Chat == false) layout[1] = "nochat";
+        if (config.Layout.Slim == true) layout[1] = "slim";
+        qs_push("layout", layout[0] + ":" + layout[1]);
         url += qs.join("&");
         add_help(`<a href="${url}" target="_blank">${url.escape()}</a>`);
       } else if (config.hasOwnProperty(tokens[0])) {
@@ -745,6 +750,7 @@ function show_context_window(client, cw, line) {
 function client_main(layout) {
   let config = get_config_object();
   let client = new TwitchClient(config);
+  config.Layout = layout;
   Util.DebugLevel = config.Debug;
 
   /* Change the document title to show our authentication state */
