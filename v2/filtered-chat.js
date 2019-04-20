@@ -27,7 +27,7 @@ var TEST_MESSAGES = {
   'CHEER': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;bits=400;color=#0262C1;display-name=Kaedenn_;emotes=25:14-18/3:29-30/153556:41-48;flags=;id=6ba8dc82-000f-4da6-9131-d69233b14e41;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555701270187;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :test cheer100 Kappa cheer100 :D cheer100 BlessRNG cheer100 test\r\n",
   'CHEER2': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;bits=400;color=#0262C1;display-name=Kaedenn_;emotes=25:14-18/3:29-30/153556:41-48;flags=;id=6ba8dc82-000f-4da6-9131-d69233b14e41;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555701270187;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :&&&& cheer100 Kappa cheer100 :D cheer100 BlessRNG cheer100 test\r\n",
   'EFFECT': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;bits=100;color=#0262C1;display-name=Kaedenn_;flags=;id=6ba8dc82-000f-4da6-9131-d69233b14e41;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555701270187;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :cheer100 rainbow bold marquee Hi!\r\n",
-  'SUB': "@badge-info=;badges=staff/1,broadcaster/1,turbo/1;color=#008000;display-name=ronni;emotes=;id=db25007f-7a18-43eb-9379-80131e44d633;login=ronni;mod=0;msg-id=resub;msg-param-cumulative-months=6;msg-param-streak-months=2;msg-param-should-share-streak=1;msg-param-sub-plan=Prime;msg-param-sub-plan-name=Prime;room-id=70067886;subscriber=1;system-msg=ronni\shas\ssubscribed\sfor\s6\smonths!;tmi-sent-ts=1507246572675;turbo=1;user-id=1337;user-type=staff :tmi.twitch.tv USERNOTICE #dwangoac :Great stream -- keep it up!\r\n",
+  'SUB': "@badge-info=;badges=staff/1,broadcaster/1,turbo/1;color=#008000;display-name=ronni;emotes=;id=db25007f-7a18-43eb-9379-80131e44d633;login=ronni;mod=0;msg-id=resub;msg-param-cumulative-months=6;msg-param-streak-months=2;msg-param-should-share-streak=1;msg-param-sub-plan=Prime;msg-param-sub-plan-name=Prime;room-id=70067886;subscriber=1;system-msg=ronni\\shas\\ssubscribed\\sfor\\s6\\smonths!;tmi-sent-ts=1507246572675;turbo=1;user-id=1337;user-type=staff :tmi.twitch.tv USERNOTICE #dwangoac :Great stream -- keep it up!\r\n",
   'GIFTSUB': ""
 };
 
@@ -38,6 +38,8 @@ function inject_message(msg) {
 }
 /* END TODO: REMOVE 0}}} */
 
+const CLIENT_ID = [49,101,52,55,97,98,108,48,115,103,52,50,105,110,116,104
+                   53,48,119,106,101,114,98,122,120,104,57,109,98,115];
 const CACHED_VALUE = "Cached";
 const AUTOGEN_VALUE = "Auto-Generated";
 var HTMLGen = {};
@@ -268,6 +270,10 @@ function get_config_object() {
     window.location.search = new_qs;
   }
 
+  if (!config.ClientID) {
+    config.ClientID = CLIENT_ID.map((n) => Util.ASCII[n]).join("");
+  }
+
   return config;
 }
 
@@ -493,7 +499,7 @@ function handle_command(e, client, config) {
         Util.SetWebStorage({});
         add_html(`<div class="notice">Purged storage"${Util.GetWebStorageKey()}"</div>`);
       } else if (tokens[0] == "url") {
-        let url = location.protocol + '//' + location.hostname + location.pathname + "?";
+        let url = location.protocol + '//' + location.hostname + location.pathname;
         if (tokens.length > 1) {
           if (tokens[1].startsWith('git')) {
             url = "https://kaedenn.github.io/twitch-filtered-chat/v2/index.html";
@@ -514,12 +520,12 @@ function handle_command(e, client, config) {
         if (config.HistorySize) { qs_push('hmax', config.HistorySize); }
         qs.push(encode_module_config('module1', config));
         qs.push(encode_module_config('module2', config));
-        let layout = ["single", "chat"];
-        if (config.Layout.Cols == 2) layout[0] = "double";
+        let layout = [config.Layout.Cols, "chat"];
+        if (config.Layout.Cols == "double") layout[0] = "double";
         if (config.Layout.Chat == false) layout[1] = "nochat";
         if (config.Layout.Slim == true) layout[1] = "slim";
         qs_push("layout", layout[0] + ":" + layout[1]);
-        url += qs.join("&");
+        url += "?" + qs.join("&");
         add_help(`<a href="${url}" target="_blank">${url.escape()}</a>`);
       } else if (config.hasOwnProperty(tokens[0])) {
         add_helpline(tokens[0], JSON.stringify(config[tokens[0]]));
