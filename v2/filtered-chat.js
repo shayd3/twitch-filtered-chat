@@ -504,7 +504,7 @@ function handle_command(e, client, config) {
         let qs = [];
         let qs_push = (k, v) => (qs.push(`${k}=${encodeURIComponent(v)}`));
         if (config.Debug > 0) { qs_push('debug', config.Debug); }
-        if (config.ClientID.length == 30) { qs_push('clientid', config.ClientID); }
+        if (config.ClientID && config.ClientID.length == 30) { qs_push('clientid', config.ClientID); }
         if (config.Channels.length > 0) { qs_push('channels', config.Channels.join(",")); }
         if (config.Name.length > 0) { qs_push('user', config.Name); }
         if (config.Pass.length > 0) { qs_push('pass', config.Pass); }
