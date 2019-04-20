@@ -772,9 +772,11 @@ function client_main() {
       let to_part = old_chs.filter((c) => new_chs.indexOf(c) == -1);
       for (let ch of to_join) {
         client.JoinChannel(ch);
+        add_html(`<span class="notice">Joining ${ch}</span>`);
       }
       for (let ch of to_part) {
         client.LeaveChannel(ch);
+        add_html(`<span class="notice">Leaving ${ch}</span>`);
       }
     }
   });
