@@ -506,8 +506,8 @@ function handle_command(e, client, config) {
         if (config.Debug > 0) { qs_push('debug', config.Debug); }
         if (config.ClientID && config.ClientID.length == 30) { qs_push('clientid', config.ClientID); }
         if (config.Channels.length > 0) { qs_push('channels', config.Channels.join(",")); }
-        if (config.Name.length > 0) { qs_push('user', config.Name); }
-        if (config.Pass.length > 0) { qs_push('pass', config.Pass); }
+        if (config.Name && config.Name.length > 0) { qs_push('user', config.Name); }
+        if (config.Pass && config.Pass.length > 0) { qs_push('pass', config.Pass); }
         if (config.NoAssets) { qs_push('noassets', config.NoAssets); }
         if (config.NoFFZ) { qs_push('noffz', config.NoFFZ); }
         if (config.NoBTTV) { qs_push('nobttv', config.NoBTTV); }
