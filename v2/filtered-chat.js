@@ -27,7 +27,7 @@ var TEST_MESSAGES = {
   'CHEER': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;bits=400;color=#0262C1;display-name=Kaedenn_;emotes=25:14-18/3:29-30/153556:41-48;flags=;id=6ba8dc82-000f-4da6-9131-d69233b14e41;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555701270187;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :test cheer100 Kappa cheer100 :D cheer100 BlessRNG cheer100 test\r\n",
   'CHEER2': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;bits=400;color=#0262C1;display-name=Kaedenn_;emotes=25:14-18/3:29-30/153556:41-48;flags=;id=6ba8dc82-000f-4da6-9131-d69233b14e41;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555701270187;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :&&&& cheer100 Kappa cheer100 :D cheer100 BlessRNG cheer100 test\r\n",
   'EFFECT': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;bits=100;color=#0262C1;display-name=Kaedenn_;flags=;id=6ba8dc82-000f-4da6-9131-d69233b14e41;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555701270187;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :cheer100 rainbow bold marquee Hi!\r\n",
-  'SUB': "",
+  'SUB': "@badge-info=;badges=staff/1,broadcaster/1,turbo/1;color=#008000;display-name=ronni;emotes=;id=db25007f-7a18-43eb-9379-80131e44d633;login=ronni;mod=0;msg-id=resub;msg-param-cumulative-months=6;msg-param-streak-months=2;msg-param-should-share-streak=1;msg-param-sub-plan=Prime;msg-param-sub-plan-name=Prime;room-id=70067886;subscriber=1;system-msg=ronni\shas\ssubscribed\sfor\s6\smonths!;tmi-sent-ts=1507246572675;turbo=1;user-id=1337;user-type=staff :tmi.twitch.tv USERNOTICE #dwangoac :Great stream -- keep it up!\r\n",
   'GIFTSUB': ""
 };
 
@@ -742,7 +742,7 @@ function show_context_window(client, cw, line) {
 };
 
 /* Called once when the document loads */
-function client_main() {
+function client_main(layout) {
   let config = get_config_object();
   let client = new TwitchClient(config);
   Util.DebugLevel = config.Debug;
@@ -1000,7 +1000,7 @@ function client_main() {
     } else {
       notes.push("(unauthenticated)");
     }
-    if (!Util.Browser.IsOBS) {
+    if (!Util.Browser.IsOBS && !layout.Slim) {
       add_html(`<div class="notice">Connected ${notes.join(" ")}</div>`);
     }
   });
@@ -1313,17 +1313,25 @@ function client_main() {
     return $bc;
   };
 
+  HTMLGen.subWrapper = function _HTMLGen_subWrapper(e) {
+    let $e = $(document.createElement("div"));
+    $e.addClass("chat-line").addClass("sub").addClass("notice");
+    $e.append($(HTMLGen.genBadges(e)));
+    $e.append($(HTMLGen.genName(e)));
+    $e.html($e.html() + "&nbsp;");
+    return $e;
+  };
+
   HTMLGen.sub = function _HTMLGen_sub(e) {
-    /* NOTE: months is undefined for first-time or twitch-prime */
-    let user = e.flag('login');
-    let months = e.flag('msg-param-sub-months');
-    return `${e.command}: ${user} ${months}`;
+    let $w = HTMLGen.subWrapper(e);
+    $w.append($(`<span class="message sub-message">subscribed using ${e.value('sub_plan').escape()}!</span>`));
+    return $w[0].outerHTML;
   };
 
   HTMLGen.resub = function _HTMLGen_resub(e) {
-    let user = e.flag('login');
-    let months = e.flag('msg-param-sub-months');
-    return `${e.command}: ${user} resubscribed for ${months}`;
+    let $w = HTMLGen.subWrapper(e);
+    $w.append($(`<span class="message sub-message">resubscribed for ${e.value('sub_months')} months, a streak of ${e.value('sub_streak_months')} months!</span>`));
+    return $w[0].outerHTML;
   };
 
   HTMLGen.giftsub = function _HTMLGen_giftsub(e) {

@@ -198,6 +198,10 @@ input:disabled {
   overflow: auto;
 }
 
+.module .content.slim {
+  padding: 0 0 0 0;
+}
+
 .module .content .loading {
   position: relative;
   font-size: 32pt;
@@ -226,6 +230,11 @@ input:disabled {
 }
 
 .module .content .message {
+}
+
+.module .content .sub-message {
+  font-weight: bold;
+  font-style: italic;
 }
 
 .module .content .message.highlight {

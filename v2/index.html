@@ -109,15 +109,16 @@
 
  */
 
-const IS_OBS = window.hasOwnProperty('obsstudio') || !!window.obsstudio;
-
 /* Parse layout= query string value */
 function ParseLayout(str) {
-  let layout = {Cols: null, Chat: true};
+  let layout = {Cols: null, Chat: true, Slim: false};
   if (str.indexOf(':') > -1) {
     let opt = str.substr(str.indexOf(':')+1);
     str = str.substr(0, str.indexOf(':'));
     if (opt == "nochat") {
+      layout.Chat = false;
+    } else if (opt == "slim") {
+      layout.Slim = true;
       layout.Chat = false;
     } else if (opt != "chat") {
       console.warn('Unknown layout option', opt);
@@ -256,8 +257,15 @@ $("#txtChatFocus").remove();
     $("div#wrapper").append($Col2);
   }
 
+  /* If slim layout, remove header */
+  if (layout.Slim) {
+    $(".header").hide();
+    $(".content").addClass("slim");
+    $("#settings_button").hide();
+  }
+
   /* Once rerendering is complete, start up the client */
-  $(document).ready(client_main);
+  $(document).ready(function() { client_main(layout); });
 }
 
 /* Populate script assets immediately */
