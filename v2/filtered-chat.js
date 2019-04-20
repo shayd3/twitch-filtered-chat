@@ -95,7 +95,6 @@ HTMLGen.cheer = function _HTMLGen_cheer(cheer, bits) {
  * 3) Remove sensitive values from the query string, if present
  */
 function get_config_object() {
-  let config = {};
   let config_key = 'config';
 
   /* Query String object, parsed */
@@ -111,11 +110,8 @@ function get_config_object() {
   var query_remove = [];
 
   /* Parse localStorage config */
-  let config_str = localStorage.getItem(config_key);
-  if (config_str) {
-    config = JSON.parse(config_str);
-    config_str = null;
-  }
+  let config = Util.GetWebStorage();
+  if (!config) config = {};
 
   /* Persist the config key */
   config.key = Util.GetWebStorageKey();
@@ -215,7 +211,7 @@ function get_config_object() {
 
   if (query_remove.length > 0) {
     /* The query string contains sensitive information; remove it */
-    localStorage.setItem(config_key, JSON.stringify(config));
+    Util.SetWebStorage(config);
     var old_qs = window.location.search;
     var old_query = Util.ParseQueryString(old_qs.substr(1));
     for (var e of query_remove) {
@@ -346,11 +342,7 @@ function update_module_config() {
   $(".module").each(function() {
     config[$(this).attr('id')] = get_module_settings(this);
   });
-  let key = "config";
-  if (config.key.startsWith('config')) {
-    key = config.key;
-  }
-  localStorage.setItem(key, JSON.stringify(config));
+  Util.SetWebStorage(config);
 }
 
 /* End configuration section 0}}} */
@@ -451,10 +443,13 @@ function handle_command(e, client, config) {
         add_helpline("ClientID", config.ClientID);
       } else if (tokens[0] == "pass") {
         add_helpline("Pass", config.Pass);
+      } else if (tokens[0] == "purge") {
+        Util.SetWebStorage({});
+        add_html(`<div class="notice">Purged local storage key "${Util.GetWebStorageKey()}"</div>`);
       } else if (config.hasOwnProperty(tokens[0])) {
         add_helpline(tokens[0], JSON.stringify(config[tokens[0]]));
       } else {
-        add_html(`<span class="pre error">Unknown config key &quot;${tokens[0]}&quot;</span>`);
+        add_html(`<div class="pre error">Unknown config key &quot;${tokens[0]}&quot;</div>`);
       }
     } else {
       let wincfgs = [];
@@ -510,11 +505,11 @@ function handle_command(e, client, config) {
     }
     add_html(`<div class="notice allbadges">${all_badges.join('&nbsp;')}</div>`);
   } else if (cmd == "//help") {
-    /* TODO: document additions to //config */
     if (tokens.length == 0) {
       var lines = [];
       lines.push([`clear`, `clears all chat windows of their contents`]);
       lines.push([`config`, `display configuration`]);
+      lines.push([`config purge`, `purge localStorage of active configuration`]);
       lines.push([`config [${arg('key')}]`, `display configuration for ${arg('key')}`]);
       lines.push([`join &lt;${arg('ch')}&gt;`, `join channel &lt;${arg('ch')}&gt;`]);
       lines.push([`part &lt;${arg('ch')}&gt;`, `leave channel &lt;${arg('ch')}&gt;`]);
@@ -532,6 +527,7 @@ function handle_command(e, client, config) {
       add_help(`//config: Display current configuration. Both ClientID and OAuth token are omitted for security reasons`);
       add_help(`//config clientid: Display current ClientID`);
       add_help(`//config oauth: Display current OAuth token`);
+      add_help(`//config purge: Purge the current key from localStorage`);
       add_help(`//config &lt;${arg("key")}&gt;: Display configuration item &lt;${arg("key")}&gt;`);
     } else if (tokens[0] == "join") {
       add_help(`//join &lt;${arg("ch")}&gt;: Join the specified channel. Channel may or may not include leading #`);
@@ -828,9 +824,24 @@ function client_main() {
   /* Opening one of the module menus */
   $(".menu").click(function() {
     let $settings = $(this).parent().children(".settings");
-    if (!$settings.fadeToggle().is(":visible")) {
+    let $lbl = $(this).parent().children('label.name');
+    let $tb = $(this).parent().children('input.name');
+    if ($settings.is(":visible")) {
       /* Update config on close */
       update_module_config();
+      $tb.hide();
+      $lbl.html($tb.val()).show();
+    } else {
+      $lbl.hide();
+      $tb.val($lbl.html()).show();
+    }
+    $settings.fadeToggle();
+  });
+  
+  /* Pressing enter on the module's name text box */
+  $('.module .header input.name').on('keyup', function(e) {
+    if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
+      $(this).parent().children(".menu").click();
     }
   });
 
@@ -848,20 +859,6 @@ function client_main() {
       }
     }
   });
-
-  /* Changing a module's name */
-  for (var m of $(".module")) {
-    let id = $(m).attr("id");
-    $(m).find("input.name").on('keyup', function _module_name_keyup(e) {
-      if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
-        $(m).find("label.name").html($(this).val());
-        update_module_config();
-        if ($(this).parent().hasClass("open")) {
-          $(this).parent().removeClass("open");
-        }
-      }
-    });
-  }
 
   /* Clicking anywhere else on the document: reconnect, username context window */
   $(document).click(function(e) {
@@ -983,18 +980,22 @@ function client_main() {
   });
 
   client.bind('twitch-sub', function _on_twitch_sub(e) {
+    console.log('sub', e);
     add_html(HTMLGen.sub(e));
   });
 
   client.bind('twitch-resub', function _on_twitch_resub(e) {
+    console.log('resub', e);
     add_html(HTMLGen.resub(e));
   });
 
   client.bind('twitch-giftsub', function _on_twitch_giftsub(e) {
+    console.log('gift', e);
     add_html(HTMLGen.giftsub(e));
   });
 
   client.bind('twitch-anongiftsub', function _on_twitch_anongiftsub(e) {
+    console.log('anon', e);
     add_html(HTMLGen.anongiftsub(e));
   });
 

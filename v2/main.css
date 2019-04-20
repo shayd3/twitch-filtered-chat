@@ -204,7 +204,8 @@ input:disabled {
   background-color: var(--disabled-color, #dddddd);
 }
 
-.module .header.open label {
+/*
+.module .header.open label.name {
   display: none;
 }
 
@@ -215,6 +216,7 @@ input:disabled {
 .module .header.open ~ .settings {
   display: block;
 }
+*/
 
 .module .content {
   padding: 2.2em 0 0 0;
