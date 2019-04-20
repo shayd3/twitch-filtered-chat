@@ -119,9 +119,9 @@ body {
 }
 
 .clear-chat-icon {
+  padding-top: 0.5em;
   width: 1.1em;
-  height: 1.1em; /* .header height 2.2em line-height 2em */
-  vertical-align: middle;
+  height: 1.6em; /* .header height 2.2em line-height 2em */
 }
 
 .clear-chat-link {
