@@ -752,6 +752,7 @@ function client_main() {
         $("#txtPass").attr("disabled", "disabled").hide();
         $("#txtPassDummy").show();
       }
+      $("#selDebug").val(`${config.Debug}`);
       $('#settings').fadeIn();
     }
   });
@@ -772,11 +773,11 @@ function client_main() {
       let to_part = old_chs.filter((c) => new_chs.indexOf(c) == -1);
       for (let ch of to_join) {
         client.JoinChannel(ch);
-        add_html(`<span class="notice">Joining ${ch}</span>`);
+        add_html(`<div class="notice">Joining ${ch}</div>`);
       }
       for (let ch of to_part) {
         client.LeaveChannel(ch);
-        add_html(`<span class="notice">Leaving ${ch}</span>`);
+        add_html(`<div class="notice">Leaving ${ch}</div>`);
       }
     }
   });
