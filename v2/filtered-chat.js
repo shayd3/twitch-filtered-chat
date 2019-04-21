@@ -899,7 +899,7 @@ function client_main(layout) {
     } else {
       /* Set them all to --<prop>-default */
       for (let prop of props) {
-        document.documentElement.style.setProperty(prop, `let(${prop}-default)`);
+        document.documentElement.style.setProperty(prop, `var(${prop}-default)`);
       }
     }
   });
