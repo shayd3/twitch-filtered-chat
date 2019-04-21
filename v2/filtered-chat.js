@@ -241,6 +241,9 @@ function get_config_object() {
     } else if (k == "module2") {
       val = decode_module_config(k, v).module2;
       set_module_settings($("#" + k), val);
+    } else if (k == "trans") {
+      key = "Transparent";
+      val = 1;
     }
     config[key] = val;
   }
@@ -894,15 +897,20 @@ function client_main(layout) {
     if ($(this).is(":checked")) {
       /* Set them all to transparent */
       for (let prop of props) {
-        document.documentElement.style.setProperty(prop, 'transparent');
+        set_css_var(prop, 'transparent');
       }
     } else {
       /* Set them all to --<prop>-default */
       for (let prop of props) {
-        document.documentElement.style.setProperty(prop, `var(${prop}-default)`);
+        set_css_var(prop, `var(${prop}-default)`);
       }
     }
   });
+
+  /* Simulate clicking cbTransparent if config.Transparent is set */
+  if (config.Transparent) {
+    $("#cbTransparent").click();
+  }
 
   /* Changing the value for "background image" */
   $("#txtBGImage").keyup(function(e) {
