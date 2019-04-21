@@ -527,6 +527,7 @@ function handle_command(e, client, config) {
         if (config.Layout.Chat == false) layout[1] = "nochat";
         if (config.Layout.Slim == true) layout[1] = "slim";
         qs_push("layout", layout[0] + ":" + layout[1]);
+        if (config.Transparent) { qs_push("trans", "1"); }
         url += "?" + qs.join("&");
         add_help(`<a href="${url}" target="_blank">${url.escape()}</a>`);
       } else if (config.hasOwnProperty(tokens[0])) {
