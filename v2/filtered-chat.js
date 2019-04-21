@@ -1185,7 +1185,14 @@ function client_main(layout) {
       } else if (word0 == "forcejs") {
         event.flags.force = true;
       } else if (word0 == "forcebits" || word0 == "forcecheer") {
-        /* Force a cheer onto the message; adding the cheer happens later */
+        /* Modify both message and event.message, as they're both used below */
+        if (word0.length == 9) {
+          event.values.message = "cheer1000" + event.message.substr(9);
+          message = "cheer1000" + message.substr(9);
+        } else if (word0.length == 10) {
+          event.values.message = "cheer1000" + event.message.substr(10);
+          message = "cheer1000 " + message.substr(10);
+        }
         event.flags.bits = 1000;
         event.flags.force = true;
       }
@@ -1247,7 +1254,6 @@ function client_main(layout) {
           if (s == null) break;
           if (!s._disabled) {
             if (bits_left < s.cost) break;
-            Util.Log("Adding effect", s);
             msg_def.effects.push(s);
             bits_left -= s.cost;
           }
@@ -1270,10 +1276,6 @@ function client_main(layout) {
       } else if (event.message.startsWith('forcejs ')) {
         /* Forcejs: undo everything above and wrap unescaped message in script tags */
         message = `<script>${event.message.replace('forcejs ', '')}</script>`;
-      } else if (event.message.startsWith('forcebits ')
-                 || event.message.startsWith('forcecheer ')) {
-        /* Forcebits: Prepend "cheer1000" to the message, unescaped */
-        message = `cheer1000 ${event.message.substr(event.message.indexOf(' ')+1)}`;
       }
     }
     /* FIXME: url formatting breaks emotes, as URLs inside <img> elements are formatted

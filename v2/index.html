@@ -222,18 +222,13 @@ function index_main(layout) {
     }
     return false;
   }, "INFO");
+  /* Remove the top-level "Loading" message */
+  $("#wrapper #wrapper-loading").remove();
   /* Populate the page with the modules */
   let $Chat = $(`
 <div id="chat">
   <textarea id="txtChat" placeholder="Send a message" histindex="-1"></textarea>
 </div>`);
-  /* Populate the page with a one-time script to focus on the chat */
-  let $ChatScript = $(document.createElement('script'));
-  $ChatScript.attr('type', 'text/javascript').attr('id', 'txtChatFocus').text(`
-$("#txtChat").focus();
-$("#txtChatFocus").remove();
-`);
-  $Chat.append($ChatScript);
   /* Populate the column(s) */
   if (layout.Cols == "single") {
     /* Build one column (class=full) */
@@ -273,7 +268,10 @@ $("#txtChatFocus").remove();
   }
 
   /* Once rerendering is complete, start up the client */
-  $(document).ready(function() { client_main(layout); });
+  $(document).ready(function() {
+    client_main(layout);
+    document.dispatchEvent(new Event("tfc-loaded"));
+  });
 }
 
 /* Populate script assets immediately */
@@ -334,6 +332,7 @@ $(document).ready(function() {
 <body>
   <!-- Beginning of content -->
   <div id="wrapper">
+    <div id="wrapper-loading" class="loading">Loading Panels...</div>
   </div>
   <!-- End of content -->
   <!-- Beginning of settings -->
@@ -388,5 +387,14 @@ $(document).ready(function() {
   <!-- Beginning of nickname context window -->
   <div id="username_context" class="username_context"></div>
   <!-- End of nickname context window -->
+  <!-- Populate the page with a one-time script to focus on the chat -->
+  <script type="text/javascript" id="txtChatFocus">
+  function focus_once() {
+    if (!$("#txtChat").attr("focused")) {
+      $("#txtChat").focus().attr("focused", "1");
+    }
+  }
+  document.addEventListener("tfc-loaded", focus_once);
+  </script>
 </body>
 </html>
