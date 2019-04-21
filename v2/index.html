@@ -227,22 +227,28 @@ function index_main(layout) {
 <div id="chat">
   <textarea id="txtChat" placeholder="Send a message" histindex="-1"></textarea>
 </div>`);
+  /* Populate the page with a one-time script to focus on the chat */
   let $ChatScript = $(document.createElement('script'));
   $ChatScript.attr('type', 'text/javascript').attr('id', 'txtChatFocus').text(`
 $("#txtChat").focus();
 $("#txtChatFocus").remove();
 `);
   $Chat.append($ChatScript);
+  /* Populate the column(s) */
   if (layout.Cols == "single") {
+    /* Build one column (class=full) */
     let $Col = $(`<div class="column full"></div>`);
     let $Module = make_window('module1', 'full', 'Chat');
     if (layout.Chat) {
       $Module.addClass("has-chat");
       $Module.find('.content').after($Chat);
+    } else {
+      $Module.addClass("no-chat");
     }
     $Col.append($Module);
     $("div#wrapper").append($Col);
   } else if (layout.Cols == "double") {
+    /* Build two columns (class=left, class=right) */
     let $Col1 = $(`<div class="column left"></div>`);
     let $Col2 = $(`<div class="column right"></div>`);
     let $Module1 = make_window("module1", "left", "Left Chat");
@@ -250,6 +256,8 @@ $("#txtChatFocus").remove();
     if (layout.Chat) {
       $Module2.addClass("has-chat");
       $Module2.find('.content').after($Chat);
+    } else {
+      $Module2.addChass("no-chat");
     }
     $Col1.append($Module1);
     $Col2.append($Module2);
@@ -291,27 +299,35 @@ $("#txtChatFocus").remove();
 
 /* Once the document is loaded, wait for the scripts, then do layout */
 $(document).ready(function() {
-  /* Wait until everything is loaded */
-  let layout = null;
-  /* Get layout information from the query string */
-  let qs = document.location.search.substr(1).split('&').map((v) => v.split('='));
-  qs = qs.map(([k, v]) => [k, (!!v ? decodeURIComponent(v) : null)]);
-  for (let [k, v] of qs) {
-    if (k === "layout") {
-      layout = ParseLayout(v);
+  try {
+    /* Wait until everything is loaded */
+    let layout = ParseLayout("double:chat");
+    /* Get layout information from the query string */
+    let qs = document.location.search.substr(1).split('&').map((v) => v.split('='));
+    qs = qs.map(([k, v]) => [k, (!!v ? decodeURIComponent(v) : null)]);
+    for (let [k, v] of qs) {
+      if (k === "layout") {
+        layout = ParseLayout(v);
+      }
     }
-  }
-  if (layout == null) {
-    layout = ParseLayout("double:chat");
-  }
-  function wait_for_load() {
-    if (AreAllAssetsLoaded()) {
-      index_main(layout);
-    } else {
-      window.setTimeout(wait_for_load, 100);
+    function wait_for_load() {
+      try {
+        if (AreAllAssetsLoaded()) {
+          index_main(layout);
+        } else {
+          window.setTimeout(wait_for_load, 100);
+        }
+      }
+      catch (e) {
+        Util.Error(e);
+        alert(e.toString());
+      }
     }
+    window.setTimeout(wait_for_load, 100);
+  } catch (e) {
+    Util.Error(e);
+    alert(e.toString());
   }
-  window.setTimeout(wait_for_load, 100);
 });
   </script>
 </head>

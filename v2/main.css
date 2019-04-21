@@ -18,6 +18,8 @@
   --sub-color: var(--sub-color-default);
   --chat-color: var(--chat-color-default);
   --textarea-color: var(--textarea-color-default);
+
+  /* Debugging and other things (changed by JS) */
 }
 
 *, *:before, *:after {
@@ -149,6 +151,8 @@ body {
   width: 85%;
 }
 
+/* Settings {{{0 */
+
 .module .settings {
   position: absolute;
   top: 2.2em;
@@ -187,6 +191,8 @@ body {
   display: inline-block;
   font-size: 0.9em;
 }
+
+/* End settings 0}}} */
 
 input:disabled {
   background-color: var(--disabled-color, var(--disabled-color-default));
@@ -271,7 +277,7 @@ input:disabled {
   margin-right: 3px;
 }
 
-img.badge {
+.module .content img.badge {
   width: 18px;
   max-width: 18px;
 }
@@ -290,8 +296,8 @@ img.badge {
   text-decoration: underline;
 }
 
-.module.full .content {
-  height: calc(100% - 6em);
+.module.no-chat .content {
+  height: 100%;
 }
 
 .module.has-chat .content {

@@ -20,7 +20,7 @@
  */
 
 /* TODO: REMOVE {{{0 */
-var TEST_MESSAGES = {
+const TEST_MESSAGES = {
   'PRIVMSG': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;color=#0262C1;display-name=Kaedenn_;emotes=25:14-18/3:29-30/153556:41-48;flags=;id=6ba8dc82-000f-4da6-9131-d69233b14e41;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555701270187;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :test cheer100 Kappa cheer100 :D cheer100 BlessRNG cheer100 test\r\n",
   'PRIVMSG2': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;color=#0262C1;display-name=Kaedenn_;emotes=25:14-18/3:29-30/153556:41-48;flags=;id=6ba8dc82-000f-4da6-9131-d69233b14e41;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555701270187;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :&&&& cheer100 Kappa cheer100 :D cheer100 BlessRNG cheer100 test\r\n",
   'CHEER0': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;bits=1;color=#0262C1;display-name=Kaedenn_;flags=;id=6ba8dc82-000f-4da6-9131-d69233b14e41;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555701270187;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :cheer1\r\n",
@@ -32,7 +32,7 @@ var TEST_MESSAGES = {
 };
 
 function inject_message(msg) {
-  var e = new Event('message');
+  let e = new Event('message');
   e.data = msg;
   client.OnWebsocketMessage(e);
 }
@@ -42,13 +42,13 @@ const CLIENT_ID = [49,101,52,55,97,98,108,48,115,103,52,50,105,110,116,104,
                    53,48,119,106,101,114,98,122,120,104,57,109,98,115];
 const CACHED_VALUE = "Cached";
 const AUTOGEN_VALUE = "Auto-Generated";
-var HTMLGen = {};
+let HTMLGen = {};
 HTMLGen._dflt_colors = {};
 
 /* Generate a random color for the given user */
 HTMLGen.getColorFor = function _HTMLGen_getColorFor(username) {
   if (!HTMLGen._dflt_colors.hasOwnProperty(username)) {
-    var ci = Math.floor(Math.random() * default_colors.length);
+    let ci = Math.floor(Math.random() * default_colors.length);
     HTMLGen._dflt_colors[username] = default_colors[ci];
   }
   return HTMLGen._dflt_colors[username];
@@ -57,8 +57,7 @@ HTMLGen.getColorFor = function _HTMLGen_getColorFor(username) {
 /* Format a Twitch-specific emote */
 HTMLGen.emote = function _HTMLGen_emote(emote) {
   if (emote.id !== null) {
-    let $e = $(document.createElement('img'));
-    $e.addClass('emote').addClass('twitch-emote');
+    let $e = $(`<img class="emote twitch-emote" />`);
     $e.attr('tw-emote-id', emote.id);
     $e.attr('src', Twitch.URL.Emote(emote.id));
     let html = $e[0].outerHTML;
@@ -150,7 +149,7 @@ function get_config_object() {
     Util.Log(`Using custom config key "${Util.GetWebStorageKey()}"`);
   }
   /* Items to remove from the query string */
-  var query_remove = [];
+  let query_remove = [];
 
   /* Parse localStorage config */
   let config = Util.GetWebStorage();
@@ -173,8 +172,8 @@ function get_config_object() {
   let txtPass = $('input#txtPass')[0];
   let selDebug = $('select#selDebug')[0];
   if (txtChannel.value) {
-    for (var ch of txtChannel.value.split(',')) {
-      var channel = Twitch.FormatChannel(ch.toLowerCase());
+    for (let ch of txtChannel.value.split(',')) {
+      let channel = Twitch.FormatChannel(ch.toLowerCase());
       if (config.Channels.indexOf(channel) == -1) {
         config.Channels.push(channel);
       }
@@ -206,7 +205,7 @@ function get_config_object() {
   }
 
   /* Parse query string config */
-  for (var [k, v] of Object.entries(Util.ParseQueryString())) {
+  for (let [k, v] of Object.entries(Util.ParseQueryString())) {
     let key = k; /* config key */
     let val = v; /* config value */
     if (k == "clientid") {
@@ -252,7 +251,7 @@ function get_config_object() {
 
   /* Populate configs for each module */
   $('.module').each(function() {
-    var id = $(this).attr('id');
+    let id = $(this).attr('id');
     if (!config[id]) {
       config[id] = get_module_settings(this);
     }
@@ -261,12 +260,12 @@ function get_config_object() {
   if (query_remove.length > 0) {
     /* The query string contains sensitive information; remove it */
     Util.SetWebStorage(config);
-    var old_qs = window.location.search;
-    var old_query = Util.ParseQueryString(old_qs.substr(1));
-    for (var e of query_remove) {
+    let old_qs = window.location.search;
+    let old_query = Util.ParseQueryString(old_qs.substr(1));
+    for (let e of query_remove) {
       delete old_query[e];
     }
-    var new_qs = Util.FormatQueryString(old_query);
+    let new_qs = Util.FormatQueryString(old_query);
     window.location.search = new_qs;
   }
 
@@ -280,7 +279,7 @@ function get_config_object() {
 /* Obtain the settings from the module's settings html */
 function get_module_settings(module) {
   module = $(module);
-  var s = {
+  let s = {
     Name: module.find('input.name').val(),
     Pleb: module.find('input.pleb').is(':checked'),
     Sub: module.find('input.sub').is(':checked'),
@@ -312,7 +311,7 @@ function get_module_settings(module) {
 
 /* Set the module's settings to the values given */
 function set_module_settings(module, mod_config) {
-  var config = mod_config;
+  let config = mod_config;
   if (config.Name) {
     $(module).find('label.name').html(config.Name);
     $(module).find('input.name').val(config.Name);
@@ -349,9 +348,9 @@ function set_module_settings(module, mod_config) {
   }
   if (config.IncludeUser && config.IncludeUser.length > 0) {
     let cls = 'include_user';
-    for (var s of config.IncludeUser) {
+    for (let s of config.IncludeUser) {
       if ($(module).find(`input.${cls}[value="${s}"]`).length == 0) {
-        var li = `<li><label><input type="checkbox" value="${s}" class="${cls}" checked />From user: ${s}</label></li>`;
+        let li = `<li><label><input type="checkbox" value="${s}" class="${cls}" checked />From user: ${s}</label></li>`;
         $(module).find('li.include_user').before(li);
         $(module).find(`input.${cls}[value="${s}"]`).click(update_module_config);
       }
@@ -359,9 +358,9 @@ function set_module_settings(module, mod_config) {
   }
   if (config.IncludeKeyword && config.IncludeKeyword.length > 0) {
     let cls = 'include_keyword';
-    for (var s of config.InclueKeyword) {
+    for (let s of config.InclueKeyword) {
       if ($(module).find(`input.${cls}[value="${s}"]`).length == 0) {
-        var li = `<li><label><input type="checkbox" value="${s}" class="${cls}" checked />Contains: ${s}</label></li>`
+        let li = `<li><label><input type="checkbox" value="${s}" class="${cls}" checked />Contains: ${s}</label></li>`
         $(module).find('li.include_keyword').before(li);
         $(module).find(`input.${cls}[value="${s}"]`).click(update_module_config);
       }
@@ -369,9 +368,9 @@ function set_module_settings(module, mod_config) {
   }
   if (config.ExcludeUser && config.ExcludeUser.length > 0) {
     let cls = 'exclude_user';
-    for (var s of config.ExcludeUser) {
+    for (let s of config.ExcludeUser) {
       if ($(module).find(`input.${cls}[value="${s}"]`).length == 0) {
-        var li = `<li><label><input type="checkbox" value="${s}" class="${cls}" checked />From user: ${s}</label></li>`
+        let li = `<li><label><input type="checkbox" value="${s}" class="${cls}" checked />From user: ${s}</label></li>`
         $(module).find('li.exclude_user').before(li);
         $(module).find(`input.${cls}[value="${s}"]`).click(update_module_config);
       }
@@ -379,9 +378,9 @@ function set_module_settings(module, mod_config) {
   }
   if (config.ExcludeStartsWith && config.ExcludeStartsWith.length > 0) {
     let cls = 'exclude_startswith';
-    for (var s of config.ExcludeStartsWith) {
+    for (let s of config.ExcludeStartsWith) {
       if ($(module).find(`input.${cls}[value="${s}"]`).length == 0) {
-        var li = `<li><label><input type="checkbox" value="${s}" class="${cls}" checked />Starts with: ${s}</label></li>`
+        let li = `<li><label><input type="checkbox" value="${s}" class="${cls}" checked />Starts with: ${s}</label></li>`
         $(module).find('li.exclude_startswith').before(li);
         $(module).find(`input.${cls}[value="${s}"]`).click(update_module_config);
       }
@@ -402,7 +401,7 @@ function update_module_config() {
 
 /* Return true if the event should be displayed on the module given */
 function check_filtered(module, event) {
-  var rules = get_module_settings(module);
+  let rules = get_module_settings(module);
   let role = "pleb";
   if (event instanceof TwitchChatEvent) {
     if (event.issub) role = "sub";
@@ -414,22 +413,22 @@ function check_filtered(module, event) {
     if (!rules.Mod && role == "mod") return false;
     /* FIXME: rules.Event is unused */
     if (!rules.Bits && event.flag('bits')) return false;
-    for (var s of rules.IncludeUser) {
+    for (let s of rules.IncludeUser) {
       if (s.toLowerCase() == event.user.toLowerCase()) {
         return true;
       }
     }
-    for (var s of rules.IncludeKeyword) {
+    for (let s of rules.IncludeKeyword) {
       if (event.message.toLowerCase().indexOf(s.toLowerCase()) > -1) {
         return true;
       }
     }
-    for (var s of rules.ExcludeUser) {
+    for (let s of rules.ExcludeUser) {
       if (s.toLowerCase() == event.user.toLowerCase()) {
         return false;
       }
     }
-    for (var s of rules.ExcludeStartsWith) {
+    for (let s of rules.ExcludeStartsWith) {
       if (event.message.startsWith(s)) {
         return false;
       }
@@ -454,7 +453,7 @@ function add_html(event) {
     $p.html(html);
     /* Append the content to the page */
     /* FIXME: Scroll to element, not to max */
-    $(this).find('.content').append($p).scrollTop(2**31-1);;
+    $(this).find('.content').append($p).scrollTop(Math.pow(2, 31)-1);;
   });
 }
 
@@ -470,8 +469,8 @@ function place_emote(message, emote_def) {
 
 /* Handle a chat command */
 function handle_command(e, client, config) {
-  var tokens = e.target.value.split(" ");
-  var cmd = tokens.shift();
+  let tokens = e.target.value.split(" ");
+  let cmd = tokens.shift();
   /* Clear empty tokens at the end (\r\n related) */
   while (tokens.length > 0 && tokens[tokens.length-1].length == 0) {
     tokens.pop();
@@ -486,7 +485,7 @@ function handle_command(e, client, config) {
 
   /* Handle each of the commands */
   if (cmd == '//clear') {
-    for (var e of $("div.content")) {
+    for (let e of $("div.content")) {
       e.html("");
     }
   } else if (cmd == "//config") {
@@ -555,7 +554,7 @@ function handle_command(e, client, config) {
     }
   } else if (cmd == "//join") {
     if (tokens.length > 0) {
-      var ch = Twitch.FormatChannel(tokens[0]);
+      let ch = Twitch.FormatChannel(tokens[0]);
       if (!client.IsInChannel(ch)) {
         client.JoinChannel(ch);
         add_pre(`Joined ${ch}`);
@@ -567,7 +566,7 @@ function handle_command(e, client, config) {
     }
   } else if (cmd == "//part" || cmd == "//leave") {
     if (tokens.length > 0) {
-      var ch = Twitch.FormatChannel(tokens[0]);
+      let ch = Twitch.FormatChannel(tokens[0]);
       if (client.IsInChannel(ch)) {
         client.LeaveChannel(ch);
         add_pre(`Left ${ch}`);
@@ -588,7 +587,7 @@ function handle_command(e, client, config) {
   } else if (cmd == "//help") {
     if (tokens.length > 0 && tokens[0].startsWith('//')) tokens[0] = tokens[0].substr(2);
     if (tokens.length == 0) {
-      var lines = [];
+      let lines = [];
       lines.push([`clear`, `clears all chat windows of their contents`]);
       lines.push([`config`, `display configuration`]);
       lines.push([`config purge`, `purge localStorage of active configuration`]);
@@ -600,7 +599,7 @@ function handle_command(e, client, config) {
       lines.push([`help`, `this message`]);
       lines.push([`help &lt;${arg('cmd')}&gt;`, `help for a specific command`]);
       add_help(`Commands:`);
-      for (var [c, m] of lines) {
+      for (let [c, m] of lines) {
         add_helpline(`//${c}`, m);
       }
     } else if (tokens[0] == "clear") {
@@ -748,9 +747,14 @@ function show_context_window(client, cw, line) {
     if (!mod) { $cw.append(Line(Link('cw-make-mod', 'Make Mod'))); }
     if (!vip) { $cw.append(Line(Link('cw-make-vip', 'Make VIP'))); }
   }
-  var l_off = $l.offset();
+  let l_off = $l.offset();
   $cw.fadeIn().offset({top: l_off.top + $l.outerHeight() + 2, left: l_off.left});
 };
+
+/* Change a variable in main.css */
+function set_css_var(varname, value) {
+  document.documentElement.style.setProperty(varname, value);
+}
 
 /* Called once when the document loads */
 function client_main(layout) {
@@ -849,7 +853,7 @@ function client_main(layout) {
 
   /* Clicking on a "Clear" link */
   $(".clear-chat-link").click(function() {
-    var id = $(this).parent().parent().parent().attr("id");
+    let id = $(this).parent().parent().parent().attr("id");
     $(`#${id} .content`).html("");
   });
 
@@ -861,10 +865,12 @@ function client_main(layout) {
       let old_chs = client.GetJoinedChannels().map(fmt_ch);
       let to_join = new_chs.filter((c) => old_chs.indexOf(c) == -1);
       let to_part = old_chs.filter((c) => new_chs.indexOf(c) == -1);
+      /* Join all the channels added */
       for (let ch of to_join) {
         client.JoinChannel(ch);
         add_html(`<div class="notice">Joining ${ch}</div>`);
       }
+      /* Leave all the channels removed */
       for (let ch of to_part) {
         client.LeaveChannel(ch);
         add_html(`<div class="notice">Leaving ${ch}</div>`);
@@ -879,18 +885,21 @@ function client_main(layout) {
     let rule = Util.CSS.GetRule(ss, ":root");
     if (!rule) { Util.Error("Can't find main.css :root rule"); return; }
     let props = [];
+    /* Find the prop="--<name>-color" rules */
     for (let prop of Util.CSS.GetPropertyNames(rule)) {
       if (prop.match(/^--[a-z-]+-color$/)) {
         props.push(prop);
       }
     }
     if ($(this).is(":checked")) {
+      /* Set them all to transparent */
       for (let prop of props) {
         document.documentElement.style.setProperty(prop, 'transparent');
       }
     } else {
+      /* Set them all to --<prop>-default */
       for (let prop of props) {
-        document.documentElement.style.setProperty(prop, `var(${prop}-default)`);
+        document.documentElement.style.setProperty(prop, `let(${prop}-default)`);
       }
     }
   });
@@ -904,8 +913,8 @@ function client_main(layout) {
 
   /* Changing the debug level */
   $("#selDebug").change(function() {
-    var v = parseInt($(this).val());
-    var old = client.GetDebug();
+    let v = parseInt($(this).val());
+    let old = client.GetDebug();
     Util.Log(`Changing debug level from ${Util.DebugLevel} (${old}) to ${v}`);
     client.SetDebug(v);
   });
@@ -931,7 +940,7 @@ function client_main(layout) {
     }
     $settings.fadeToggle();
   });
-  
+
   /* Pressing enter on the module's name text box */
   $('.module .header input.name').on('keyup', function(e) {
     if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
@@ -945,8 +954,8 @@ function client_main(layout) {
     if (v.length > 0) {
       if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
         let $cli = $(this).closest('li');
-        var cls = $cli.attr('class').replace('textbox', '').trim();
-        var $li = $(`<li><label><input type="checkbox" value="${v}" class="${cls}" checked />${$cli.find('label').html()} ${v}</label></li>`);
+        let cls = $cli.attr('class').replace('textbox', '').trim();
+        let $li = $(`<li><label><input type="checkbox" value="${v}" class="${cls}" checked />${$cli.find('label').html()} ${v}</label></li>`);
         $cli.before($li);
         $(this).val('');
         update_module_config();
@@ -1018,9 +1027,9 @@ function client_main(layout) {
   });
 
   client.bind('twitch-close', function _on_twitch_close(e) {
-    var code = e.raw_line.code;
-    var reason = e.raw_line.reason;
-    var msg = "Connection closed";
+    let code = e.raw_line.code;
+    let reason = e.raw_line.reason;
+    let msg = "Connection closed";
     if (reason) {
       msg = `${msg} (code ${code}: ${reason})`;
     } else {
@@ -1064,7 +1073,7 @@ function client_main(layout) {
       $(`.chat-line[data-channelid="${e.flag("room-id")}"][data-user-id="${e.flag("target-user-id")}"]`).parent().remove();
     } else {
       /* Moderator cleared the chat */
-      for (var e of $("div.content")) {
+      for (let e of $("div.content")) {
         e.html("");
       }
     }
@@ -1104,11 +1113,9 @@ function client_main(layout) {
 
   /* Entry point: generate for an event (likely TwitchChatEvent) */
   HTMLGen.gen = function _HTMLGen_gen(event) {
-    let $e = $(document.createElement('div'));
+    let $e = $(`<div class="chat-line"></div>`);
     if (client.IsUIDSelf(event.flags["user-id"])) {
-      $e.addClass('chat-line self');
-    } else {
-      $e.addClass('chat-line');
+      $e.addClass('self');
     }
     $e.attr("data-id", event.flags.id);
     $e.attr("data-user", event.user);
@@ -1151,7 +1158,7 @@ function client_main(layout) {
   HTMLGen.genName = function _HTMLGen_genName(event) {
     let user = event.flag("display-name");
     if (!user) user = event.user;
-    let $e = $(document.createElement('span'));
+    let $e = $(`<span class="username" data-username="1"></span>`);
     $e.addClass('username');
     $e.attr('data-username', '1');
     if (!!event.flags.color) {
@@ -1166,12 +1173,24 @@ function client_main(layout) {
   /* Generate HTML for the message content */
   HTMLGen.genMsgInfo = function _HTMLGen_genMsgInfo(event) {
     let msg_def = {e: null, effects: []};
-    let e_msg = $(document.createElement('span'));
-    e_msg.addClass('message');
-    e_msg.attr('data-message', '1');
-    var [message, map] = Util.EscapeWithMap(event.message);
+    let e_msg = $(`<span class="message" data-message="1"></span>`);
+    /* Escape the message, keeping track of how characters move */
+    let [message, map] = Util.EscapeWithMap(event.message);
     map.push(message.length); /* Prevent off-the-end mistakes */
-    /* emotes */
+    /* Handle early mod-only antics */
+    if (!$("#cbForce").is(":checked") && event.ismod) {
+      let word0 = event.message.split(" ")[0];
+      if (word0 == "force") {
+        event.flags.force = true;
+      } else if (word0 == "forcejs") {
+        event.flags.force = true;
+      } else if (word0 == "forcebits" || word0 == "forcecheer") {
+        /* Force a cheer onto the message; adding the cheer happens later */
+        event.flags.bits = 1000;
+        event.flags.force = true;
+      }
+    }
+    /* Handle emotes */
     if (event.flag('emotes')) {
       let emotes = event.flags.emotes.map(function(e) {
         return {'id': e.id, 'name': e.name,
@@ -1180,10 +1199,10 @@ function client_main(layout) {
       });
       emotes.sort((a, b) => a.start - b.start);
       while (emotes.length > 0) {
-        var emote = emotes.pop();
-        var msg_start = message.substr(0, emote.start);
-        var msg_end = message.substr(emote.end+1);
-        var emote_str = HTMLGen.emote(emote);
+        let emote = emotes.pop();
+        let msg_start = message.substr(0, emote.start);
+        let msg_end = message.substr(emote.end+1);
+        let emote_str = HTMLGen.emote(emote);
         message = `${msg_start}${emote_str}${msg_end}`;
         /* Shift the entire map to keep track */
         for (let idx = emote.ostart; idx < map.length; ++idx) {
@@ -1199,7 +1218,7 @@ function client_main(layout) {
     }
     /* TODO: FFZ emotes (dwango has none) */
     /* TODO: BTTV emotes (dwango has none) */
-    /* cheers */
+    /* Handle cheers */
     if (event.flag('bits') && event.flag('bits') > 0) {
       let bits_left = event.flag('bits');
       let matches = client.FindCheers(event.channel.channel, event.message);
@@ -1244,18 +1263,22 @@ function client_main(layout) {
       return `${p1}<em>${p2}</em>${p3}`;
     });
     /* Handle mod-only antics */
-    if (event.ismod && !$("#cbForce").is(":checked")) {
+    if (event.ismod && !$("#cbForce").is(":checked") && event.flags.force) {
       if (event.message.startsWith('force ')) {
+        /* Force: undo everything above and put the message, unescaped, as-is */
         message = event.message.replace('force ', '');
       } else if (event.message.startsWith('forcejs ')) {
+        /* Forcejs: undo everything above and wrap unescaped message in script tags */
         message = `<script>${event.message.replace('forcejs ', '')}</script>`;
-      } else if (event.message.startsWith('forcebits ')) {
-        message = `cheer1000 ${event.message.replace('forcebits ', '')}`;
+      } else if (event.message.startsWith('forcebits ')
+                 || event.message.startsWith('forcecheer ')) {
+        /* Forcebits: Prepend "cheer1000" to the message, unescaped */
+        message = `cheer1000 ${event.message.substr(event.message.indexOf(' ')+1)}`;
       }
     }
     /* FIXME: url formatting breaks emotes, as URLs inside <img> elements are formatted
     message = message.replace(Util.URL_REGEX, function(url) {
-      var u = new URL(url);
+      let u = new URL(url);
       return `<a href="${u}" target="_blank">${u}</a>`;
     });*/
     e_msg.html(message);
@@ -1265,7 +1288,7 @@ function client_main(layout) {
 
   /* Generate HTML for the user's badges */
   HTMLGen.genBadges = function _HTMLGen_genBadges(event) {
-    let $bc = $(document.createElement('span'));
+    let $bc = $(`<span class="badges" data-badges="1"></span>`);
     $bc.addClass('badges');
     $bc.attr('data-badges', '1');
     if (event.flags.badges) {
@@ -1277,10 +1300,7 @@ function client_main(layout) {
       $bc.css("width", `${total_width}px`);
       $bc.css("max-width", `${total_width}px`);
       for (let [badge_name, badge_num] of event.flags.badges) {
-        let $b = $(document.createElement('img'));
-        $b.addClass('badge');
-        $b.attr('width', '18px');
-        $b.attr('height', '18px');
+        let $b = $(`<img class="badge" width="18px" height="18px" />`);
         $b.attr('tw-badge-cause', JSON.stringify([badge_name, badge_num]));
         $b.attr('data-badge', '1');
         $b.attr('data-badge-name', badge_name);
@@ -1309,9 +1329,7 @@ function client_main(layout) {
     /* Add FFZ badges */
     if (event.flags['ffz-badges']) {
       for (let badge of Object.values(event.flags['ffz-badges'])) {
-        let $b = $(document.createElement('img'));
-        $b.attr('width', '18');
-        $b.attr('height', '18');
+        let $b = $(`<img class="badge ffz-badge" width="18px" height="18px"`);
         $b.attr('data-badge', '1');
         $b.attr('data-ffz-badge', '1');
         $b.attr('src', Util.URL(badge.image));
@@ -1326,7 +1344,7 @@ function client_main(layout) {
   };
 
   HTMLGen.subWrapper = function _HTMLGen_subWrapper(e) {
-    let $e = $(document.createElement("div"));
+    let $e = $(`<div></div>`);
     $e.addClass("chat-line").addClass("sub").addClass("notice");
     $e.append($(HTMLGen.genBadges(e)));
     $e.append($(HTMLGen.genName(e)));
