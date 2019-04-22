@@ -211,7 +211,7 @@ function make_window(id, classname, name) {
 /* Populate templates and load the client */
 function index_main(layout) {
   /* Filter a few things out of the logger */
-  Util.Logger.add_filter(function(args) {
+  /* Util.Logger.add_filter(function(args) {
     if (args.length > 0) {
       if (typeof(args[0]) == "string") {
         let pats = ["ws recv>", "ws open>", "ws close>"];
@@ -221,7 +221,7 @@ function index_main(layout) {
       }
     }
     return false;
-  }, "INFO");
+  }, "INFO"); */
   /* Remove the top-level "Loading" message */
   $("#wrapper #wrapper-loading").remove();
   /* Populate the page with the modules */
