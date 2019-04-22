@@ -1121,18 +1121,17 @@ function client_main(layout) {
         let user = event.user.escape();
         let m = verify_string(event.message);
         let tokens = m.split(' ');
-        if (tokens[0] === '!tfc' || tokens[0] === "!tfcq") {
-          if (tokens[0] !== "!tfcq") {
-            Util.Log("Received TFC command from", user, ":", m, event);
-            add_html(`<div class="notice">Moderator command from ${user}: ${m.escape()}</div>`);
-          }
+        if (tokens[0] === '!tfc') {
           if (tokens[1] === "reload") {
             location.reload();
           } else if (tokens[1] === "force-reload") {
             location.reload(true);
           } else if (tokens[1] === "clear") {
             $(".content").children().remove();
-          } else if (tokens[1] === "removeuser" || tokens[1] === "clearuser") {
+          } else if (tokens[1] === "removeuser"
+                     || tokens[1] === "clearuser"
+                     || tokens[1] === "remove-user"
+                     || tokens[1] === "clear-user") {
             if (tokens[2] && tokens[2].length > 1) {
               let target = tokens[2].toLowerCase();
               $(`[data-user="${target}"]`).parent().remove();
