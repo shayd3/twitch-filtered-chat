@@ -227,7 +227,11 @@ function get_config_object() {
       query_remove.push(k);
     } else if (k == "channels") {
       key = "Channels";
-      val = v.split(',').map((c) => Twitch.FormatChannel(c));
+      if (typeof(v) === "string") {
+        val = v.split(',').map((c) => Twitch.FormatChannel(c));
+      } else {
+        val = [];
+      }
     } else if (k == "debug") {
       key = "Debug";
       if (!val) { val = 0; }
@@ -256,12 +260,6 @@ function get_config_object() {
     }
     config[key] = val;
   }
-
-  /* TODO: REMOVE and add some kind of UI */
-  if (config.Channels.length == 0) {
-    config.Channels = ['#dwangoac'];
-  }
-  /* END TODO: REMOVE */
 
   /* Populate configs for each module */
   $('.module').each(function() {
@@ -803,6 +801,12 @@ function set_css_var(varname, value) {
   document.documentElement.style.setProperty(varname, value);
 }
 
+/* Obtain a variable from main.css */
+function get_css_var(varname) {
+  /* TODO: is this possible without parsing
+   * $("link[rel=\"stylesheet\"]")[0].sheet.cssRules.item(":root").cssText ? */
+}
+
 /* Called once when the document loads */
 function client_main(layout) {
   let config = get_config_object();
@@ -938,15 +942,16 @@ function client_main(layout) {
         props.push(prop);
       }
     }
-    if ($(this).is(":checked")) {
-      /* Set them all to transparent */
-      for (let prop of props) {
+    let is_transparent = $(this).is(":checked");
+    for (let prop of props) {
+      if (is_transparent) {
+        /* Set them all to transparent */
         set_css_var(prop, 'transparent');
-      }
-    } else {
-      /* Set them all to --<prop>-default */
-      for (let prop of props) {
+        $(".module").addClass("transparent");
+      } else {
+        /* Set them all to default */
         set_css_var(prop, `var(${prop}-default)`);
+        $(".module").removeClass("transparent");
       }
     }
   });
@@ -1117,9 +1122,9 @@ function client_main(layout) {
 
   client.bind('twitch-chat', function _on_twitch_chat(event) {
     if (event instanceof TwitchChatEvent) {
-      if (event.flags && event.flags.mod) {
+      let m = verify_string(event.message);
+      if (event.flags && event.flags.mod && m.indexOf(' ') > -1) {
         let user = event.user.escape();
-        let m = verify_string(event.message);
         let tokens = m.split(' ');
         if (tokens[0] === '!tfc') {
           if (tokens[1] === "reload") {
@@ -1133,8 +1138,13 @@ function client_main(layout) {
                      || tokens[1] === "remove-user"
                      || tokens[1] === "clear-user") {
             if (tokens[2] && tokens[2].length > 1) {
-              let target = tokens[2].toLowerCase();
-              $(`[data-user="${target}"]`).parent().remove();
+              $(`[data-user="${tokens[2].toLowerCase()}"]`).parent().remove();
+            }
+          } else if (tokens[1] == "nuke") {
+            if (tokens[2] && tokens[2].length > 1) {
+              $(`[data-user="${tokens[2].toLowerCase()}"]`).parent().remove();
+            } else {
+              $(".content").children().remove();
             }
           }
         }
