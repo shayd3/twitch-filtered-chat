@@ -2,21 +2,24 @@
 
 "use strict";
 
+/* Notes:
+ *
+ * Adding to the query string parser:
+ *  Add to both get_config_object *and* //config url
+ */
+
 /* TODO:
- * Implement subs HTMLGen
- * Implement host/raid HTMLGen
+ * Implement border/background for username contrast
+ * Implement HTMLGen.sub, HTMLGen.anonsubgift, and calling code
+ * Implement HTMLGen.host, HTMLGen.raid, and calling code
  * Implement FFZ emotes
  * Implement BTTV emotes
- * Populate context window with more things
+ * Rewrite index.html using promises
+ * Add "Channels" dropdown to the module filtering (default: all)
  *
  * FIXME:
  * Fix formatting for "@user" (user @ highlights)
  * Fix URL formatting with emotes (URLs in emotes are formatted)
- *
- * XXX SECURITY (are we really okay with this?):
- * Anyone can call get_config_object()
- * Anyone can read localStorage.config
- * Anyone who can execute JS can grab both authid and clientid
  */
 
 /* TODO: REMOVE {{{0 */
@@ -86,6 +89,12 @@ HTMLGen.cheer = function _HTMLGen_cheer(cheer, bits) {
 
 /* Begin configuration section {{{0 */
 
+/* Functions to sanitize configuration */
+function verify_string(val) { return (typeof(val) == "string" ? val : ""); }
+function verify_number(val) { return (typeof(val) == "number" ? val : ""); }
+function verify_boolean(val) { return (typeof(val) == "boolean" ? val : ""); }
+function verify_array(val) { return Util.IsArray(val) ? val : []; }
+
 /* Parse a module configuration from a query string key and value */
 function decode_module_config(key, value) {
   let parts = value.split(',');
@@ -137,7 +146,7 @@ function encode_module_config(name, config) {
  * 3) Remove sensitive values from the query string, if present
  */
 function get_config_object() {
-  let config_key = 'config';
+  let config_key = 'tfc-config';
 
   /* Query String object, parsed */
   let qs = Util.ParseQueryString();
@@ -155,6 +164,15 @@ function get_config_object() {
   let config = Util.GetWebStorage();
   if (!config) config = {};
 
+  /* Ensure certain keys are present and have expected values */
+  if (!config.hasOwnProperty("Channels") || !Util.IsArray(config.Channels)) {
+    config.Channels = [];
+  }
+  if (typeof(config.Name) != "string") config.Name = "";
+  if (typeof(config.ClientID) != "string") config.ClientID = "";
+  if (typeof(config.Pass) != "string") config.Pass = "";
+  if (typeof(config.Debug) != "number") config.Debug = 0;
+
   /* Persist the config key */
   config.key = Util.GetWebStorageKey();
 
@@ -163,9 +181,6 @@ function get_config_object() {
   if (config.hasOwnProperty('Debug')) delete config["Debug"];
 
   /* Parse div#settings config */
-  if (!config.hasOwnProperty("Channels")) {
-    config.Channels = [];
-  }
   let txtChannel = $('input#txtChannel')[0];
   let txtNick = $('input#txtNick')[0];
   let txtClientID = $('input#txtClientID')[0];
@@ -179,20 +194,14 @@ function get_config_object() {
       }
     }
   }
-  if (txtNick.value) {
-    if (txtNick.value != AUTOGEN_VALUE) {
-      config.Name = txtNick.value;
-    }
+  if (txtNick.value && txtNick.value != AUTOGEN_VALUE) {
+    config.Name = txtNick.value;
   }
-  if (txtClientID.value) {
-    if (txtClientID.value != CACHED_VALUE) {
-      config.ClientID = txtClientID.value;
-    }
+  if (txtClientID.value && txtClientID.value != CACHED_VALUE) {
+    config.ClientID = txtClientID.value;
   }
-  if (txtPass.value) {
-    if (txtPass.value != CACHED_VALUE) {
-      config.Pass = txtPass.value;
-    }
+  if (txtPass.value && txtPass.value != CACHED_VALUE) {
+    config.Pass = txtPass.value;
   }
   if (selDebug.value) {
     if (selDebug.value == "0") {
@@ -248,9 +257,11 @@ function get_config_object() {
     config[key] = val;
   }
 
+  /* TODO: REMOVE and add some kind of UI */
   if (config.Channels.length == 0) {
     config.Channels = ['#dwangoac'];
   }
+  /* END TODO: REMOVE */
 
   /* Populate configs for each module */
   $('.module').each(function() {
@@ -258,6 +269,16 @@ function get_config_object() {
     if (!config[id]) {
       config[id] = get_module_settings(this);
     }
+    config[id].Pleb = verify_boolean(config[id].Pleb);
+    config[id].Sub = verify_boolean(config[id].Sub);
+    config[id].VIP = verify_boolean(config[id].VIP);
+    config[id].Mod = verify_boolean(config[id].Mod);
+    config[id].Event = verify_boolean(config[id].Event);
+    config[id].Bits = verify_boolean(config[id].Bits);
+    config[id].IncludeKeyword = verify_array(config[id].IncludeKeyword);
+    config[id].IncludeUser = verify_array(config[id].IncludeUser);
+    config[id].ExcludeUser = verify_array(config[id].ExcludeUser);
+    config[id].ExcludeStartsWith = verify_array(config[id].ExcludeStartsWith);
   });
 
   if (query_remove.length > 0) {
@@ -349,6 +370,28 @@ function set_module_settings(module, mod_config) {
   } else {
     $(module).find('input.bits').removeAttr('checked');
   }
+  function add_input(cls, label, values) {
+    if (values && values.length > 0) {
+      let $li = $(`<li></li`);
+      let $l = $(`<label></label>`).val(label);
+      for (let val of values) {
+        let isel = `input.${cls}[value="${val}"]`;
+        if ($(module).find(isel).length == 0) {
+          let $cb = $(`<input type="checkbox" value=${val.escape()} checked />`);
+          $cb.addClass(cls);
+          $l.append($cb);
+          $li.append($l);
+          $(module).find(`li.${cls}`).before($li);
+          $(module).find(isel).click(update_module_config);
+        }
+      }
+    }
+  }
+  add_input("include_user", "From user: ", config.IncludeUser);
+  add_input("include_keyword", "Contains: ", config.IncludeKeyword);
+  add_input("exclude_user", "From user: ", config.ExcludeUser);
+  add_input("exclude_startswith", "Starts with: ", config.ExcludeStartsWith);
+  /*
   if (config.IncludeUser && config.IncludeUser.length > 0) {
     let cls = 'include_user';
     for (let s of config.IncludeUser) {
@@ -388,7 +431,7 @@ function set_module_settings(module, mod_config) {
         $(module).find(`input.${cls}[value="${s}"]`).click(update_module_config);
       }
     }
-  }
+  }*/
 }
 
 /* Update the local storage config with the current module settings */
@@ -1340,7 +1383,7 @@ function client_main(layout) {
     /* Add FFZ badges */
     if (event.flags['ffz-badges']) {
       for (let badge of Object.values(event.flags['ffz-badges'])) {
-        let $b = $(`<img class="badge ffz-badge" width="18px" height="18px"`);
+        let $b = $(`<img class="badge ffz-badge" width="18px" height="18px" />`);
         $b.attr('data-badge', '1');
         $b.attr('data-ffz-badge', '1');
         $b.attr('src', Util.URL(badge.image));
