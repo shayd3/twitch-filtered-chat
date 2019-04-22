@@ -1213,11 +1213,14 @@ function client_main(layout) {
     let $e = $(`<span class="username" data-username="1"></span>`);
     $e.addClass('username');
     $e.attr('data-username', '1');
-    if (!!event.flags.color) {
-      $e.css('color', event.flags.color);
-    } else {
-      $e.css("color", HTMLGen.getColorFor(user));
-    }
+    let color = !!event.flags.color ? event.flags.color : HTMLGen.getColorFor(user);
+    /* Add "low-contrast" for usernames hard to see */
+    let c1 = Util.ContrastRatio(color, '#303030')
+    let c2 = Util.ContrastRatio(color, '#0e0e0e')
+    $e.attr('data-contrast-1', c1);
+    $e.attr('data-contrast-2', c2);
+    if (c1 < 4 && c2 < 4) { $e.addClass("low-contrast"); }
+    $e.css('color', color);
     $e.html(user.escape());
     return $e[0].outerHTML;
   };
@@ -1414,7 +1417,11 @@ function client_main(layout) {
 
   HTMLGen.resub = function _HTMLGen_resub(e) {
     let $w = HTMLGen.subWrapper(e);
-    $w.append($(`<span class="message sub-message">resubscribed for ${e.value('sub_months')} months, a streak of ${e.value('sub_streak_months')} months!</span>`));
+    if (e.value('sub_streak_months')) {
+      $w.append($(`<span class="message sub-message">resubscribed for ${e.value('sub_months')} months, a streak of ${e.value('sub_streak_months')} months!</span>`));
+    } else {
+      $w.append($(`<span class="message sub-message">resubscribed for ${e.value('sub_months')} months!</span>`));
+    }
     return $w[0].outerHTML;
   };
 

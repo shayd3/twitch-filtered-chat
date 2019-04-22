@@ -239,11 +239,30 @@ input:disabled {
   border: 2px solid #c03030;
 }
 
-.module .content p .username {
+.module .content .username {
   font-weight: bold;
+  text-shadow: -1px -1px 1px black,
+               1px 1px 1px black,
+               -1px 1px 1px black,
+               1px -1px 1px black;
+}
+
+.module .content .username.low-contrast {
+  text-shadow: -1px -1px 1px lightgray,
+               1px 1px 1px lightgray,
+               -1px 1px 1px lightgray,
+               1px -1px 1px lightgray;
 }
 
 .module .content .message {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  -ms-word-break: break-all;
+  word-break: break-word;
+  color: #e0e0e0;
+  text-shadow: -1px -1px 1px black,
+                -1px 1px 1px black,
+                2px 2px 1px black;
 }
 
 .module .content .sub-message {
@@ -373,7 +392,6 @@ input:disabled {
 }
 
 #settings ul li input {
-
 }
 
 #settings ul li input.middle {
