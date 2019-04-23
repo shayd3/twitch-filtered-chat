@@ -410,14 +410,15 @@ function set_module_settings(module, mod_config) {
   }
   function add_input(cls, label, values) {
     if (values && values.length > 0) {
-      let $li = $(`<li></li`);
-      let $l = $(`<label></label>`).val(label);
+      let $li = $(`<li></li>`);
       for (let val of values) {
         let isel = `input.${cls}[value="${val}"]`;
         if ($(module).find(isel).length == 0) {
+          let $l = $(`<label></label>`).val(label);
           let $cb = $(`<input type="checkbox" value=${val.escape()} checked />`);
           $cb.addClass(cls);
           $l.append($cb);
+          $l.html($l.html() + label + val.escape());
           $li.append($l);
           $(module).find(`li.${cls}`).before($li);
           $(module).find(isel).click(update_module_config);

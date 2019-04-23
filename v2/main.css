@@ -175,6 +175,7 @@ body {
 
 .module .settings input[type="checkbox"] {
   margin-right: 4px;
+  vertical-align: text-bottom;
 }
 
 .module .settings input[type="text"] {
@@ -203,6 +204,7 @@ input:disabled {
   padding: 2.2em 0 0 0;
   height: 100%;
   overflow: auto;
+  overflow-y: hidden;
 }
 
 .module .content.slim {
