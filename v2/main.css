@@ -20,6 +20,7 @@
   --textarea-color: var(--textarea-color-default);
 
   /* Debugging and other things (changed by JS) */
+  --body-font-size: 18px;
 }
 
 *, *:before, *:after {
@@ -34,7 +35,7 @@
 html, body {
   width: 100%;
   height: 100%;
-  font-size: 18px;
+  font-size: var(--body-font-size, 18px);
   color: #cccccc;
 }
 
