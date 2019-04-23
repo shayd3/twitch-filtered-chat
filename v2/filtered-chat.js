@@ -154,7 +154,7 @@ function get_config_object() {
     config_key = config_key + '-' + qs.config_key.replace(/[^a-z]/g, '');
   }
   Util.SetWebStorageKey(config_key);
-  if (config_key !== "config") {
+  if (config_key !== "tfc-config") {
     Util.Log(`Using custom config key "${Util.GetWebStorageKey()}"`);
   }
   /* Items to remove from the query string */
@@ -582,7 +582,11 @@ function handle_command(e, client, config) {
         if (config.Layout.Slim == true) layout[1] = "slim";
         qs_push("layout", layout[0] + ":" + layout[1]);
         if (config.Transparent) { qs_push("trans", "1"); }
-        url += "?base64=" + encodeURIComponent(btoa(qs.join("&")));
+        if (tokens[tokens.length-1] === "text") {
+          url += "?" + qs.join("&");
+        } else {
+          url += "?base64=" + encodeURIComponent(btoa(qs.join("&")));
+        }
         add_help(`<a href="${url}" target="_blank">${url.escape()}</a>`);
       } else if (config.hasOwnProperty(tokens[0])) {
         add_helpline(tokens[0], JSON.stringify(config[tokens[0]]));
@@ -670,6 +674,7 @@ function handle_command(e, client, config) {
       add_help(`//config url: Generate a URL from the current configuration (CONTAINS AUTHID)`);
       add_help(`//config url git: As above, but target https://kaedenn.github.io`);
       add_help(`//config url file: As above, but target file:///home/kaedenn`);
+      add_help(`//config url [git|file] text: Prevent base64 encoding URL`);
       add_help(`//config &lt;${arg("key")}&gt;: Display configuration item &lt;${arg("key")}&gt;`);
     } else if (tokens[0] == "join") {
       add_help(`//join &lt;${arg("ch")}&gt;: Join the specified channel. Channel may or may not include leading #`);
@@ -1103,6 +1108,19 @@ function client_main(layout) {
     add_html(`<div class="error">${msg}<span class="reconnect"><a href="javascript:void(0)" data-reconnect="1">Reconnect</a></span></div>`);
   });
 
+  if (!Util.Browser.IsOBS && !layout.Slim) {
+    client.bind('twitch-join', function _on_twitch_join(e) {
+      if (e.user == client.GetName().toLowerCase()) {
+        add_html(`<div class="notice">Joined ${e.channel.channel}</div>`);
+      }
+    });
+    client.bind('twitch-part', function _on_twitch_part(e) {
+      if (e.user == client.GetName().toLowerCase()) {
+        add_html(`<div class="notice">Left ${e.channel.channel}</div>`);
+      }
+    });
+  }
+
   client.bind('twitch-notice', function _on_twitch_notice(e) {
     /* Some notices are benign */
     if (e.flag('msg-id') == 'host_on') { }
@@ -1321,6 +1339,7 @@ function client_main(layout) {
       }
     }
     /* TODO: FFZ emotes (dwango has none) */
+    let ffz_emotes = client.GetFFZEmotes(event.channel.channel);
     /* TODO: BTTV emotes (dwango has none) */
     /* Handle cheers */
     if (event.flag('bits') && event.flag('bits') > 0) {
@@ -1338,6 +1357,7 @@ function client_main(layout) {
         let msg_start = message.substr(0, start);
         let msg_end = message.substr(end);
         message = msg_start + chtml + msg_end;
+        /* TODO: update the map */
         let end_words = msg_end.trimStart().split(" ");
         /* Scan words after the cheer for effects */
         while (end_words.length > 0) {
