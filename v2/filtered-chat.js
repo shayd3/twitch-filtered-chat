@@ -30,7 +30,7 @@ const TEST_MESSAGES = {
   'CHEER': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;bits=400;color=#0262C1;display-name=Kaedenn_;emotes=25:14-18/3:29-30/153556:41-48;flags=;id=6ba8dc82-000f-4da6-9131-d69233b14e41;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555701270187;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :test cheer100 Kappa cheer100 :D cheer100 BlessRNG cheer100 test\r\n",
   'CHEER2': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;bits=400;color=#0262C1;display-name=Kaedenn_;emotes=25:14-18/3:29-30/153556:41-48;flags=;id=6ba8dc82-000f-4da6-9131-d69233b14e41;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555701270187;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :&&&& cheer100 Kappa cheer100 :D cheer100 BlessRNG cheer100 test\r\n",
   'EFFECT': "@badge-info=subscriber/12;badges=moderator/1,subscriber/12,bits/1000;bits=100;color=#0262C1;display-name=Kaedenn_;flags=;id=6ba8dc82-000f-4da6-9131-d69233b14e41;mod=1;room-id=70067886;subscriber=1;tmi-sent-ts=1555701270187;turbo=0;user-id=175437030;user-type=mod :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv PRIVMSG #dwangoac :cheer100 rainbow bold marquee Hi!\r\n",
-  'SUB': "@badge-info=;badges=staff/1,broadcaster/1,turbo/1;color=#008000;display-name=ronni;emotes=;id=db25007f-7a18-43eb-9379-80131e44d633;login=ronni;mod=0;msg-id=resub;msg-param-cumulative-months=6;msg-param-streak-months=2;msg-param-should-share-streak=1;msg-param-sub-plan=Prime;msg-param-sub-plan-name=Prime;room-id=70067886;subscriber=1;system-msg=ronni\\shas\\ssubscribed\\sfor\\s6\\smonths!;tmi-sent-ts=1507246572675;turbo=1;user-id=1337;user-type=staff :tmi.twitch.tv USERNOTICE #dwangoac :Great stream -- keep it up!\r\n",
+  'RESUB': "@badge-info=;badges=staff/1,broadcaster/1,turbo/1;color=#008000;display-name=ronni;emotes=;id=db25007f-7a18-43eb-9379-80131e44d633;login=ronni;mod=0;msg-id=resub;msg-param-cumulative-months=6;msg-param-streak-months=2;msg-param-should-share-streak=1;msg-param-sub-plan=Prime;msg-param-sub-plan-name=Prime;room-id=70067886;subscriber=1;system-msg=ronni\\shas\\ssubscribed\\sfor\\s6\\smonths!;tmi-sent-ts=1507246572675;turbo=1;user-id=1337;user-type=staff :tmi.twitch.tv USERNOTICE #dwangoac :Great stream -- keep it up!\r\n",
   'GIFTSUB': ""
 };
 
@@ -213,8 +213,13 @@ function get_config_object() {
     }
   }
 
+  let qs_data = Util.ParseQueryString();
+  if (qs_data.base64 && qs_data.base64.length > 0) {
+    qs_data = Util.ParseQueryString(atob(qs_data.base64));
+  }
+
   /* Parse query string config */
-  for (let [k, v] of Object.entries(Util.ParseQueryString())) {
+  for (let [k, v] of Object.entries(qs_data)) {
     let key = k; /* config key */
     let val = v; /* config value */
     if (k == "clientid") {
@@ -284,10 +289,18 @@ function get_config_object() {
     Util.SetWebStorage(config);
     let old_qs = window.location.search;
     let old_query = Util.ParseQueryString(old_qs.substr(1));
+    let is_base64 = false;
+    if (old_query.base64 && old_query.base64.length > 0) {
+      is_base64 = true;
+      old_query = Util.ParseQueryString(atob(old_query.base64));
+    }
     for (let e of query_remove) {
       delete old_query[e];
     }
     let new_qs = Util.FormatQueryString(old_query);
+    if (is_base64) {
+      new_qs = "?base64=" + encodeURIComponent(btoa(new_qs));
+    }
     window.location.search = new_qs;
   }
 
@@ -569,7 +582,7 @@ function handle_command(e, client, config) {
         if (config.Layout.Slim == true) layout[1] = "slim";
         qs_push("layout", layout[0] + ":" + layout[1]);
         if (config.Transparent) { qs_push("trans", "1"); }
-        url += "?" + qs.join("&");
+        url += "?base64=" + encodeURIComponent(btoa(qs.join("&")));
         add_help(`<a href="${url}" target="_blank">${url.escape()}</a>`);
       } else if (config.hasOwnProperty(tokens[0])) {
         add_helpline(tokens[0], JSON.stringify(config[tokens[0]]));
@@ -816,11 +829,6 @@ function client_main(layout) {
 
   /* Change the document title to show our authentication state */
   document.title += " -";
-  if (config.ClientID && config.ClientID.length > 0) {
-    document.title += " Identified";
-  } else {
-    document.title += " Anonymous";
-  }
   if (config.Pass && config.Pass.length > 0) {
     document.title += " Authenticated";
   } else {

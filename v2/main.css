@@ -254,11 +254,14 @@ input:disabled {
                1px -1px 1px lightgray;
 }
 
-.module .content .message {
+.module .content .line {
   overflow-wrap: break-word;
   word-wrap: break-word;
   -ms-word-break: break-all;
   word-break: break-word;
+}
+
+.module .content .message {
   color: #e0e0e0;
   text-shadow: -1px -1px 1px black,
                 -1px 1px 1px black,
