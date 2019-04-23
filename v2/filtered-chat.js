@@ -107,6 +107,10 @@ function decode_module_config(key, value) {
   if (parts[1].length < 6) {
     Util.Error("Module flags not long enough", part[1], value);
   }
+  /* Handle FromChannel addition */
+  if (parts.length == 6) {
+    parts.push("");
+  }
   let config = {};
   config[key] = {};
   config[key].Name = UnEscComma(parts[0]);
@@ -120,6 +124,7 @@ function decode_module_config(key, value) {
   config[key].IncludeUser = ParseSet(parts[3]);
   config[key].ExcludeUser = ParseSet(parts[4]);
   config[key].ExcludeStartsWith = ParseSet(parts[5]);
+  config[key].FromChannel = ParseSet(parts[6]);
   return config;
 }
 
@@ -135,6 +140,7 @@ function encode_module_config(name, config) {
   parts.push(cfg.IncludeUser.map((e) => EscComma(e)).join(","));
   parts.push(cfg.ExcludeUser.map((e) => EscComma(e)).join(","));
   parts.push(cfg.ExcludeStartsWith.map((e) => EscComma(e)).join(","));
+  parts.push(cfg.FromChannel.map((e) => EscComma(e)).join(","));
   return `${name}=${encodeURIComponent(parts.join(","))}`;
 }
 
@@ -253,15 +259,15 @@ function get_config_object() {
       key = "NoBTTV";
     } else if (k == "hmax") {
       key = "HistorySize";
-    } else if (k == "module1") {
-      val = decode_module_config(k, v).module1;
-      set_module_settings($("#" + k), val);
-    } else if (k == "module2") {
-      val = decode_module_config(k, v).module2;
+    } else if (k == "module1" || k == "module2") {
+      val = decode_module_config(k, v)[k];
       set_module_settings($("#" + k), val);
     } else if (k == "trans") {
       key = "Transparent";
       val = 1;
+    } else if (k == "layout" && ParseLayout) {
+      key = "Layout";
+      val = ParseLayout(v);
     }
     config[key] = val;
   }
@@ -282,6 +288,7 @@ function get_config_object() {
     config[id].IncludeUser = verify_array(config[id].IncludeUser);
     config[id].ExcludeUser = verify_array(config[id].ExcludeUser);
     config[id].ExcludeStartsWith = verify_array(config[id].ExcludeStartsWith);
+    config[id].FromChannel = verify_array(config[id].FromChannel);
   });
 
   if (query_remove.length > 0) {
@@ -325,7 +332,8 @@ function get_module_settings(module) {
     IncludeUser: [],
     IncludeKeyword: [],
     ExcludeUser: [],
-    ExcludeStartsWith: []
+    ExcludeStartsWith: [],
+    FromChannel: []
   };
 
   module.find('input.include_user:checked').each(function() {
@@ -340,8 +348,27 @@ function get_module_settings(module) {
   module.find('input.exclude_startswith:checked').each(function() {
     s.ExcludeStartsWith.push($(this).val());
   });
+  module.find('input.from_channel:checked').each(function() {
+    s.FromChannel.push($(this).val());
+  });
 
   return s;
+}
+
+/* Join a channel and save it in the configuration */
+function join_channel(client, channel) {
+  client.JoinChannel(channel);
+  let cfg = get_config_object();
+  cfg.Channels = client.GetJoinedChannels();
+  Util.SetWebStorage(cfg);
+}
+
+/* Leave a channel and save it in the configuration */
+function leave_channel(client, channel) {
+  client.LeaveChannel(channel);
+  let cfg = get_config_object();
+  cfg.Channels = client.GetJoinedChannels();
+  Util.SetWebStorage(cfg);
 }
 
 /* Set the module's settings to the values given */
@@ -402,47 +429,7 @@ function set_module_settings(module, mod_config) {
   add_input("include_keyword", "Contains: ", config.IncludeKeyword);
   add_input("exclude_user", "From user: ", config.ExcludeUser);
   add_input("exclude_startswith", "Starts with: ", config.ExcludeStartsWith);
-  /*
-  if (config.IncludeUser && config.IncludeUser.length > 0) {
-    let cls = 'include_user';
-    for (let s of config.IncludeUser) {
-      if ($(module).find(`input.${cls}[value="${s}"]`).length == 0) {
-        let li = `<li><label><input type="checkbox" value="${s}" class="${cls}" checked />From user: ${s}</label></li>`;
-        $(module).find('li.include_user').before(li);
-        $(module).find(`input.${cls}[value="${s}"]`).click(update_module_config);
-      }
-    }
-  }
-  if (config.IncludeKeyword && config.IncludeKeyword.length > 0) {
-    let cls = 'include_keyword';
-    for (let s of config.InclueKeyword) {
-      if ($(module).find(`input.${cls}[value="${s}"]`).length == 0) {
-        let li = `<li><label><input type="checkbox" value="${s}" class="${cls}" checked />Contains: ${s}</label></li>`
-        $(module).find('li.include_keyword').before(li);
-        $(module).find(`input.${cls}[value="${s}"]`).click(update_module_config);
-      }
-    }
-  }
-  if (config.ExcludeUser && config.ExcludeUser.length > 0) {
-    let cls = 'exclude_user';
-    for (let s of config.ExcludeUser) {
-      if ($(module).find(`input.${cls}[value="${s}"]`).length == 0) {
-        let li = `<li><label><input type="checkbox" value="${s}" class="${cls}" checked />From user: ${s}</label></li>`
-        $(module).find('li.exclude_user').before(li);
-        $(module).find(`input.${cls}[value="${s}"]`).click(update_module_config);
-      }
-    }
-  }
-  if (config.ExcludeStartsWith && config.ExcludeStartsWith.length > 0) {
-    let cls = 'exclude_startswith';
-    for (let s of config.ExcludeStartsWith) {
-      if ($(module).find(`input.${cls}[value="${s}"]`).length == 0) {
-        let li = `<li><label><input type="checkbox" value="${s}" class="${cls}" checked />Starts with: ${s}</label></li>`
-        $(module).find('li.exclude_startswith').before(li);
-        $(module).find(`input.${cls}[value="${s}"]`).click(update_module_config);
-      }
-    }
-  }*/
+  add_input("from_channel", "Channel:", config.FromChannel);
 }
 
 /* Update the local storage config with the current module settings */
@@ -490,6 +477,13 @@ function check_filtered(module, event) {
         return false;
       }
     }
+    if (rules.FromChannel.length > 0) {
+      for (let s of rules.FromChannel) {
+        if (event.channel.channel != s) {
+          return false;
+        }
+      }
+    }
   }
   return true;
 }
@@ -525,9 +519,10 @@ function place_emote(message, emote_def) {
 }
 
 /* Handle a chat command */
-function handle_command(e, client, config) {
+function handle_command(e, client) {
   let tokens = e.target.value.split(" ");
   let cmd = tokens.shift();
+  let config = get_config_object();
   /* Clear empty tokens at the end (\r\n related) */
   while (tokens.length > 0 && tokens[tokens.length-1].length == 0) {
     tokens.pop();
@@ -618,8 +613,7 @@ function handle_command(e, client, config) {
     if (tokens.length > 0) {
       let ch = Twitch.FormatChannel(tokens[0]);
       if (!client.IsInChannel(ch)) {
-        client.JoinChannel(ch);
-        add_pre(`Joined ${ch}`);
+        join_channel(client, ch);
       } else {
         add_pre(`Already in channel ${ch}`);
       }
@@ -630,8 +624,7 @@ function handle_command(e, client, config) {
     if (tokens.length > 0) {
       let ch = Twitch.FormatChannel(tokens[0]);
       if (client.IsInChannel(ch)) {
-        client.LeaveChannel(ch);
-        add_pre(`Left ${ch}`);
+        leave_channel(client, ch);
       } else {
         add_pre(`Not in channel ${ch}`);
       }
@@ -814,12 +807,12 @@ function show_context_window(client, cw, line) {
   $cw.fadeIn().offset({top: l_off.top + $l.outerHeight() + 2, left: l_off.left});
 };
 
-/* Change a variable in main.css */
+/* Change a variable in main.css :root */
 function set_css_var(varname, value) {
   document.documentElement.style.setProperty(varname, value);
 }
 
-/* Obtain a variable from main.css */
+/* Obtain a variable from main.css :root */
 function get_css_var(varname) {
   /* TODO: is this possible without parsing
    * $("link[rel=\"stylesheet\"]")[0].sheet.cssRules.item(":root").cssText ? */
@@ -856,7 +849,7 @@ function client_main(layout) {
     if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
       /* Prevent sending empty messages by mistake */
       if (e.target.value.trim().length > 0) {
-        if (!handle_command(e, client, config)) {
+        if (!handle_command(e, client)) {
           client.SendMessageToAll(e.target.value);
         }
         client.AddHistory(e.target.value);
@@ -931,14 +924,19 @@ function client_main(layout) {
       let to_part = old_chs.filter((c) => new_chs.indexOf(c) == -1);
       /* Join all the channels added */
       for (let ch of to_join) {
-        client.JoinChannel(ch);
+        join_channel(client, ch);
         add_html(`<div class="notice">Joining ${ch}</div>`);
       }
       /* Leave all the channels removed */
       for (let ch of to_part) {
+        leave_channel(client, ch);
         client.LeaveChannel(ch);
         add_html(`<div class="notice">Leaving ${ch}</div>`);
       }
+      /* Save the new configuration */
+      let current_cfg = get_config_object();
+      current_cfg.Channels = client.GetJoinedChannels().map(fmt_ch);
+      Util.SetWebStorage(current_cfg);
     }
   });
 
