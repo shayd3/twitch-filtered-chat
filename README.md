@@ -1,1 +1,1 @@
-# twitch-filtered-chat
+# twitch-filtered-chat# Version TwoIt's the v2/ subdirectory you want. Everything top-level is being discontinued.### DocumentationDocumentation coming soon.### CreditsYoshiRulz - Improving rainbow effectInverted - Improving username contrast
