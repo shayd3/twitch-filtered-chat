@@ -9,6 +9,7 @@
  */
 
 /* TODO:
+ * Implement /me
  * Implement border/background for username contrast
  * Implement HTMLGen.sub, HTMLGen.anonsubgift, and calling code
  * Implement HTMLGen.host, HTMLGen.raid, and calling code
@@ -51,8 +52,8 @@ HTMLGen._dflt_colors = {};
 /* Generate a random color for the given user */
 HTMLGen.getColorFor = function _HTMLGen_getColorFor(username) {
   if (!HTMLGen._dflt_colors.hasOwnProperty(username)) {
-    let ci = Math.floor(Math.random() * default_colors.length);
-    HTMLGen._dflt_colors[username] = default_colors[ci];
+    let ci = Math.floor(Math.random() * DefaultUserColors.length);
+    HTMLGen._dflt_colors[username] = DefaultUserColors[ci];
   }
   return HTMLGen._dflt_colors[username];
 }
@@ -490,33 +491,28 @@ function check_filtered(module, event) {
 }
 
 /* Add either an event or direct HTML to all modules */
-function add_html(event) {
+function add_html(content) {
   /* Generate HTML if it's a TwitchEvent */
-  let html = (event instanceof TwitchEvent) ? HTMLGen.gen(event) : event;
+  let html = (content instanceof TwitchEvent) ? HTMLGen.gen(content) : content;
   /* Add the html to each module */
   $(".module").each(function() {
     /* Check the filters to see if this event should be displayed */
-    if (event instanceof TwitchEvent && !check_filtered($(this), event)) {
+    if (content instanceof TwitchEvent && !check_filtered($(this), content)) {
       /* Filtered out */
       return;
     }
     /* Build the content element */
-    let $p = $(document.createElement('p')).addClass('line line-wrapper');
-    $p.html(html);
+    let $w = $(`<div class="line line-wrapper"></div>`);
+    $w.html(html);
     /* Append the content to the page */
     /* FIXME: Scroll to element, not to max */
-    $(this).find('.content').append($p).scrollTop(Math.pow(2, 31)-1);;
+    $(this).find('.content').append($w).scrollTop(Math.pow(2, 31)-1);
   });
 }
 
 /* Shortcut for adding a <div class="pre"> element */
 function add_pre(content) {
   add_html(`<div class="pre">${content}</div>`);
-}
-
-/* Place an emote in the message and return the result.
- * Places the final length of the inserted emote into emote_def.final_length */
-function place_emote(message, emote_def) {
 }
 
 /* Handle a chat command */
@@ -1222,7 +1218,7 @@ function client_main(layout) {
 
   /* HTML generation functions (defined here to access the client object) */
 
-  /* Entry point: generate for an event (likely TwitchChatEvent) */
+  /* Generate HTML for either TwitchEvent or TwitchChatEvent */
   HTMLGen.gen = function _HTMLGen_gen(event) {
     let $e = $(`<div class="chat-line"></div>`);
     if (client.IsUIDSelf(event.flags["user-id"])) {
@@ -1286,11 +1282,17 @@ function client_main(layout) {
 
   /* Generate HTML for the message content */
   HTMLGen.genMsgInfo = function _HTMLGen_genMsgInfo(event) {
-    let msg_def = {e: null, effects: []};
-    let e_msg = $(`<span class="message" data-message="1"></span>`);
+    let $msg = $(`<span class="message" data-message="1"></span>`);
+    let $effects = [];
+
     /* Escape the message, keeping track of how characters move */
     let [message, map] = Util.EscapeWithMap(event.message);
     map.push(message.length); /* Prevent off-the-end mistakes */
+
+    /* Kept for testing
+    console.log("m1=", JSON.stringify(message), ";", "map1=", JSON.stringify(map), ";");
+    */
+
     /* Handle early mod-only antics */
     if (!$("#cbForce").is(":checked") && event.ismod) {
       let word0 = event.message.split(" ")[0];
@@ -1337,9 +1339,11 @@ function client_main(layout) {
         }
       }
     }
-    /* TODO: FFZ emotes (dwango has none) */
-    let ffz_emotes = client.GetFFZEmotes(event.channel.channel);
-    /* TODO: BTTV emotes (dwango has none) */
+
+    /* Kept for testing
+    console.log("m2=", JSON.stringify(message), ";", "map2=", JSON.stringify(map), ";");
+    */
+
     /* Handle cheers */
     if (event.flag('bits') && event.flag('bits') > 0) {
       let bits_left = event.flag('bits');
@@ -1356,31 +1360,117 @@ function client_main(layout) {
         let msg_start = message.substr(0, start);
         let msg_end = message.substr(end);
         message = msg_start + chtml + msg_end;
-        /* TODO: update the map */
+        for (let idx = match.start; idx < map.length; ++idx) {
+          if (map[idx] - map[match.start] < (end - start)) {
+            /* Inside the modified range */
+          } else {
+            /* After the modified range */
+            map[idx] += chtml.length - (end - start);
+          }
+        }
         let end_words = msg_end.trimStart().split(" ");
         /* Scan words after the cheer for effects */
         while (end_words.length > 0) {
           let s = null;
-          /* css_styles and ColorNames have our valid styles */
-          if (css_styles.hasOwnProperty(end_words[0])) {
-            s = css_styles[end_words[0]];
+          /* CSSCheerStyles and ColorNames have our valid styles */
+          if (CSSCheerStyles.hasOwnProperty(end_words[0])) {
+            s = CSSCheerStyles[end_words[0]];
           } else if (ColorNames.hasOwnProperty(end_words[0])) {
-            s = css_color_style(ColorNames[end_words[0]]);
+            s = CSSColorStyle(ColorNames[end_words[0]]);
           }
           if (s == null) break;
           if (!s._disabled) {
             if (bits_left < s.cost) break;
-            msg_def.effects.push(s);
+            $effects.push(s);
             bits_left -= s.cost;
           }
           end_words.shift();
         }
       }
     }
+
+    /* Kept for testing
+    console.log("m3=", JSON.stringify(message), ";", "map3=", JSON.stringify(map), ";");
+    */
+
+    /* Handle FFZ emotes */
+    let ffz_emotes = client.GetFFZEmotes(event.channel.channel);
+    if (ffz_emotes && ffz_emotes.emotes) {
+      let ffz_emote_arr = [];
+      for (let [k,v] of Object.entries(ffz_emotes.emotes)) {
+        ffz_emote_arr.push([v, k]);
+      }
+      let results = Twitch.ScanEmotes(event.message, ffz_emote_arr);
+      results.sort((a, b) => (a.start - b.start));
+      while (results.length > 0) {
+        let emote = results.pop();
+        let start = emote.start;
+        let end = emote.end+1;
+        let mstart = map[start];
+        let mend = map[end];
+        let url = emote.id.urls[Object.keys(emote.id.urls).min()];
+        let $i = $(`<img class="emote ffz-emote" ffz-emote-id=${emote.id.id} />`);
+        $i.attr('src', url);
+        $i.attr('width', emote.id.width);
+        $i.attr('height', emote.id.height);
+        let msg_start = message.substr(0, mstart);
+        let msg_end = message.substr(mend);
+        let emote_str = $i[0].outerHTML;
+        message = `${msg_start}${emote_str}${msg_end}`;
+        for (let idx = emote.start; idx < map.length; ++idx) {
+          if (map[idx] - map[emote.start] < (end - start)) {
+            /* Inside the modified range */
+          } else {
+            /* After the modified range */
+            map[idx] += emote_str.length - (end - start);
+          }
+        }
+      }
+    }
+
+    /* Handle BTTV emotes */
+    let bttv_emotes = client.GetBTTVEmotes(event.channel.channel);
+    if (bttv_emotes && bttv_emotes.emotes) {
+      let bttv_emote_arr = [];
+      for (let [k,v] of Object.entries(bttv_emotes.emotes)) {
+        bttv_emote_arr.push([v, k]);
+      }
+      let results = Twitch.ScanEmotes(event.message, bttv_emote_arr);
+      results.sort((a, b) => (a.start - b.start));
+      if (results.length > 0) {
+        console.log(results);
+      }
+      while (results.length > 0) {
+        let emote = results.pop();
+        let start = emote.start;
+        let end = emote.end+1;
+        let mstart = map[start];
+        let mend = map[end];
+        let $i = $(`<img class="emote bttv-emote" bttv-emote-id="${emote.id.id}" />`);
+        $i.attr("src", emote.id.url);
+        let msg_start = message.substr(0, mstart);
+        let msg_end = message.substr(mend);
+        let emote_str = $i[0].outerHTML;
+        message = `${msg_start}${emote_str}${msg_end}`;
+        for (let idx = emote.start; idx < map.length; ++idx) {
+          if (map[idx] - map[emote.start] < (end - start)) {
+            /* Inside the modified range */
+          } else {
+            /* After the modified range */
+            map[idx] += emote_str.length - (end - start);
+          }
+        }
+      }
+    }
+
+    /* Kept for testing
+    console.log("m4=", JSON.stringify(message), ";", "map4=", JSON.stringify(map), ";");
+    */
+
     /* @user highlighting */
     message = message.replace(/(^|\b\s*)(@\w+)(\s*\b|$)/g, function(m, p1, p2, p3) {
       if (p2.substr(1).toLowerCase() == client.GetName().toLowerCase()) {
-        e_msg.addClass("highlight");
+        $msg.addClass("highlight");
       }
       return `${p1}<em>${p2}</em>${p3}`;
     });
@@ -1399,9 +1489,8 @@ function client_main(layout) {
       let u = new URL(url);
       return `<a href="${u}" target="_blank">${u}</a>`;
     });*/
-    e_msg.html(message);
-    msg_def.e = e_msg;
-    return msg_def;
+    $msg.html(message);
+    return {e: $msg, effects: $effects};
   };
 
   /* Generate HTML for the user's badges */
@@ -1409,14 +1498,21 @@ function client_main(layout) {
     let $bc = $(`<span class="badges" data-badges="1"></span>`);
     $bc.addClass('badges');
     $bc.attr('data-badges', '1');
+    let total_width = 0;
+    if (event.flags['badges']) {
+      total_width += 18 * event.flags['badges'].length
+    }
+    if (event.flags['ffz-badges']) {
+      total_width += 18 * event.flags['ffz-badges'].length
+    }
+    if (event.flags['bttv-badges']) {
+      total_width += 18 * event.flags['bttv-badges'].length
+    }
+    $bc.css("overflow", "hidden");
+    $bc.css("width", `${total_width}px`);
+    $bc.css("max-width", `${total_width}px`);
+    /* Add Twitch-native badges */
     if (event.flags.badges) {
-      let total_width = 18 * event.flags.badges.length;
-      if (event.flags['ffz-badges']) {
-        total_width += 18 * event.flags['ffz-badges'].length;
-      }
-      $bc.css("overflow", `hidden`);
-      $bc.css("width", `${total_width}px`);
-      $bc.css("max-width", `${total_width}px`);
       for (let [badge_name, badge_num] of event.flags.badges) {
         let $b = $(`<img class="badge" width="18px" height="18px" />`);
         $b.attr('tw-badge-cause', JSON.stringify([badge_name, badge_num]));
@@ -1450,14 +1546,23 @@ function client_main(layout) {
         let $b = $(`<img class="badge ffz-badge" width="18px" height="18px" />`);
         $b.attr('data-badge', '1');
         $b.attr('data-ffz-badge', '1');
+        $b.attr('tw-badge-scope', 'ffz');
         $b.attr('src', Util.URL(badge.image));
         $b.attr('alt', badge.name);
         $b.attr('title', badge.title);
         $bc.append($b);
       }
     }
-    /* TODO: add BTTV badges */
-
+    /* TODO: Are there any BTTV badges? */
+    if (event.flags['bttv-badges']) {
+      for (let badge of Object.values(event.flags['bttv-badges'])) {
+        let $b = $(`<img class="badge bttv-badge" width="18px" height="18px" />`);
+        $b.attr('data-badge', '1');
+        $b.attr('data-ffz-badge', '1');
+        $b.attr('tw-badge-scope', 'ffz');
+        /* ... */
+      }
+    }
     return $bc;
   };
 
@@ -1498,12 +1603,6 @@ function client_main(layout) {
     let gifter = e.flag('login');
     let months = e.flag('msg-param-sub-months');
     return `${e.command}: ${gifter} gifted to ${user} ${months}`;
-  };
-
-  HTMLGen.badgeImage = function(badge_name, badge_num) {
-    let $i = $(`<img />`);
-    $i.attr("src", client.GetGlobalBadge(badge_name, badge_num).image_url_1x);
-    return $i;
   };
 
   /* Finally, connect */

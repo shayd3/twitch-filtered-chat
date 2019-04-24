@@ -14,21 +14,23 @@
  *    html_post: <HTML to place after the line "span" element>,
  *  }
  * Line format:
- *  <p>
- *    <div class="line-wrapper ${wclass}" style="${wstyle}">
- *      badges
+ *  <div class="line line-wrapper">
+ *    <div class="chat-line ${wclass}" style="${wstyle}">
+ *      <span class="badges" data-badges="1">
+ *        <img class="badge" ... />
+ *      </span>
  *      <span class="username" style="color: ${username_color}; ${text_shadow}">
  *        username
  *      </span>
  *      ${html_pre}
- *      <span class="line-text ${class}" style="${style}">
+ *      <span class="message ${class}" style="${style}">
  *        text
  *      </span>
  *      ${html_post}
  *    </div>
- *  </p>
+ *  </div>
  */
-var css_styles = {
+var CSSCheerStyles = {
   cssmarquee: {
     _disabled: true,
     cost: 1,
@@ -149,7 +151,7 @@ var css_styles = {
   }
 };
 
-function css_color_style(colorname) {
+function CSSColorStyle(colorname) {
   return {
     cost: 1,
     style: `color: ${AllColors[colorname]}`
@@ -157,7 +159,7 @@ function css_color_style(colorname) {
 }
 
 /* Colors to use for users without username colors specified */
-var default_colors = [
+var DefaultUserColors = [
   '#0000FF',
   '#008000',
   '#FF0000',
