@@ -2,21 +2,11 @@
 
 "use strict";
 
-/* Notes:
- *
- * Adding to the query string parser:
- *  Add to both get_config_object *and* //config url
- */
-
 /* TODO:
  * Implement /me
- * Implement border/background for username contrast
- * Implement HTMLGen.sub, HTMLGen.anonsubgift, and calling code
- * Implement HTMLGen.host, HTMLGen.raid, and calling code
- * Implement FFZ emotes
- * Implement BTTV emotes
+ * Verify HTMLGen.sub and HTMLGen.anonsubgift
+ * Implement HTMLGen.raid and calling code
  * Rewrite index.html using promises
- * Add "Channels" dropdown to the module filtering (default: all)
  *
  * FIXME:
  * Fix formatting for "@user" (user @ highlights)
@@ -492,8 +482,6 @@ function check_filtered(module, event) {
 
 /* Add either an event or direct HTML to all modules */
 function add_html(content) {
-  /* Generate HTML if it's a TwitchEvent */
-  let html = (content instanceof TwitchEvent) ? HTMLGen.gen(content) : content;
   /* Add the html to each module */
   $(".module").each(function() {
     /* Check the filters to see if this event should be displayed */
@@ -503,7 +491,7 @@ function add_html(content) {
     }
     /* Build the content element */
     let $w = $(`<div class="line line-wrapper"></div>`);
-    $w.html(html);
+    $w.html(content);
     /* Append the content to the page */
     /* FIXME: Scroll to element, not to max */
     $(this).find('.content').append($w).scrollTop(Math.pow(2, 31)-1);
@@ -1171,7 +1159,7 @@ function client_main(layout) {
         }
       }
     }
-    add_html(event);
+    add_html(HTMLGen.gen(event));
   });
 
   client.bind('twitch-clearchat', function _on_twitch_clearchat(e) {
@@ -1221,6 +1209,9 @@ function client_main(layout) {
   /* Generate HTML for either TwitchEvent or TwitchChatEvent */
   HTMLGen.gen = function _HTMLGen_gen(event) {
     let $e = $(`<div class="chat-line"></div>`);
+    if (!event.flags.color) {
+      event.flags.color = HTMLGen.getColorFor(user);
+    }
     if (client.IsUIDSelf(event.flags["user-id"])) {
       $e.addClass('self');
     }
@@ -1244,7 +1235,11 @@ function client_main(layout) {
     let msg_def = HTMLGen.genMsgInfo(event);
     $e.append(badges_elem);
     $e.append(name_elem);
-    $e.html($e.html() + ":&nbsp");
+    if (!event.flags.action) {
+      $e.html($e.html() + ":&nbsp");
+    } else {
+      msg_def.e.css("color", event.flags.color);
+    }
     let html_pre = [];
     let html_post = [];
     if (msg_def.effects.length > 0) {
@@ -1268,7 +1263,7 @@ function client_main(layout) {
     let $e = $(`<span class="username" data-username="1"></span>`);
     $e.addClass('username');
     $e.attr('data-username', '1');
-    let color = !!event.flags.color ? event.flags.color : HTMLGen.getColorFor(user);
+    let color = event.flags.color;
     /* Add "low-contrast" for usernames hard to see */
     let c1 = Util.ContrastRatio(color, '#303030')
     let c2 = Util.ContrastRatio(color, '#0e0e0e')
@@ -1553,14 +1548,13 @@ function client_main(layout) {
         $bc.append($b);
       }
     }
-    /* TODO: Are there any BTTV badges? */
     if (event.flags['bttv-badges']) {
       for (let badge of Object.values(event.flags['bttv-badges'])) {
         let $b = $(`<img class="badge bttv-badge" width="18px" height="18px" />`);
         $b.attr('data-badge', '1');
         $b.attr('data-ffz-badge', '1');
         $b.attr('tw-badge-scope', 'ffz');
-        /* ... */
+        /* For if BTTV ever adds badges */
       }
     }
     return $bc;
