@@ -229,7 +229,7 @@ input:disabled {
   top: calc(50% - 14pt);
 }
 
-.module .content p {
+.module .content .line.line-wrapper {
   line-height: 1.3em;
   padding: 4px;
 }
@@ -302,11 +302,11 @@ input:disabled {
   margin-right: 2px;
 }
 
-.module .content p img {
+.module .content .line.line-wrapper img {
   vertical-align: middle;
 }
 
-.module .content p span.badges img {
+.module .content .line.line-wrapper span.badges img {
   margin-right: 3px;
 }
 
@@ -315,7 +315,7 @@ input:disabled {
   max-width: 18px;
 }
 
-.module .content p.sub {
+.module .content .sub {
   background-color: var(--sub-color, var(--sub-color-default));
   color: #999999;
 }

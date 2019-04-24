@@ -1,8 +1,5 @@
 # Custom additions
 
-# Ignore testcases
-tests/
-
 # Ignore supporting material
 package-lock.json
 package.json
