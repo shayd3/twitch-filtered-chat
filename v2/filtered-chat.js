@@ -465,21 +465,29 @@ function check_filtered(module, event) {
   return true;
 }
 
+function add_chat_event(event) {
+  $(".module").each(function() {
+    if (!check_filtered($(this), event)) {
+      /* Filtered out */
+      return;
+    }
+    let $w = $(`<div class="line line-wrapper"></div>`);
+    $w.html(HTMLGen.gen(event));
+    let $c = $(this).find('.content');
+    $c.append($w);
+    $c.scrollTop(Math.pow(2, 31) - 1);
+  });
+}
+
 /* Add either an event or direct HTML to all modules */
 function add_html(content) {
   /* Add the html to each module */
   $(".module").each(function() {
-    /* Check the filters to see if this event should be displayed */
-    if (content instanceof TwitchEvent && !check_filtered($(this), content)) {
-      /* Filtered out */
-      return;
-    }
-    /* Build the content element */
     let $w = $(`<div class="line line-wrapper"></div>`);
     $w.html(content);
-    /* Append the content to the page */
-    /* FIXME: Scroll to element, not to max */
-    $(this).find('.content').append($w).scrollTop(Math.pow(2, 31)-1);
+    let $c = $(this).find('.content');
+    $c.append($w);
+    $c.scrollTop(Math.pow(2, 31) - 1);
   });
 }
 
@@ -491,7 +499,7 @@ function add_pre(content) {
 /* Handle a chat command */
 function handle_command(e, client) {
   let tokens = e.target.value.split(" ");
-  let cmd = tokens.shift();
+  let command = tokens.shift();
   let config = get_config_object();
   /* Clear empty tokens at the end (\r\n related) */
   while (tokens.length > 0 && tokens[tokens.length-1].length == 0) {
@@ -506,11 +514,21 @@ function handle_command(e, client) {
   let add_help = (s) => add_pre(help(s));
 
   /* Handle each of the commands */
-  if (cmd == '//clear') {
-    for (let e of $("div.content")) {
-      e.html("");
+  if (command == "//log") {
+    let logs = Util.GetWebStorage("debug-msg-log");
+    add_help(`Debug message log length: ${logs.length}`);
+    if (tokens.length > 0 && tokens[0] == "show") {
+      for (let [i, l] of Object.entries(logs)) {
+        let event_cmd = l._cmd;
+        let event_data = l._parsed;
+        add_help(`${i}: ${event_cmd}: ${JSON.stringify(event_data)}`);
+      }
+    } else {
+      add_help(`Use //log show to view them all`);
     }
-  } else if (cmd == "//config") {
+  } else if (command == '//clear') {
+    $("div.content").html("");
+  } else if (command == "//config") {
     if (tokens.length > 0) {
       if (tokens[0] == "clientid") {
         add_helpline("ClientID", config.ClientID);
@@ -552,7 +570,7 @@ function handle_command(e, client) {
         } else {
           url += "?base64=" + encodeURIComponent(btoa(qs.join("&")));
         }
-        add_help(`<a href="${url}" target="_blank">${url.escape()}</a>`);
+        add_help(HTMLGen.url(url));
       } else if (config.hasOwnProperty(tokens[0])) {
         add_helpline(tokens[0], JSON.stringify(config[tokens[0]]));
       } else {
@@ -579,7 +597,7 @@ function handle_command(e, client) {
         }
       }
     }
-  } else if (cmd == "//join") {
+  } else if (command == "//join") {
     if (tokens.length > 0) {
       let ch = Twitch.FormatChannel(tokens[0]);
       if (!client.IsInChannel(ch)) {
@@ -590,7 +608,7 @@ function handle_command(e, client) {
     } else {
       add_pre(`Usage: //join &lt;${arg('channel')}&gt;`);
     }
-  } else if (cmd == "//part" || cmd == "//leave") {
+  } else if (command == "//part" || command == "//leave") {
     if (tokens.length > 0) {
       let ch = Twitch.FormatChannel(tokens[0]);
       if (client.IsInChannel(ch)) {
@@ -601,7 +619,7 @@ function handle_command(e, client) {
     } else {
       add_pre(`Usage: //leave &lt;${arg("channel")}&gt;`);
     }
-  } else if (cmd == "//badges") {
+  } else if (command == "//badges") {
     let all_badges = [];
     for (let [bname, badge] of Object.entries(client.GetGlobalBadges())) {
       for (let [bv, bdef] of Object.entries(badge.versions)) {
@@ -609,7 +627,7 @@ function handle_command(e, client) {
       }
     }
     add_html(`<div class="notice allbadges">${all_badges.join('&nbsp;')}</div>`);
-  } else if (cmd == "//help") {
+  } else if (command == "//help") {
     if (tokens.length > 0 && tokens[0].startsWith('//')) tokens[0] = tokens[0].substr(2);
     if (tokens.length == 0) {
       let lines = [];
@@ -622,7 +640,7 @@ function handle_command(e, client) {
       lines.push([`leave &lt;${arg('ch')}&gt;`, `leave channel &lt;${arg('ch')}&gt;`]);
       lines.push([`badges`, `show the global badges`]);
       lines.push([`help`, `this message`]);
-      lines.push([`help &lt;${arg('cmd')}&gt;`, `help for a specific command`]);
+      lines.push([`help &lt;${arg('command')}&gt;`, `help for a specific command`]);
       add_help(`Commands:`);
       for (let [c, m] of lines) {
         add_helpline(`//${c}`, m);
@@ -646,12 +664,12 @@ function handle_command(e, client) {
       add_help(`//leave &lt;${arg("ch")}&gt;: Disconnect from the specified channel. Channel may or may not include leading #`);
     } else if (tokens[0] == "help") {
       add_help(`//help: Displays a list of recognized commands and their usage`);
-      add_help(`//help &lt;${arg("cmd")}&gt;: Displays help for a specific command`);
+      add_help(`//help &lt;${arg("command")}&gt;: Displays help for a specific command`);
     } else {
       add_help(`//help: No such command "${tokens[0].escape()}"`);
     }
-  } else if (cmd.startsWith('//')) {
-    add_html(`<div class="pre error">Unknown command "${cmd.escape()}"</div>`);
+  } else if (command.startsWith('//')) {
+    add_html(`<div class="pre error">Unknown command "${command.escape()}"</div>`);
   } else {
     return false;
   }
@@ -719,7 +737,7 @@ function show_context_window(client, cw, line) {
   $cw.attr("data-id", id);
   /* Define line and link templates */
   let Line = (s) => $(`<div class="item">${s}</div>`);
-  let Link = (id, text) => `<a id="${id}" class="cw-link" href="javascript:void(0)">${text.escape()}</a>`;
+  let Link = (id, text) => HTMLGen.url(null, text, "cw-link", id);
   let Em = (t) => `<span class="em">${t}</span>`;
   /* Add general user information */
   $cw.append(Line(`${Em(user)} in ${Em(channel)}`));
@@ -996,7 +1014,9 @@ function client_main(layout) {
       if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
         let $cli = $(this).closest('li');
         let cls = $cli.attr('class').replace('textbox', '').trim();
-        let $li = $(`<li><label><input type="checkbox" value="${v}" class="${cls}" checked />${$cli.find('label').html()} ${v}</label></li>`);
+        let cb = HTMLGen.checkbox(v, null, cls, true);
+        let val = $cli.find('label').html();
+        let $li = $(`<li><label>${cb}${val} ${v}</label></li>`);
         $cli.before($li);
         $(this).val('');
         update_module_config();
@@ -1143,47 +1163,49 @@ function client_main(layout) {
             } else {
               $(".content").children().remove();
             }
+            return;
           }
         }
       }
     }
-    add_html(HTMLGen.gen(event));
+    add_chat_event(event);
   });
 
   client.bind('twitch-clearchat', function _on_twitch_clearchat(e) {
     if (e.has_flag("target-user-id")) {
       /* Moderator timed out a user */
-      $(`.chat-line[data-channelid="${e.flag("room-id")}"][data-user-id="${e.flag("target-user-id")}"]`).parent().remove();
+      let r = e.flag("room-id");
+      let u = e.flag("target-user-id");
+      $(`.chat-line[data-channelid="${r}"][data-user-id="${u}"]`).parent().remove();
     } else {
       /* Moderator cleared the chat */
-      for (let e of $("div.content")) {
-        e.html("");
-      }
+      $("div.content").e.html("");
     }
   });
 
   client.bind('twitch-clearmsg', function _on_twitch_clearmsg(e) {
+    Util.StorageAppend("debug-msg-log", e);
     /* Moderator has timed-out or banned a user */
     Util.Warn("Unhandled CLEARMSG:", e);
   });
 
   client.bind('twitch-sub', function _on_twitch_sub(e) {
-    console.log('sub', e);
+    Util.StorageAppend("debug-msg-log", e);
     add_html(HTMLGen.sub(e));
   });
 
   client.bind('twitch-resub', function _on_twitch_resub(e) {
-    console.log('resub', e);
+    Util.StorageAppend("debug-msg-log", e);
     add_html(HTMLGen.resub(e));
   });
 
   client.bind('twitch-giftsub', function _on_twitch_giftsub(e) {
-    console.log('gift', e);
+    Util.StorageAppend("debug-msg-log", e);
     add_html(HTMLGen.giftsub(e));
   });
 
   client.bind('twitch-anongiftsub', function _on_twitch_anongiftsub(e) {
-    console.log('anon', e);
+    Util.StorageAppend("debug-msg-log", e);
     add_html(HTMLGen.anongiftsub(e));
   });
 

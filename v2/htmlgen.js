@@ -21,6 +21,7 @@ class HTMLGenerator {
   }
   set client(c) { this._client = c; }
   set config(c) { this._config = c; }
+  /* Generation from chat events */
   getColorFor(username) {
     if (!this._user_colors.hasOwnProperty(username)) {
       /* Taken from Twitch vendor javascript */
@@ -200,7 +201,7 @@ class HTMLGenerator {
         let emote = emotes.pop();
         let msg_start = message.substr(0, emote.start);
         let msg_end = message.substr(emote.end+1);
-        let emote_str = this.emote(emote);
+        let emote_str = this._twitchEmote(emote);
         message = `${msg_start}${emote_str}${msg_end}`;
         /* Shift the entire map to keep track */
         for (let idx = emote.ostart; idx < map.length; ++idx) {
@@ -450,5 +451,54 @@ class HTMLGenerator {
   }
   raid(event) {
     /* TODO */
+  }
+
+  /* General-use */
+  url(href=null, text=null, classes=null, id=null) {
+    let $l = $(`<a></a>`);
+    if (href !== null) {
+      $l.attr("href", href);
+    } else {
+      $l.attr("href", "javascript:void(0)");
+    }
+    if (text !== null) {
+      $l.html(text.escape());
+    } else if (href !== null) {
+      $l.html(href.escape());
+    } else {
+      $l.val("undefined");
+    }
+    if (classes !== null) {
+      if (typeof(classes) === "string") {
+        $l.addClass(classes);
+      } else {
+        for (let c of classes) {
+          $l.addClass(c);
+        }
+      }
+    }
+    if (id !== null) {
+      $l.attr("id", id);
+    }
+    return $l[0].outerHTML;
+  }
+
+  checkbox(value, id=null, classes=null, checked=false) {
+    let $e = $(`<input type="checkbox" />`);
+    $e.attr("value", value);
+    if (id !== null) {
+      $e.attr("id", id);
+    }
+    if (typeof(classes) === "string") {
+      $e.addClass(classes);
+    } else {
+      for (let c of classes) {
+        $e.addClass(c);
+      }
+    }
+    if (checked !== null) {
+      $e.attr("checked", "checked");
+    }
+    return $e[0].outerHTML;
   }
 }
