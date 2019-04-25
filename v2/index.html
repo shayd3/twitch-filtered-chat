@@ -8,6 +8,7 @@
   <script type="text/javascript" src="assets/jquery-3.4.0.js"></script>
   <script type="text/javascript" src="config.js"></script>
   <script type="text/javascript" src="colors.js"></script>
+  <script type="text/javascript" src="htmlgen.js"></script>
   <script type="text/javascript" src="filtered-chat.js"></script>
   <script type="text/javascript">
 "use strict";
@@ -151,6 +152,7 @@ function AssetLoaded(asset) {
   });
 }
 
+/* Assets for delayed load */
 let ASSETS = [
   ["twitch-api", "utility.js", AssetLoaded('Util')],
   ["twitch-api", "twitch-utility.js", AssetLoaded('Twitch')],
@@ -216,18 +218,6 @@ function make_window(id, classname, name) {
 
 /* Populate templates and load the client */
 function index_main(layout) {
-  /* Filter a few things out of the logger */
-  /* Util.Logger.add_filter(function(args) {
-    if (args.length > 0) {
-      if (typeof(args[0]) == "string") {
-        let pats = ["ws recv>", "ws open>", "ws close>"];
-        if (pats.any((p) => args[0].startsWith(p))) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }, "INFO"); */
   /* Remove the top-level "Loading" message */
   $("#wrapper #wrapper-loading").remove();
   /* Populate the page with the modules */
@@ -238,7 +228,6 @@ function index_main(layout) {
   /* Populate the column(s) */
   if (layout.Cols == "single") {
     /* Build one column (class=full) */
-    let $Col = $(`<div class="column full"></div>`);
     let $Module = make_window('module1', 'full', 'Chat');
     if (layout.Chat) {
       $Module.addClass("has-chat");
@@ -246,12 +235,11 @@ function index_main(layout) {
     } else {
       $Module.addClass("no-chat");
     }
+    let $Col = $(`<div class="column full"></div>`);
     $Col.append($Module);
     $("div#wrapper").append($Col);
   } else if (layout.Cols == "double") {
     /* Build two columns (class=left, class=right) */
-    let $Col1 = $(`<div class="column left"></div>`);
-    let $Col2 = $(`<div class="column right"></div>`);
     let $Module1 = make_window("module1", "left", "Left Chat");
     let $Module2 = make_window("module2", "right", "Right Chat");
     if (layout.Chat) {
@@ -260,6 +248,8 @@ function index_main(layout) {
     } else {
       $Module2.addClass("no-chat");
     }
+    let $Col1 = $(`<div class="column left"></div>`);
+    let $Col2 = $(`<div class="column right"></div>`);
     $Col1.append($Module1);
     $Col2.append($Module2);
     $("div#wrapper").append($Col1);
@@ -287,12 +277,18 @@ function index_main(layout) {
       .attr("type", "text/javascript")
       .attr("src", src)[0];
   }
-  for (let [atyp, afile, afunc] of ASSETS) {
-    let twapi = "https://kaedenn.github.io/twitch-api";
-    if (window.location.protocol === 'file:') {
-      twapi = "../../twitch-api";
+  for (let asset of ASSETS) {
+    let s = null;
+    if (asset.length == 3) {
+      let [atype, afile, afunc] = asset;
+      if (atype == "twitch-api") {
+        let base = `${window.location}`.substr(0, `${window.location}`.indexOf('/twitch-filtered-chat'));
+        let twapi = `${base}/twitch-api`;
+        s = script(`${twapi}/${afile}`);
+      } else {
+        console.error("Uknown asset", asset);
+      }
     }
-    let s = script(`${twapi}/${afile}`);
     if (s === null) {
       console.error("Failed to add script", asset);
     } else {
@@ -336,12 +332,11 @@ $(document).ready(function() {
   </script>
 </head>
 <body>
-  <!-- Beginning of content -->
+  <!-- Content wrapper -->
   <div id="wrapper">
     <div id="wrapper-loading" class="loading">Loading Panels...</div>
   </div>
-  <!-- End of content -->
-  <!-- Beginning of settings -->
+  <!-- Settings -->
   <div id="settings">
     <header>Settings</header>
     <ul>
@@ -389,15 +384,15 @@ $(document).ready(function() {
     </footer>
   </div>
   <img id="settings_button" src="assets/settings_white.png" alt="Settings" />
-  <!-- End of settings -->
-  <!-- Beginning of nickname context window -->
+  <!-- Username context window -->
   <div id="username_context" class="username_context"></div>
-  <!-- End of nickname context window -->
   <!-- Populate the page with a one-time script to focus on the chat -->
   <script type="text/javascript" id="txtChatFocus">
   function focus_once() {
-    if (!$("#txtChat").attr("focused")) {
-      $("#txtChat").focus().attr("focused", "1");
+    let $tc = $("#txtChat");
+    if (!$tc.attr("focused")) {
+      $tc.attr("focused", "1");
+      $tc[0].focus();
     }
   }
   document.addEventListener("tfc-loaded", focus_once);

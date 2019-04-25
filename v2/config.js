@@ -1,7 +1,4 @@
-// Twitch Filtered Chat
-// Configuration
-
-// All user-configurable items should be included in this file
+/* Twitch Filtered Chat (v2) Main Configuration */
 
 /* Defining a new CSS style:
  *  <style_name>: {
@@ -35,119 +32,56 @@ var CSSCheerStyles = {
     _disabled: true,
     cost: 1,
     class: "effect-marquee",
-    style: "",
-    wclass: "effect-marquee-container",
-    wstyle: "",
-    html_pre: "",
-    html_post: ""
+    wclass: "effect-marquee-container"
   },
   marquee: {
     cost: 1,
-    //class: "effect-marquee",
-    style: "",
-    //wclass: "effect-marquee-container",
-    wstyle: "",
     html_pre: "<marquee>",
     html_post: "</marquee>"
   },
   bold: {
     cost: 1,
-    class: "effect-bold",
-    style: "",
-    wclass: "",
-    wstyle: "",
-    html_pre: "",
-    html_post: ""
+    class: "effect-bold"
   },
   italic: {
     cost: 1,
-    class: "effect-italic",
-    style: "",
-    wclass: "",
-    wstyle: "",
-    html_pre: "",
-    html_post: ""
+    class: "effect-italic"
   },
   underline: {
     cost: 1,
-    class: "effect-underline",
-    style: "",
-    wclass: "",
-    wstyle: "",
-    html_pre: "",
-    html_post: ""
+    class: "effect-underline"
   },
   upsidedown: {
     cost: 1,
-    class: "effect-upsidedown",
-    style: "",
-    wclass: "",
-    wstyle: "",
-    html_pre: "",
-    html_post: ""
+    class: "effect-upsidedown"
   },
   inverted: {
     cost: 1,
-    class: "effect-inverted",
-    style: "",
-    wclass: "",
-    wstyle: "",
-    html_pre: "",
-    html_post: ""
+    class: "effect-inverted"
   },
   strikethrough: {
     cost: 1,
-    class: "effect-strikethrough",
-    style: "",
-    wclass: "",
-    wstyle: "",
-    html_pre: "",
-    html_post: ""
+    class: "effect-strikethrough"
   },
   subscript: {
     cost: 1,
-    class: "effect-subscript",
-    style: "",
-    wclass: "",
-    wstyle: "",
-    html_pre: "",
-    html_post: ""
+    class: "effect-subscript"
   },
   superscript: {
     cost: 1,
-    class: "effect-superscript",
-    style: "",
-    wclass: "",
-    wstyle: "",
-    html_pre: "",
-    html_post: ""
+    class: "effect-superscript"
   },
   big: {
     cost: 1,
-    class: "effect-big",
-    style: "",
-    wclass: "",
-    wstyle: "",
-    html_pre: "",
-    html_post: ""
+    class: "effect-big"
   },
   small: {
     cost: 1,
-    class: "effect-small",
-    style: "",
-    wclass: "",
-    wstyle: "",
-    html_pre: "",
-    html_post: ""
+    class: "effect-small"
   },
   rainbow: {
     cost: 1,
-    class: "effect-rainbow",
-    style: "",
-    wclass: "",
-    wstyle: "",
-    html_pre: "",
-    html_post: ""
+    class: "effect-rainbow"
   }
 };
 
