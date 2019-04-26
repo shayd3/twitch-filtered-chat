@@ -312,9 +312,6 @@ class HTMLGenerator {
       }
       let results = Twitch.ScanEmotes(event.message, bttv_emote_arr);
       results.sort((a, b) => (a.start - b.start));
-      if (results.length > 0) {
-        console.log(results);
-      }
       while (results.length > 0) {
         let emote = results.pop();
         let start = emote.start;
@@ -343,12 +340,12 @@ class HTMLGenerator {
     */
 
     /* @user highlighting */
-    message = message.replace(/(^|\b\s*)(@\w+)(\s*\b|$)/g, function(m, p1, p2, p3) {
+    message = message.replace(/(^|\b\s*)(@\w+)(\s*\b|$)/g, (function(m, p1, p2, p3) {
       if (p2.substr(1).toLowerCase() == this._client.GetName().toLowerCase()) {
         $msg.addClass("highlight");
       }
       return `${p1}<em>${p2}</em>${p3}`;
-    });
+    }).bind(this));
     /* Handle mod-only antics */
     if (event.ismod && !$("#cbForce").is(":checked") && event.flags.force) {
       if (event.message.startsWith('force ')) {
