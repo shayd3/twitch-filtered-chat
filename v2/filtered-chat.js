@@ -1133,7 +1133,7 @@ function client_main(layout) {
 
   client.bind('twitch-message', function _on_twitch_message(e) {
     if (Util.DebugLevel > 1) {
-      add_html(`<span class="pre">${e.values.toSource()}</span>`);
+      add_html(`<span class="pre">${JSON.stringify(e.values)}</span>`);
     }
   });
 
