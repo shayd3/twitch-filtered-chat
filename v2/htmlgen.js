@@ -5,7 +5,6 @@
 /* TODO:
  * Implement raid and calling code
  * Fix URL formatting with emotes (URLs in emotes are formatted)
- * Fix formatting for "@user" (user @ highlights)
  */
 
 /* Fold methods
@@ -68,13 +67,13 @@ class HTMLGenerator {
     $b.attr('data-badge', '1');
     $b.attr('data-badge-name', badge_name);
     $b.attr('data-badge-num', badge_num);
-    if (client.IsGlobalBadge(badge_name, badge_num)) {
-      let badge_info = client.GetGlobalBadge(badge_name, badge_num);
+    if (this._client.IsGlobalBadge(badge_name, badge_num)) {
+      let badge_info = this._client.GetGlobalBadge(badge_name, badge_num);
       $b.attr('src', badge_info.image_url_1x);
       $b.attr('tw-badge-scope', 'global');
       $b.attr('alt', badge_info.title);
-    } else if (client.IsChannelBadge(event.channel, badge_name)) {
-      let badge_info = client.GetChannelBadge(event.channel, badge_name);
+    } else if (this._client.IsChannelBadge(event.channel, badge_name)) {
+      let badge_info = this._client.GetChannelBadge(event.channel, badge_name);
       let badge_src = !!badge_info.alpha ? badge_info.alpha : badge_info.image;
       $b.attr('src', badge_src);
       $b.attr('tw-badge', JSON.stringify(badge_info));
@@ -223,7 +222,7 @@ class HTMLGenerator {
     /* Handle cheers */
     if (event.flag('bits') && event.flag('bits') > 0) {
       let bits_left = event.flag('bits');
-      let matches = client.FindCheers(event.channel.channel, event.message);
+      let matches = this._client.FindCheers(event.channel.channel, event.message);
       matches.sort((a, b) => a.start - b.start);
       while (matches.length > 0) {
         let match = matches.pop();
@@ -270,7 +269,7 @@ class HTMLGenerator {
     */
 
     /* Handle FFZ emotes */
-    let ffz_emotes = client.GetFFZEmotes(event.channel.channel);
+    let ffz_emotes = this._client.GetFFZEmotes(event.channel.channel);
     if (ffz_emotes && ffz_emotes.emotes) {
       let ffz_emote_arr = [];
       for (let [k,v] of Object.entries(ffz_emotes.emotes)) {
@@ -305,7 +304,7 @@ class HTMLGenerator {
     }
 
     /* Handle BTTV emotes */
-    let bttv_emotes = client.GetBTTVEmotes(event.channel.channel);
+    let bttv_emotes = this._client.GetBTTVEmotes(event.channel.channel);
     if (bttv_emotes && bttv_emotes.emotes) {
       let bttv_emote_arr = [];
       for (let [k,v] of Object.entries(bttv_emotes.emotes)) {
@@ -345,7 +344,7 @@ class HTMLGenerator {
 
     /* @user highlighting */
     message = message.replace(/(^|\b\s*)(@\w+)(\s*\b|$)/g, function(m, p1, p2, p3) {
-      if (p2.substr(1).toLowerCase() == client.GetName().toLowerCase()) {
+      if (p2.substr(1).toLowerCase() == this._client.GetName().toLowerCase()) {
         $msg.addClass("highlight");
       }
       return `${p1}<em>${p2}</em>${p3}`;
@@ -379,7 +378,7 @@ class HTMLGenerator {
   gen(event) {
     let $e = $(`<div class="chat-line"></div>`);
     if (!event.flags.color) event.flags.color = this.getColorFor(event.user);
-    if (client.IsUIDSelf(event.flags["user-id"])) {
+    if (this._client.IsUIDSelf(event.flags["user-id"])) {
       $e.addClass('self');
     }
     $e.attr("data-id", event.flags.id);
