@@ -348,7 +348,7 @@ $(document).ready(function() {
   <script type="text/javascript" id="txtChatFocus">
   function focus_once() {
     let $tc = $("#txtChat");
-    if ($tc && !$tc.attr("focused")) {
+    if ($tc && $tc.length > 0 && !$tc.attr("focused")) {
       $tc.attr("focused", "1");
       $tc[0].focus();
     }

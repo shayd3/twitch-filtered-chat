@@ -65,6 +65,7 @@ function parse_query_string(config, qs=null) {
     /* Parse specific items */
     if (k === "clientid") {
       key = "ClientID";
+      config.__clientid_override = true;
       query_remove.push(k);
     } else if (k === "user" || k === "name") {
       key = "Name";
@@ -109,6 +110,9 @@ function parse_query_string(config, qs=null) {
       val = ParseLayout(v);
     }
     config[key] = val;
+  }
+  if (!config.hasOwnProperty('layout')) {
+    config.Layout = ParseLayout("double:chat");
   }
   return query_remove;
 }
@@ -482,8 +486,8 @@ function add_pre(content) {
 }
 
 /* Handle a chat command */
-function handle_command(event, client) {
-  let tokens = event.target.value.split(" ");
+function handle_command(value, client) {
+  let tokens = value.split(" ");
   let command = tokens.shift();
   let config = get_config_object();
 
@@ -533,10 +537,18 @@ function handle_command(event, client) {
         let qs = [];
         let qs_push = (k, v) => (qs.push(`${k}=${encodeURIComponent(v)}`));
         if (config.Debug > 0) { qs_push('debug', config.Debug); }
-        if (config.ClientID && config.ClientID.length == 30) { qs_push('clientid', config.ClientID); }
-        if (config.Channels.length > 0) { qs_push('channels', config.Channels.join(",")); }
-        if (config.Name && config.Name.length > 0) { qs_push('user', config.Name); }
-        if (config.Pass && config.Pass.length > 0) { qs_push('pass', config.Pass); }
+        if (config.__clientid_override) {
+          if (config.ClientID && config.ClientID.length == 30) {
+            qs_push('clientid', config.ClientID);
+          }
+        }
+        if (config.Channels.length > 0) {
+          qs_push('channels', config.Channels.join(","));
+        }
+        if (tokens.indexOf("auth") > -1) {
+          if (config.Name && config.Name.length > 0) { qs_push('user', config.Name); }
+          if (config.Pass && config.Pass.length > 0) { qs_push('pass', config.Pass); }
+        }
         if (config.NoAssets) { qs_push('noassets', config.NoAssets); }
         if (config.NoFFZ) { qs_push('noffz', config.NoFFZ); }
         if (config.NoBTTV) { qs_push('nobttv', config.NoBTTV); }
@@ -849,7 +861,7 @@ function client_main(layout) {
     if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
       /* Prevent sending empty messages by mistake */
       if (e.target.value.trim().length > 0) {
-        if (!handle_command(e, client)) {
+        if (!handle_command(e.target.value, client)) {
           client.SendMessageToAll(e.target.value);
         }
         client.AddHistory(e.target.value);
