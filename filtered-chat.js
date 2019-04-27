@@ -468,21 +468,17 @@ function check_filtered(module, event) {
   return true;
 }
 
-/* Add either an event or direct HTML to all modules */
+/* Add direct HTML to all modules */
 function add_html(content) {
-  /* Add the html to each module */
-  $(".module").each(function() {
-    let $w = $(`<div class="line line-wrapper"></div>`);
-    $w.html(content);
-    let $c = $(this).find('.content');
-    $c.append($w);
-    $c.scrollTop(Math.pow(2, 31) - 1);
-  });
+  let line = `<div class="line line-wrapper"></div>`;
+  let $Content = $(".module").find($(".content"));
+  $Content.append($(line).append(content));
+  $Content.scrollTop(Math.pow(2, 31) - 1);
 }
 
 /* Shortcut for adding a <div class="pre"> element */
 function add_pre(content) {
-  add_html(`<div class="pre">${content}</div>`);
+  add_html($(`<div class="pre"></div>`).html(content));
 }
 
 /* Handle a chat command */
@@ -672,37 +668,6 @@ function handle_command(value, client) {
   return true;
 }
 
-/* Format a date object to "%Y-%m-%d %H:%M:%S.<ms>" */
-function format_date(date) {
-  let [y, m, d] = [date.getFullYear(), date.getMonth(), date.getDay()];
-  let [h, mi, s] = [date.getHours(), date.getMinutes(), date.getSeconds()];
-  let ms = date.getMilliseconds();
-  let p = [y, Util.Pad(m, 2), Util.Pad(d, 2),
-           Util.Pad(h, 2), Util.Pad(mi, 2), Util.Pad(s, 2),
-           Util.Pad(ms, 3)];
-  return `${p[0]}-${p[1]}-${p[2]} ${p[3]}:${p[4]}:${p[5]}.${p[6]}`;
-}
-
-/* Format an interval in seconds to "Xh Ym Zs" */
-function format_interval(time) {
-  let parts = [];
-  time = Math.round(time);
-  if (time < 0) {
-    parts.push('-');
-    time *= -1;
-  }
-  if (time % 60 != 0) { parts.unshift(`${time % 60}s`); }
-  time = Math.floor(time / 60);
-  if (time > 0) {
-    if (time % 60 != 0) { parts.unshift(`${time % 60}m`); }
-    time = Math.floor(time / 60);
-  }
-  if (time > 0) {
-    parts.unshift(`${time}h`);
-  }
-  return parts.join(" ");
-}
-
 /* Populate and show the username context window */
 function show_context_window(client, cw, line) {
   let $cw = $(cw);
@@ -773,8 +738,8 @@ function show_context_window(client, cw, line) {
     $cw.append($ba);
   }
   /* Add other information */
-  let sent_ts = format_date(time);
-  let ago_ts = format_interval((Date.now() - timestamp) / 1000);
+  let sent_ts = Util.FormatDate(time);
+  let ago_ts = Util.FormatInterval((Date.now() - timestamp) / 1000);
   $cw.append($Line(`Sent: ${sent_ts} (${ago_ts} ago)`));
   $cw.append($Line(`UserID: ${userid}`));
   $cw.append($Line(`MsgUID: ${id}`));
@@ -800,6 +765,8 @@ function show_context_window(client, cw, line) {
   let l_off = $l.offset();
   $cw.fadeIn().offset({top: l_off.top + $l.outerHeight() + 2, left: l_off.left});
 };
+
+/* CSS functions {{{0 */
 
 /* Change a variable in main.css :root */
 function set_css_var(varname, value) {
@@ -837,6 +804,8 @@ function update_transparency(transparent) {
     }
   }
 }
+
+/* End CSS functions 0}}} */
 
 /* Called once when the document loads */
 function client_main(layout) {
