@@ -5,6 +5,7 @@
 /* TODO:
  * Verify HTMLGen.sub and HTMLGen.anonsubgift
  * Rewrite index.html using promises
+ * Rewrite filtered-chat.js to hide get_config_object() within client_main()
  *
  * FIXME: BUGS:
  * TypeError: this._self_userstate[Twitch.FormatChannel(...)] is undefined
@@ -842,6 +843,9 @@ function client_main(layout) {
 
   /* Construct the HTML Generator and tell it and the client about each other */
   client.set('HTMLGen', new HTMLGenerator(client));
+
+  /* Construct the plugins */
+  Plugins.LoadAll(client);
 
   /* Allow JS access if debugging is enabled */
   if (Util.DebugLevel > 0) {

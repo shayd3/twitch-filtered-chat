@@ -10,6 +10,7 @@
   <script type="text/javascript" src="colors.js"></script>
   <script type="text/javascript" src="htmlgen.js"></script>
   <script type="text/javascript" src="filtered-chat.js"></script>
+  <script type="text/javascript" src="plugins/plugins.js"></script>
   <script type="text/javascript">
 "use strict";
 
@@ -186,6 +187,7 @@ function make_window(id, classname, name) {
 
 /* Populate templates and load the client */
 function index_main() {
+  /* Parse layout */
   let layout_raw = Util.ParseQueryString().layout;
   if (layout_raw === undefined) layout_raw = "double:chat";
   let layout = ParseLayout(layout_raw);
