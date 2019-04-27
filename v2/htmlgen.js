@@ -1,4 +1,4 @@
-/* HTML Generator for the Twitch Filtered Chat (v2) */
+/* HTML Generator for the Twitch Filtered Chat */
 
 "use strict";
 

@@ -1,4 +1,4 @@
-/* Twitch Filtered Chat (v2) Main Module */
+/* Twitch Filtered Chat Main Module */
 
 "use strict";
 
@@ -527,9 +527,7 @@ function handle_command(event, client) {
         let url = location.protocol + '//' + location.hostname + location.pathname;
         if (tokens.length > 1) {
           if (tokens[1].startsWith('git')) {
-            url = "https://kaedenn.github.io/twitch-filtered-chat/v2/index.html";
-          } else if (tokens[1].startsWith('file')) {
-            url = "file:///home/kaedenn/Programming/twitch-filtered-chat/v2/index.html";
+            url = "https://kaedenn.github.io/twitch-filtered-chat/index.html";
           }
         }
         let qs = [];

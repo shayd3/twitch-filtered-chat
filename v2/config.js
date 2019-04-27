@@ -1,4 +1,4 @@
-/* Twitch Filtered Chat (v2) Main Configuration */
+/* Twitch Filtered Chat Main Configuration */
 
 /* Defining a new CSS style:
  *  <style_name>: {
