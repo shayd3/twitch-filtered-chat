@@ -812,6 +812,32 @@ function get_css_var(varname) {
    * $("link[rel=\"stylesheet\"]")[0].sheet.cssRules.item(":root").cssText ? */
 }
 
+/* Set or unset transparency */
+function update_transparency(transparent) {
+  let ss = Util.CSS.GetSheet("main.css");
+  if (!ss) { Util.Error("Can't find main.css object"); return; }
+  let rule = Util.CSS.GetRule(ss, ":root");
+  if (!rule) { Util.Error("Can't find main.css :root rule"); return; }
+  let props = [];
+  /* Find the prop="--<name>-color" rules */
+  for (let prop of Util.CSS.GetPropertyNames(rule)) {
+    if (prop.match(/^--[a-z-]+-color$/)) {
+      props.push(prop);
+    }
+  }
+  for (let prop of props) {
+    if (transparent) {
+      /* Set them all to transparent */
+      set_css_var(prop, 'transparent');
+      $(".module").addClass("transparent");
+    } else {
+      /* Set them all to default */
+      set_css_var(prop, `var(${prop}-default)`);
+      $(".module").removeClass("transparent");
+    }
+  }
+}
+
 /* Called once when the document loads */
 function client_main(layout) {
   let client;
@@ -836,7 +862,7 @@ function client_main(layout) {
 
     /* Simulate clicking cbTransparent if config.Transparent is set */
     if (config.Transparent) {
-      $("#cbTransparent").click();
+      update_transparency(true);
     }
 
     /* After all that, sync the final settings up with the html */
@@ -954,29 +980,7 @@ function client_main(layout) {
 
   /* Changing the "stream is transparent" checkbox */
   $("#cbTransparent").change(function() {
-    let ss = Util.CSS.GetSheet("main.css");
-    if (!ss) { Util.Error("Can't find main.css object"); return; }
-    let rule = Util.CSS.GetRule(ss, ":root");
-    if (!rule) { Util.Error("Can't find main.css :root rule"); return; }
-    let props = [];
-    /* Find the prop="--<name>-color" rules */
-    for (let prop of Util.CSS.GetPropertyNames(rule)) {
-      if (prop.match(/^--[a-z-]+-color$/)) {
-        props.push(prop);
-      }
-    }
-    let is_transparent = $(this).is(":checked");
-    for (let prop of props) {
-      if (is_transparent) {
-        /* Set them all to transparent */
-        set_css_var(prop, 'transparent');
-        $(".module").addClass("transparent");
-      } else {
-        /* Set them all to default */
-        set_css_var(prop, `var(${prop}-default)`);
-        $(".module").removeClass("transparent");
-      }
-    }
+    return update_transparency($(this).is(":checked"));
   });
 
   /* Changing the value for "background image" */
