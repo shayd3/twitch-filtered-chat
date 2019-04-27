@@ -12,14 +12,14 @@
  */
 
 class HTMLGenerator {
-  constructor() {
-    this._client = null;
-    this._config = null;
+  constructor(client) {
+    this._client = client;
     this._default_colors = ["lightseagreen", "forestgreen", "goldenrod", "dodgerblue", "darkorchid", "crimson"];
     this._user_colors = {};
   }
+
   set client(c) { this._client = c; }
-  set config(c) { this._config = c; }
+
   /* Generation from chat events */
   getColorFor(username) {
     if (!this._user_colors.hasOwnProperty(username)) {

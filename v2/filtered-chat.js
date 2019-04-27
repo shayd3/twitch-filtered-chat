@@ -34,7 +34,6 @@ const CLIENT_ID = [49,101,52,55,97,98,108,48,115,103,52,50,105,110,116,104,
                    53,48,119,106,101,114,98,122,120,104,57,109,98,115];
 const CACHED_VALUE = "Cached";
 const AUTOGEN_VALUE = "Auto-Generated";
-let HTMLGen = new HTMLGenerator();
 
 /* Begin configuration section {{{0 */
 
@@ -465,20 +464,6 @@ function check_filtered(module, event) {
   return true;
 }
 
-function add_chat_event(event) {
-  $(".module").each(function() {
-    if (!check_filtered($(this), event)) {
-      /* Filtered out */
-      return;
-    }
-    let $w = $(`<div class="line line-wrapper"></div>`);
-    $w.html(HTMLGen.gen(event));
-    let $c = $(this).find('.content');
-    $c.append($w);
-    $c.scrollTop(Math.pow(2, 31) - 1);
-  });
-}
-
 /* Add either an event or direct HTML to all modules */
 function add_html(content) {
   /* Add the html to each module */
@@ -497,10 +482,11 @@ function add_pre(content) {
 }
 
 /* Handle a chat command */
-function handle_command(e, client) {
-  let tokens = e.target.value.split(" ");
+function handle_command(event, client) {
+  let tokens = event.target.value.split(" ");
   let command = tokens.shift();
   let config = get_config_object();
+
   /* Clear empty tokens at the end (\r\n related) */
   while (tokens.length > 0 && tokens[tokens.length-1].length == 0) {
     tokens.pop();
@@ -570,7 +556,7 @@ function handle_command(e, client) {
         } else {
           url += "?base64=" + encodeURIComponent(btoa(qs.join("&")));
         }
-        add_help(HTMLGen.url(url));
+        add_help(client.get('HTMLGen').url(url));
       } else if (config.hasOwnProperty(tokens[0])) {
         add_helpline(tokens[0], JSON.stringify(config[tokens[0]]));
       } else {
@@ -735,62 +721,71 @@ function show_context_window(client, cw, line) {
   $cw.attr("data-vip", vip);
   $cw.attr("data-caster", caster);
   $cw.attr("data-id", id);
-  /* Define line and link templates */
-  let Line = (s) => $(`<div class="item">${s}</div>`);
-  let Link = (id, text) => HTMLGen.url(null, text, "cw-link", id);
+  /* Define functions for building elements */
+  let $Line = (s) => $(`<div class="item">${s}</div>`);
+  let Link = (id, text) => client.get('HTMLGen').url(null, text, "cw-link", id);
   let Em = (t) => `<span class="em">${t}</span>`;
+  let $EmItem = (s) => $(Em(s)).css('margin-left', '0.5em');
   /* Add general user information */
-  $cw.append(Line(`${Em(user)} in ${Em(channel)}`));
+  let $username = $l.find('.username');
+  let color = `color: ${$username.css("color")}`;
+  let classes = $username.attr("class");
+  $cw.append($Line(`<span class="${classes}" style="${color}">${user}</span> in ${Em(channel)}`));
   /* Add link to timeout user */
-  let $tl = $(`<div class="cw-timeout">Timeout:</div>`);
-  for (let dur of "1s 10s 60s 10m 30m 1h 12h 24h".split(" ")) {
-    let $ta = $(Link(`cw-timeout-${user}-${dur}`, dur));
-    $ta.addClass("cw-timeout-dur");
-    $ta.attr("data-channel", channel);
-    $ta.attr("data-user", user);
-    $ta.attr("data-duration", dur);
-    $ta.click(function() {
-      let ch = $(this).attr('data-channel');
-      let u = $(this).attr('data-user');
-      let dur = $(this).attr('data-duration');
-      client.Timeout(ch, u, dur);
-      Util.Log('Timed out user', u, 'from', ch, 'for', dur);
-      $(cw).fadeOut();
-    });
-    $tl.append($ta);
+  if (client.IsMod(channel)) {
+    let $tl = $(`<div class="cw-timeout">Timeout:</div>`);
+    for (let dur of "1s 10s 60s 10m 30m 1h 12h 24h".split(" ")) {
+      let $ta = $(Link(`cw-timeout-${user}-${dur}`, dur));
+      $ta.addClass("cw-timeout-dur");
+      $ta.attr("data-channel", channel);
+      $ta.attr("data-user", user);
+      $ta.attr("data-duration", dur);
+      $ta.click(function() {
+        let ch = $(this).attr('data-channel');
+        let u = $(this).attr('data-user');
+        let dur = $(this).attr('data-duration');
+        client.Timeout(ch, u, dur);
+        Util.Log('Timed out user', u, 'from', ch, 'for', dur);
+        $(cw).fadeOut();
+      });
+      $tl.append($ta);
+    }
+    $cw.append($tl);
   }
-  $cw.append($tl);
   /* Add link which populates "/ban <user>" into the chat */
-  let $ba = $(Link(`cw-ban-${user}`, "Ban"));
-  $ba.attr("data-channel", channel);
-  $ba.attr("data-user", user);
-  $ba.click(function() {
-    $("#txtChat").val(`/ban ${$(this).attr('data-user')}`);
-  });
-  $cw.append($ba);
+  if (client.IsMod(channel)) {
+    let $ba = $(Link(`cw-ban-${user}`, "Ban"));
+    $ba.attr("data-channel", channel);
+    $ba.attr("data-user", user);
+    $ba.click(function() {
+      $("#txtChat").val(`/ban ${$(this).attr('data-user')}`);
+    });
+    $cw.append($ba);
+  }
   /* Add other information */
   let sent_ts = format_date(time);
   let ago_ts = format_interval((Date.now() - timestamp) / 1000);
-  $cw.append(Line(`Sent: ${sent_ts} (${ago_ts} ago)`));
-  $cw.append(Line(`UserID: ${userid}`));
-  $cw.append(Line(`MsgUID: ${id}`));
+  $cw.append($Line(`Sent: ${sent_ts} (${ago_ts} ago)`));
+  $cw.append($Line(`UserID: ${userid}`));
+  $cw.append($Line(`MsgUID: ${id}`));
   /* Add roles (and ability to remove roles, for the caster) */
   if (mod || vip || sub) {
-    let $role_line = Line(`User Role:`);
-    let EmItem = (s) => $(Em(s)).css('margin-left', '0.5em');
-    if (mod) { $role_line.append(EmItem('Mod')); }
-    if (vip) { $role_line.append(EmItem('VIP')); }
-    if (sub) { $role_line.append(EmItem('Sub')); }
-    $cw.append($role_line);
+    let $roles = $Line(`User Role:`);
+    if (mod) { $roles.append($EmItem('Mod')); $roles.append(","); }
+    if (vip) { $roles.append($EmItem('VIP')); $roles.append(","); }
+    if (sub) { $roles.append($EmItem('Sub')); $roles.append(","); }
+    /* Remove the last comma */
+    $roles[0].removeChild($roles[0].lastChild);
+    $cw.append($roles);
     if (client.IsCaster(channel) && !client.IsUIDSelf(user_id)) {
-      if (mod) { $cw.append(Line(Link('cw-unmod', 'Remove Mod'))); }
-      if (vip) { $cw.append(Line(Link('cw-unvip', 'Remove VIP'))); }
+      if (mod) { $cw.append($Line(Link('cw-unmod', 'Remove Mod'))); }
+      if (vip) { $cw.append($Line(Link('cw-unvip', 'Remove VIP'))); }
     }
   }
   /* Add the ability to add roles (for the caster) */
   if (client.IsCaster(channel) && !client.IsUIDSelf(user_id)) {
-    if (!mod) { $cw.append(Line(Link('cw-make-mod', 'Make Mod'))); }
-    if (!vip) { $cw.append(Line(Link('cw-make-vip', 'Make VIP'))); }
+    if (!mod) { $cw.append($Line(Link('cw-make-mod', 'Make Mod'))); }
+    if (!vip) { $cw.append($Line(Link('cw-make-vip', 'Make VIP'))); }
   }
   let l_off = $l.offset();
   $cw.fadeIn().offset({top: l_off.top + $l.outerHeight() + 2, left: l_off.left});
@@ -809,27 +804,43 @@ function get_css_var(varname) {
 
 /* Called once when the document loads */
 function client_main(layout) {
-  let config = get_config_object();
-  let client = new TwitchClient(config);
-  config.Layout = layout;
-  Util.DebugLevel = config.Debug;
-  HTMLGen.client = client;
-  HTMLGen.config = config;
+  let client;
+  /* Obtain the config and construct the client */
+  (function() {
+    let config = get_config_object();
+    client = new TwitchClient(config);
+    Util.DebugLevel = config.Debug;
 
-  /* Change the document title to show our authentication state */
-  document.title += " -";
-  if (config.Pass && config.Pass.length > 0) {
-    document.title += " Authenticated";
-  } else {
-    document.title += " Read-Only";
-  }
+    /* Change the document title to show our authentication state */
+    document.title += " -";
+    if (config.Pass && config.Pass.length > 0) {
+      document.title += " Authenticated";
+    } else {
+      document.title += " Read-Only";
+      if (config.Layout.Chat) {
+        /* Change the chat placeholder and border to reflect read-only */
+        $("#txtChat").attr("placeholder", "Authentication needed to send messages");
+        set_css_var('--chat-border-color', '#dc143c');
+      }
+    }
+
+    /* Simulate clicking cbTransparent if config.Transparent is set */
+    if (config.Transparent) {
+      $("#cbTransparent").click();
+    }
+
+    /* After all that, sync the final settings up with the html */
+    $(".module").each(function() {
+      set_module_settings(this, config[$(this).attr('id')]);
+    });
+  })();
+
+  /* Construct the HTML Generator and tell it and the client about each other */
+  client.set('HTMLGen', new HTMLGenerator(client));
 
   /* Allow JS access if debugging is enabled */
   if (Util.DebugLevel > 0) {
     window.client = client;
-  }
-  if (Util.DebugLevel > 1) {
-    window.config = config;
   }
 
   let is_up = (k) => (k == KeyEvent.DOM_VK_UP);
@@ -958,11 +969,6 @@ function client_main(layout) {
     }
   });
 
-  /* Simulate clicking cbTransparent if config.Transparent is set */
-  if (config.Transparent) {
-    $("#cbTransparent").click();
-  }
-
   /* Changing the value for "background image" */
   $("#txtBGImage").keyup(function(e) {
     if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
@@ -989,7 +995,7 @@ function client_main(layout) {
     let $lbl = $(this).parent().children('label.name');
     let $tb = $(this).parent().children('input.name');
     if ($settings.is(":visible")) {
-      /* Update config on close */
+      /* Update module configurations on close */
       update_module_config();
       $tb.hide();
       $lbl.html($tb.val()).show();
@@ -1014,7 +1020,7 @@ function client_main(layout) {
       if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
         let $cli = $(this).closest('li');
         let cls = $cli.attr('class').replace('textbox', '').trim();
-        let cb = HTMLGen.checkbox(v, null, cls, true);
+        let cb = client.get('HTMLGen').checkbox(v, null, cls, true);
         let val = $cli.find('label').html();
         let $li = $(`<li><label>${cb}${val} ${v}</label></li>`);
         $cli.before($li);
@@ -1072,11 +1078,6 @@ function client_main(layout) {
   client.bind('twitch-open', function _on_twitch_open(e) {
     let notes = [];
     $(".loading").remove();
-    if (e.has_value('has-clientid') && e.value('has-clientid')) {
-      notes.push("(with Client-ID)");
-    } else {
-      notes.push("(without Client-ID)");
-    }
     if (client.IsAuthed()) {
       notes.push("(authenticated)");
     } else {
@@ -1120,7 +1121,7 @@ function client_main(layout) {
     }
     let channel = Twitch.FormatChannel(e.channel);
     let message = e.message.escape();
-    add_html(`<div class="notice">Notice: ${channel}: ${message}</div>`);
+    add_html(`<div class="notice">Notice from ${channel}: ${message}</div>`);
   });
 
   client.bind('twitch-error', function _on_twitch_error(e) {
@@ -1128,7 +1129,7 @@ function client_main(layout) {
     let user = e.user;
     let command = e.values.command;
     let message = e.message.escape();
-    add_html(`<div class="error">Error ${user}: ${command}: ${message}</div>`);
+    add_html(`<div class="error">Error for ${user}: ${command}: ${message}</div>`);
   });
 
   client.bind('twitch-message', function _on_twitch_message(e) {
@@ -1168,7 +1169,17 @@ function client_main(layout) {
         }
       }
     }
-    add_chat_event(event);
+    $(".module").each(function() {
+      if (!check_filtered($(this), event)) {
+        /* Filtered out */
+        return;
+      }
+      let $w = $(`<div class="line line-wrapper"></div>`);
+      $w.html(client.get('HTMLGen').gen(event));
+      let $c = $(this).find('.content');
+      $c.append($w);
+      $c.scrollTop(Math.pow(2, 31) - 1);
+    });
   });
 
   client.bind('twitch-clearchat', function _on_twitch_clearchat(e) {
@@ -1191,30 +1202,25 @@ function client_main(layout) {
 
   client.bind('twitch-sub', function _on_twitch_sub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    add_html(HTMLGen.sub(e));
+    add_html(client.get('HTMLGen').sub(e));
   });
 
   client.bind('twitch-resub', function _on_twitch_resub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    add_html(HTMLGen.resub(e));
+    add_html(client.get('HTMLGen').resub(e));
   });
 
   client.bind('twitch-giftsub', function _on_twitch_giftsub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    add_html(HTMLGen.giftsub(e));
+    add_html(client.get('HTMLGen').giftsub(e));
   });
 
   client.bind('twitch-anongiftsub', function _on_twitch_anongiftsub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    add_html(HTMLGen.anongiftsub(e));
+    add_html(client.get('HTMLGen').anongiftsub(e));
   });
 
   /* End of all the binding 0}}} */
-
-  /* Sync the final settings up with the html */
-  $(".module").each(function() {
-    set_module_settings(this, config[$(this).attr('id')]);
-  });
 
   /* Finally, connect */
   client.Connect();

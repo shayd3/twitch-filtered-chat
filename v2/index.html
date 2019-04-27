@@ -21,29 +21,19 @@
  * The following are parsed in filtered-chat.js:
  *  config_key  - Config key override (default: "config")
  *  clientid    - ClientID to use for Twitch asset loading
- *  user        - Username to use (for Twitch identification)
- *  pass        - OAuth token to use (removed once parsed)
+ *  user        - Username to use (requires "pass" too)
+ *  pass        - OAuth token to use (requires "user"; removed once parsed)
  *  debug       - One of "true", "false", "debug", "trace" (default: "false")
  *  channels    - Channels to join (without #), separated by commas
  *  noassets    - Prevents loading of image (badge, emote, cheer) assets
  *  noffz       - Disable FFZ support entirely
  *  nobttv      - Disable BTTV support entirely
  *  hmax        - Maximum number of chat messages to retain (default 300)
+ *  trans       - Makes the backgrounds completely transparent
+ *  module1     - The encoded module configuration for the first module
+ *  module2     - The encoded module configuration for the second module
  *
- * EXAMPLE QUERY STRING USAGE
- *
- * Authenticated: index.html
-      ?clientid=<YOUR-CLIENTID>
-      &channels=dwangoAC,pangaeapanga
-      &user=<YOUR-TWITCH-USERNAME>
-      &pass=oauth:<YOUR-OAUTH>
-      &layout=single:chat
- * Unauthenticated: index.html
-      ?channels=dwangoAC,pangaeapanga
-      &layout=double:nochat
- */
-
-/** Layout option
+ ** LAYOUT OPTION USAGE
  *
  * Usage:
  *  layout=<keyword>[:<chat>]
@@ -62,54 +52,29 @@
  *    Give two windows side-by-side without a chat input textarea
  *  layout=single:slim
  *    Give one window without header, chat, or settings viewable
+ *
+ ** EXAMPLE QUERY STRING USAGE
+ *
+ * Authenticated: index.html
+      ?clientid=<YOUR-CLIENTID>
+      &channels=dwangoAC,pangaeapanga
+      &user=<YOUR-TWITCH-USERNAME>
+      &pass=oauth:<YOUR-OAUTH>
+      &layout=single:chat
+ * Unauthenticated: index.html
+      ?channels=dwangoAC,pangaeapanga
+      &layout=double:nochat
  */
 
-/** PAGE LOAD SEQUENCE (in horrifying detail)
-
-**** index.html ****
+/* PAGE LOAD SEQUENCE
 1) Inject and load each of the scripts defined in `ASSETS`
 2) On document.ready:
-  2.1) Parse the layout query string arg
-  2.2) Wait for script assets to finish loading
-  2.3) Call index_main with the parsed layout
+  2.1) Wait for script assets to finish loading
+  2.2) Call index_main
 3) In index_main
   3.1) Build the document based on the layout
   3.2) Wait for the document to finish rendering
   3.3) Call client_main from filtered_chat.js
-
-**** filtered_chat.js ****
-1) Load configuration object
-2) Construct the TwitchClient
-3) Adjust the document.title based on configuration
-4) Bind all of the things using jQuery:
-  a) Bind "return" keypress on #txtChat to send a message
-  b) Bind "return" keypress on #settings to cick the settings button
-  c) Bind settings button click to toggle settings visibility
-  d) Bind clear-chat button click to char the chat
-  e) Bind changing the debugging level to change the debugging level
-  f) Bind the reconnect button to reconnect the client
-  g) Bind clicking on the module settings to toggle the module settings window
-  h) Bind "return" on any of the module settings to update the settings
-  i) Bind changing a module's name
-  j) Bind clicks on the document to handle the following:
-    i) Clicking on the "reconnect" link reconnects the client
-    ii) Clicking on a username opens the username context window
-    iii) Clicking off of the username and username context window closes it
-5) Bind to the following chat events:
-  a) twitch-open
-  b) twitch-close
-  c) twitch-notice
-  d) twitch-error
-  e) twitch-message
-  f) twitch-chat
-  g) twitch-clearchat
-  h) twitch-clearmsg
-  i) twitch-sub
-  j) twitch-resub
-  k) twitch-giftsub
-  l) twitch-anongiftsub
-6) Store the computed settings in the modules' settings window
-
  */
 
 /* Parse layout= query string value */
@@ -158,6 +123,9 @@ let ASSETS = [
   ["twitch-api", "twitch-utility.js", AssetLoaded('Twitch')],
   ["twitch-api", "colors.js", AssetLoaded('AllColors')],
   ["twitch-api", "client.js", AssetLoaded('TwitchClient')]
+/* The following are supported:
+  ["GLOBAL", "https://example.com/js/library.js", function() { return window.Lib; }]
+ */
 ];
 
 /* Return true if all assets defined in ASSETS are loaded */
@@ -217,15 +185,17 @@ function make_window(id, classname, name) {
 }
 
 /* Populate templates and load the client */
-function index_main(layout) {
+function index_main() {
+  let layout_raw = Util.ParseQueryString().layout;
+  if (layout_raw === undefined) layout_raw = "double:chat";
+  let layout = ParseLayout(layout_raw);
   /* Remove the top-level "Loading" message */
   $("#wrapper #wrapper-loading").remove();
-  /* Populate the page with the modules */
-  let $Chat = $(`
-<div id="chat">
+  let $Chat = $(`<div id="chat">
   <textarea id="txtChat" placeholder="Send a message" histindex="-1"></textarea>
 </div>`);
-  /* Populate the column(s) */
+  /* Create the columns */
+  let Columns = [];
   if (layout.Cols == "single") {
     /* Build one column (class=full) */
     let $Module = make_window('module1', 'full', 'Chat');
@@ -235,9 +205,7 @@ function index_main(layout) {
     } else {
       $Module.addClass("no-chat");
     }
-    let $Col = $(`<div class="column full"></div>`);
-    $Col.append($Module);
-    $("div#wrapper").append($Col);
+    Columns.push($(`<div class="column full"></div>`).append($Module));
   } else if (layout.Cols == "double") {
     /* Build two columns (class=left, class=right) */
     let $Module1 = make_window("module1", "left", "Left Chat");
@@ -248,15 +216,15 @@ function index_main(layout) {
     } else {
       $Module2.addClass("no-chat");
     }
-    let $Col1 = $(`<div class="column left"></div>`);
-    let $Col2 = $(`<div class="column right"></div>`);
-    $Col1.append($Module1);
-    $Col2.append($Module2);
-    $("div#wrapper").append($Col1);
-    $("div#wrapper").append($Col2);
+    Columns.push($(`<div class="column left"></div>`).append($Module1));
+    Columns.push($(`<div class="column right"></div>`).append($Module2));
+  }
+  /* Insert the columns into the document */
+  for (let $Col of Columns) {
+    $("div#wrapper").append($Col);
   }
 
-  /* If slim layout, remove header */
+  /* If slim layout, remove the entire header */
   if (layout.Slim) {
     $(".header").hide();
     $(".content").addClass("slim");
@@ -282,9 +250,12 @@ function index_main(layout) {
     if (asset.length == 3) {
       let [atype, afile, afunc] = asset;
       if (atype == "twitch-api") {
-        let base = `${window.location}`.substr(0, `${window.location}`.indexOf('/twitch-filtered-chat'));
+        let tfcidx = `${window.location}`.indexOf('/twitch-filtered-chat');
+        let base = `${window.location}`.substr(0, tfcidx);
         let twapi = `${base}/twitch-api`;
         s = script(`${twapi}/${afile}`);
+      } else if (atype == "GLOBAL") {
+        s = script(afile);
       } else {
         console.error("Uknown asset", asset);
       }
@@ -297,37 +268,24 @@ function index_main(layout) {
   }
 })();
 
+function delay_until(func, cond) {
+  try {
+    if (cond()) {
+      func();
+    } else {
+      console.debug("Delaying");
+      window.setTimeout(delay_until.bind(window, func, cond), 50);
+    }
+  }
+  catch (e) {
+    alert("Loading: " + e.toString());
+    throw e;
+  }
+}
+
 /* Once the document is loaded, wait for the scripts, then do layout */
 $(document).ready(function() {
-  try {
-    /* Wait until everything is loaded */
-    let layout = ParseLayout("double:chat");
-    /* Get layout information from the query string */
-    let qs = document.location.search.substr(1).split('&').map((v) => v.split('='));
-    qs = qs.map(([k, v]) => [k, (!!v ? decodeURIComponent(v) : null)]);
-    for (let [k, v] of qs) {
-      if (k === "layout") {
-        layout = ParseLayout(v);
-      }
-    }
-    function wait_for_load() {
-      try {
-        if (AreAllAssetsLoaded()) {
-          index_main(layout);
-        } else {
-          window.setTimeout(wait_for_load, 100);
-        }
-      }
-      catch (e) {
-        Util.Error(e);
-        alert(e.toString());
-      }
-    }
-    window.setTimeout(wait_for_load, 100);
-  } catch (e) {
-    Util.Error(e);
-    alert(e.toString());
-  }
+  delay_until(index_main, AreAllAssetsLoaded);
 });
   </script>
 </head>
@@ -362,7 +320,7 @@ $(document).ready(function() {
         <input type="checkbox" id="cbTransparent" class="middle" />
       </li>
       <li>
-        <label>Image CSS:</label>
+        <label>BG CSS:</label>
         <input type="text" id="txtBGImage" />
       </li>
       <li>
@@ -390,7 +348,7 @@ $(document).ready(function() {
   <script type="text/javascript" id="txtChatFocus">
   function focus_once() {
     let $tc = $("#txtChat");
-    if (!$tc.attr("focused")) {
+    if ($tc && !$tc.attr("focused")) {
       $tc.attr("focused", "1");
       $tc[0].focus();
     }

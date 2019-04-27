@@ -9,6 +9,8 @@
   --chat-color-default: #0e0e0e;
   --textarea-color-default: #1a1a1a;
 
+  --chat-border-color-default: #7d5bbe;
+
   /* Configured colors (changed by JS) */
   --body-color: var(--body-color-default);
   --header-color: var(--header-color-default);
@@ -18,6 +20,7 @@
   --sub-color: var(--sub-color-default);
   --chat-color: var(--chat-color-default);
   --textarea-color: var(--textarea-color-default);
+  --chat-border-color: var(--chat-border-color-default);
 
   /* Debugging and other things (changed by JS) */
   --body-font-size: 18px;
@@ -240,7 +243,7 @@ input:disabled {
   border: 2px solid #c03030;
 }
 
-.module .content .username {
+.username {
   font-weight: bold;
   text-shadow: -1px -1px 1px black,
                1px 1px 1px black,
@@ -248,7 +251,7 @@ input:disabled {
                1px -1px 1px black;
 }
 
-.module .content .username.low-contrast {
+.username.low-contrast {
   text-shadow: -1px -1px 1px lightgray,
                1px 1px 1px lightgray,
                -1px 1px 1px lightgray,
@@ -363,7 +366,7 @@ input:disabled {
 }
 
 #chat textarea:focus {
-  border-color: #7d5bbe;
+  border-color: var(--chat-border-color, var(--chat-border-color-default));
 }
 
 /* End chat textbox 0}}} */
