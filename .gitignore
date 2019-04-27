@@ -1,21 +1,20 @@
 # Custom additions
 
 # Ignore supporting material
+Makefile
+
+# Ignore Node.js files
+node_modules/
 package-lock.json
 package.json
 .eslintrc*
-Makefile
-
-# Ignore system-specific Node.js files
-node_modules/
 
 # Ignore compiled Python files
 *.pyc
 *.pyo
 
-# Ignore old/reference material
+# Ignore reference material
 ref/
-old/
 
 # Ignore notes files
 notes.txt
