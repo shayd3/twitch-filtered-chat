@@ -109,6 +109,9 @@ function parse_query_string(config, qs=null) {
     } else if (k === "layout" && ParseLayout) {
       key = "Layout";
       val = ParseLayout(v);
+    } else if (k == "reconnect") {
+      key = "AutoReconnect";
+      val = true;
     }
     config[key] = val;
   }
@@ -1105,7 +1108,12 @@ function client_main(layout) {
     } else {
       msg = `${msg} (code ${code})`;
     }
-    add_error(`${msg}<span class="reconnect" data-reconnect="1">Reconnect</span>`);
+    if (get_config_object().AutoReconnect) {
+      add_error(`${msg}`);
+      client.Connect();
+    } else {
+      add_error(`${msg}<span class="reconnect" data-reconnect="1">Reconnect</span>`);
+    }
   });
 
   if (!Util.Browser.IsOBS && !layout.Slim) {
