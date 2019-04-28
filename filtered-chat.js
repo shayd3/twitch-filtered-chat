@@ -482,6 +482,16 @@ function add_pre(content) {
   add_html($(`<div class="pre"></div>`).html(content));
 }
 
+/* Shortcut for adding a <div class="notice"> element */
+function add_notice(content) {
+  add_html($(`<div class="notice"></div>`).html(content));
+}
+
+/* Shortcut for adding a <div class="error"> element */
+function add_error(content) {
+  add_html($(`<div class="error"></div>`).html(content));
+}
+
 /* Handle a chat command */
 function handle_command(value, client) {
   let tokens = value.split(" ");
@@ -501,17 +511,19 @@ function handle_command(value, client) {
   let add_help = (s) => add_pre(help(s));
 
   /* Handle each of the commands */
-  if (command == "//log") {
-    let logs = Util.GetWebStorage("debug-msg-log");
+  if (command == "//log" || command == "//logs") {
+    let logs = Util.GetWebStorage("debug-msg-log") || [];
     add_help(`Debug message log length: ${logs.length}`);
-    if (tokens.length > 0 && tokens[0] == "show") {
-      for (let [i, l] of Object.entries(logs)) {
-        let event_cmd = l._cmd;
-        let event_data = l._parsed;
-        add_help(`${i}: ${event_cmd}: ${JSON.stringify(event_data)}`);
+    if (tokens.length > 0) {
+      if (tokens[0] == "show") {
+        for (let [i, l] of Object.entries(logs)) {
+          let event_cmd = l._cmd;
+          let event_data = l._parsed;
+          add_help(`${i}: ${event_cmd}: ${JSON.stringify(event_data)}`);
+        }
+      } else {
+        add_help(`Use //log show to view them all`);
       }
-    } else {
-      add_help(`Use //log show to view them all`);
     }
   } else if (command == '//clear') {
     $("div.content").html("");
@@ -523,7 +535,7 @@ function handle_command(value, client) {
         add_helpline("Pass", config.Pass);
       } else if (tokens[0] == "purge") {
         Util.SetWebStorage({});
-        add_html(`<div class="notice">Purged storage"${Util.GetWebStorageKey()}"</div>`);
+        add_notice(`Purged storage "${Util.GetWebStorageKey()}"`);
       } else if (tokens[0] == "url") {
         let url = location.protocol + '//' + location.hostname + location.pathname;
         if (tokens.length > 1) {
@@ -616,10 +628,19 @@ function handle_command(value, client) {
     let all_badges = [];
     for (let [bname, badge] of Object.entries(client.GetGlobalBadges())) {
       for (let [bv, bdef] of Object.entries(badge.versions)) {
-        all_badges.push(`<img src="${bdef.image_url_2x}" width="36" height="36" title="${bname}" />`);
+        let u = bdef.image_url_2x;
+        let s = 36;
+        if (tokens.indexOf("small") > -1) {
+          u = bdef.image_url_1x;
+          s = 18;
+        } else if (tokens.indexOf("large") > -1) {
+          u = bdef.image_url_4x;
+          s = 72;
+        }
+        all_badges.push(`<img src="${u}" width="${s}" height="${s}" title="${bname}" />`);
       }
     }
-    add_html(`<div class="notice allbadges">${all_badges.join('&nbsp;')}</div>`);
+    add_notice(all_badges.join(''));
   } else if (command == "//help") {
     if (tokens.length > 0 && tokens[0].startsWith('//')) tokens[0] = tokens[0].substr(2);
     if (tokens.length == 0) {
@@ -936,13 +957,13 @@ function client_main(layout) {
       /* Join all the channels added */
       for (let ch of to_join) {
         join_channel(client, ch);
-        add_html(`<div class="notice">Joining ${ch}</div>`);
+        add_notice(`Joining ${ch}`);
       }
       /* Leave all the channels removed */
       for (let ch of to_part) {
         leave_channel(client, ch);
         client.LeaveChannel(ch);
-        add_html(`<div class="notice">Leaving ${ch}</div>`);
+        add_notice(`Leaving ${ch}`);
       }
       /* Save the new configuration */
       let current_cfg = get_config_object();
@@ -1022,7 +1043,7 @@ function client_main(layout) {
     let $t = $(e.target);
     /* Clicking on a reconnect link */
     if ($t.attr("data-reconnect") == '1') {
-      add_html(`<div class="notice">Reconnecting...</div>`);
+      add_notice(`Reconnecting...`);
       client.Connect();
     }
     /* Clicking on a username: context window */
@@ -1071,7 +1092,7 @@ function client_main(layout) {
       notes.push("(unauthenticated)");
     }
     if (!Util.Browser.IsOBS && !layout.Slim) {
-      add_html(`<div class="notice">Connected ${notes.join(" ")}</div>`);
+      add_notice(`Connected ${notes.join(" ")}`);
     }
   });
 
@@ -1084,18 +1105,18 @@ function client_main(layout) {
     } else {
       msg = `${msg} (code ${code})`;
     }
-    add_html(`<div class="error">${msg}<span class="reconnect"><a href="javascript:void(0)" data-reconnect="1">Reconnect</a></span></div>`);
+    add_error(`${msg}<span class="reconnect" data-reconnect="1">Reconnect</span>`);
   });
 
   if (!Util.Browser.IsOBS && !layout.Slim) {
     client.bind('twitch-join', function _on_twitch_join(e) {
       if (e.user == client.GetName().toLowerCase()) {
-        add_html(`<div class="notice">Joined ${e.channel.channel}</div>`);
+        add_notice(`Joined ${e.channel.channel}`);
       }
     });
     client.bind('twitch-part', function _on_twitch_part(e) {
       if (e.user == client.GetName().toLowerCase()) {
-        add_html(`<div class="notice">Left ${e.channel.channel}</div>`);
+        add_notice(`Left ${e.channel.channel}`);
       }
     });
   }
@@ -1108,7 +1129,7 @@ function client_main(layout) {
     }
     let channel = Twitch.FormatChannel(e.channel);
     let message = e.message.escape();
-    add_html(`<div class="notice">Notice from ${channel}: ${message}</div>`);
+    add_notice(`Notice from ${channel}: ${message}`);
   });
 
   client.bind('twitch-error', function _on_twitch_error(e) {
@@ -1116,7 +1137,7 @@ function client_main(layout) {
     let user = e.user;
     let command = e.values.command;
     let message = e.message.escape();
-    add_html(`<div class="error">Error for ${user}: ${command}: ${message}</div>`);
+    add_error(`Error for ${user}: ${command}: ${message}`);
   });
 
   client.bind('twitch-message', function _on_twitch_message(e) {
