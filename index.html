@@ -17,7 +17,7 @@
 /** QUERY STRING USAGE
  *
  * The following are parsed here in index.html:
- *  layout      - Layout to use, explained below
+ *  layout      - Layout to use
  *
  * The following are parsed in filtered-chat.js:
  *  config_key  - Config key override (default: "config")
@@ -34,37 +34,22 @@
  *  module1     - The encoded module configuration for the first module
  *  module2     - The encoded module configuration for the second module
  *
- ** LAYOUT OPTION USAGE
+ * layout=single uses module1
+ * layout=double uses [module1, module2]
  *
- * Usage:
- *  layout=<keyword>[:<chat>]
- *    <keyword>  ::= "single", "double"
- *    <chat>     ::= "", "chat", "nochat", "slim"
- * Default: layout=double:chat
- *  Two columns, each with a content window. Chat is on second column.
- * Keywords:
- *  layout=single
- *    Only give one large window
- *  layout=double
- *    Give two windows side-by-side
- *  layout=single:nochat
- *    Give one large window without a chat input textarea
- *  layout=double:nochat
- *    Give two windows side-by-side without a chat input textarea
- *  layout=single:slim
- *    Give one window without header, chat, or settings viewable
- *
- ** EXAMPLE QUERY STRING USAGE
- *
- * Authenticated: index.html
+ * Authenticated:
       ?clientid=<YOUR-CLIENTID>
       &channels=dwangoAC,pangaeapanga
       &user=<YOUR-TWITCH-USERNAME>
       &pass=oauth:<YOUR-OAUTH>
       &layout=single:chat
- * Unauthenticated: index.html
+ * Unauthenticated:
       ?channels=dwangoAC,pangaeapanga
       &layout=double:nochat
+ * Unauthenticated; filter out TAS9000 and messages starting with "!":
+      ?channels=dwangoAC
+      &module1=Chat,111111,,,TAS9000,!,
+      &layout=single:nochat
  */
 
 /* PAGE LOAD SEQUENCE
@@ -270,7 +255,9 @@ function index_main() {
   }
 })();
 
+/* Helper function to delay calling `func` until `cond` returns true */
 function delay_until(func, cond) {
+  /* TODO: replace with promises */
   try {
     if (cond()) {
       func();
