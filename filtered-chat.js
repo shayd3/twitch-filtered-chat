@@ -832,8 +832,34 @@ function update_transparency(transparent) {
 
 /* End CSS functions 0}}} */
 
+/* Handle tab completion */
+function complete($e, value, selIdx, client) {
+  let tabIndex = Number($e.attr("tab-index"));
+  let wordStartIdx = value.lastIndexOf(' ', selIdx == 0 ? 0 : selIdx-1);
+  if (wordStartIdx == -1) wordStartIdx = 0;
+  let wordEndIdx = value.indexOf(' ', selIdx);
+  if (wordEndIdx == -1) wordEndIdx = value.length;
+  let word = value.substring(wordStartIdx, wordEndIdx);
+  let wordLeft = value.substring(wordStartIdx, selIdx);
+  let wordRight = value.substring(selIdx, wordEndIdx);
+  return {
+    value: value,
+    selIdx: selIdx,
+    origValue: null,
+    tabOffset: -1
+  };
+}
+
 /* Called once when the document loads */
 function client_main(layout) {
+  /* TODO: Show warnings and errors in chat
+  Util.Logger.add_hook(function(...args) {
+
+  }, "WARN");
+  Util.Logger.add_hook(function(...args) {
+
+  }, "ERROR");
+  */
   let client;
   /* Obtain the config and construct the client */
   (function() {
@@ -888,14 +914,15 @@ function client_main(layout) {
           client.SendMessageToAll(e.target.value);
         }
         client.AddHistory(e.target.value);
-        $(e.target).attr("histindex", "-1");
+        $(e.target).attr("hist-index", "-1");
         e.target.value = "";
       }
-      e.preventDefault(); /* prevent bubbling */
-      return false; /* prevent bubbling */
+      /* Prevent bubbling */
+      e.preventDefault();
+      return false;
     } else if (is_up(e.keyCode) || is_down(e.keyCode)) {
       /* Handle traversing message history */
-      let i = Number.parseInt($(e.target).attr("histindex"));
+      let i = Number.parseInt($(e.target).attr("hist-index"));
       let l = client.GetHistoryLength();
       if (is_up(e.keyCode)) {
         /* Going up */
@@ -905,12 +932,23 @@ function client_main(layout) {
         i = (i - 1 < 0 ? -1 : i - 1);
       }
       e.target.value = (i > -1 ? client.GetHistoryItem(i) : "");
-      $(e.target).attr("histindex", `${i}`);
+      $(e.target).attr("hist-index", `${i}`);
       /* Delay moving the cursor until after the text is updated */
       requestAnimationFrame(() => {
         e.target.selectionStart = e.target.value.length;
         e.target.selectionEnd = e.target.value.length;
       });
+    }
+    /* Handle tab-completion */
+    if (e.keyCode == KeyEvent.DOM_VK_TAB) {
+      let result = complete($(e), e.target.value, e.target.selectionStart, client);
+      console.log(result);
+      e.preventDefault();
+      return false;
+    } else {
+      /* Reset tab-completion variables */
+      $(e).attr("tab-index", "-1");
+      $(e).attr("tab-word", "");
     }
   });
 

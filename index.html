@@ -178,9 +178,12 @@ function index_main() {
   let layout = ParseLayout(layout_raw);
   /* Remove the top-level "Loading" message */
   $("#wrapper #wrapper-loading").remove();
-  let $Chat = $(`<div id="chat">
-  <textarea id="txtChat" placeholder="Send a message" histindex="-1"></textarea>
-</div>`);
+  /* Create the chat input elements */
+  let $ChatBox = $(`<textarea id="txtChat" placeholder="Send a message"></textarea>`);
+  $ChatBox.attr("hist-index", "-1");
+  $ChatBox.attr("tab-index", "-1");
+  $ChatBox.attr("tab-word", "");
+  let $Chat = $(`<div id="chat"></div>`).append($ChatBox);
   /* Create the columns */
   let Columns = [];
   if (layout.Cols == "single") {
