@@ -248,6 +248,7 @@ input:disabled {
   border: 2px solid #c03030;
 }
 
+/* TODO: Make username border configurable */
 .username { font-weight: bold; }
 /* By request, remove username border
 .username {
