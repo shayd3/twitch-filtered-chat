@@ -10,6 +10,7 @@
  * FIXME: BUGS:
  * TypeError: this._self_userstate[Twitch.FormatChannel(...)] is undefined
  *   when clicking on a username in an un-authed session
+ * //part <ch> doesn't update configs like changing the Channels input does
  */
 
 /* TODO: REMOVE {{{0 */
@@ -77,6 +78,10 @@ function parse_query_string(config, qs=null) {
       key = "Channels";
       val = v.split(',').map((c) => Twitch.FormatChannel(c));
     } else if (k === "debug") {
+      key = "Debug";
+      if (typeof(v) === "string" && v.match(/^[0-9]+$/)) {
+        v = +v;
+      }
       if (typeof(v) === "integer") {
         if (v < Util.LEVEL_MIN) v = Util.LEVEL_MIN;
         if (v > Util.LEVEL_MAX) v = Util.LEVEL_MAX;
@@ -362,17 +367,21 @@ function get_module_settings(module) {
 function decode_module_config(key, value) {
   let parts = value.split(',');
   let UnEscComma = (s) => (s.replace(/%2c/g, ','));
-  let ParseSet = (p) => (p.split(',').map((e) => UnEscComma(e)).filter((e) => e.length > 0));
-  if (parts.length < 6) {
-    Util.Error("Failed to decode module config: not enough parts", value);
-    return null;
+  function ParseSet(p) {
+    return p.split(',')
+            .map((e) => UnEscComma(e))
+            .filter((e) => e.length > 0);
+  }
+  function doWarn(msg) {
+    Util.Warn("Decoding module config: " + msg);
+  }
+  if (parts.length < 7) {
+    doWarn(`not enough parts; extending (need: 7, got: ${parts.length})`);
+    while (parts.length < 7) parts.push("");
   }
   if (parts[1].length < 6) {
-    Util.Error("Module flags not long enough", part[1], value);
-  }
-  /* Handle FromChannel addition */
-  if (parts.length == 6) {
-    parts.push("");
+    doWarn(`need more module flags (need: 6, got: ${parts[1].length}`);
+    while (parts[1].length < 6) parts[1] += "0";
   }
   let config = {};
   config[key] = {};
@@ -397,8 +406,9 @@ function encode_module_config(name, config) {
   let parts = [];
   let EscComma = (s) => (s.replace(/,/g, '%2c'));
   let B = (b) => (b ? "1" : "0");
+  let bits = [cfg.Pleb, cfg.Sub, cfg.VIP, cfg.Mod, cfg.Event, cfg.Bits];
   parts.push(EscComma(cfg.Name));
-  parts.push(B(cfg.Pleb) + B(cfg.Sub) + B(cfg.VIP) + B(cfg.Mod) + B(cfg.Event) + B(cfg.Bits));
+  parts.push(bits.map((e) => B(e)).join(""));
   parts.push(cfg.IncludeKeyword.map((e) => EscComma(e)).join(","));
   parts.push(cfg.IncludeUser.map((e) => EscComma(e)).join(","));
   parts.push(cfg.ExcludeUser.map((e) => EscComma(e)).join(","));
@@ -1147,7 +1157,7 @@ function client_main(layout) {
       msg = `${msg} (code ${code})`;
     }
     if (get_config_object().AutoReconnect) {
-      add_error(`${msg}`);
+      add_error(msg);
       client.Connect();
     } else {
       add_error(`${msg}<span class="reconnect" data-reconnect="1">Reconnect</span>`);

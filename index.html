@@ -128,8 +128,8 @@ function AreAllAssetsLoaded() {
 
 /* Function to generate a window */
 function make_window(id, classname, name) {
-  return $(`
-<div id="${id}" class="module ${classname}">
+  let $W = $(`
+<div class="module">
   <div class="header">
     <div class="menu">
       <div></div>
@@ -138,36 +138,58 @@ function make_window(id, classname, name) {
     </div>
     <span class="clear-chat">
       <a class="clear-chat-link" href="javascript:void(0)" title="Clear" alt="Clear">
-        <img class="clear-chat-icon" src="assets/no-entry.svg" width="1.1em" height="1.1em" />
+        <img class="clear-chat-icon" src="assets/no-entry.svg" />
       </a>
     </span>
     <div class="settings">
       <p>Include:</p>
       <ul class="include">
-        <li><label><input type="checkbox" class="pleb" checked />Non-subs</label></li>
-        <li><label><input type="checkbox" class="sub" checked />Subscribers</label></li>
-        <li><label><input type="checkbox" class="vip" checked />VIPs</label></li>
-        <li><label><input type="checkbox" class="mod" checked />Moderators</label></li>
-        <li><label><input type="checkbox" class="event" checked />Channel events</label></li>
-        <li><label><input type="checkbox" class="bits" checked />Bit messages</label></li>
-        <li class="textbox include_user"><label>From user:</label><input type="text" class="user" /></li>
-        <li class="textbox include_keyword"><label>Contains:</label><input type="text" class="keyword" /></li>
+        <li><label><input type="checkbox" class="pleb" />Non-subs</label></li>
+        <li><label><input type="checkbox" class="sub" />Subscribers</label></li>
+        <li><label><input type="checkbox" class="vip" />VIPs</label></li>
+        <li><label><input type="checkbox" class="mod" />Moderators</label></li>
+        <li><label><input type="checkbox" class="event" />Channel events</label></li>
+        <li><label><input type="checkbox" class="bits" />Bit messages</label></li>
+        <li class="textbox include_user">
+          <label>From user:</label>
+          <input type="text" class="user" />
+        </li>
+        <li class="textbox include_keyword">
+          <label>Contains:</label>
+          <input type="text" class="keyword" />
+        </li>
       </ul>
       <p>Limit to:</p>
       <ul>
-        <li class="textbox from_channel"><label>Channel:</label><input type="text" class="channel" /></li>
+        <li class="textbox from_channel">
+          <label>Channel:</label>
+          <input type="text" class="channel" />
+        </li>
       </ul>
       <p>Exclude:</p>
       <ul class="exclude">
-        <li class="textbox exclude_user"><label>From user:</label><input type="text" class="user" /></li>
-        <li class="textbox exclude_startswith"><label>Starts with:</label><input type="text" class="keyword" /></li>
+        <li class="textbox exclude_user">
+          <label>From user:</label>
+          <input type="text" class="user" />
+        </li>
+        <li class="textbox exclude_startswith">
+          <label>Starts with:</label>
+          <input type="text" class="keyword" />
+        </li>
       </ul>
     </div>
-    <label class="name">${name}</label>
-    <input type="text" class="name" value="${name}"></input>
+    <label class="name"></label>
+    <input type="text" class="name"></input>
   </div>
   <div class="content"><div class="loading">Loading...</div></div>
 </div>`);
+  $W.attr("id", id);
+  $W.addClass(classname);
+  $W.find('.clear-chat-icon').attr("width", "1.1em").attr("height", "1.1em");
+  $W.find('.header .settings input[type="checkbox"]').attr('checked', 'checked');
+  $W.find('.header label.name').val(name);
+  $W.find('.header input.name').attr("value", name);
+  return $W;
 }
 
 /* Populate templates and load the client */
@@ -305,7 +327,10 @@ $(document).ready(function() {
       <li>
         <label>OAuth:</label>
         <input type="password" id="txtPass" />
-        <input type="text" id="txtPassDummy" value="Cached" style="display: none" disabled />
+        <input type="text" id="txtPassDummy"
+               value="Cached"
+               style="display: none"
+               disabled />
       </li>
       <li>
         <label>Transparent:</label>

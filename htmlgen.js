@@ -14,7 +14,13 @@
 class HTMLGenerator {
   constructor(client) {
     this._client = client;
-    this._default_colors = ["lightseagreen", "forestgreen", "goldenrod", "dodgerblue", "darkorchid", "crimson"];
+    this._default_colors = [
+      "lightseagreen",
+      "forestgreen",
+      "goldenrod",
+      "dodgerblue",
+      "darkorchid",
+      "crimson"];
     this._user_colors = {};
   }
 
@@ -421,16 +427,22 @@ class HTMLGenerator {
   }
   sub(event) {
     let $w = this._genSubWrapper(event);
-    $w.append($(`<span class="message sub-message">subscribed using ${event.value('sub_plan').escape()}!</span>`));
+    let $m = $(`<span class="message sub-message"></span>`);
+    $m.html(`subscribed using ${event.value('sub_plan').escape()}!`);
+    $w.append($m);
     return $w[0].outerHTML;
   }
   resub(event) {
     let $w = this._genSubWrapper(event);
-    if (event.value('sub_streak_months')) {
-      $w.append($(`<span class="message sub-message">resubscribed for ${event.value('sub_months')} months, a streak of ${event.value('sub_streak_months')} months!</span>`));
+    let $m = $(`<span class="message sub-message"></span>`);
+    let months = event.value('sub_months');
+    let streak = event.value('sub_streak_months');
+    if (streak) {
+      $m.html(`resubscribed for ${months} months, a streak of ${streak} months!`);
     } else {
-      $w.append($(`<span class="message sub-message">resubscribed for ${event.value('sub_months')} months!</span>`));
+      $m.html(`resubscribed for ${months} months!`);
     }
+    $w.append($m);
     return $w[0].outerHTML;
   }
   giftsub(event) {
