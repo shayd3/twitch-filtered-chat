@@ -248,6 +248,8 @@ input:disabled {
   border: 2px solid #c03030;
 }
 
+.username { font-weight: bold; }
+/* By request, remove username border
 .username {
   font-weight: bold;
   text-shadow: -1px -1px 1px black,
@@ -262,6 +264,7 @@ input:disabled {
                -1px 1px 1px lightgray,
                1px -1px 1px lightgray;
 }
+*/
 
 .module .content .line {
   overflow-wrap: break-word;
