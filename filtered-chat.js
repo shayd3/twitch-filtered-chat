@@ -703,6 +703,23 @@ function handle_command(value, client) {
     } else {
       add_help(`//help: No such command "${tokens[0].escape()}"`);
     }
+  } else if (command === "//plugins") {
+    for (let [n, p] of Object.entries(Plugins.plugins)) {
+      let msg = `${n}: ${p.file} @ ${p.order}`;
+      if (p._error) {
+        add_error(`${msg}: Failed: ${JSON.stringify(p._error_obj)}`);
+      } else if (p._loaded) {
+        msg = `${msg}: Loaded`;
+        if (p.commands) {
+          msg = `${msg}: Commands: ${p.commands.join(" ")}`;
+        }
+        add_pre(msg);
+      }
+    }
+  } else if (CHAT_COMMANDS.hasOwnProperty(command)) {
+    for (let cmd of CHAT_COMMANDS[command]) {
+      cmd({line: value, command: command, tokens: tokens});
+    }
   } else if (command.startsWith('//')) {
     add_html(`<div class="pre error">Unknown command "${command.escape()}"</div>`);
   } else {
