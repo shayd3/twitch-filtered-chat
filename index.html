@@ -252,6 +252,9 @@ function index_main() {
 
 /* Populate script assets immediately */
 (function() {
+  if (window.location.search.indexOf('&fail') != -1) {
+    return;
+  }
   function script(src) {
     return $(document.createElement('script'))
       .attr("type", "text/javascript")
@@ -299,7 +302,9 @@ function delay_until(func, cond) {
 
 /* Once the document is loaded, wait for the scripts, then do layout */
 $(document).ready(function() {
-  delay_until(index_main, AreAllAssetsLoaded);
+  if (window.location.search.indexOf('&fail') == -1) {
+    delay_until(index_main, AreAllAssetsLoaded);
+  }
 });
   </script>
 </head>
