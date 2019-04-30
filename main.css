@@ -46,6 +46,10 @@ html, body {
   color: #cccccc;
 }
 
+body.transparent {
+  color: #222222;
+}
+
 input {
   padding: 2px;
   font-size: 0.8em;
@@ -330,6 +334,41 @@ input:disabled {
   margin-right: 3px;
 }
 
+/* Transparent background overrides {{{0 */
+
+body.transparent .username {
+  text-shadow:
+    -2px  0px 1px darkgray,
+     0px  2px 1px darkgray,
+     2px  0px 1px darkgray,
+     0px -2px 1px darkgray,
+    -1px  0px 0px darkgray,
+     0px  1px 0px darkgray,
+     1px  0px 0px darkgray,
+     0px -1px 0px darkgray;
+}
+
+body.transparent .username.low-contrast {
+  text-shadow:
+    -2px  0px 1px darkgray,
+     0px  2px 1px darkgray,
+     2px  0px 1px darkgray,
+     0px -2px 1px darkgray,
+    -1px  0px 0px darkgray,
+     0px  1px 0px darkgray,
+     1px  0px 0px darkgray,
+     0px -1px 0px darkgray;
+}
+
+.module .content .message:not(.effect-rainbow) {
+  text-shadow: -1px -1px 0px black,
+                -2px 2px 1px black,
+                1px -1px 0px black,
+                1px 1px 1px black;
+}
+
+/* End transparent background overrides 0}}} */
+
 .module .content img.badge {
   width: 18px;
   max-width: 18px;
@@ -384,6 +423,14 @@ input:disabled {
 #chat textarea:focus {
   border-color: var(--chat-border, var(--chat-border-default));
 }
+
+/* Transparent background overrides {{{1 */
+
+body.transparent #chat textarea  {
+  color: #0f0f0f;
+}
+
+/* End transparent background overrides 1}}} */
 
 /* End chat textbox 0}}} */
 

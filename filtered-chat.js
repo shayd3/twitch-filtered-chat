@@ -7,6 +7,10 @@
  * Rewrite index.html using promises
  * Rewrite filtered-chat.js to hide get_config_object() within client_main()
  *
+ * FIXME URGENT:
+ * Configuration for module1 is lost on change and not stored
+ * Figure out why
+ *
  * FIXME: BUGS:
  * TypeError: this._self_userstate[Twitch.FormatChannel(...)] is undefined
  *   when clicking on a username in an un-authed session
@@ -37,20 +41,24 @@ const CLIENT_ID = [49,101,52,55,97,98,108,48,115,103,52,50,105,110,116,104,
 const CACHED_VALUE = "Cached";
 const AUTOGEN_VALUE = "Auto-Generated";
 
-/* Begin configuration section {{{0 */
-
 /* Functions to sanitize configuration */
 function verify_string(val) { return (typeof(val) == "string" ? val : ""); }
 function verify_number(val) { return (typeof(val) == "number" ? val : ""); }
 function verify_boolean(val) { return (typeof(val) == "boolean" ? val : ""); }
 function verify_array(val) { return Util.IsArray(val) ? val : []; }
 
+/* Begin configuration section {{{0 */
+
 /* Parse a query string into the config object given and return removals */
 function parse_query_string(config, qs=null) {
-  if (qs === null) qs = window.location.search;
-  let qs_data = Util.ParseQueryString(qs);
-  if (qs_data.base64 && qs_data.base64.length > 0) {
-    qs_data = Util.ParseQueryString(atob(qs_data.base64));
+  let qs_data;
+  if (qs === null) {
+    qs = window.location.search;
+    qs_data = Util.ParseQueryString(qs);
+  } else if (typeof(qs) === "string") {
+    qs_data = Util.ParseQueryString(qs);
+  } else if (typeof(qs) === "object") {
+    qs_data = qs;
   }
 
   if (qs_data.debug === undefined) qs_data.debug = false;
@@ -130,8 +138,8 @@ function parse_query_string(config, qs=null) {
 function get_config_object() {
   /* 1) Obtain configuration values
    *  a) from localStorage
-   *  b) from settings elements (overrides (a))
-   *  c) from query string (overrides (b))
+   *  b) from query string (overrides (a))
+   *  c) from settings elements (overrides (b))
    * 2) Store module configuration in each modules' settings window
    * 3) Remove sensitive values from the query string, if present
    */
@@ -169,6 +177,9 @@ function get_config_object() {
   if (config.hasOwnProperty('NoAssets')) delete config["NoAssets"];
   if (config.hasOwnProperty('Debug')) delete config["Debug"];
 
+  /* Parse the query string */
+  query_remove = parse_query_string(config, qs);
+
   /* Parse div#settings config */
   let txtChannel = $('input#txtChannel')[0];
   let txtNick = $('input#txtNick')[0];
@@ -202,14 +213,11 @@ function get_config_object() {
     }
   }
 
-  /* Parse the query string */
-  query_remove = parse_query_string(config);
-
   /* Populate configs for each module */
   $('.module').each(function() {
     let id = $(this).attr('id');
     if (!config[id]) {
-      config[id] = get_module_settings(this);
+      config[id] = get_module_settings($(this));
     }
     config[id].Pleb = verify_boolean(config[id].Pleb);
     config[id].Sub = verify_boolean(config[id].Sub);
@@ -321,7 +329,7 @@ function set_module_settings(module, mod_config) {
 function update_module_config() {
   let config = get_config_object();
   $(".module").each(function() {
-    config[$(this).attr('id')] = get_module_settings(this);
+    config[$(this).attr('id')] = get_module_settings($(this));
   });
   Util.SetWebStorage(config);
 }
@@ -832,10 +840,12 @@ function update_transparency(transparent) {
       /* Set them all to transparent */
       set_css_var(prop, 'transparent');
       $(".module").addClass("transparent");
+      $("body").addClass("transparent");
     } else {
       /* Set them all to default */
       set_css_var(prop, `var(${prop}-default)`);
       $(".module").removeClass("transparent");
+      $("body").removeClass("transparent");
     }
   }
 }
@@ -871,6 +881,18 @@ function client_main(layout) {
   }, "ERROR");
   */
   let client;
+  let config_obj = new ConfigStore(
+    /* TODO: get config key */ "tfc-config-test",
+    ["NoAssets", "NoFFZ", "NoBTTV", "Transparent", "Layout",
+     "AutoReconnect", "Debug"]);
+  $(".module").each(function() {
+    let id = $(this).attr("id");
+    let cfg = config_obj.getValue(id);
+    console.log(id, cfg);
+    if (cfg) {
+      set_module_settings(this, cfg);
+    }
+  });
   /* Obtain the config and construct the client */
   (function() {
     let config = get_config_object();
@@ -952,7 +974,6 @@ function client_main(layout) {
     /* Handle tab-completion */
     if (e.keyCode == KeyEvent.DOM_VK_TAB) {
       let result = complete($(e), e.target.value, e.target.selectionStart, client);
-      console.log(result);
       e.preventDefault();
       return false;
     } else {
@@ -1067,8 +1088,14 @@ function client_main(layout) {
 
   /* Pressing enter on the module's name text box */
   $('.module .header input.name').on('keyup', function(e) {
+    let $settings = $(this).parent().children(".settings");
+    let $lbl = $(this).parent().children('label.name');
+    let $tb = $(this).parent().children('input.name');
     if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
-      $(this).parent().children(".menu").click();
+      update_module_config();
+      $tb.hide();
+      $lbl.html($tb.val()).show();
+      $settings.fadeToggle();
     }
   });
 
@@ -1260,7 +1287,6 @@ function client_main(layout) {
 
   client.bind('twitch-clearmsg', function _on_twitch_clearmsg(e) {
     Util.StorageAppend("debug-msg-log", e);
-    /* Moderator has timed-out or banned a user */
     Util.Warn("Unhandled CLEARMSG:", e);
   });
 

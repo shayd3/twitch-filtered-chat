@@ -22,9 +22,16 @@ class HTMLGenerator {
       "darkorchid",
       "crimson"];
     this._user_colors = {};
+    this._bg_colors = [];
   }
 
   set client(c) { this._client = c; }
+  set bgcolors(colors) {
+    this._bg_colors = [];
+    for (let c of colors) {
+      this._bg_colors.push(c);
+    }
+  }
 
   /* Generation from chat events */
   getColorFor(username) {
@@ -157,7 +164,7 @@ class HTMLGenerator {
     let c2 = Util.ContrastRatio(color, '#0e0e0e')
     $e.attr('data-contrast-1', c1);
     $e.attr('data-contrast-2', c2);
-    if (c1 < 4 && c2 < 4) { $e.addClass("low-contrast"); }
+    if (c1 < 4 || c2 < 4) { $e.addClass("low-contrast"); }
     $e.css('color', color);
     $e.html(user.escape());
     return $e[0].outerHTML;
