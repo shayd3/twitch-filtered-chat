@@ -252,9 +252,6 @@ function index_main() {
 
 /* Populate script assets immediately */
 (function() {
-  if (window.location.search.indexOf('&fail') != -1) {
-    return;
-  }
   function script(src) {
     return $(document.createElement('script'))
       .attr("type", "text/javascript")

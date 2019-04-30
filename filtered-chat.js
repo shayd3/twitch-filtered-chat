@@ -905,7 +905,6 @@ function client_main(layout) {
   $(".module").each(function() {
     let id = $(this).attr("id");
     let cfg = config_obj.getValue(id);
-    console.log(id, cfg);
     if (cfg) {
       set_module_settings(this, cfg);
     }
@@ -939,6 +938,10 @@ function client_main(layout) {
       set_module_settings(this, config[$(this).attr('id')]);
     });
   })();
+
+  if (window.location.search.indexOf('&fail') != -1) {
+    return;
+  }
 
   /* Construct the HTML Generator and tell it and the client about each other */
   client.set('HTMLGen', new HTMLGenerator(client));
@@ -1186,9 +1189,9 @@ function client_main(layout) {
     } else {
       notes.push("(unauthenticated)");
     }
-    if (!Util.Browser.IsOBS && !layout.Slim) {
+    /*if (!Util.Browser.IsOBS && !layout.Slim) {*/
       add_notice(`Connected ${notes.join(" ")}`);
-    }
+    /*}*/
   });
 
   client.bind('twitch-close', function _on_twitch_close(e) {
