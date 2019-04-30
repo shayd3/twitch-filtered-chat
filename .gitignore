@@ -1,5 +1,8 @@
 # Custom additions
 
+# Ignore files not meant for distribution
+plugins/dwangoAC.js
+
 # Ignore supporting material
 Makefile
 
