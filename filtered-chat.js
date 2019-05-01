@@ -116,7 +116,7 @@ function parse_query_string(config, qs=null) {
       key = "AutoReconnect";
       val = true;
     } else if (k == "size") {
-      set_css_var("--body-font-size", `${v}px`);
+      set_css_var("--body-font-size", `${v}pt`);
     }
     config[key] = val;
   }
