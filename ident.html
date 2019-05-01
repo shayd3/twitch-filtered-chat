@@ -49,11 +49,24 @@ function add_message(s, cls) {
 function onready() {
   add_message("Loaded");
   add_message(navigator.userAgent);
+  /* Check for WebKit v8 */
+  var v8string = 'function%20javaEnabled%28%29%20%7B%20%5Bnative%20code%5D%20%7D';
+  if ('WebkitAppearance' in document.documentElement.style) { //If (probably) WebKit browser
+    if (escape(navigator.javaEnabled.toString()) === v8string) {
+      add_message('V8 detected');
+    } else {
+      add_message('JSC detected');
+    }
+  } else {
+    add_message("Not a WebKit browser");
+  }
+  /* Check for OBSStudio */
   if (typeof(window["obsstudio"]) != "undefined") {
     add_message("window.obsstudio exists!", "im");
   } else {
     add_message("no window.obsstudio object");
   }
+  /* Check for changes in window members */
   if (window["Reflect"] && typeof(window["Reflect"]) == "object") {
     add_message("Window has Reflect object");
     let new_attrs = [];
