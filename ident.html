@@ -48,7 +48,6 @@ function add_message(s, cls) {
 
 function onready() {
   add_message("Loaded");
-  add_message(navigator.userAgent);
   /* Check for WebKit v8 */
   var v8string = 'function%20javaEnabled%28%29%20%7B%20%5Bnative%20code%5D%20%7D';
   if ('WebkitAppearance' in document.documentElement.style) { //If (probably) WebKit browser
@@ -66,6 +65,8 @@ function onready() {
   } else {
     add_message("no window.obsstudio object");
   }
+  /* Log UA */
+  add_message(navigator.userAgent);
   /* Check for changes in window members */
   if (window["Reflect"] && typeof(window["Reflect"]) == "object") {
     add_message("Window has Reflect object");
