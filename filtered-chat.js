@@ -1250,9 +1250,9 @@ function client_main(layout) {
   });
 
   client.bind('twitch-message', function _on_twitch_message(e) {
-    if (Util.DebugLevel > 1) {
-      add_html(`<span class="pre">${JSON.stringify(e.values)}</span>`);
-    }
+    /*if (Util.DebugLevel > 1) {*/
+      add_html(`<span class="pre">${e.raw_line.replace(/</g, '&lt;')}</span>`);
+    /*}*/
   });
 
   client.bind('twitch-chat', function _on_twitch_chat(event) {
