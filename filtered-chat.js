@@ -8,12 +8,10 @@
  * Rewrite filtered-chat.js to hide get_config_object() within client_main()
  *
  * FIXME URGENT:
- * Configuration for module1 is lost on change and not stored
- * Figure out why
+ * Configuration for module1 is lost on change and not stored; figure out why.
+ * Page load takes ages. Figure out why and fix.
  *
  * FIXME: BUGS:
- * TypeError: this._self_userstate[Twitch.FormatChannel(...)] is undefined
- *   when clicking on a username in an un-authed session
  * //part <ch> doesn't update configs like changing the Channels input does
  */
 
@@ -584,11 +582,7 @@ function handle_command(value, client) {
         if (config.HistorySize) { qs_push('hmax', config.HistorySize); }
         qs.push(encode_module_config('module1', config));
         qs.push(encode_module_config('module2', config));
-        let layout = [config.Layout.Cols, "chat"];
-        if (config.Layout.Cols == "double") layout[0] = "double";
-        if (config.Layout.Chat == false) layout[1] = "nochat";
-        if (config.Layout.Slim == true) layout[1] = "slim";
-        qs_push("layout", layout[0] + ":" + layout[1]);
+        qs_push("layout", FormatLayout(config.Layout));
         if (config.Transparent) { qs_push("trans", "1"); }
         if (tokens[tokens.length-1] === "text") {
           url += "?" + qs.join("&");
@@ -901,7 +895,6 @@ function client_main(layout) {
     /* TODO: get config key */ "tfc-config-test",
     ["NoAssets", "NoFFZ", "NoBTTV", "Transparent", "Layout",
      "AutoReconnect", "Debug"]);
-  debug_msg("Constructed ConfigStore"); /* TODO: REMOVE */
   $(".module").each(function() {
     let id = $(this).attr("id");
     let cfg = config_obj.getValue(id);
@@ -909,13 +902,10 @@ function client_main(layout) {
       set_module_settings(this, cfg);
     }
   });
-  debug_msg("Moduels configured"); /* TODO: REMOVE */
   /* Obtain the config and construct the client */
   (function() {
     let config = get_config_object();
-    debug_msg("Main config gathered"); /* TODO: REMOVE */
     client = new TwitchClient(config);
-    debug_msg("Client constructed"); /* TODO: REMOVE */
     Util.DebugLevel = config.Debug;
 
     /* Change the document title to show our authentication state */
@@ -940,26 +930,21 @@ function client_main(layout) {
     $(".module").each(function() {
       set_module_settings(this, config[$(this).attr('id')]);
     });
-    debug_msg("Module settings synced"); /* TODO: REMOVE */
   })();
 
   /* Construct the HTML Generator and tell it and the client about each other */
   client.set('HTMLGen', new HTMLGenerator(client));
 
-  debug_msg("Loading plugins"); /* TODO: REMOVE */
   /* Construct the plugins */
   Plugins.LoadAll(client);
-  debug_msg("Loaded pluins"); /* TODO: REMOVE */
 
   /* Allow JS access if debugging is enabled */
-  if (Util.DebugLevel > 0) {
+  if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
     window.client = client;
   }
 
   let is_up = (k) => (k == KeyEvent.DOM_VK_UP);
   let is_down = (k) => (k == KeyEvent.DOM_VK_DOWN);
-
-  debug_msg("Registering jQuery events"); /* TODO: REMOVE */
 
   /* Sending a chat message */
   $("#txtChat").keydown(function(e) {
@@ -1184,7 +1169,6 @@ function client_main(layout) {
   });
 
   /* Bind to numerous TwitchEvent events {{{0 */
-  debug_msg("Registering client events"); /* TODO: REMOVE */
 
   client.bind('twitch-open', function _on_twitch_open(e) {
     let notes = [];
@@ -1250,9 +1234,9 @@ function client_main(layout) {
   });
 
   client.bind('twitch-message', function _on_twitch_message(e) {
-    /*if (Util.DebugLevel > 1) {*/
+    if (Util.DebugLevel >= Util.DEBUG_TRACE) {
       add_html(`<span class="pre">${e.raw_line.replace(/</g, '&lt;')}</span>`);
-    /*}*/
+    }
   });
 
   client.bind('twitch-chat', function _on_twitch_chat(event) {
@@ -1337,8 +1321,6 @@ function client_main(layout) {
   });
 
   /* End of all the binding 0}}} */
-
-  debug_msg("Connecting to Twitch"); /* TODO: REMOVE */
 
   /* Finally, connect */
   client.Connect();

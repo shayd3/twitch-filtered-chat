@@ -65,14 +65,10 @@ function Main(global) {
   }
   global.debug_msg = debug_msg;
 
-  debug_msg("Adding assets");
-
   AddAsset("utility.js", "twitch-api");
   AddAsset("twitch-utility.js", "twitch-api");
   AddAsset("colors.js", "twitch-api");
   AddAsset("client.js", "twitch-api");
-
-  debug_msg("Added assets");
 
   /* Function to generate a window */
   function make_window(id, classname, name) {
@@ -146,15 +142,17 @@ function Main(global) {
     let layout_raw = Util.ParseQueryString().layout;
     if (layout_raw === undefined) layout_raw = "double:chat";
     let layout = ParseLayout(layout_raw);
+
     /* Remove the top-level "Loading" message */
     $("#wrapper #wrapper-loading").remove();
     /* Create the chat input elements */
-    debug_msg("Adding txtChat"); /* TODO: REMOVE */
-    let $ChatBox = $(`<textarea id="txtChat" placeholder="Send a message"></textarea>`);
+    let $ChatBox = $(`<textarea id="txtChat"></textarea>`);
+    $ChatBox.attr("placeholder", "Send a message");
     $ChatBox.attr("hist-index", "-1");
     $ChatBox.attr("tab-index", "-1");
     $ChatBox.attr("tab-word", "");
     let $Chat = $(`<div id="chat"></div>`).append($ChatBox);
+
     /* Create the columns */
     let Columns = [];
     if (layout.Cols == "single") {
@@ -180,13 +178,12 @@ function Main(global) {
       Columns.push($(`<div class="column left"></div>`).append($Module1));
       Columns.push($(`<div class="column right"></div>`).append($Module2));
     }
-    debug_msg("Adding columns"); /* TODO: REMOVE */
+
     /* Insert the columns into the document */
     for (let $Col of Columns) {
       $("div#wrapper").append($Col);
     }
 
-    debug_msg("Configuring slim layout"); /* TODO: REMOVE */
     /* If slim layout, remove the entire header */
     if (layout.Slim) {
       $(".header").hide();
@@ -194,17 +191,14 @@ function Main(global) {
       $("#settings_button").hide();
     }
 
-    debug_msg("Waiting for ready"); /* TODO: REMOVE */
     /* Once rerendering is complete, start up the client */
     $(document).ready(function() {
-      debug_msg("Document ready");
       client_main(layout);
       document.dispatchEvent(new Event("tfc-loaded"));
     });
   }
 
   /* Once the document is loaded, wait for the scripts, then do layout */
-  debug_msg("Waiting for ready");
   onReady(index_main);
 }
   </script>

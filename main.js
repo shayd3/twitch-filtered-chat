@@ -22,7 +22,6 @@ function CreateURL(src, tree) {
 }
 
 function AddAsset(src, tree=null) {
-  debug_msg("Creating asset " + src);
   ASSETS.push({});
   let s = document.createElement("script");
   let asset = ASSETS[ASSETS.length - 1];
@@ -41,7 +40,6 @@ function AddAsset(src, tree=null) {
     console.error("Failed loading", asset, e);
     asset.error = true;
   }
-  debug_msg("About to add " + asset.src.substr(asset.src.lastIndexOf('/')+1));
   document.head.appendChild(s);
 }
 
@@ -85,6 +83,27 @@ function ParseLayout(str) {
     console.error("Failed to parse layout", str);
   }
   return layout;
+}
+
+/* Generate layout= query string value */
+function FormatLayout(layout) {
+  let k = "";
+  let v = "";
+  if (layout.Tesla) {
+    return "tesla";
+  } else if (layout.Cols === "single") {
+    k = "single";
+  } else if (layout.Cols === "double") {
+    k = "double";
+  }
+  if (layout.Slim) {
+    v = "slim";
+  } else if (layout.Chat) {
+    v = "chat";
+  } else {
+    v = "nochat";
+  }
+  return `${k}:${v}`;
 }
 
 function onReady(func) {
