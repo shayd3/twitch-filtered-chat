@@ -36,8 +36,6 @@ function inject_message(msg) {
 }
 /* END TODO: REMOVE 0}}} */
 
-const CLIENT_ID = [49,101,52,55,97,98,108,48,115,103,52,50,105,110,116,104,
-                   53,48,119,106,101,114,98,122,120,104,57,109,98,115];
 const CACHED_VALUE = "Cached";
 const AUTOGEN_VALUE = "Auto-Generated";
 
@@ -254,9 +252,10 @@ function get_config_object() {
   }
 
   /* Default ClientID */
-  if (!config.ClientID) {
-    config.ClientID = CLIENT_ID.map((n) => Util.ASCII[n]).join("");
-  }
+  config.ClientID = [
+    78,26,75,72,30,29,19,79,12,24,75,77,22,17,11,
+    23,74,79, 8,21,26,13,29, 5, 7,23,70,18,29,12
+  ].map((n) => Util.ASCII[n^127]).join("");
 
   return config;
 }

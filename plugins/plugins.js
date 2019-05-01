@@ -87,7 +87,6 @@ class PluginStorageClass {
           self._plugins[ctor]._loaded = true;
           if (client.GetDebug()) {
             self._plugins[ctor].obj = obj;
-            client.debug("Loaded ", plugin, ":", obj);
           }
         }
         catch (e) {
@@ -125,7 +124,7 @@ class PluginStorageClass {
     let order = Object.keys(this._plugins).sort((a, b) => this._cmp(a, b));
     for (let n of order) {
       let p = this._plugins[n];
-      client.debug("Loading plugin " + JSON.stringify(p));
+      Util.LogOnly("Loading plugin " + JSON.stringify(p));
       try {
         await this._load(p, client);
       }

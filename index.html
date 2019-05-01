@@ -9,8 +9,11 @@
   <script type="text/javascript" src="config.js"></script>
   <script type="text/javascript" src="colors.js"></script>
   <script type="text/javascript" src="htmlgen.js"></script>
-  <script type="text/javascript" src="filtered-chat.js"></script>
   <script type="text/javascript" src="plugins/plugins.js"></script>
+  <!-- Contains all of the TFC-specific logic -->
+  <script type="text/javascript" src="filtered-chat.js"></script>
+  <!-- Contains much of the driver -->
+  <script type="text/javascript" src="main.js"></script>
   <script type="text/javascript">
 "use strict";
 
@@ -52,279 +55,161 @@
       &layout=single:nochat
  */
 
-/* PAGE LOAD SEQUENCE
-1) Inject and load each of the scripts defined in `ASSETS`
-2) On document.ready:
-  2.1) Wait for script assets to finish loading
-  2.2) Call index_main
-3) In index_main
-  3.1) Build the document based on the layout
-  3.2) Wait for the document to finish rendering
-  3.3) Call client_main from filtered_chat.js
- */
-
-/* Parse layout= query string value */
-function ParseLayout(str) {
-  let layout = {Cols: null, Chat: true, Slim: false};
-  if (str.indexOf(':') > -1) {
-    let v1 = str.substr(0, str.indexOf(':'));
-    let v2 = str.substr(str.indexOf(':')+1);
-    if (v1 == "single") {
-      layout.Cols = "single";
-    } else if (v1 == "double") {
-      layout.Cols = "double";
-    } else {
-      console.warn("Unknown layout", v1, "defaulting to double");
-      layout.Cols = "double";
-    }
-    if (v2 == "nochat") {
-      layout.Chat = false;
-    } else if (v2 == "slim") {
-      layout.Slim = true;
-      layout.Chat = false;
-    } else if (v2 != "chat") {
-      console.warn('Unknown layout option', v2);
-    }
-  } else if (str === "tesla") {
-    layout.Cols = "single";
-    layout.Chat = false;
-    layout.Slim = true;
-    layout.Tesla = true;
-  } else {
-    console.error("Failed to parse layout", str);
-  }
-  return layout;
-}
-
-/* Return true if the given asset is loaded */
-function AssetLoaded(asset) {
-  return (function() {
-    var loaded = false;
-    try {
-      if (eval(asset).API_Loaded) {
-        loaded = true;
-      }
-    }
-    catch (e) { }
-    return loaded;
-  });
-}
-
-/* Assets for delayed load */
-let ASSETS = [
-  ["twitch-api", "utility.js", AssetLoaded('Util')],
-  ["twitch-api", "twitch-utility.js", AssetLoaded('Twitch')],
-  ["twitch-api", "colors.js", AssetLoaded('AllColors')],
-  ["twitch-api", "client.js", AssetLoaded('TwitchClient')]
-/* The following are supported:
-  ["GLOBAL", "https://example.com/js/library.js", function() { return window.Lib; }]
- */
-];
-
-/* Return true if all assets defined in ASSETS are loaded */
-function AreAllAssetsLoaded() {
-  for (let [lib, asset, func] of ASSETS) {
-    if (!func()) {
-      return false;
-    } else {
-      console.log(lib, asset, func, "loaded");
+function Main(global) {
+  /* Populate the debug div with text */
+  function debug_msg(msg) {
+    let d = document.getElementById("debug");
+    if (d) {
+      d.innerHTML = `${msg}<br />${d.innerHTML}`;
     }
   }
-  return true;
-}
 
-/* Populate the debug div with text */
-function debug_msg(msg) {
-  if ($("#debug").length > 0) {
-    $("#debug").show();
-  }
-  $("#debug").html(msg.escape() + "<br />" + $("#debug").html());
-}
+  debug_msg("Adding assets");
 
-/* Function to generate a window */
-function make_window(id, classname, name) {
-  let $W = $(`
-<div class="module">
-  <div class="header">
-    <div class="menu">
-      <div></div>
-      <div></div>
-      <div></div>
+  AddAsset("utility.js", "twitch-api");
+  AddAsset("twitch-utility.js", "twitch-api");
+  AddAsset("colors.js", "twitch-api");
+  AddAsset("client.js", "twitch-api");
+
+  debug_msg("Added assets");
+
+  /* Function to generate a window */
+  function make_window(id, classname, name) {
+    let $W = $(`
+  <div class="module">
+    <div class="header">
+      <div class="menu">
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+      <span class="clear-chat">
+        <a class="clear-chat-link" href="javascript:void(0)" title="Clear" alt="Clear">
+          <img class="clear-chat-icon" src="assets/no-entry.svg" />
+        </a>
+      </span>
+      <div class="settings">
+        <p>Include:</p>
+        <ul class="include">
+          <li><label><input type="checkbox" class="pleb" />Non-subs</label></li>
+          <li><label><input type="checkbox" class="sub" />Subscribers</label></li>
+          <li><label><input type="checkbox" class="vip" />VIPs</label></li>
+          <li><label><input type="checkbox" class="mod" />Moderators</label></li>
+          <li><label><input type="checkbox" class="event" />Channel events</label></li>
+          <li><label><input type="checkbox" class="bits" />Bit messages</label></li>
+          <li class="textbox include_user">
+            <label>From user:</label>
+            <input type="text" class="user" />
+          </li>
+          <li class="textbox include_keyword">
+            <label>Contains:</label>
+            <input type="text" class="keyword" />
+          </li>
+        </ul>
+        <p>Limit to:</p>
+        <ul>
+          <li class="textbox from_channel">
+            <label>Channel:</label>
+            <input type="text" class="channel" />
+          </li>
+        </ul>
+        <p>Exclude:</p>
+        <ul class="exclude">
+          <li class="textbox exclude_user">
+            <label>From user:</label>
+            <input type="text" class="user" />
+          </li>
+          <li class="textbox exclude_startswith">
+            <label>Starts with:</label>
+            <input type="text" class="keyword" />
+          </li>
+        </ul>
+      </div>
+      <label class="name"></label>
+      <input type="text" class="name"></input>
     </div>
-    <span class="clear-chat">
-      <a class="clear-chat-link" href="javascript:void(0)" title="Clear" alt="Clear">
-        <img class="clear-chat-icon" src="assets/no-entry.svg" />
-      </a>
-    </span>
-    <div class="settings">
-      <p>Include:</p>
-      <ul class="include">
-        <li><label><input type="checkbox" class="pleb" />Non-subs</label></li>
-        <li><label><input type="checkbox" class="sub" />Subscribers</label></li>
-        <li><label><input type="checkbox" class="vip" />VIPs</label></li>
-        <li><label><input type="checkbox" class="mod" />Moderators</label></li>
-        <li><label><input type="checkbox" class="event" />Channel events</label></li>
-        <li><label><input type="checkbox" class="bits" />Bit messages</label></li>
-        <li class="textbox include_user">
-          <label>From user:</label>
-          <input type="text" class="user" />
-        </li>
-        <li class="textbox include_keyword">
-          <label>Contains:</label>
-          <input type="text" class="keyword" />
-        </li>
-      </ul>
-      <p>Limit to:</p>
-      <ul>
-        <li class="textbox from_channel">
-          <label>Channel:</label>
-          <input type="text" class="channel" />
-        </li>
-      </ul>
-      <p>Exclude:</p>
-      <ul class="exclude">
-        <li class="textbox exclude_user">
-          <label>From user:</label>
-          <input type="text" class="user" />
-        </li>
-        <li class="textbox exclude_startswith">
-          <label>Starts with:</label>
-          <input type="text" class="keyword" />
-        </li>
-      </ul>
-    </div>
-    <label class="name"></label>
-    <input type="text" class="name"></input>
-  </div>
-  <div class="content"><div class="loading">Loading...</div></div>
-</div>`);
-  $W.attr("id", id);
-  $W.addClass(classname);
-  $W.find('.clear-chat-icon').attr("width", "1.1em").attr("height", "1.1em");
-  $W.find('.header .settings input[type="checkbox"]').attr('checked', 'checked');
-  $W.find('.header label.name').val(name);
-  $W.find('.header input.name').attr("value", name);
-  return $W;
-}
-
-/* Populate templates and load the client */
-function index_main() {
-  /* Parse layout */
-  let layout_raw = Util.ParseQueryString().layout;
-  if (layout_raw === undefined) layout_raw = "double:chat";
-  let layout = ParseLayout(layout_raw);
-  /* Remove the top-level "Loading" message */
-  $("#wrapper #wrapper-loading").remove();
-  /* Create the chat input elements */
-  debug_msg("Adding txtChat"); /* TODO: REMOVE */
-  let $ChatBox = $(`<textarea id="txtChat" placeholder="Send a message"></textarea>`);
-  $ChatBox.attr("hist-index", "-1");
-  $ChatBox.attr("tab-index", "-1");
-  $ChatBox.attr("tab-word", "");
-  let $Chat = $(`<div id="chat"></div>`).append($ChatBox);
-  /* Create the columns */
-  let Columns = [];
-  if (layout.Cols == "single") {
-    /* Build one column (class=full) */
-    let $Module = make_window('module1', 'full', 'Chat');
-    if (layout.Chat) {
-      $Module.addClass("has-chat");
-      $Module.find('.content').after($Chat);
-    } else {
-      $Module.addClass("no-chat");
-    }
-    Columns.push($(`<div class="column full"></div>`).append($Module));
-  } else if (layout.Cols == "double") {
-    /* Build two columns (class=left, class=right) */
-    let $Module1 = make_window("module1", "left", "Left Chat");
-    let $Module2 = make_window("module2", "right", "Right Chat");
-    if (layout.Chat) {
-      $Module2.addClass("has-chat");
-      $Module2.find('.content').after($Chat);
-    } else {
-      $Module2.addClass("no-chat");
-    }
-    Columns.push($(`<div class="column left"></div>`).append($Module1));
-    Columns.push($(`<div class="column right"></div>`).append($Module2));
-  }
-  debug_msg("Adding columns"); /* TODO: REMOVE */
-  /* Insert the columns into the document */
-  for (let $Col of Columns) {
-    $("div#wrapper").append($Col);
+    <div class="content"><div class="loading">Loading...</div></div>
+  </div>`);
+    $W.attr("id", id);
+    $W.addClass(classname);
+    $W.find('.clear-chat-icon').attr("width", "1.1em").attr("height", "1.1em");
+    $W.find('.header .settings input[type="checkbox"]').attr('checked', 'checked');
+    $W.find('.header label.name').val(name);
+    $W.find('.header input.name').attr("value", name);
+    return $W;
   }
 
-  debug_msg("Configuring slim layout"); /* TODO: REMOVE */
-  /* If slim layout, remove the entire header */
-  if (layout.Slim) {
-    $(".header").hide();
-    $(".content").addClass("slim");
-    $("#settings_button").hide();
-  }
-
-  debug_msg("Waiting for ready"); /* TODO: REMOVE */
-  /* Once rerendering is complete, start up the client */
-  $(document).ready(function() {
-    debug_msg("Document ready");
-    client_main(layout);
-    document.dispatchEvent(new Event("tfc-loaded"));
-  });
-}
-
-/* Populate script assets immediately */
-(function() {
-  function script(src) {
-    return $(document.createElement('script'))
-      .attr("type", "text/javascript")
-      .attr("src", src)[0];
-  }
-  for (let asset of ASSETS) {
-    let s = null;
-    if (asset.length == 3) {
-      let [atype, afile, afunc] = asset;
-      if (atype == "twitch-api") {
-        let tfcidx = `${window.location}`.indexOf('/twitch-filtered-chat');
-        let base = `${window.location}`.substr(0, tfcidx);
-        let twapi = `${base}/twitch-api`;
-        s = script(`${twapi}/${afile}`);
-      } else if (atype == "GLOBAL") {
-        s = script(afile);
+  /* Populate templates and load the client */
+  function index_main() {
+    /* Parse layout */
+    let layout_raw = Util.ParseQueryString().layout;
+    if (layout_raw === undefined) layout_raw = "double:chat";
+    let layout = ParseLayout(layout_raw);
+    /* Remove the top-level "Loading" message */
+    $("#wrapper #wrapper-loading").remove();
+    /* Create the chat input elements */
+    debug_msg("Adding txtChat"); /* TODO: REMOVE */
+    let $ChatBox = $(`<textarea id="txtChat" placeholder="Send a message"></textarea>`);
+    $ChatBox.attr("hist-index", "-1");
+    $ChatBox.attr("tab-index", "-1");
+    $ChatBox.attr("tab-word", "");
+    let $Chat = $(`<div id="chat"></div>`).append($ChatBox);
+    /* Create the columns */
+    let Columns = [];
+    if (layout.Cols == "single") {
+      /* Build one column (class=full) */
+      let $Module = make_window('module1', 'full', 'Chat');
+      if (layout.Chat) {
+        $Module.addClass("has-chat");
+        $Module.find('.content').after($Chat);
       } else {
-        console.error("Unknown asset", asset);
+        $Module.addClass("no-chat");
       }
+      Columns.push($(`<div class="column full"></div>`).append($Module));
+    } else if (layout.Cols == "double") {
+      /* Build two columns (class=left, class=right) */
+      let $Module1 = make_window("module1", "left", "Left Chat");
+      let $Module2 = make_window("module2", "right", "Right Chat");
+      if (layout.Chat) {
+        $Module2.addClass("has-chat");
+        $Module2.find('.content').after($Chat);
+      } else {
+        $Module2.addClass("no-chat");
+      }
+      Columns.push($(`<div class="column left"></div>`).append($Module1));
+      Columns.push($(`<div class="column right"></div>`).append($Module2));
     }
-    if (s === null) {
-      console.error("Failed to add script", asset);
-    } else {
-      document.head.appendChild(s);
+    debug_msg("Adding columns"); /* TODO: REMOVE */
+    /* Insert the columns into the document */
+    for (let $Col of Columns) {
+      $("div#wrapper").append($Col);
     }
-  }
-})();
 
-/* Helper function to delay calling `func` until `cond` returns true */
-function delay_until(func, cond) {
-  /* TODO: replace with promises */
-  try {
-    if (cond()) {
-      func();
-    } else {
-      console.debug("Delaying");
-      window.setTimeout(delay_until.bind(window, func, cond), 50);
+    debug_msg("Configuring slim layout"); /* TODO: REMOVE */
+    /* If slim layout, remove the entire header */
+    if (layout.Slim) {
+      $(".header").hide();
+      $(".content").addClass("slim");
+      $("#settings_button").hide();
     }
-  }
-  catch (e) {
-    alert("Loading: " + e.toString());
-    throw e;
-  }
-}
 
-/* Once the document is loaded, wait for the scripts, then do layout */
-$(document).ready(function() {
+    debug_msg("Waiting for ready"); /* TODO: REMOVE */
+    /* Once rerendering is complete, start up the client */
+    $(document).ready(function() {
+      debug_msg("Document ready");
+      client_main(layout);
+      document.dispatchEvent(new Event("tfc-loaded"));
+    });
+  }
+
+  /* Once the document is loaded, wait for the scripts, then do layout */
   debug_msg("waiting for ready");
-  delay_until(index_main, AreAllAssetsLoaded);
-});
+  global.debug_msg = debug_msg;
+  onReady(index_main);
+}
   </script>
 </head>
-<body>
+<body onload="Main(window)">
   <!-- Debugging -->
   <span class="debug" id="debug" style="position: absolute; color: black; font-weight: bold; background-color: white; z-index: 100;">Debug active</span>
   <!-- Content wrapper -->
