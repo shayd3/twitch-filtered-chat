@@ -902,6 +902,7 @@ function client_main(layout) {
     /* TODO: get config key */ "tfc-config-test",
     ["NoAssets", "NoFFZ", "NoBTTV", "Transparent", "Layout",
      "AutoReconnect", "Debug"]);
+  debug_msg("Constructed ConfigStore"); /* TODO: REMOVE */
   $(".module").each(function() {
     let id = $(this).attr("id");
     let cfg = config_obj.getValue(id);
@@ -909,10 +910,13 @@ function client_main(layout) {
       set_module_settings(this, cfg);
     }
   });
+  debug_msg("Moduels configured"); /* TODO: REMOVE */
   /* Obtain the config and construct the client */
   (function() {
     let config = get_config_object();
+    debug_msg("Main config gathered"); /* TODO: REMOVE */
     client = new TwitchClient(config);
+    debug_msg("Client constructed"); /* TODO: REMOVE */
     Util.DebugLevel = config.Debug;
 
     /* Change the document title to show our authentication state */
@@ -937,17 +941,16 @@ function client_main(layout) {
     $(".module").each(function() {
       set_module_settings(this, config[$(this).attr('id')]);
     });
+    debug_msg("Module settings synced"); /* TODO: REMOVE */
   })();
-
-  if (window.location.search.indexOf('&fail') != -1) {
-    return;
-  }
 
   /* Construct the HTML Generator and tell it and the client about each other */
   client.set('HTMLGen', new HTMLGenerator(client));
 
+  debug_msg("Loading plugins"); /* TODO: REMOVE */
   /* Construct the plugins */
   Plugins.LoadAll(client);
+  debug_msg("Loaded pluins"); /* TODO: REMOVE */
 
   /* Allow JS access if debugging is enabled */
   if (Util.DebugLevel > 0) {
@@ -956,6 +959,8 @@ function client_main(layout) {
 
   let is_up = (k) => (k == KeyEvent.DOM_VK_UP);
   let is_down = (k) => (k == KeyEvent.DOM_VK_DOWN);
+
+  debug_msg("Registering jQuery events"); /* TODO: REMOVE */
 
   /* Sending a chat message */
   $("#txtChat").keydown(function(e) {
@@ -1180,10 +1185,12 @@ function client_main(layout) {
   });
 
   /* Bind to numerous TwitchEvent events {{{0 */
+  debug_msg("Registering client events"); /* TODO: REMOVE */
 
   client.bind('twitch-open', function _on_twitch_open(e) {
     let notes = [];
     $(".loading").remove();
+    $("#debug").hide();
     if (client.IsAuthed()) {
       notes.push("(authenticated)");
     } else {
@@ -1331,6 +1338,8 @@ function client_main(layout) {
   });
 
   /* End of all the binding 0}}} */
+
+  debug_msg("Connecting to Twitch"); /* TODO: REMOVE */
 
   /* Finally, connect */
   client.Connect();
