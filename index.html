@@ -63,6 +63,7 @@ function Main(global) {
       d.innerHTML = `${msg}<br />${d.innerHTML}`;
     }
   }
+  global.debug_msg = debug_msg;
 
   debug_msg("Adding assets");
 
@@ -203,8 +204,7 @@ function Main(global) {
   }
 
   /* Once the document is loaded, wait for the scripts, then do layout */
-  debug_msg("waiting for ready");
-  global.debug_msg = debug_msg;
+  debug_msg("Waiting for ready");
   onReady(index_main);
 }
   </script>
