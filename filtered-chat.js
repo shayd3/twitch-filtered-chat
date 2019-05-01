@@ -8,11 +8,7 @@
  * Rewrite filtered-chat.js to hide get_config_object() within client_main()
  *
  * FIXME URGENT:
- * Configuration for module1 is lost on change and not stored; figure out why.
  * Page load takes ages. Figure out why and fix.
- *
- * FIXME: BUGS:
- * //part <ch> doesn't update configs like changing the Channels input does
  */
 
 /* TODO: REMOVE {{{0 */
@@ -26,7 +22,6 @@ const TEST_MESSAGES = {
   'RESUB': "@badge-info=;badges=staff/1,broadcaster/1,turbo/1;color=#008000;display-name=ronni;emotes=;id=db25007f-7a18-43eb-9379-80131e44d633;login=ronni;mod=0;msg-id=resub;msg-param-cumulative-months=6;msg-param-streak-months=2;msg-param-should-share-streak=1;msg-param-sub-plan=Prime;msg-param-sub-plan-name=Prime;room-id=70067886;subscriber=1;system-msg=ronni\\shas\\ssubscribed\\sfor\\s6\\smonths!;tmi-sent-ts=1507246572675;turbo=1;user-id=1337;user-type=staff :tmi.twitch.tv USERNOTICE #dwangoac :Great stream -- keep it up!\r\n",
   'GIFTSUB': ""
 };
-
 function inject_message(msg) {
   let e = new Event('message');
   e.data = msg;
@@ -83,19 +78,18 @@ function parse_query_string(config, qs=null) {
       val = v.split(',').map((c) => Twitch.FormatChannel(c));
     } else if (k === "debug") {
       key = "Debug";
-      if (typeof(v) === "string" && v.match(/^[0-9]+$/)) {
-        v = +v;
+      val = Number(v);
+      if (Number.isNaN(val)) {
+        if (v === "debug") {
+          val = Util.LEVEL_DEBUG;
+        } else if (v === "trace") {
+          val = Util.LEVEL_TRACE;
+        } else {
+          val = !!v ? 1 : 0;
+        }
       }
-      if (typeof(v) === "integer") {
-        if (v < Util.LEVEL_MIN) v = Util.LEVEL_MIN;
-        if (v > Util.LEVEL_MAX) v = Util.LEVEL_MAX;
-      } else if (v === "debug") {
-        val = 1;
-      } else if (v === "trace") {
-        val = 2;
-      } else {
-        val = !!v;
-      }
+      if (val < Util.LEVEL_MIN) val = Util.LEVEL_MIN;
+      if (val > Util.LEVEL_MAX) val = Util.LEVEL_MAX;
     } else if (k === "noassets") {
       key = "NoAssets";
       val = !!v;
@@ -121,6 +115,8 @@ function parse_query_string(config, qs=null) {
     } else if (k == "reconnect") {
       key = "AutoReconnect";
       val = true;
+    } else if (k == "size") {
+      set_css_var("--body-font-size", `${v}px`);
     }
     config[key] = val;
   }
@@ -128,6 +124,16 @@ function parse_query_string(config, qs=null) {
     config.Layout = ParseLayout("double:chat");
   }
   return query_remove;
+}
+
+/* Obtain configuration key */
+function get_config_key() {
+  let config_key = 'tfc-config';
+  let qs = Util.ParseQueryString();
+  if (qs.hasOwnProperty('config_key')) {
+    config_key = config_key + '-' + qs.config_key.replace(/[^a-z]/g, '');
+  }
+  return config_key;
 }
 
 /* Obtain configuration */
@@ -139,13 +145,10 @@ function get_config_object() {
    * 2) Store module configuration in each modules' settings window
    * 3) Remove sensitive values from the query string, if present
    */
-  let config_key = 'tfc-config';
+  let config_key = get_config_key();
 
   /* Query String object, parsed */
   let qs = Util.ParseQueryString();
-  if (qs.hasOwnProperty('config_key')) {
-    config_key = config_key + '-' + qs.config_key.replace(/[^a-z]/g, '');
-  }
   Util.SetWebStorageKey(config_key);
   if (config_key !== "tfc-config") {
     Util.Log(`Using custom config key "${Util.GetWebStorageKey()}"`);
@@ -164,12 +167,11 @@ function get_config_object() {
   if (typeof(config.Name) != "string") config.Name = "";
   if (typeof(config.ClientID) != "string") config.ClientID = "";
   if (typeof(config.Pass) != "string") config.Pass = "";
-  if (typeof(config.Debug) != "number") config.Debug = 0;
 
   /* Persist the config key */
   config.key = Util.GetWebStorageKey();
 
-  /* Certain unwanted items may be preserved */
+  /* Certain unwanted items may be preserved in localStorage */
   if (config.hasOwnProperty('NoAssets')) delete config["NoAssets"];
   if (config.hasOwnProperty('Debug')) delete config["Debug"];
 
@@ -181,7 +183,6 @@ function get_config_object() {
   let txtNick = $('input#txtNick')[0];
   let txtClientID = $('input#txtClientID')[0];
   let txtPass = $('input#txtPass')[0];
-  let selDebug = $('select#selDebug')[0];
   if (txtChannel.value) {
     for (let ch of txtChannel.value.split(',')) {
       let channel = Twitch.FormatChannel(ch.toLowerCase());
@@ -198,15 +199,6 @@ function get_config_object() {
   }
   if (txtPass.value && txtPass.value != CACHED_VALUE) {
     config.Pass = txtPass.value;
-  }
-  if (selDebug.value) {
-    if (selDebug.value == "0") {
-      config.Debug = 0;
-    } else if (selDebug.value == "1") {
-      config.Debug = 1;
-    } else if (selDebug.value == "2") {
-      config.Debug = 2;
-    }
   }
 
   /* Populate configs for each module */
@@ -410,10 +402,9 @@ function encode_module_config(name, config) {
   let cfg = config[name];
   let parts = [];
   let EscComma = (s) => (s.replace(/,/g, '%2c'));
-  let B = (b) => (b ? "1" : "0");
   let bits = [cfg.Pleb, cfg.Sub, cfg.VIP, cfg.Mod, cfg.Event, cfg.Bits];
   parts.push(EscComma(cfg.Name));
-  parts.push(bits.map((e) => B(e)).join(""));
+  parts.push(bits.map((e) => e ? "1" : "0").join(""));
   parts.push(cfg.IncludeKeyword.map((e) => EscComma(e)).join(","));
   parts.push(cfg.IncludeUser.map((e) => EscComma(e)).join(","));
   parts.push(cfg.ExcludeUser.map((e) => EscComma(e)).join(","));
@@ -535,13 +526,11 @@ function handle_command(value, client) {
     if (tokens.length > 0) {
       if (tokens[0] == "show") {
         for (let [i, l] of Object.entries(logs)) {
-          let event_cmd = l._cmd;
-          let event_data = l._parsed;
-          add_help(`${i}: ${event_cmd}: ${JSON.stringify(event_data)}`);
+          add_help(`${i}: ${JSON.stringify(l).escape()}`);
         }
-      } else {
-        add_help(`Use //log show to view them all`);
       }
+    } else {
+      add_help(`Use //log show to view them all`);
     }
   } else if (command == '//clear') {
     $("div.content").html("");
@@ -797,11 +786,12 @@ function show_context_window(client, cw, line) {
   $cw.append($Line(`UserID: ${userid}`));
   $cw.append($Line(`MsgUID: ${id}`));
   /* Add roles (and ability to remove roles, for the caster) */
-  if (mod || vip || sub) {
+  if (mod || vip || sub || caster) {
     let $roles = $Line(`User Role:`);
     if (mod) { $roles.append($EmItem('Mod')); $roles.append(","); }
     if (vip) { $roles.append($EmItem('VIP')); $roles.append(","); }
     if (sub) { $roles.append($EmItem('Sub')); $roles.append(","); }
+    if (caster) { $roles.append($EmItem('Host')); $roles.append(","); }
     /* Remove the last comma */
     $roles[0].removeChild($roles[0].lastChild);
     $cw.append($roles);
@@ -891,8 +881,9 @@ function client_main(layout) {
   }, "ERROR");
   */
   let client;
+  /*
   let config_obj = new ConfigStore(
-    /* TODO: get config key */ "tfc-config-test",
+    get_config_key(),
     ["NoAssets", "NoFFZ", "NoBTTV", "Transparent", "Layout",
      "AutoReconnect", "Debug"]);
   $(".module").each(function() {
@@ -902,6 +893,7 @@ function client_main(layout) {
       set_module_settings(this, cfg);
     }
   });
+  */
   /* Obtain the config and construct the client */
   (function() {
     let config = get_config_object();
@@ -1171,17 +1163,17 @@ function client_main(layout) {
   /* Bind to numerous TwitchEvent events {{{0 */
 
   client.bind('twitch-open', function _on_twitch_open(e) {
-    let notes = [];
     $(".loading").remove();
     $("#debug").hide();
-    if (client.IsAuthed()) {
-      notes.push("(authenticated)");
-    } else {
-      notes.push("(unauthenticated)");
-    }
-    /*if (!Util.Browser.IsOBS && !layout.Slim) {*/
+    if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
+      let notes = [];
+      if (client.IsAuthed()) {
+        notes.push("(authenticated)");
+      } else {
+        notes.push("(unauthenticated)");
+      }
       add_notice(`Connected ${notes.join(" ")}`);
-    /*}*/
+    }
   });
 
   client.bind('twitch-close', function _on_twitch_close(e) {
@@ -1234,8 +1226,8 @@ function client_main(layout) {
   });
 
   client.bind('twitch-message', function _on_twitch_message(e) {
-    if (Util.DebugLevel >= Util.DEBUG_TRACE) {
-      add_html(`<span class="pre">${e.raw_line.replace(/</g, '&lt;')}</span>`);
+    if (Util.DebugLevel >= Util.LEVEL_TRACE) {
+      add_html(`<span class="pre">${e.repr()}</span>`);
     }
   });
 

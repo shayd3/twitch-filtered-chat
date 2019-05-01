@@ -2,45 +2,53 @@
 
 "use strict";
 
+/* NOTE: This script may execute before the page finishes loading. Don't rely
+ * on jQuery or any of the other script dependencies being available.
+ */
+
+const MOD_SELF = 'twitch-filtered-chat';
+const MOD_TWAPI = 'twitch-api';
+const IS_GIT = `${window.location}`.indexOf('github.io') > -1;
+const IS_LOCAL = window.location.protocol === "file:";
 var ASSETS = [];
 
-function CreateURL(src, tree) {
-  let l = window.location;
-  let ls = `${l}`;
-  if (tree === "twitch-api") {
-    let base = ls.substr(0, ls.indexOf('/twitch-filtered-chat'));
-    src = `${base}/twitch-api/${src}`;
-  }
-  if (src.startsWith('/')) {
-    if (l.protocol === "https:") {
-      src = "https:" + s;
+function GetAssetURL(file, tree) {
+  if (tree === MOD_TWAPI) {
+    if (IS_GIT) {
+      return `${MOD_TWAPI}/${file}`;
     } else {
-      src = "http:" + s;
+      return `../${MOD_TWAPI}/${file}`;
+    }
+  } else if (file.startsWith('//')) {
+    if (window.location.protocol === "https:") {
+      return `https:${file}`;
+    } else if (window.location.protocol === "http:") {
+      return `http:${file}`;
+    } else if (window.location.protocol === "file:") {
+      return `http:${file}`;
     }
   }
-  return src;
 }
 
 function AddAsset(src, tree=null) {
   ASSETS.push({});
-  let s = document.createElement("script");
   let asset = ASSETS[ASSETS.length - 1];
-  asset.src = CreateURL(src, tree);
+  asset.src = GetAssetURL(src, tree);
   asset.tree = tree;
-  asset.script = s;
   asset.loaded = false;
   asset.error = false;
-  s.setAttribute("type", "text/javascript");
-  s.setAttribute("src", asset.src);
-  s.onload = function() {
+  asset.script = document.createElement("script");
+  asset.script.setAttribute("type", "text/javascript");
+  asset.script.setAttribute("src", asset.src);
+  asset.script.onload = function() {
     console.log(`${asset.src} loaded`);
     asset.loaded = true;
   }
-  s.onerror = function(e) {
+  asset.script.onerror = function(e) {
     console.error("Failed loading", asset, e);
     asset.error = true;
   }
-  document.head.appendChild(s);
+  document.head.appendChild(asset.script);
 }
 
 function AssetsLoaded() {

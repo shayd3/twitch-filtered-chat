@@ -50,6 +50,14 @@ body.transparent {
   color: #222222;
 }
 
+.debug {
+  position: absolute;
+  color: black;
+  font-weight: bold;
+  background-color: white;
+  z-index: 100;
+}
+
 input {
   padding: 2px;
   font-size: 0.8em;
