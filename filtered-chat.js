@@ -1231,6 +1231,10 @@ function client_main(layout) {
     }
   });
 
+  client.bind('twitch-streaminfo', function _on_twitch_streaminfo(e) {
+    Util.Log("Got stream info:", client.GetChannelInfo(e.channel.channel));
+  });
+
   client.bind('twitch-chat', function _on_twitch_chat(event) {
     if (event instanceof TwitchChatEvent) {
       let m = verify_string(event.message);

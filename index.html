@@ -56,6 +56,9 @@
  */
 
 function Main(global) {
+  /* Greetings! Can't use Util as that isn't loaded yet */
+  console.log("Hello!");
+
   /* Populate the debug div with text */
   function debug_msg(msg) {
     let d = document.getElementById("debug");
@@ -138,6 +141,8 @@ function Main(global) {
 
   /* Populate templates and load the client */
   function index_main() {
+    Util.LogOnly("Assets loaded; initializing page...");
+
     /* Parse layout */
     let layout_raw = Util.ParseQueryString().layout;
     if (layout_raw === undefined) layout_raw = "double:chat";
@@ -191,8 +196,11 @@ function Main(global) {
       $("#settings_button").hide();
     }
 
+    Util.LogOnly("Waiting for document to finish rendering...");
+
     /* Once rerendering is complete, start up the client */
     $(document).ready(function() {
+      Util.LogOnly("Document rendered; setting up TFC...");
       client_main(layout);
       document.dispatchEvent(new Event("tfc-loaded"));
     });
