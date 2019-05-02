@@ -124,6 +124,7 @@ function onReady(func) {
   }
   catch (e) {
     alert("Fail: " + e.toString());
+    throw e;
   }
 }
 

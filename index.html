@@ -73,72 +73,6 @@ function Main(global) {
   AddAsset("colors.js", "twitch-api");
   AddAsset("client.js", "twitch-api");
 
-  /* Function to generate a window */
-  function make_window(id, classname, name) {
-    let $W = $(`
-  <div class="module">
-    <div class="header">
-      <div class="menu">
-        <div></div>
-        <div></div>
-        <div></div>
-      </div>
-      <span class="clear-chat">
-        <a class="clear-chat-link" href="javascript:void(0)" title="Clear" alt="Clear">
-          <img class="clear-chat-icon" src="assets/no-entry.svg" />
-        </a>
-      </span>
-      <div class="settings">
-        <p>Include:</p>
-        <ul class="include">
-          <li><label><input type="checkbox" class="pleb" />Non-subs</label></li>
-          <li><label><input type="checkbox" class="sub" />Subscribers</label></li>
-          <li><label><input type="checkbox" class="vip" />VIPs</label></li>
-          <li><label><input type="checkbox" class="mod" />Moderators</label></li>
-          <li><label><input type="checkbox" class="event" />Channel events</label></li>
-          <li><label><input type="checkbox" class="bits" />Bit messages</label></li>
-          <li class="textbox include_user">
-            <label>From user:</label>
-            <input type="text" class="user" />
-          </li>
-          <li class="textbox include_keyword">
-            <label>Contains:</label>
-            <input type="text" class="keyword" />
-          </li>
-        </ul>
-        <p>Limit to:</p>
-        <ul>
-          <li class="textbox from_channel">
-            <label>Channel:</label>
-            <input type="text" class="channel" />
-          </li>
-        </ul>
-        <p>Exclude:</p>
-        <ul class="exclude">
-          <li class="textbox exclude_user">
-            <label>From user:</label>
-            <input type="text" class="user" />
-          </li>
-          <li class="textbox exclude_startswith">
-            <label>Starts with:</label>
-            <input type="text" class="keyword" />
-          </li>
-        </ul>
-      </div>
-      <label class="name"></label>
-      <input type="text" class="name"></input>
-    </div>
-    <div class="content"><div class="loading">Loading...</div></div>
-  </div>`);
-    $W.attr("id", id);
-    $W.addClass(classname);
-    $W.find('.clear-chat-icon').attr("width", "1.1em").attr("height", "1.1em");
-    $W.find('.header .settings input[type="checkbox"]').attr('checked', 'checked');
-    $W.find('.header label.name').val(name);
-    $W.find('.header input.name').attr("value", name);
-    return $W;
-  }
-
   /* Populate templates and load the client */
   function index_main() {
     Util.LogOnly("Assets loaded; initializing page...");
@@ -158,35 +92,39 @@ function Main(global) {
     $ChatBox.attr("tab-word", "");
     let $Chat = $(`<div id="chat"></div>`).append($ChatBox);
 
-    /* Create the columns */
-    let Columns = [];
+    let $Column1 = $("#column1");
+    let $Column2 = $("#column2");
+    let $Columns = $(".column");
+    let $Module1 = $("#module1");
+    let $Module2 = $("#module2");
+    let $Modules = $(".module");
+    $Modules.find('.clear-chat-icon')
+            .attr("width", "1.1em")
+            .attr("height", "1.1em");
+    $Modules.find('.header .settings input[type="checkbox"]')
+            .attr('checked', 'checked');
+    $Modules.find('.header label.name').val('Chat');
+    $Modules.find('.header input.name').attr("value", 'Chat');
+
     if (layout.Cols == "single") {
-      /* Build one column (class=full) */
-      let $Module = make_window('module1', 'full', 'Chat');
-      if (layout.Chat) {
-        $Module.addClass("has-chat");
-        $Module.find('.content').after($Chat);
-      } else {
-        $Module.addClass("no-chat");
-      }
-      Columns.push($(`<div class="column full"></div>`).append($Module));
-    } else if (layout.Cols == "double") {
-      /* Build two columns (class=left, class=right) */
-      let $Module1 = make_window("module1", "left", "Left Chat");
-      let $Module2 = make_window("module2", "right", "Right Chat");
-      if (layout.Chat) {
-        $Module2.addClass("has-chat");
-        $Module2.find('.content').after($Chat);
-      } else {
-        $Module2.addClass("no-chat");
-      }
-      Columns.push($(`<div class="column left"></div>`).append($Module1));
-      Columns.push($(`<div class="column right"></div>`).append($Module2));
+      $Column1.removeClass("left");
+      $Column1.addClass("full");
+      $Module1.removeClass("left");
+      $Module1.addClass('full');
+      $Column1.show();
+      $Column2.remove();
+    } else {
+      $Columns.show();
     }
 
-    /* Insert the columns into the document */
-    for (let $Col of Columns) {
-      $("div#wrapper").append($Col);
+    let $ChatModule = null;
+    if (layout.Chat) {
+      $ChatModule = layout.Cols == "single" ? $Module1 : $Module2;
+    }
+    if ($ChatModule !== null) {
+      $ChatModule.removeClass("no-chat");
+      $ChatModule.addClass("has-chat");
+      $ChatModule.find(".content").append($Chat);
     }
 
     /* If slim layout, remove the entire header */
@@ -213,10 +151,122 @@ function Main(global) {
 </head>
 <body onload="Main(window)">
   <!-- Debugging -->
-  <span class="debug" id="debug">Debug active</span>
+  <span class="debug" id="debug" style="display: none">Debug active</span>
   <!-- Content wrapper -->
   <div id="wrapper">
     <div id="wrapper-loading" class="loading">Loading Panels...</div>
+    <div class="column left" id="column1" style="display: none">
+      <div class="module left no-chat" id="module1">
+        <div class="header">
+          <div class="menu">
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>
+          <span class="clear-chat">
+            <a class="clear-chat-link" href="javascript:void(0)" title="Clear" alt="Clear">
+              <img class="clear-chat-icon" src="assets/no-entry.svg" />
+            </a>
+          </span>
+          <div class="settings">
+            <p>Include:</p>
+            <ul class="include">
+              <li><label><input type="checkbox" class="pleb" />Non-subs</label></li>
+              <li><label><input type="checkbox" class="sub" />Subscribers</label></li>
+              <li><label><input type="checkbox" class="vip" />VIPs</label></li>
+              <li><label><input type="checkbox" class="mod" />Moderators</label></li>
+              <li><label><input type="checkbox" class="event" />Channel events</label></li>
+              <li><label><input type="checkbox" class="bits" />Bit messages</label></li>
+              <li class="textbox include_user">
+                <label>From user:</label>
+                <input type="text" class="user" />
+              </li>
+              <li class="textbox include_keyword">
+                <label>Contains:</label>
+                <input type="text" class="keyword" />
+              </li>
+            </ul>
+            <p>Limit to:</p>
+            <ul>
+              <li class="textbox from_channel">
+                <label>Channel:</label>
+                <input type="text" class="channel" />
+              </li>
+            </ul>
+            <p>Exclude:</p>
+            <ul class="exclude">
+              <li class="textbox exclude_user">
+                <label>From user:</label>
+                <input type="text" class="user" />
+              </li>
+              <li class="textbox exclude_startswith">
+                <label>Starts with:</label>
+                <input type="text" class="keyword" />
+              </li>
+            </ul>
+          </div>
+          <label class="name"></label>
+          <input type="text" class="name"></input>
+        </div>
+        <div class="content"><div class="loading">Loading...</div></div>
+      </div>
+    </div>
+    <div class="column right" id="column2" style="display: none">
+      <div class="module right no-chat" id="module2">
+        <div class="header">
+          <div class="menu">
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>
+          <span class="clear-chat">
+            <a class="clear-chat-link" href="javascript:void(0)" title="Clear" alt="Clear">
+              <img class="clear-chat-icon" src="assets/no-entry.svg" />
+            </a>
+          </span>
+          <div class="settings">
+            <p>Include:</p>
+            <ul class="include">
+              <li><label><input type="checkbox" class="pleb" />Non-subs</label></li>
+              <li><label><input type="checkbox" class="sub" />Subscribers</label></li>
+              <li><label><input type="checkbox" class="vip" />VIPs</label></li>
+              <li><label><input type="checkbox" class="mod" />Moderators</label></li>
+              <li><label><input type="checkbox" class="event" />Channel events</label></li>
+              <li><label><input type="checkbox" class="bits" />Bit messages</label></li>
+              <li class="textbox include_user">
+                <label>From user:</label>
+                <input type="text" class="user" />
+              </li>
+              <li class="textbox include_keyword">
+                <label>Contains:</label>
+                <input type="text" class="keyword" />
+              </li>
+            </ul>
+            <p>Limit to:</p>
+            <ul>
+              <li class="textbox from_channel">
+                <label>Channel:</label>
+                <input type="text" class="channel" />
+              </li>
+            </ul>
+            <p>Exclude:</p>
+            <ul class="exclude">
+              <li class="textbox exclude_user">
+                <label>From user:</label>
+                <input type="text" class="user" />
+              </li>
+              <li class="textbox exclude_startswith">
+                <label>Starts with:</label>
+                <input type="text" class="keyword" />
+              </li>
+            </ul>
+          </div>
+          <label class="name"></label>
+          <input type="text" class="name"></input>
+        </div>
+        <div class="content"><div class="loading">Loading...</div></div>
+      </div>
+    </div>
   </div>
   <!-- Settings -->
   <div id="settings">
