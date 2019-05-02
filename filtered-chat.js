@@ -117,6 +117,9 @@ function parse_query_string(config, qs=null) {
       val = true;
     } else if (k == "size") {
       set_css_var("--body-font-size", `${v}pt`);
+    } else if (k == "plugins") {
+      key = "Plugins";
+      val = !!v;
     }
     config[key] = val;
   }
@@ -895,6 +898,7 @@ function client_main(layout) {
   });
   */
   /* Obtain the config and construct the client */
+  let ConfigCommon = {};
   (function() {
     let config = get_config_object();
     client = new TwitchClient(config);
@@ -922,13 +926,18 @@ function client_main(layout) {
     $(".module").each(function() {
       set_module_settings(this, config[$(this).attr('id')]);
     });
+
+    /* Set values we'll want to use later */
+    ConfigCommon.Plugins = !!config.Plugins;
   })();
 
   /* Construct the HTML Generator and tell it and the client about each other */
   client.set('HTMLGen', new HTMLGenerator(client));
 
   /* Construct the plugins */
-  Plugins.LoadAll(client);
+  if (ConfigCommon.Plugins) {
+    Plugins.LoadAll(client);
+  }
 
   /* Allow JS access if debugging is enabled */
   if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
