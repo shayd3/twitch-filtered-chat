@@ -368,6 +368,16 @@ SKIP.push("check_reflect_navigator");
 
 function onready() {
   add_message("Loaded");
+  var supportsES6 = function() {
+    try {
+      new Function("(a = 0) => a");
+      return true;
+    }
+    catch (err) {
+      return false;
+    }
+  }();
+  if (!supportsES6) add_message(`<pre class="im">NO ES6 SUPPORT</pre>`);
   check_webkit();
   check_obs();
   /* Log UA */
