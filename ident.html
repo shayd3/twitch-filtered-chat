@@ -91,7 +91,7 @@ function check_reflect_window() {
     if (a == "jQuery") continue;
     if (a == "$") continue;
     if (a.match(/^PrivateSymbol\./)) continue;
-    //if (SKIP.indexOf(a) != -1) continue;
+    if (SKIP.indexOf(a) != -1) continue;
     if (typeof(navigator[a]) == "function") continue;
     if (window.DFLT_WINDOW_ATTRIBS.indexOf(a) == -1) {
       new_attrs.push(a);
