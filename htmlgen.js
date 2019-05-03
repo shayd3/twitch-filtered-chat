@@ -187,14 +187,16 @@ class HTMLGenerator {
     let $e = $(`<span class="username" data-username="1"></span>`);
     $e.addClass('username');
     $e.attr('data-username', '1');
-    let color = event.flags.color;
-    /* Add "low-contrast" for usernames hard to see */
-    let c1 = Util.ContrastRatio(color, '#303030')
-    let c2 = Util.ContrastRatio(color, '#0e0e0e')
-    $e.attr('data-contrast-1', c1);
-    $e.attr('data-contrast-2', c2);
-    if (c1 < 4 || c2 < 4) { $e.addClass("low-contrast"); }
-    $e.css('color', color);
+    $e.css('color', event.flags.color);
+    /* Calculate "brightness" of the username */
+    let luma = (new Util.Color(event.flags.color)).yiq[0];
+    if (luma >= 128) {
+      $e.addClass("luma-dark");
+    } else if (luma >= 120) {
+      $e.addClass("luma-mid");
+    } else {
+      $e.addClass("luma-light");
+    }
     $e.text(user);
     return $e[0].outerHTML;
   }

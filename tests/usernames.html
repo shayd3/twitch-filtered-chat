@@ -1,0 +1,123 @@
+<!DOCTYPE xhtml>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>CSS Username Readability Test</title>
+  <meta charset="utf-8" />
+  <script type="text/javascript" src="../assets/jquery-3.4.0.js"></script>
+  <script type="text/javascript" src="../../twitch-api/utility.js"></script>
+  <link href="../main.css" rel="stylesheet" type="text/css" />
+  <style type="text/css">
+.line {
+  border: 1px solid lightgray;
+}
+.username {
+  text-shadow:
+    -1px 0px 0px #1d1d1d,
+    1px 0px 0px #1d1d1d,
+    0px -1px 0px #1d1d1d,
+    0px 1px 0px #1d1d1d,
+    -2px -2px 1px #d1d1d1,
+    -2px 2px 1px #d1d1d1,
+    2px -2px 1px #d1d1d1,
+    2px 2px 1px #d1d1d1
+    ;
+}
+.username.low-contrast {
+  text-shadow: inherit
+    ;
+}
+
+.username.light {
+  text-shadow:
+    -1px 0px 0px #d1d1d1,
+    1px 0px 0px #d1d1d1,
+    0px -1px 0px #d1d1d1,
+    0px 1px 0px #d1d1d1,
+    -2px 0px 1px #d1d1d1,
+    2px 0px 1px #d1d1d1,
+    0px -2px 1px #d1d1d1,
+    0px 2px 1px #d1d1d1;
+}
+
+.username.mid {
+  text-shadow:
+    -1px 0px 0px #0a0a0a,
+    1px 0px 0px #0a0a0a,
+    0px -1px 0px #0a0a0a,
+    0px 1px 0px #0a0a0a,
+    -2px 0px 1px #0a0a0a,
+    2px 0px 1px #0a0a0a,
+    0px -2px 1px #0a0a0a,
+    0px 2px 1px #0a0a0a;
+}
+
+.username.dark {
+  text-shadow:
+    -1px 0px 0px #1d1d1d,
+    1px 0px 0px #1d1d1d,
+    0px -1px 0px #1d1d1d,
+    0px 1px 0px #1d1d1d,
+    -2px 0px 1px #1d1d1d,
+    2px 0px 1px #1d1d1d,
+    0px -2px 1px #1d1d1d,
+    0px 2px 1px #1d1d1d;
+}
+
+  </style>
+  <script type="text/javascript">
+COLORS = ["lightgray", "#0f0f0f", "lightseagreen", "forestgreen",
+          "goldenrod", "dodgerblue", "darkorchid", "crimson"];
+
+function test_colors(text, args) {
+  let i = 0;
+  let lstyle = `width: ${100/COLORS.length}%; display: inline-block`;
+  let cstyle = ``;
+  let ustyle = ``;
+  if (args.ls) { lstyle = args.ls.trimEnd(';') + ";" + lstyle; }
+  if (args.cs) { cstyle = args.cs; }
+  if (args.us) { ustyle = args.us; }
+  for (i = 0; i < COLORS.length; ++i) {
+    let color = COLORS[i];
+    let $l = $(`<div class="line line-wrapper"></div>`).attr("style", lstyle);
+    let $c = $(`<div class="chat-line"></div>`).attr("style", cstyle);
+    let $u = $(`<span class="username">${color}</span>`).attr("style", ustyle);
+    if (text) $u.text($u.text() + " " + text);
+    $u.css("color", color);
+    $u.attr("data-yiq", (new Util.Color(color)).yiq[0]);
+    $u.addClass(calculateColorBackground(color));
+    if (args.lc) for (let c of args.lc.split(' ')) $l.addClass(c);
+    if (args.cc) for (let c of args.cc.split(' ')) $c.addClass(c);
+    if (args.uc) for (let c of args.uc.split(' ')) $u.addClass(c);
+    $c.append($u);
+    $l.append($c);
+    $(".content").append($l);
+    console.log($c.html());
+  }
+}
+
+function calculateColorBackground(color) {
+  let y = (new Util.Color(color)).yiq[0];
+  if (y >= 128) {
+    return "dark";
+  } else if (y >= 120) {
+    return "mid";
+  } else {
+    return "light";
+  }
+}
+
+function test_all_colors() {
+  test_colors("nc", {});
+  $(".content").append(`<div class="line line-wrapper"></div>`);
+  test_colors("lc", {uc: "low-contrast"});
+}
+$(document).ready(test_all_colors);
+  </script>
+</head>
+<body>
+  <div class="module module1" id="module1">
+    <div class="content">
+    </div>
+  </div>
+</body>
+ 

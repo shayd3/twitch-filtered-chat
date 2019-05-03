@@ -880,7 +880,7 @@ function client_main(layout) {
       add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
     }, "ERROR");
   }
-  if (Util.DebugLevel >= Util.LEVEL_TRACE) {
+  if (Util.DebugLevel >= Util.LEVEL_TRACE || layout.Tesla) {
     Util.Logger.add_hook(function(...args) {
       add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
     }, "DEBUG");

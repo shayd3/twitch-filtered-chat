@@ -262,27 +262,45 @@ input:disabled {
 
 .username {
   font-weight: bold;
-  text-shadow:
-    -2px  0px 1px darkgray,
-     0px  2px 1px darkgray,
-     2px  0px 1px darkgray,
-     0px -2px 1px darkgray,
-    -1px  0px 0px darkgray,
-     0px  1px 0px darkgray,
-     1px  0px 0px darkgray,
-     0px -1px 0px darkgray;
 }
 
-.username.low-contrast {
+/* Username has a dark color: light border */
+.username.luma-dark {
   text-shadow:
-    -2px  0px 1px lightgray,
-     0px  2px 1px lightgray,
-     2px  0px 1px lightgray,
-     0px -2px 1px lightgray,
-    -1px  0px 0px lightgray,
-     0px  1px 0px lightgray,
-     1px  0px 0px lightgray,
-     0px -1px 0px lightgray;
+    -1px  0px 0px #d1d1d1,
+     1px  0px 0px #d1d1d1,
+     0px -1px 0px #d1d1d1,
+     0px  1px 0px #d1d1d1,
+    -2px  0px 1px #d1d1d1,
+     2px  0px 1px #d1d1d1,
+     0px -2px 1px #d1d1d1,
+     0px  2px 1px #d1d1d1;
+}
+
+/* Username has a midrange color: very dark border */
+.username.luma-mid {
+  text-shadow:
+    -1px  0px 0px #0a0a0a,
+     1px  0px 0px #0a0a0a,
+     0px -1px 0px #0a0a0a,
+     0px  1px 0px #0a0a0a,
+    -2px  0px 1px #0a0a0a,
+     2px  0px 1px #0a0a0a,
+     0px -2px 1px #0a0a0a,
+     0px  2px 1px #0a0a0a;
+}
+
+/* Username has a light color: dark border */
+.username.luma-light {
+  text-shadow:
+    -1px  0px 0px #1d1d1d,
+     1px  0px 0px #1d1d1d,
+     0px -1px 0px #1d1d1d,
+     0px  1px 0px #1d1d1d,
+    -2px  0px 1px #1d1d1d,
+     2px  0px 1px #1d1d1d,
+     0px -2px 1px #1d1d1d,
+     0px  2px 1px #1d1d1d;
 }
 
 .module .content .line {
@@ -359,30 +377,6 @@ input:disabled {
 }
 
 /* Transparent background overrides {{{0 */
-
-body.transparent .username {
-  text-shadow:
-    -2px  0px 1px darkgray,
-     0px  2px 1px darkgray,
-     2px  0px 1px darkgray,
-     0px -2px 1px darkgray,
-    -1px  0px 0px darkgray,
-     0px  1px 0px darkgray,
-     1px  0px 0px darkgray,
-     0px -1px 0px darkgray;
-}
-
-body.transparent .username.low-contrast {
-  text-shadow:
-    -2px  0px 1px darkgray,
-     0px  2px 1px darkgray,
-     2px  0px 1px darkgray,
-     0px -2px 1px darkgray,
-    -1px  0px 0px darkgray,
-     0px  1px 0px darkgray,
-     1px  0px 0px darkgray,
-     0px -1px 0px darkgray;
-}
 
 .module .content .line .message:not(.effect-rainbow) {
   text-shadow: -1px -1px 0px black,
