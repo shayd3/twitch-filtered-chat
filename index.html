@@ -138,9 +138,15 @@ function Main(global) {
 
     /* Once rerendering is complete, start up the client */
     $(document).ready(function() {
-      Util.LogOnly("Document rendered; setting up TFC...");
-      client_main(layout);
-      document.dispatchEvent(new Event("tfc-loaded"));
+      try {
+        Util.LogOnly("Document rendered; setting up TFC...");
+        client_main(layout);
+        document.dispatchEvent(new Event("tfc-loaded"));
+      } catch(e) {
+        alert("client_main error: " + e.toString());
+        alert("Stacktrace: " + e.stack ? e.stack.toString() : "no stack");
+        throw e;
+      }
     });
   }
 
