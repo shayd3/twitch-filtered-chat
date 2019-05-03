@@ -872,14 +872,18 @@ function complete($e, value, selIdx, client) {
 
 /* Called once when the document loads */
 function client_main(layout) {
-  /* TODO: Show warnings and errors in chat
   Util.Logger.add_hook(function(...args) {
-
+    add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
   }, "WARN");
   Util.Logger.add_hook(function(...args) {
-
+    add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
   }, "ERROR");
-  */
+  Util.Logger.add_hook(function(...args) {
+    add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
+  }, "DEBUG");
+  Util.Logger.add_hook(function(...args) {
+    add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
+  }, "TRACE");
   let client;
   /*
   let config_obj = new ConfigStore(
