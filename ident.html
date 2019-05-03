@@ -19,9 +19,11 @@
   border-right: 1px solid gray;
   padding: 0 0.5em;
   margin-right: 0.5em;
+  font-family: monospace;
+  min-width: 16px;
+  text-align: right;
 }
-
-.line.im {
+.im {
   font-weight: bold;
 }
 
@@ -38,6 +40,8 @@ window.DFLT_WINDOW_ATTRIBS = "undefined Array Boolean Date Math Number String Re
   </script>
   <script type="text/javascript">
 
+var SKIP = ["SKIP"];
+
 function add_message(s, cls) {
   let $d = $(`<div class="line"></div>`);
   if (!!cls) {
@@ -45,9 +49,14 @@ function add_message(s, cls) {
   }
   $("div.content")[0].appendChild($d.html(s)[0]);
 }
+SKIP.push("add_message");
 
-function onready() {
-  add_message("Loaded");
+function has_reflect() {
+  return window.Reflect && typeof(window.Reflect) == "object";
+}
+SKIP.push("has_reflect");
+
+function check_webkit() {
   /* Check for WebKit v8 */
   var v8string = 'function%20javaEnabled%28%29%20%7B%20%5Bnative%20code%5D%20%7D';
   if ('WebkitAppearance' in document.documentElement.style) { //If (probably) WebKit browser
@@ -59,41 +68,70 @@ function onready() {
   } else {
     add_message("Not a WebKit browser");
   }
+}
+SKIP.push("check_webkit");
+
+function check_obs() {
   /* Check for OBSStudio */
   if (typeof(window["obsstudio"]) != "undefined") {
     add_message("window.obsstudio exists!", "im");
   } else {
     add_message("no window.obsstudio object");
   }
+}
+SKIP.push("check_obs");
+
+function check_reflect_window() {
+  let new_attrs = [];
+  let a;
+  for (a of window["Reflect"].ownKeys(window)) {
+    if (a == "DFLT_WINDOW_ATTRIBS") continue;
+    if (a == "add_message") continue;
+    if (a == "onready") continue;
+    if (a == "jQuery") continue;
+    if (a == "$") continue;
+    if (a.match(/^PrivateSymbol\./)) continue;
+    //if (SKIP.indexOf(a) != -1) continue;
+    if (typeof(navigator[a]) == "function") continue;
+    if (window.DFLT_WINDOW_ATTRIBS.indexOf(a) == -1) {
+      new_attrs.push(a);
+    }
+  }
+  var msg = "";
+  for (var attr of new_attrs) {
+    msg = msg + `&nbsp;&quot;<pre class="im">${attr}</pre>&quot;`;
+  }
+  if (new_attrs.length > 0) {
+    add_message(`New window objects:${msg}`);
+  }
+}
+SKIP.push("check_reflect_window");
+
+function check_reflect_navigator() {
+  for (k of Reflect.ownKeys(navigator.__proto__)) {
+    if (k === "userAgent") continue;
+    if (typeof(navigator[k]) == "string") {
+      add_message(`Navigator object <pre>${k}</pre>="<pre>${navigator[k]}</pre>"`);
+    }
+  }
+}
+SKIP.push("check_reflect_navigator");
+
+function onready() {
+  add_message("Loaded");
+  check_webkit();
+  check_obs();
   /* Log UA */
-  add_message(navigator.userAgent);
+  add_message(`<pre>${navigator.userAgent}</pre>`);
   /* Check for changes in window members */
-  if (window["Reflect"] && typeof(window["Reflect"]) == "object") {
-    add_message("Window has Reflect object");
-    let new_attrs = [];
-    let a;
-    for (a of window["Reflect"].ownKeys(window)) {
-      if (a == "DFLT_WINDOW_ATTRIBS") continue;
-      if (a == "add_message") continue;
-      if (a == "onready") continue;
-      if (a == "jQuery") continue;
-      if (a == "$") continue;
-      if (window.DFLT_WINDOW_ATTRIBS.indexOf(a) == -1) {
-        new_attrs.push(a);
-      }
-    }
-    if (new_attrs.length > 0) {
-      add_message(`New window objects: "<pre>${new_attrs.join('</pre>", "<pre>')}</pre>"`, "im");
-    }
-    for (k of Reflect.ownKeys(navigator.__proto__)) {
-      if (typeof(navigator[k]) == "string") {
-        add_message(`Navigator object <pre>${k}</pre>="<pre>${navigator[k]}</pre>"`);
-      }
-    }
+  if (has_reflect()) { 
+    check_reflect_window();
+    check_reflect_navigator();
   } else {
     add_message("Window does not have reflect object");
   }
 }
+SKIP.push("onready");
 
 $(document).ready(onready);
   </script>
