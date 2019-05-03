@@ -28,9 +28,10 @@ function GetAssetURL(file, tree) {
       return `http:${file}`;
     }
   }
+  return file;
 }
 
-function AddAsset(src, tree=null) {
+function AddAsset(src, tree=null, errcb=null) {
   ASSETS.push({});
   let asset = ASSETS[ASSETS.length - 1];
   asset.src = GetAssetURL(src, tree);
@@ -45,6 +46,7 @@ function AddAsset(src, tree=null) {
     asset.loaded = true;
   }
   asset.script.onerror = function(e) {
+    if (errcb) { errorcb(asset, e); }
     console.error("Failed loading", asset, e);
     asset.error = true;
   }
