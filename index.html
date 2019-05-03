@@ -88,12 +88,8 @@ function Main(global) {
   AddAsset("colors.js", "twitch-api");
   AddAsset("client.js", "twitch-api");
 
-  alert("main called");
-
   /* Populate templates and load the client */
   function index_main() {
-    alert("index main called");
-
     Util.LogOnly("Assets loaded; initializing page...");
 
     /* Parse layout */
@@ -155,12 +151,8 @@ function Main(global) {
 
     Util.LogOnly("Waiting for document to finish rendering...");
 
-    alert("prepping");
-
     /* Once rerendering is complete, start up the client */
     $(document).ready(function() {
-      alert("document ready called");
-
       try {
         Util.LogOnly("Document rendered; setting up TFC...");
         client_main(layout);
