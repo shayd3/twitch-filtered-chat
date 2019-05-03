@@ -7,8 +7,27 @@
  * Fix URL formatting with emotes (URLs in emotes are formatted)
  */
 
-/* Fold methods
-%g/^  [^ ].*{$/norm $zf%
+/** Chat message structure
+ *
+ * div.line.line-wrapper
+ *  div.chat-line (has attrs)
+ *   span.badges
+ *    img.badge
+ *   span.username
+ *   span.message
+ *
+ * div.chat-line attrs:
+ *  data-id
+ *  data-user
+ *  data-user-id
+ *  data-channel
+ *  data-channel-id
+ *  data-subscriber
+ *  data-vip
+ *  data-mod
+ *  data-caster
+ *  data-sent-ts
+ *  data-recv-ts
  */
 
 class HTMLGenerator {
@@ -48,17 +67,23 @@ class HTMLGenerator {
     }
     return this._user_colors[username];
   }
+
   _twitchEmote(emote) {
     if (emote.id !== null) {
       let $e = $(`<img class="emote twitch-emote" />`);
       $e.attr('tw-emote-id', emote.id);
       $e.attr('src', Twitch.URL.Emote(emote.id));
+      if (emote.name) {
+        $e.attr('alt', emote.name);
+        $e.attr('title', emote.name);
+      }
       let html = $e[0].outerHTML;
       emote.final_length = html.length;
       return html;
     }
     return null;
   }
+
   _genCheer(cheer, bits) {
     /* Use the highest tier that doesn't exceed the cheered bits */
     let t = cheer.tiers.filter((t) => bits >= t.min_bits).max((t) => t.min_bits);
@@ -74,17 +99,19 @@ class HTMLGenerator {
     $w.append(bits);
     return $w[0].outerHTML;
   }
+
   _genTwitchBadge(event, badge_name, badge_num) {
     let $b = $(`<img class="badge" width="18px" height="18px" />`);
     $b.attr('tw-badge-cause', JSON.stringify([badge_name, badge_num]));
     $b.attr('data-badge', '1');
     $b.attr('data-badge-name', badge_name);
     $b.attr('data-badge-num', badge_num);
+    $b.attr('title', `${badge_name}/${badge_num}`);
+    $b.attr('alt', `${badge_name}/${badge_num}`);
     if (this._client.IsGlobalBadge(badge_name, badge_num)) {
       let badge_info = this._client.GetGlobalBadge(badge_name, badge_num);
       $b.attr('src', badge_info.image_url_1x);
       $b.attr('tw-badge-scope', 'global');
-      $b.attr('alt', badge_info.title);
     } else if (this._client.IsChannelBadge(event.channel, badge_name)) {
       let badge_info = this._client.GetChannelBadge(event.channel, badge_name);
       let badge_src = !!badge_info.alpha ? badge_info.alpha : badge_info.image;
@@ -99,6 +126,7 @@ class HTMLGenerator {
     }
     return $b;
   }
+
   _genBadges(event) {
     let $bc = $(`<span class="badges" data-badges="1"></span>`);
     $bc.addClass('badges');
@@ -152,6 +180,7 @@ class HTMLGenerator {
     }
     return $bc;
   }
+
   _genName(event) {
     let user = event.flag("display-name");
     if (!user) user = event.user;
@@ -169,6 +198,7 @@ class HTMLGenerator {
     $e.html(user.escape());
     return $e[0].outerHTML;
   }
+
   _genMsgInfo(event) {
     let $msg = $(`<span class="message" data-message="1"></span>`);
     let $effects = [];
@@ -377,6 +407,7 @@ class HTMLGenerator {
     $msg.html(message);
     return {e: $msg, effects: $effects};
   }
+
   _genSubWrapper(event) {
     let $e = $(`<div></div>`);
     $e.addClass("chat-line").addClass("sub").addClass("notice");
@@ -385,12 +416,14 @@ class HTMLGenerator {
     $e.html($e.html() + "&nbsp;");
     return $e;
   }
+
   gen(event) {
     let $e = $(`<div class="chat-line"></div>`);
     if (!event.flags.color) event.flags.color = this.getColorFor(event.user);
     if (this._client.IsUIDSelf(event.flags["user-id"])) {
       $e.addClass('self');
     }
+    /* Add data attributes */
     $e.attr("data-id", event.flags.id);
     $e.attr("data-user", event.user);
     $e.attr("data-user-id", event.flags["user-id"]);
@@ -399,13 +432,19 @@ class HTMLGenerator {
       $e.attr("data-room", event.channel.room);
     if (!!event.channel.roomuid)
       $e.attr("data-roomuid", event.channel.roomuid);
-    $e.attr("data-channelid", event.flags["room-id"]);
+    $e.attr("data-channel-id", event.flags["room-id"]);
     $e.attr("data-subscriber", event.flags.subscriber);
     $e.attr("data-mod", event.flags.mod);
     $e.attr("data-vip", event.isvip ? "1" : "0");
     $e.attr("data-caster", event.flags.broadcaster ? "1" : "0");
     $e.attr("data-sent-ts", event.flags["tmi-sent-ts"]);
     $e.attr("data-recv-ts", Date.now());
+    /* Add attributes as classes */
+    if (event.flags.subscriber) $e.addClass("chat-sub");
+    if (event.flags.mod) $e.addClass("chat-mod");
+    if (event.flags.vip) $e.addClass("chat-vip");
+    if (event.flags.broadcaster) $e.addClass("chat-caster");
+    /* Generate line content */
     let badges_elem = $(this._genBadges(event));
     let name_elem = $(this._genName(event));
     let msg_def = this._genMsgInfo(event);
@@ -432,6 +471,7 @@ class HTMLGenerator {
     $e.append($(html_pre.join("") + msg_def.e[0].outerHTML + html_post.join("")));
     return $e[0].outerHTML;
   }
+
   sub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
@@ -439,6 +479,7 @@ class HTMLGenerator {
     $w.append($m);
     return $w[0].outerHTML;
   }
+
   resub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
@@ -452,18 +493,21 @@ class HTMLGenerator {
     $w.append($m);
     return $w[0].outerHTML;
   }
+
   giftsub(event) {
     let user = event.flag('msg-param-recipient-user-name');
     let gifter = event.flag('login');
     let months = event.flag('msg-param-sub-months');
     return `${event.command}: ${gifter} gifted to ${user} ${months}`;
   }
+
   anongiftsub(event) {
     let user = event.flag('msg-param-recipient-user-name');
     let gifter = event.flag('login');
     let months = event.flag('msg-param-sub-months');
     return `${event.command}: ${gifter} gifted to ${user} ${months}`;
   }
+
   raid(event) {
     /* TODO */
   }

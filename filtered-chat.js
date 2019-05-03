@@ -6,9 +6,6 @@
  * Verify HTMLGen.sub and HTMLGen.anonsubgift
  * Rewrite index.html using promises
  * Rewrite filtered-chat.js to hide get_config_object() within client_main()
- *
- * FIXME URGENT:
- * Page load takes ages. Figure out why and fix.
  */
 
 /* TODO: REMOVE {{{0 */
@@ -1171,6 +1168,7 @@ function client_main(layout) {
 
   /* Bind to numerous TwitchEvent events {{{0 */
 
+  /* WebSocket opened */
   client.bind('twitch-open', function _on_twitch_open(e) {
     $(".loading").remove();
     $("#debug").hide();
@@ -1185,6 +1183,7 @@ function client_main(layout) {
     }
   });
 
+  /* WebSocket closed */
   client.bind('twitch-close', function _on_twitch_close(e) {
     let code = e.raw_line.code;
     let reason = e.raw_line.reason;
@@ -1202,19 +1201,25 @@ function client_main(layout) {
     }
   });
 
-  if (!Util.Browser.IsOBS && !layout.Slim) {
-    client.bind('twitch-join', function _on_twitch_join(e) {
+  /* User joined (any user) */
+  client.bind('twitch-join', function _on_twitch_join(e) {
+    if (!Util.Browser.IsOBS && !layout.Slim) {
       if (e.user == client.GetName().toLowerCase()) {
         add_notice(`Joined ${e.channel.channel}`);
       }
-    });
-    client.bind('twitch-part', function _on_twitch_part(e) {
+    }
+  });
+
+  /* User left (any user) */
+  client.bind('twitch-part', function _on_twitch_part(e) {
+    if (!Util.Browser.IsOBS && !layout.Slim) {
       if (e.user == client.GetName().toLowerCase()) {
         add_notice(`Left ${e.channel.channel}`);
       }
-    });
-  }
+    }
+  });
 
+  /* Notice (or warning) from Twitch */
   client.bind('twitch-notice', function _on_twitch_notice(e) {
     /* Some notices are benign */
     if (e.flag('msg-id') == 'host_on') { }
@@ -1226,6 +1231,7 @@ function client_main(layout) {
     add_notice(`Notice from ${channel}: ${message}`);
   });
 
+  /* Error from Twitch or Twitch Client API */
   client.bind('twitch-error', function _on_twitch_error(e) {
     Util.Error(e);
     let user = e.user;
@@ -1234,16 +1240,19 @@ function client_main(layout) {
     add_error(`Error for ${user}: ${command}: ${message}`);
   });
 
+  /* Message received from Twitch */
   client.bind('twitch-message', function _on_twitch_message(e) {
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
       add_html(`<span class="pre">${e.repr()}</span>`);
     }
   });
 
+  /* Received streamer info */
   client.bind('twitch-streaminfo', function _on_twitch_streaminfo(e) {
     Util.Log("Got stream info:", client.GetChannelInfo(e.channel.channel));
   });
 
+  /* Received chat message */
   client.bind('twitch-chat', function _on_twitch_chat(event) {
     if (event instanceof TwitchChatEvent) {
       let m = verify_string(event.message);
@@ -1288,38 +1297,44 @@ function client_main(layout) {
     });
   });
 
+  /* Received clearchat event */
   client.bind('twitch-clearchat', function _on_twitch_clearchat(e) {
     if (e.has_flag("target-user-id")) {
       /* Moderator timed out a user */
       let r = e.flag("room-id");
       let u = e.flag("target-user-id");
-      $(`.chat-line[data-channelid="${r}"][data-user-id="${u}"]`).parent().remove();
+      $(`.chat-line[data-channel-id="${r}"][data-user-id="${u}"]`).parent().remove();
     } else {
       /* Moderator cleared the chat */
       $("div.content").e.html("");
     }
   });
 
+  /* Received clearmsg event */
   client.bind('twitch-clearmsg', function _on_twitch_clearmsg(e) {
     Util.StorageAppend("debug-msg-log", e);
     Util.Warn("Unhandled CLEARMSG:", e);
   });
 
+  /* Subscribe */
   client.bind('twitch-sub', function _on_twitch_sub(e) {
     Util.StorageAppend("debug-msg-log", e);
     add_html(client.get('HTMLGen').sub(e));
   });
 
+  /* Resubscribe */
   client.bind('twitch-resub', function _on_twitch_resub(e) {
     Util.StorageAppend("debug-msg-log", e);
     add_html(client.get('HTMLGen').resub(e));
   });
 
+  /* Gift subscription */
   client.bind('twitch-giftsub', function _on_twitch_giftsub(e) {
     Util.StorageAppend("debug-msg-log", e);
     add_html(client.get('HTMLGen').giftsub(e));
   });
 
+  /* Anonymous gift subscription */
   client.bind('twitch-anongiftsub', function _on_twitch_anongiftsub(e) {
     Util.StorageAppend("debug-msg-log", e);
     add_html(client.get('HTMLGen').anongiftsub(e));

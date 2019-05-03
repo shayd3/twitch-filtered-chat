@@ -292,28 +292,44 @@ input:disabled {
   word-break: break-word;
 }
 
-.module .content .message {
+.module .content .line .message {
   color: #e0e0e0;
 }
 
-.module .content .message:not(.effect-rainbow) {
+.module .content .line .chat-line.chat-vip:not(.chat-sub) {
+  border: 2px inset darkorchid;
+}
+
+.module .content .line .chat-line.chat-sub:not(.chat-mod) {
+  border: 2px inset forestgreen;
+}
+
+.module .content .line .chat-line.chat-mod:not(.chat-caster) {
+  border: 2px inset crimson;
+}
+
+.module .content .line .chat-line.chat-caster {
+  border: 2px inset goldenrod;
+}
+
+.module .content .line .message:not(.effect-rainbow) {
   text-shadow: -1px -1px 1px black,
                 -1px 1px 1px black,
                 2px 2px 1px black;
 }
 
-.module .content .sub-message {
+.module .content .line .sub-message {
   font-weight: bold;
   font-style: italic;
 }
 
-.module .content .message.highlight { }
+.module .content .line .message.highlight { }
 
-.module .content .message .cheer {
+.module .content .line .message .cheer {
   font-weight: bold;
 }
 
-.module .content .message em {
+.module .content .line .message em {
   font-weight: bold;
 }
 
@@ -368,7 +384,7 @@ body.transparent .username.low-contrast {
      0px -1px 0px darkgray;
 }
 
-.module .content .message:not(.effect-rainbow) {
+.module .content .line .message:not(.effect-rainbow) {
   text-shadow: -1px -1px 0px black,
                 -2px 2px 1px black,
                 1px -1px 0px black,
