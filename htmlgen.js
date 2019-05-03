@@ -195,7 +195,7 @@ class HTMLGenerator {
     $e.attr('data-contrast-2', c2);
     if (c1 < 4 || c2 < 4) { $e.addClass("low-contrast"); }
     $e.css('color', color);
-    $e.html(user.escape());
+    $e.text(user);
     return $e[0].outerHTML;
   }
 
@@ -475,7 +475,7 @@ class HTMLGenerator {
   sub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
-    $m.html(`subscribed using ${event.value('sub_plan').escape()}!`);
+    $m.text(`subscribed using ${event.value('sub_plan')}!`);
     $w.append($m);
     return $w[0].outerHTML;
   }
@@ -486,19 +486,26 @@ class HTMLGenerator {
     let months = event.value('sub_months');
     let streak = event.value('sub_streak_months');
     if (streak) {
-      $m.html(`resubscribed for ${months} months, a streak of ${streak} months!`);
+      $m.text(`resubscribed for ${months} months, a streak of ${streak} months!`);
     } else {
-      $m.html(`resubscribed for ${months} months!`);
+      $m.text(`resubscribed for ${months} months!`);
     }
     $w.append($m);
     return $w[0].outerHTML;
   }
 
   giftsub(event) {
-    let user = event.flag('msg-param-recipient-user-name');
-    let gifter = event.flag('login');
-    let months = event.flag('msg-param-sub-months');
-    return `${event.command}: ${gifter} gifted to ${user} ${months}`;
+    let $w = this._genSubWrapper(event);
+    let $m = $(`<span class="message sub-message"></span>`);
+    if (event.flag('system-msg')) {
+      $m.text(event.flag('system-msg'));
+    } else {
+      let user = event.flag('msg-param-recipient-user-name');
+      let gifter = event.flag('login');
+      $m.text(`${gifter} gifted a subscription to ${user}!`);
+    }
+    $w.append($m);
+    return $w[0].outerHTML;
   }
 
   anongiftsub(event) {
@@ -521,9 +528,9 @@ class HTMLGenerator {
       $l.attr("href", "javascript:void(0)");
     }
     if (text !== null) {
-      $l.html(text.escape());
+      $l.text(text);
     } else if (href !== null) {
-      $l.html(href.escape());
+      $l.text(href);
     } else {
       $l.val("undefined");
     }

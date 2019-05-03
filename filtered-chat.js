@@ -120,7 +120,7 @@ function parse_query_string(config, qs=null) {
     }
     config[key] = val;
   }
-  if (!config.hasOwnProperty('layout')) {
+  if (!config.hasOwnProperty('Layout')) {
     config.Layout = ParseLayout("double:chat");
   }
   return query_remove;
@@ -872,18 +872,22 @@ function complete($e, value, selIdx, client) {
 
 /* Called once when the document loads */
 function client_main(layout) {
-  Util.Logger.add_hook(function(...args) {
-    add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
-  }, "WARN");
-  Util.Logger.add_hook(function(...args) {
-    add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
-  }, "ERROR");
-  Util.Logger.add_hook(function(...args) {
-    add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
-  }, "DEBUG");
-  Util.Logger.add_hook(function(...args) {
-    add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
-  }, "TRACE");
+  if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
+    Util.Logger.add_hook(function(...args) {
+      add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
+    }, "WARN");
+    Util.Logger.add_hook(function(...args) {
+      add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
+    }, "ERROR");
+  }
+  if (Util.DebugLevel >= Util.LEVEL_TRACE) {
+    Util.Logger.add_hook(function(...args) {
+      add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
+    }, "DEBUG");
+    Util.Logger.add_hook(function(...args) {
+      add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
+    }, "TRACE");
+  }
   let client;
   /*
   let config_obj = new ConfigStore(
@@ -930,6 +934,7 @@ function client_main(layout) {
 
     /* Set values we'll want to use later */
     ConfigCommon.Plugins = !!config.Plugins;
+    ConfigCommon.Layout = config.Layout;
   })();
 
   /* Construct the HTML Generator and tell it and the client about each other */
@@ -1253,7 +1258,12 @@ function client_main(layout) {
 
   /* Received streamer info */
   client.bind('twitch-streaminfo', function _on_twitch_streaminfo(e) {
-    Util.Log("Got stream info:", client.GetChannelInfo(e.channel.channel));
+    let cinfo = client.GetChannelInfo(e.channel.channel);
+    if (!cinfo.online) {
+      if (ConfigCommon.Layout && !ConfigCommon.Layout.Slim) {
+        add_notice(`${e.channel.channel} is not currently streaming`);
+      }
+    }
   });
 
   /* Received chat message */
