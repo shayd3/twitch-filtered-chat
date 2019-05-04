@@ -12,9 +12,13 @@ const IS_GIT = `${window.location}`.indexOf('github.io') > -1;
 const IS_LOCAL = window.location.protocol === "file:";
 var ASSETS = [];
 
+const IS_TESLA = !!navigator.userAgent.match(/\bTesla\b/);
+
 function GetAssetURL(file, tree) {
   if (tree === MOD_TWAPI) {
-    if (IS_GIT) {
+    if (IS_TESLA || window.location.search.indexOf('usedist=1') > -1) {
+      return `${MOD_TWAPI}/dist/${file}`;
+    } else if (IS_GIT) {
       return `${MOD_TWAPI}/${file}`;
     } else {
       return `../${MOD_TWAPI}/${file}`;
