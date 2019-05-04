@@ -142,6 +142,10 @@ function Main(global) {
       $ChatModule.find(".content").append($Chat);
     }
 
+    if (layout.Tesla) {
+      $(".content").css("overflow-y", "scroll");
+    }
+
     /* If slim layout, remove the entire header */
     if (layout.Slim) {
       $(".header").hide();

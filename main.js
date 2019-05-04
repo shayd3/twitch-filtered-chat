@@ -90,7 +90,7 @@ function ParseLayout(str) {
     }
   } else if (str === "tesla") {
     layout.Cols = "single";
-    layout.Chat = true;
+    layout.Chat = false;
     layout.Slim = true;
     layout.Tesla = true;
   } else {
