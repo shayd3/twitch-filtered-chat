@@ -248,8 +248,6 @@ input:disabled {
 }
 
 .module .content .line.line-wrapper {
-  line-height: 1.3em;
-  padding: 4px;
 }
 
 .module .content .line-wrapper:nth-child(2n) {
@@ -644,11 +642,11 @@ body.transparent #chat textarea  {
 }
 
 .effect-big {
-  font-size: large;
+  font-size: calc(var(--body-font-size)*1.2);
 }
 
 .effect-small {
-  font-size: small;
+  font-size: calc(var(--body-font-size)*0.8);
 }
 
 .effect-rainbow {
