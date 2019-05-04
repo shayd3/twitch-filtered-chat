@@ -123,6 +123,9 @@ function parse_query_string(config, qs=null) {
           CSSCheerStyles[e]._disabled = true;
         }
       }
+    } else if (k == "max") {
+      key = "MaxMessages";
+      val = typeof(v) === "number" ? v : TwitchClient.DEFAULT_MAX_MESSAGES;
     }
     config[key] = val;
   }
@@ -941,10 +944,12 @@ function client_main(layout) {
     /* Set values we'll want to use later */
     ConfigCommon.Plugins = !!config.Plugins;
     ConfigCommon.Layout = config.Layout;
+    ConfigCommon.Transparent = config.Transparent;
+    ConfigCommon.MaxMessages = config.MaxMessages || 100;
   })();
 
   /* Construct the HTML Generator and tell it and the client about each other */
-  client.set('HTMLGen', new HTMLGenerator(client));
+  client.set('HTMLGen', new HTMLGenerator(client, ConfigCommon));
 
   /* Construct the plugins */
   if (ConfigCommon.Plugins) {
@@ -1259,6 +1264,13 @@ function client_main(layout) {
   client.bind('twitch-message', function _on_twitch_message(e) {
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
       add_html(`<span class="pre">${e.repr()}</span>`);
+    }
+    /* Avoid flooding the DOM with stale chat messages */
+    let max = client.get('HTMLGen').getValue("MaxMessages") || 100;
+    for (let c of $(".content")) {
+      while ($(c).find(".line-wrapper").length > max) {
+        $(c).find(".line-wrapper").first().remove();
+      }
     }
   });
 

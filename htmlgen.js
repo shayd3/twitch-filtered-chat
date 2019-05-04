@@ -5,6 +5,8 @@
 /* TODO:
  * Implement raid and calling code
  * Fix URL formatting with emotes (URLs in emotes are formatted)
+ * Fix the following username colors:
+ *   #725ac1
  */
 
 /** Chat message structure
@@ -31,8 +33,9 @@
  */
 
 class HTMLGenerator {
-  constructor(client) {
+  constructor(client, config=null) {
     this._client = client;
+    this._config = config || {};
     this._default_colors = [
       "lightseagreen",
       "forestgreen",
@@ -42,6 +45,9 @@ class HTMLGenerator {
       "crimson"];
     this._user_colors = {};
     this._bg_colors = [];
+
+    /* Ensure config has certain values */
+    if (!this._config.Layout) this._config.Layout = {};
   }
 
   set client(c) { this._client = c; }
@@ -50,6 +56,12 @@ class HTMLGenerator {
     for (let c of colors) {
       this._bg_colors.push(c);
     }
+  }
+  setValue(k, v) {
+    this._config[k] = v;
+  }
+  getValue(k) {
+    return this._config[k];
   }
 
   /* Generation from chat events */
@@ -64,6 +76,12 @@ class HTMLGenerator {
       if (r < 0) r += this._default_colors.length;
       let c = this._default_colors[r];
       this._user_colors[username] = c;
+    }
+    /* FIXME: Figure out why this happens on the Tesla */
+    if (!this._user_colors[username]) {
+      var i = Math.floor(Math.random() * this._default_colors.length);
+      this._user_colors[username] = this._default_colors[i];
+      Util.Error("user_colors for " + username + " still null; using " + i + ": " + this._user_colors[username]);
     }
     return this._user_colors[username];
   }
@@ -182,14 +200,14 @@ class HTMLGenerator {
   }
 
   _genName(event) {
-    let user = event.flag("display-name");
-    if (!user) user = event.user;
+    let user = event.flag("display-name") || event.user;
+    let color = event.flags.color || this.getColorFor(event.user);
     let $e = $(`<span class="username" data-username="1"></span>`);
     $e.addClass('username');
     $e.attr('data-username', '1');
     $e.css('color', event.flags.color);
     /* Calculate "brightness" of the username */
-    let luma = (new Util.Color(event.flags.color)).yiq[0];
+    let luma = (new Util.Color(color)).yiq[0];
     if (luma >= 128) {
       $e.addClass("luma-dark");
     } else if (luma >= 120) {
@@ -441,11 +459,13 @@ class HTMLGenerator {
     $e.attr("data-caster", event.flags.broadcaster ? "1" : "0");
     $e.attr("data-sent-ts", event.flags["tmi-sent-ts"]);
     $e.attr("data-recv-ts", Date.now());
-    /* Add attributes as classes */
-    if (event.flags.subscriber) $e.addClass("chat-sub");
-    if (event.flags.mod) $e.addClass("chat-mod");
-    if (event.flags.vip) $e.addClass("chat-vip");
-    if (event.flags.broadcaster) $e.addClass("chat-caster");
+    if (!this._config.Layout.Slim) {
+      /* Add attributes as classes */
+      if (event.flags.subscriber) $e.addClass("chat-sub");
+      if (event.flags.mod) $e.addClass("chat-mod");
+      if (event.flags.vip) $e.addClass("chat-vip");
+      if (event.flags.broadcaster) $e.addClass("chat-caster");
+    }
     /* Generate line content */
     let badges_elem = $(this._genBadges(event));
     let name_elem = $(this._genName(event));
