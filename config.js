@@ -29,7 +29,7 @@
  */
 
 /* CSS cheer styles */
-const CSSCheerStyles = {
+var CSSCheerStyles = {
   cssmarquee: {
     _disabled: true,
     cost: 1,

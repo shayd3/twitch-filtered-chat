@@ -117,6 +117,12 @@ function parse_query_string(config, qs=null) {
     } else if (k == "plugins") {
       key = "Plugins";
       val = !!v;
+    } else if (k == "disable") {
+      for (let e of `${v}`.split(',')) {
+        if (CSSCheerStyles[e]) {
+          CSSCheerStyles[e]._disabled = true;
+        }
+      }
     }
     config[key] = val;
   }
