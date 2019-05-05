@@ -4,6 +4,7 @@
 
 /* TODO:
  * Implement raid and calling code
+ * Implement TwitchSubEvent htmlgen
  * Fix URL formatting with emotes (URLs in emotes are formatted)
  * Fix the following username colors:
  *   #725ac1
@@ -259,7 +260,7 @@ class HTMLGenerator {
       }
     }
     /* Handle emotes */
-    if (event.flag('emotes')) {
+    if (event.flags.emotes) {
       let emotes = event.flags.emotes.map(function(e) {
         return {'id': e.id, 'name': e.name,
                 'start': map[e.start], 'end': map[e.end],
@@ -290,8 +291,8 @@ class HTMLGenerator {
     */
 
     /* Handle cheers */
-    if (event.flag('bits') && event.flag('bits') > 0) {
-      let bits_left = event.flag('bits');
+    if (event.flags.bits && event.flags.bits > 0) {
+      let bits_left = event.flags.bits;
       let matches = this._client.FindCheers(event.channel.channel, event.message);
       matches.sort((a, b) => a.start - b.start);
       while (matches.length > 0) {
@@ -526,11 +527,11 @@ class HTMLGenerator {
   giftsub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
-    if (event.flag('system-msg')) {
-      $m.text(event.flag('system-msg'));
+    if (event.flags['system-msg']) {
+      $m.text(event.flags['system-msg']);
     } else {
-      let user = event.flag('msg-param-recipient-user-name');
-      let gifter = event.flag('login');
+      let user = event.flags['msg-param-recipient-user-name'];
+      let gifter = event.flags['login'];
       $m.text(`${gifter} gifted a subscription to ${user}!`);
     }
     $w.append($m);
@@ -538,9 +539,9 @@ class HTMLGenerator {
   }
 
   anongiftsub(event) {
-    let user = event.flag('msg-param-recipient-user-name');
-    let gifter = event.flag('login');
-    let months = event.flag('msg-param-sub-months');
+    let user = event.flags['msg-param-recipient-user-name'];
+    let gifter = event.flags.login;
+    let months = event.flags['msg-param-sub-months'];
     return `${event.command}: ${gifter} gifted to ${user} ${months}`;
   }
 
