@@ -1,0 +1,32 @@
+{
+  "name": "twitch-filtered-chat",
+  "version": "1.0.0",
+  "description": "Twitch Filtered Chat",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/Kaedenn/twitch-filtered-chat.git"
+  },
+  "author": "Kaedenn",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/Kaedenn/twitch-filtered-chat/issues"
+  },
+  "homepage": "https://github.com/Kaedenn/twitch-filtered-chat#readme",
+  "devDependencies": {
+    "eslint": "^5.16.0"
+  },
+  "eslintConfig": {
+    "env": {
+      "browser": true,
+      "node": true
+    }
+  },
+  "dependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1"
+  }
+}

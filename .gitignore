@@ -6,13 +6,9 @@ plugins/dwangoAC.js
 # Ignore assets not included in project
 assets/3rdparty/
 
-# Ignore supporting material
-Makefile
-
 # Ignore Node.js files
 node_modules/
 package-lock.json
-package.json
 .eslintrc*
 
 # Ignore compiled Python files
@@ -28,3 +24,5 @@ notes.txt
 # Ignore swap files
 .*.swp
 .*.swo
+.swp
+.swo
