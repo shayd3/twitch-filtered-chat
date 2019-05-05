@@ -208,6 +208,7 @@ class HTMLGenerator {
   _genName(event) {
     let user = event.flags["display-name"] || event.user;
     let color = event.flags.color || this.getColorFor(event.user);
+    if (!color) { color = '#ffffff'; }
     let $e = $(`<span class="username" data-username="1"></span>`);
     $e.addClass('username');
     $e.attr('data-username', '1');
