@@ -1,5 +1,7 @@
 /* Twitch Filtered Chat Main Configuration */
 
+"use strict";
+
 /* Defining a new CSS style:
  *  <style_name>: {
  *    cost: <number: bits>,

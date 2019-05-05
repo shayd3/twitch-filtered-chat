@@ -1,6 +1,6 @@
-"use strict";
-
 /* Twitch Filtered Chat Main Configuration */
+
+"use strict";
 
 /* Defining a new CSS style:
  *  <style_name>: {
@@ -31,6 +31,7 @@
  */
 
 /* CSS cheer styles */
+
 var CSSCheerStyles = {
   cssmarquee: {
     _disabled: true,
