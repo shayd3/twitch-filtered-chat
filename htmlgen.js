@@ -66,6 +66,12 @@ class HTMLGenerator {
 
   /* Generation from chat events */
   getColorFor(username) {
+    if (!username) {
+      /* TODO: figure out why this happens (giftsub in the Tesla) */
+      Util.Error("invalid username passed to genColorFor, using random color");
+      var i = Math.floor(Math.random() * this._default_colors.length);
+      return this._default_colors[i];
+    }
     if (!this._user_colors.hasOwnProperty(username)) {
       /* Taken from Twitch vendor javascript */
       var r = 0;
@@ -200,12 +206,12 @@ class HTMLGenerator {
   }
 
   _genName(event) {
-    let user = event.flag("display-name") || event.user;
+    let user = event.flags["display-name"] || event.user;
     let color = event.flags.color || this.getColorFor(event.user);
     let $e = $(`<span class="username" data-username="1"></span>`);
     $e.addClass('username');
     $e.attr('data-username', '1');
-    $e.css('color', event.flags.color);
+    $e.css('color', color);
     /* Calculate "brightness" of the username */
     let luma = (new Util.Color(color)).yiq[0];
     if (luma >= 128) {
