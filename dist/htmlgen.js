@@ -4,6 +4,7 @@
 
 /* TODO:
  * Implement raid and calling code
+ * Implement TwitchSubEvent htmlgen
  * Fix URL formatting with emotes (URLs in emotes are formatted)
  * Fix the following username colors:
  *   #725ac1
@@ -347,7 +348,7 @@ var HTMLGenerator = function () {
         }
       }
       /* Handle emotes */
-      if (event.flag('emotes')) {
+      if (event.flags.emotes) {
         var emotes = event.flags.emotes.map(function (e) {
           return { 'id': e.id, 'name': e.name,
             'start': map[e.start], 'end': map[e.end],
@@ -380,8 +381,8 @@ var HTMLGenerator = function () {
       */
 
       /* Handle cheers */
-      if (event.flag('bits') && event.flag('bits') > 0) {
-        var bits_left = event.flag('bits');
+      if (event.flags.bits && event.flags.bits > 0) {
+        var bits_left = event.flags.bits;
         var matches = this._client.FindCheers(event.channel.channel, event.message);
         matches.sort(function (a, b) {
           return a.start - b.start;
@@ -694,11 +695,11 @@ var HTMLGenerator = function () {
     value: function giftsub(event) {
       var $w = this._genSubWrapper(event);
       var $m = $("<span class=\"message sub-message\"></span>");
-      if (event.flag('system-msg')) {
-        $m.text(event.flag('system-msg'));
+      if (event.flags['system-msg']) {
+        $m.text(event.flags['system-msg']);
       } else {
-        var user = event.flag('msg-param-recipient-user-name');
-        var gifter = event.flag('login');
+        var user = event.flags['msg-param-recipient-user-name'];
+        var gifter = event.flags['login'];
         $m.text(gifter + " gifted a subscription to " + user + "!");
       }
       $w.append($m);
@@ -707,9 +708,9 @@ var HTMLGenerator = function () {
   }, {
     key: "anongiftsub",
     value: function anongiftsub(event) {
-      var user = event.flag('msg-param-recipient-user-name');
-      var gifter = event.flag('login');
-      var months = event.flag('msg-param-sub-months');
+      var user = event.flags['msg-param-recipient-user-name'];
+      var gifter = event.flags.login;
+      var months = event.flags['msg-param-sub-months'];
       return event.command + ": " + gifter + " gifted to " + user + " " + months;
     }
   }, {
