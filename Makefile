@@ -3,9 +3,12 @@ SRCS = $(wildcard *.js)
 DIST = dist
 DISTS = $(patsubst %,$(DIST)/%,$(SRCS))
 
-.PHONY: all lint dist-lint
+.PHONY: all lint dist-lint twitch-api
 
-all: lint dist dist-lint
+all: lint dist dist-lint twitch-api
+
+twitch-api:
+	cd twitch-api && git pull
 
 lint:
 	npx eslint --env browser --env es6 *.js
