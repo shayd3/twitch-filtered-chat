@@ -83,8 +83,8 @@ function parse_query_string(config, qs=null) {
       val = typeof(v) === "number" ? v : TwitchClient.DEFAULT_HISTORY_SIZE;
     } else if (k.match(/^module[12]?$/)) {
       if (k === "module") k = "module1";
-      val = decode_module_config(k, v)[k];
-      set_module_settings($("#" + k), val);
+      key = k === "module" ? "module1" : k;
+      val = parse_module_config(v);
     } else if (k === "trans" || k === "transparent") {
       key = "Transparent";
       val = 1;
@@ -165,6 +165,11 @@ function get_config_object() {
   /* Certain unwanted items may be preserved in localStorage */
   if (config.hasOwnProperty('NoAssets')) delete config["NoAssets"];
   if (config.hasOwnProperty('Debug')) delete config["Debug"];
+  if (config.hasOwnProperty('AutoReconnect')) delete config["AutoReconnect"];
+  if (config.hasOwnProperty('Layout')) delete config['Layout'];
+  if (!config.hasOwnProperty("MaxMessages")) {
+    config.MaxMessages = TwitchClient.DEFAULT_MAX_MESSAGES;
+  }
 
   /* Parse the query string */
   query_remove = parse_query_string(config, qs);
@@ -282,18 +287,18 @@ function set_module_settings(module, mod_config) {
   }
   function add_input(cls, label, values) {
     if (values && values.length > 0) {
-      let $li = $(`<li></li>`);
       for (let val of values) {
+        let $li = $(`<li></li>`);
         let isel = `input.${cls}[value="${val}"]`;
         if ($(module).find(isel).length == 0) {
           let $l = $(`<label></label>`).val(label);
           let $cb = $(`<input type="checkbox" value=${val.escape()} checked />`);
           $cb.addClass(cls);
+          $cb.click(update_module_config);
           $l.append($cb);
           $l.html($l.html() + label + val.escape());
           $li.append($l);
           $(module).find(`li.${cls}`).before($li);
-          $(module).find(isel).click(update_module_config);
         }
       }
     }
@@ -351,57 +356,42 @@ function get_module_settings(module) {
   return s;
 }
 
-/* Parse a module configuration from a query string component */
-function decode_module_config(key, value) {
-  let parts = value.split(',');
-  let UnEscComma = (s) => (s.replace(/%2c/g, ','));
-  function ParseSet(p) {
-    return p.split(',')
-            .map((e) => UnEscComma(e))
-            .filter((e) => e.length > 0);
-  }
-  function doWarn(msg) {
-    Util.Warn("Decoding module config: " + msg);
-  }
-  if (parts.length < 7) {
-    doWarn(`not enough parts; extending (need: 7, got: ${parts.length})`);
-    while (parts.length < 7) parts.push("");
-  }
-  if (parts[1].length < 6) {
-    doWarn(`need more module flags (need: 6, got: ${parts[1].length}`);
-    while (parts[1].length < 6) parts[1] += "0";
-  }
+/* Parse the module configuration from a query string component */
+function parse_module_config(value) {
+  let Decode = (vals) => vals.map((v) => decodeURIComponent(v));
+  let parts = Decode(value.split(/,/g));
+  while (parts.length < 7) parts.push("");
   let config = {};
-  config[key] = {};
-  config[key].Name = UnEscComma(parts[0]);
-  config[key].Pleb = parts[1][0] == "1";
-  config[key].Sub = parts[1][1] == "1";
-  config[key].VIP = parts[1][2] == "1";
-  config[key].Mod = parts[1][3] == "1";
-  config[key].Event = parts[1][4] == "1";
-  config[key].Bits = parts[1][5] == "1";
-  config[key].IncludeKeyword = ParseSet(parts[2]);
-  config[key].IncludeUser = ParseSet(parts[3]);
-  config[key].ExcludeUser = ParseSet(parts[4]);
-  config[key].ExcludeStartsWith = ParseSet(parts[5]);
-  config[key].FromChannel = ParseSet(parts[6]);
+  config.Name = parts[0];
+  config.Pleb = parts[1][0] == "1";
+  config.Sub = parts[1][1] == "1";
+  config.VIP = parts[1][2] == "1";
+  config.Mod = parts[1][3] == "1";
+  config.Event = parts[1][4] == "1";
+  config.Bits = parts[1][5] == "1";
+  config.IncludeKeyword = parts[2] ? Decode(parts[2].split(/,/g)) : [];
+  config.IncludeUser = parts[3] ? Decode(parts[3].split(/,/g)) : [];
+  config.ExcludeUser = parts[4] ? Decode(parts[4].split(/,/g)) : [];
+  config.ExcludeStartsWith = parts[5] ? Decode(parts[5].split(/,/g)) : [];
+  config.FromChannel = parts[6] ? Decode(parts[6].split(/,/g)) : [];
   return config;
 }
 
-/* Encode a module configuration into a query string component */
-function encode_module_config(name, config) {
-  let cfg = config[name];
-  let parts = [];
-  let EscComma = (s) => (s.replace(/,/g, '%2c'));
+/* Format the module configuration into a query string component */
+function format_module_config(cfg) {
+  let B = (b) => !!b ? "1" : "0";
+  let Encode = (vals) => vals.map((v) => encodeURIComponent(v));
   let bits = [cfg.Pleb, cfg.Sub, cfg.VIP, cfg.Mod, cfg.Event, cfg.Bits];
-  parts.push(EscComma(cfg.Name));
-  parts.push(bits.map((e) => e ? "1" : "0").join(""));
-  parts.push(cfg.IncludeKeyword.map((e) => EscComma(e)).join(","));
-  parts.push(cfg.IncludeUser.map((e) => EscComma(e)).join(","));
-  parts.push(cfg.ExcludeUser.map((e) => EscComma(e)).join(","));
-  parts.push(cfg.ExcludeStartsWith.map((e) => EscComma(e)).join(","));
-  parts.push(cfg.FromChannel.map((e) => EscComma(e)).join(","));
-  return `${name}=${encodeURIComponent(parts.join(","))}`;
+  let values = [
+    cfg.Name,
+    bits.map((b) => B(b)).join(""),
+    Encode(cfg.IncludeKeyword).join(","),
+    Encode(cfg.IncludeUser).join(","),
+    Encode(cfg.ExcludeUser).join(","),
+    Encode(cfg.ExcludeStartsWith).join(","),
+    Encode(cfg.FromChannel).join(",")
+  ];
+  return Encode(values).join(",");
 }
 
 /* End module configuration 1}}} */
@@ -460,7 +450,8 @@ function check_filtered(module, event) {
     }
     if (rules.FromChannel.length > 0) {
       for (let s of rules.FromChannel) {
-        if (event.channel.channel != s) {
+        let c = s.indexOf('#') == -1 ? '#' + s : s;
+        if (event.channel.channel != c) {
           return false;
         }
       }
@@ -560,10 +551,18 @@ function handle_command(value, client) {
         if (config.NoFFZ) { qs_push('noffz', config.NoFFZ); }
         if (config.NoBTTV) { qs_push('nobttv', config.NoBTTV); }
         if (config.HistorySize) { qs_push('hmax', config.HistorySize); }
-        qs.push(encode_module_config('module1', config));
-        qs.push(encode_module_config('module2', config));
+        qs_push("module1", format_module_config(config.module1));
+        qs_push("module2", format_module_config(config.module2));
         qs_push("layout", FormatLayout(config.Layout));
         if (config.Transparent) { qs_push("trans", "1"); }
+        if (config.AutoReconnect) { qs_push("reconnect", "1"); }
+        if (get_css_var("--body_font_size") != get_css_var("--body-font-size-default")) {
+          qs_push("size", get_css_var("--body_font_size").replace(/[^0-9]/g, ''));
+        }
+        if (config.Plugins) { qs_push("plugins", "1"); }
+        if (config.MaxMessages != TwitchClient.DEFAULT_MAX_MESSAGES) {
+          qs_push("max", `${config.MaxMessages}`);
+        }
         if (tokens[tokens.length-1] === "text") {
           url += "?" + qs.join("&");
         } else {

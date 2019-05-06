@@ -27,7 +27,8 @@
   --disabled-input: var(--disabled-input-default);
 
   /* Debugging and other things */
-  --body-font-size: 18px;
+  --body-font-size-default: 12pt;
+  --body-font-size: var(--body-font-size-default);
 }
 
 *, *:before, *:after {

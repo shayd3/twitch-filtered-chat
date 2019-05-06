@@ -88,6 +88,10 @@ function ParseLayout(str) {
     } else if (v2 != "chat") {
       console.warn('Unknown layout option', v2);
     }
+  } else if (str === "single") {
+    layout.Cols = "single";
+  } else if (str === "double") {
+    layout.Cols = "double";
   } else if (str === "tesla") {
     layout.Cols = "single";
     layout.Chat = false;
