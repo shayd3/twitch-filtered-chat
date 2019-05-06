@@ -287,112 +287,128 @@ window.DFLT_WINDOW_ATTRIBS = [
   </script>
   <script type="text/javascript">
 
-var SKIP = ["SKIP"];
-
-function add_message(s, cls) {
-  let $d = $(`<div class="line"></div>`);
-  if (!!cls) {
-    $d.addClass(cls);
-  }
-  $("div.content")[0].appendChild($d.html(s)[0]);
-}
-SKIP.push("add_message");
-
-function has_reflect() {
-  return window.Reflect && typeof(window.Reflect) == "object";
-}
-SKIP.push("has_reflect");
-
-function check_webkit() {
-  /* Check for WebKit v8 */
-  var v8string = 'function%20javaEnabled%28%29%20%7B%20%5Bnative%20code%5D%20%7D';
-  if ('WebkitAppearance' in document.documentElement.style) { //If (probably) WebKit browser
-    if (escape(navigator.javaEnabled.toString()) === v8string) {
-      add_message('V8 detected');
-    } else {
-      add_message('JSC detected');
+function Checks() {
+  function add_message(s, cls) {
+    let $d = $(`<div class="line"></div>`);
+    if (!!cls) {
+      $d.addClass(cls);
     }
-  } else {
-    add_message("Not a WebKit browser");
+    $("div.content")[0].appendChild($d.html(s)[0]);
   }
-}
-SKIP.push("check_webkit");
 
-function check_obs() {
-  /* Check for OBSStudio */
-  if (typeof(window["obsstudio"]) != "undefined") {
-    add_message("window.obsstudio exists!", "im");
-  } else {
-    add_message("no window.obsstudio object");
+  function has_reflect() {
+    return window.Reflect && typeof(window.Reflect) == "object";
   }
-}
-SKIP.push("check_obs");
 
-function check_reflect_window() {
-  let new_attrs = [];
-  let a;
-  for (a of window["Reflect"].ownKeys(window)) {
-    if (a == "DFLT_WINDOW_ATTRIBS") continue;
-    if (a == "add_message") continue;
-    if (a == "onready") continue;
-    if (a == "jQuery") continue;
-    if (a == "$") continue;
-    if (a.match(/^PrivateSymbol\./)) continue;
-    if (SKIP.indexOf(a) != -1) continue;
-    if (typeof(navigator[a]) == "function") continue;
-    if (window.DFLT_WINDOW_ATTRIBS.indexOf(a) == -1) {
+  function check_webkit() {
+    /* Check for WebKit v8 */
+    var v8string = 'function%20javaEnabled%28%29%20%7B%20%5Bnative%20code%5D%20%7D';
+    if ('WebkitAppearance' in document.documentElement.style) {
+      /* If (probably) WebKit browser */
+      if (escape(navigator.javaEnabled.toString()) === v8string) {
+        add_message('V8 detected');
+      } else {
+        add_message('JSC detected');
+      }
+    } else {
+      add_message("Not a WebKit browser");
+    }
+  }
+
+  function check_obs() {
+    /* Check for OBSStudio */
+    if (typeof(window["obsstudio"]) != "undefined") {
+      add_message("window.obsstudio exists!", "im");
+    } else {
+      add_message("no window.obsstudio object");
+    }
+  }
+
+  function check_reflect_window() {
+    let new_attrs = [];
+    let a;
+    for (a of window["Reflect"].ownKeys(window)) {
+      if (a == "DFLT_WINDOW_ATTRIBS") continue;
+      if (a == "_ident_onready") continue;
+      if (a == "jQuery") continue;
+      if (a == "$") continue;
+      if (a.match(/^PrivateSymbol\./)) continue;
+      if (a == "Checks" && typeof(window[a]) === "function") continue;
+      if (typeof(navigator[a]) == "function") continue;
+      if (window.DFLT_WINDOW_ATTRIBS.indexOf(a) > -1) continue;
       new_attrs.push(a);
     }
+    var msg = "";
+    for (var attr of new_attrs) {
+      msg = msg + ` &quot;<pre class="im">${attr}</pre>&quot;`;
+    }
+    if (new_attrs.length > 0) {
+      add_message(`New window objects:${msg}`);
+    }
+    console.log(new_attrs);
   }
-  var msg = "";
-  for (var attr of new_attrs) {
-    msg = msg + ` &quot;<pre class="im">${attr}</pre>&quot;`;
-  }
-  if (new_attrs.length > 0) {
-    add_message(`New window objects:${msg}`);
-  }
-  console.log(new_attrs);
-}
-SKIP.push("check_reflect_window");
 
-function check_reflect_navigator() {
-  for (k of Reflect.ownKeys(navigator.__proto__)) {
-    if (k === "userAgent") continue;
-    if (typeof(k) !== "string") continue;
-    if (typeof(navigator[k]) == "string") {
-      add_message(`Navigator object <pre>${k}</pre>="<pre>${navigator[k]}</pre>"`);
+  function check_reflect_navigator() {
+    for (k of Reflect.ownKeys(navigator.__proto__)) {
+      if (k === "userAgent") continue;
+      if (typeof(k) !== "string") continue;
+      if (typeof(navigator[k]) == "string") {
+        add_message(`Navigator object <pre>${k}</pre>="<pre>${navigator[k]}</pre>"`);
+      }
     }
   }
-}
-SKIP.push("check_reflect_navigator");
 
-function onready() {
-  add_message("Loaded");
+  function check_navigator() {
+    let members = ["oscpu", "vendor", "vendorSub", "productSub", "buildID",
+                   "appCodeName", "appName", "appVersion", "platform", "product"];
+    for (let m of members) {
+      let k = `navigator["${m}"]`;
+      let v = `${JSON.stringify(navigator[m])}`;
+      add_message(`<pre>${k}</pre> = <pre>${v}</pre>`);
+    }
+  }
+
+  return {
+    add_message: add_message,
+    has_reflect: has_reflect,
+    check_webkit: check_webkit,
+    check_obs: check_obs,
+    check_reflect_window: check_reflect_window,
+    check_reflect_navigator: check_reflect_navigator,
+    check_navigator: check_navigator
+  };
+}
+
+function _ident_onready() {
+  var C = Checks();
+  C.add_message("Loaded");
   var supportsES6 = function() {
+    /* Test anonymous closures with a default argument */
     try {
-      new Function("(a = 0) => a");
-      return true;
+      var v0 = (new Function("return (a = 0) => a"))()();
+      var v1 = (new Function("return (a = 0) => a"))()(1);
+      return (v0 === 0 && v1 === 1);
     }
     catch (err) {
       return false;
     }
   }();
-  if (!supportsES6) add_message(`<pre class="im">NO ES6 SUPPORT</pre>`);
-  check_webkit();
-  check_obs();
-  /* Log UA */
-  add_message(`<pre>${navigator.userAgent}</pre>`);
-  /* Check for changes in window members */
-  if (has_reflect()) { 
-    check_reflect_window();
-    check_reflect_navigator();
+  if (!supportsES6) {
+    C.add_message(`<pre class="im">NO ES6 SUPPORT</pre>`);
+  }
+  C.check_webkit();
+  C.check_obs();
+  C.add_message(`<pre>${navigator.userAgent}</pre>`);
+  C.check_navigator();
+  if (C.has_reflect()) { 
+    C.check_reflect_window();
+    C.check_reflect_navigator();
   } else {
-    add_message("Window does not have reflect object");
+    C.add_message("Window does not have reflect object");
   }
 }
-SKIP.push("onready");
 
-$(document).ready(onready);
+$(document).ready(_ident_onready);
   </script>
 </head>
 <body>
