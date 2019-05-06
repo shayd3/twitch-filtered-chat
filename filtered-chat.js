@@ -451,7 +451,7 @@ function check_filtered(module, event) {
     if (rules.FromChannel.length > 0) {
       for (let s of rules.FromChannel) {
         let c = s.indexOf('#') == -1 ? '#' + s : s;
-        if (event.channel.channel != c) {
+        if (event.channel.channel.toLowerCase() != c.toLowerCase()) {
           return false;
         }
       }
@@ -861,23 +861,28 @@ function complete($e, value, selIdx, client) {
 
 /* Called once when the document loads */
 function client_main(layout) {
-  if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
-    Util.Logger.add_hook(function(...args) {
-      add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
-    }, "WARN");
-    Util.Logger.add_hook(function(...args) {
-      add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
-    }, "ERROR");
-  }
-  if (Util.DebugLevel >= Util.LEVEL_TRACE || layout.Tesla) {
-    Util.Logger.add_hook(function(...args) {
-      add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
-    }, "DEBUG");
-    Util.Logger.add_hook(function(...args) {
-      add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
-    }, "TRACE");
-  }
-  let client;
+  /* Hook Logger messages */
+  Util.Logger.add_hook(function(sev, with_stack, ...args) {
+    if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
+      add_html("ERROR: " + JSON.stringify(args.length == 1 ? args[0] : args).escape());
+    }
+  }, "ERROR");
+  Util.Logger.add_hook(function(sev, with_stack, ...args) {
+    if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
+      add_html("WARN: " + JSON.stringify(args.length == 1 ? args[0] : args).escape());
+    }
+  }, "WARN");
+  Util.Logger.add_hook(function(sev, with_stack, ...args) {
+    if (Util.DebugLevel >= Util.LEVEL_TRACE) {
+      add_html("DEBUG: " + JSON.stringify(args.length == 1 ? args[0] : args).escape());
+    }
+  }, "DEBUG");
+  Util.Logger.add_hook(function(sev, with_stack, ...args) {
+    if (Util.DebugLevel >= Util.LEVEL_TRACE) {
+      add_html("TRACE: " + JSON.stringify(args.length == 1 ? args[0] : args).escape());
+    }
+  }, "TRACE");
+
   /*
   let config_obj = new ConfigStore(
     get_config_key(),
@@ -892,6 +897,7 @@ function client_main(layout) {
   });
   */
   /* Obtain the config and construct the client */
+  let client;
   let ConfigCommon = {};
   (function() {
     let config = get_config_object();
@@ -1022,7 +1028,7 @@ function client_main(layout) {
   /* Clicking on a "Clear" link */
   $(".clear-chat-link").click(function() {
     let id = $(this).parent().parent().parent().attr("id");
-    $(`#${id} .content`).html("");
+    $(`#${id} .content`).find(".line-wrapper").remove();
   });
 
   /* Pressing enter on the "Channels" text box */
@@ -1318,7 +1324,7 @@ function client_main(layout) {
       $(`.chat-line[data-channel-id="${r}"][data-user-id="${u}"]`).parent().remove();
     } else {
       /* Moderator cleared the chat */
-      $("div.content").e.html("");
+      $("div.content").find(".line-wrapper").remove();
     }
   });
 

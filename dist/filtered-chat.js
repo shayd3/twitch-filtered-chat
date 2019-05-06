@@ -675,7 +675,7 @@ function check_filtered(module, event) {
           var s = _step10.value;
 
           var c = s.indexOf('#') == -1 ? '#' + s : s;
-          if (event.channel.channel != c) {
+          if (event.channel.channel.toLowerCase() != c.toLowerCase()) {
             return false;
           }
         }
@@ -1431,39 +1431,44 @@ function complete($e, value, selIdx, client) {
 
 /* Called once when the document loads */
 function client_main(layout) {
-  if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
-    Util.Logger.add_hook(function () {
-      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-        args[_key] = arguments[_key];
+  /* Hook Logger messages */
+  Util.Logger.add_hook(function (sev, with_stack) {
+    if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
+      for (var _len = arguments.length, args = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+        args[_key - 2] = arguments[_key];
       }
 
-      add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
-    }, "WARN");
-    Util.Logger.add_hook(function () {
-      for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-        args[_key2] = arguments[_key2];
+      add_html("ERROR: " + JSON.stringify(args.length == 1 ? args[0] : args).escape());
+    }
+  }, "ERROR");
+  Util.Logger.add_hook(function (sev, with_stack) {
+    if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
+      for (var _len2 = arguments.length, args = Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
+        args[_key2 - 2] = arguments[_key2];
       }
 
-      add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
-    }, "ERROR");
-  }
-  if (Util.DebugLevel >= Util.LEVEL_TRACE || layout.Tesla) {
-    Util.Logger.add_hook(function () {
-      for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-        args[_key3] = arguments[_key3];
+      add_html("WARN: " + JSON.stringify(args.length == 1 ? args[0] : args).escape());
+    }
+  }, "WARN");
+  Util.Logger.add_hook(function (sev, with_stack) {
+    if (Util.DebugLevel >= Util.LEVEL_TRACE) {
+      for (var _len3 = arguments.length, args = Array(_len3 > 2 ? _len3 - 2 : 0), _key3 = 2; _key3 < _len3; _key3++) {
+        args[_key3 - 2] = arguments[_key3];
       }
 
-      add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
-    }, "DEBUG");
-    Util.Logger.add_hook(function () {
-      for (var _len4 = arguments.length, args = Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
-        args[_key4] = arguments[_key4];
+      add_html("DEBUG: " + JSON.stringify(args.length == 1 ? args[0] : args).escape());
+    }
+  }, "DEBUG");
+  Util.Logger.add_hook(function (sev, with_stack) {
+    if (Util.DebugLevel >= Util.LEVEL_TRACE) {
+      for (var _len4 = arguments.length, args = Array(_len4 > 2 ? _len4 - 2 : 0), _key4 = 2; _key4 < _len4; _key4++) {
+        args[_key4 - 2] = arguments[_key4];
       }
 
-      add_html(JSON.stringify(args.length == 1 ? args[0] : args).escape());
-    }, "TRACE");
-  }
-  var client = void 0;
+      add_html("TRACE: " + JSON.stringify(args.length == 1 ? args[0] : args).escape());
+    }
+  }, "TRACE");
+
   /*
   let config_obj = new ConfigStore(
     get_config_key(),
@@ -1478,6 +1483,7 @@ function client_main(layout) {
   });
   */
   /* Obtain the config and construct the client */
+  var client = void 0;
   var ConfigCommon = {};
   (function () {
     var config = get_config_object();
@@ -1611,7 +1617,7 @@ function client_main(layout) {
   /* Clicking on a "Clear" link */
   $(".clear-chat-link").click(function () {
     var id = $(this).parent().parent().parent().attr("id");
-    $("#" + id + " .content").html("");
+    $("#" + id + " .content").find(".line-wrapper").remove();
   });
 
   /* Pressing enter on the "Channels" text box */
@@ -1974,7 +1980,7 @@ function client_main(layout) {
       $(".chat-line[data-channel-id=\"" + r + "\"][data-user-id=\"" + u + "\"]").parent().remove();
     } else {
       /* Moderator cleared the chat */
-      $("div.content").e.html("");
+      $("div.content").find(".line-wrapper").remove();
     }
   });
 
