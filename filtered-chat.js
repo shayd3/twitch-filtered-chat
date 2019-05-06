@@ -513,15 +513,56 @@ function handle_command(value, client) {
     add_help(`Debug message log length: ${logs.length}`);
     if (tokens.length > 0) {
       if (tokens[0] == "show") {
-        for (let [i, l] of Object.entries(logs)) {
-          add_help(`${i}: ${JSON.stringify(l).escape()}`);
+        if (tokens.length > 1) {
+          let idx = Number.parseInt(tokens[1]);
+          add_help(`${idx}: ${JSON.stringify(logs[idx]).escape()}`);
+        } else {
+          for (let [i, l] of Object.entries(logs)) {
+            add_help(`${i}: ${JSON.stringify(l).escape()}`);
+          }
         }
+      } else if (tokens[0] == "summary") {
+        let lines = [];
+        let line = [];
+        for (let [i, l] of Object.entries(logs)) {
+          let desc = '';
+          if (l._cmd) {
+            desc = l._cmd;
+          } else {
+            desc = JSON.stringify(l).substr(0, 10);
+          }
+          line.push(desc);
+          if (line.length >= 10) {
+            lines.push(line);
+            line = [];
+          }
+        }
+        if (line.length > 0) lines.push(line);
+        let lidx = 0;
+        for (let [i, l] of Object.entries(lines)) {
+          add_help(`${lidx}-${lidx+l.length}: ${JSON.stringify(l)}`);
+          lidx += l.length;
+        }
+      } else if (tokens[0] == "shift") {
+        logs.shift();
+        add_help(`New logs length: ${logs.length}`);
+        Util.SetWebStorage(logs, "debug-msg-log");
+      } else if (tokens[0] == "pop") {
+        logs.pop();
+        add_help(`New logs length: ${logs.length}`);
+        Util.SetWebStorage(logs, "debug-msg-log");
+      } else {
+        add_help(`Unknown argument "${tokens[0]}"`);
       }
     } else {
+      add_help(`Use //log summary to view a summary`);
       add_help(`Use //log show to view them all`);
+      add_help(`Use //log show &lt;N&gt; to show item &lt;N&gt;`);
+      add_help(`Use //log shift to remove one entry from the start`);
+      add_help(`Use //log pop to remove one entry from the end`);
     }
   } else if (command == '//clear') {
-    $("div.content").html("");
+    $(".content").find(".line-wrapper").remove();
   } else if (command == "//config") {
     if (tokens.length > 0) {
       if (tokens[0] == "clientid") {
@@ -1136,10 +1177,9 @@ function client_main(layout) {
       add_notice(`Reconnecting...`);
       client.Connect();
     }
-    /* Clicking on a username: context window */
     let $cw = $("#username_context");
     if ($t.attr('data-username') == '1') {
-      /* Clicked on a username; open context window */
+      /* Clicked on a username; show context window */
       show_context_window(client, $cw, $t.parent());
     } else if (Util.PointIsOn(e.clientX, e.clientY, $cw[0])) {
       /* Clicked on the context window */
@@ -1149,7 +1189,7 @@ function client_main(layout) {
       if (!client.IsUIDSelf(userid)) {
         if ($t.attr("id") === "cw-unmod") {
           /* Clicked on the "unmod" link */
-          Util.Log("Unmodding", user, "in", ch, ($t == $("a#cw-unmod")));
+          Util.Log("Unmodding", user, "in", ch);
           client.SendMessage(ch, `/unmod ${user}`);
         } else if ($t.attr("id") === "cw-unvip") {
           /* Clicked on the "unvip" link */
