@@ -8,9 +8,6 @@
   <script type="text/javascript" src="assets/jquery-3.4.0.js"></script>
   <script type="text/javascript" src="config.js"></script>
   <script type="text/javascript" src="colors.js"></script>
-  <!--<script type="text/javascript" src="htmlgen.js"></script>
-  <script type="text/javascript" src="plugins/plugins.js"></script>
-  <script type="text/javascript" src="filtered-chat.js"></script>-->
   <script type="text/javascript" src="main.js"></script>
   <script type="text/javascript">
 "use strict";
@@ -30,50 +27,7 @@ AddAsset("htmlgen.js", null, asset_error);
 AddAsset("plugins/plugins.js", null, asset_error);
 AddAsset("filtered-chat.js", null, asset_error);
 
-/** QUERY STRING USAGE
- *
- * The following are parsed here in index.html:
- *  layout      - Layout to use
- *
- * The following are parsed in filtered-chat.js:
- *  config_key  - Config key override (default: "config")
- *  clientid    - ClientID to use for Twitch asset loading
- *  user        - Username to use (requires pass)
- *  pass        - OAuth token to use (requires user; removed once parsed)
- *  debug       - A number or "debug" or "trace" (default: 0)
- *  channels    - Channels to join (without #), separated by commas
- *  noassets    - Prevents loading of image (badge, emote, cheer) assets
- *  noffz       - Disable FFZ support entirely
- *  nobttv      - Disable BTTV support entirely
- *  hmax        - Maximum number of chat messages to retain (default 300)
- *  trans       - Makes the backgrounds completely transparent
- *  module1     - The encoded module configuration for the first module
- *  module2     - The encoded module configuration for the second module
- *  reconnect   - Automatically reconnect if disconnected (default false)
- *  plugins     - Load plugins (default false)
- *
- * layout=single uses module1
- * layout=double uses [module1, module2]
- *
- * Authenticated:
-      ?clientid=<YOUR-CLIENTID>
-      &channels=dwangoAC,pangaeapanga
-      &user=<YOUR-TWITCH-USERNAME>
-      &pass=oauth:<YOUR-OAUTH>
-      &layout=single:chat
- * Unauthenticated:
-      ?channels=dwangoAC,pangaeapanga
-      &layout=double:nochat
- * Unauthenticated; filter out TAS9000 and messages starting with "!":
-      ?channels=dwangoAC
-      &module1=Chat,111111,,,TAS9000,!,
-      &layout=single:nochat
- */
-
 function Main(global) {
-  /* Greetings! Can't use Util as that isn't loaded yet */
-  console.log("Hello!");
-
   /* Populate the debug div with text */
   function debug_msg(msg) {
     let d = document.getElementById("debug");
@@ -191,7 +145,7 @@ function Main(global) {
             <div></div>
           </div>
           <span class="clear-chat">
-            <a class="clear-chat-link" href="javascript:void(0)" title="Clear" alt="Clear">
+            <a class="clear-chat-link" title="Clear" alt="Clear">
               <img class="clear-chat-icon" src="assets/no-entry.svg" />
             </a>
           </span>
