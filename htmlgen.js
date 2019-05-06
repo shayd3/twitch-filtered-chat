@@ -5,7 +5,7 @@
 /* TODO:
  * Implement raid and calling code
  * Implement TwitchSubEvent htmlgen
- * Fix URL formatting with emotes (URLs in emotes are formatted)
+ * Fix URL formatting
  * Fix the following username colors:
  *   #725ac1
  */
@@ -52,45 +52,33 @@ class HTMLGenerator {
   }
 
   set client(c) { this._client = c; }
+  setValue(k, v) { this._config[k] = v; }
+  getValue(k) { return this._config[k]; }
+
   set bgcolors(colors) {
     this._bg_colors = [];
     for (let c of colors) {
       this._bg_colors.push(c);
     }
   }
-  setValue(k, v) {
-    this._config[k] = v;
-  }
-  getValue(k) {
-    return this._config[k];
-  }
 
-  /* Generation from chat events */
   getColorFor(username) {
-    if (!username) {
-      /* TODO: figure out why this happens (giftsub in the Tesla) */
-      Util.Error("invalid username passed to genColorFor, using random color");
-      var i = Math.floor(Math.random() * this._default_colors.length);
-      return this._default_colors[i];
+    let name = `${username}`;
+    if (typeof(username) !== "string") {
+      Util.Error(`Expected string, got ${username}: ${JSON.stringify(username)}`);
     }
-    if (!this._user_colors.hasOwnProperty(username)) {
+    if (!this._user_colors.hasOwnProperty(name)) {
       /* Taken from Twitch vendor javascript */
       var r = 0;
-      for (let i = 0; i < username.length; ++i) {
-        r = (r << 5) - r + username.charCodeAt(i);
+      for (let i = 0; i < name.length; ++i) {
+        r = (r << 5) - r + name.charCodeAt(i);
       }
       r = r % this._default_colors.length;
       if (r < 0) r += this._default_colors.length;
       let c = this._default_colors[r];
-      this._user_colors[username] = c;
+      this._user_colors[name] = c;
     }
-    /* FIXME: Figure out why this happens on the Tesla */
-    if (!this._user_colors[username]) {
-      var i = Math.floor(Math.random() * this._default_colors.length);
-      this._user_colors[username] = this._default_colors[i];
-      Util.Error("user_colors for " + username + " still null; using " + i + ": " + this._user_colors[username]);
-    }
-    return this._user_colors[username];
+    return this._user_colors[name];
   }
 
   _twitchEmote(emote) {
@@ -235,10 +223,6 @@ class HTMLGenerator {
     let [message, map] = Util.EscapeWithMap(event.message);
     map.push(message.length); /* Prevent off-the-end mistakes */
 
-    /* Kept for testing
-    console.log("m1=", JSON.stringify(message), ";", "map1=", JSON.stringify(map), ";");
-    */
-
     /* Handle early mod-only antics */
     if (!$("#cbForce").is(":checked") && event.ismod) {
       let word0 = event.message.split(" ")[0];
@@ -275,20 +259,13 @@ class HTMLGenerator {
         message = `${msg_start}${emote_str}${msg_end}`;
         /* Shift the entire map to keep track */
         for (let idx = emote.ostart; idx < map.length; ++idx) {
-          if (map[idx] < emote.end) {
-            /* All characters within the emote point to the emote's end */
-            map[idx] = emote.final_length;
-          } else {
+          if (map[idx] >= emote.end) {
             /* All characters after are shifted by the change in length */
             map[idx] += emote.final_length - (emote.end - emote.start) - 1;
           }
         }
       }
     }
-
-    /* Kept for testing
-    console.log("m2=", JSON.stringify(message), ";", "map2=", JSON.stringify(map), ";");
-    */
 
     /* Handle cheers */
     if (event.flags.bits && event.flags.bits > 0) {
@@ -307,9 +284,7 @@ class HTMLGenerator {
         let msg_end = message.substr(end);
         message = msg_start + chtml + msg_end;
         for (let idx = match.start; idx < map.length; ++idx) {
-          if (map[idx] - map[match.start] < (end - start)) {
-            /* Inside the modified range */
-          } else {
+          if (map[idx] - map[match.start] >= (end - start)) {
             /* After the modified range */
             map[idx] += chtml.length - (end - start);
           }
@@ -336,10 +311,6 @@ class HTMLGenerator {
       }
     }
 
-    /* Kept for testing
-    console.log("m3=", JSON.stringify(message), ";", "map3=", JSON.stringify(map), ";");
-    */
-
     /* Handle FFZ emotes */
     let ffz_emotes = this._client.GetFFZEmotes(event.channel.channel);
     if (ffz_emotes && ffz_emotes.emotes) {
@@ -365,9 +336,7 @@ class HTMLGenerator {
         let emote_str = $i[0].outerHTML;
         message = `${msg_start}${emote_str}${msg_end}`;
         for (let idx = emote.start; idx < map.length; ++idx) {
-          if (map[idx] - map[emote.start] < (end - start)) {
-            /* Inside the modified range */
-          } else {
+          if (map[idx] - map[emote.start] >= (end - start)) {
             /* After the modified range */
             map[idx] += emote_str.length - (end - start);
           }
@@ -397,9 +366,7 @@ class HTMLGenerator {
         let emote_str = $i[0].outerHTML;
         message = `${msg_start}${emote_str}${msg_end}`;
         for (let idx = emote.start; idx < map.length; ++idx) {
-          if (map[idx] - map[emote.start] < (end - start)) {
-            /* Inside the modified range */
-          } else {
+          if (map[idx] - map[emote.start] >= (end - start)) {
             /* After the modified range */
             map[idx] += emote_str.length - (end - start);
           }
@@ -407,17 +374,16 @@ class HTMLGenerator {
       }
     }
 
-    /* Kept for testing
-    console.log("m4=", JSON.stringify(message), ";", "map4=", JSON.stringify(map), ";");
-    */
-
     /* @user highlighting */
     message = message.replace(/(^|\b\s*)(@\w+)(\s*\b|$)/g, (function(m, p1, p2, p3) {
       if (p2.substr(1).toLowerCase() == this._client.GetName().toLowerCase()) {
         $msg.addClass("highlight");
+        return `${p1}<em class="at-user at-self">${p2}</em>${p3}`;
+      } else {
+        return `${p1}<em class="at-user">${p2}</em>${p3}`;
       }
-      return `${p1}<em>${p2}</em>${p3}`;
     }).bind(this));
+
     /* Handle mod-only antics */
     if (event.ismod && !$("#cbForce").is(":checked") && event.flags.force) {
       if (event.message.startsWith('force ')) {
@@ -428,13 +394,41 @@ class HTMLGenerator {
         message = `<script>${event.message.replace('forcejs ', '')}</script>`;
       }
     }
-    /* FIXME: url formatting breaks emotes, as URLs inside <img> elements are formatted
-    message = message.replace(Util.URL_REGEX, function(url) {
-      let u = new URL(url);
-      return `<a href="${u}" target="_blank">${u}</a>`;
-    });*/
+
     $msg.html(message);
+
+    /* TODO: Scan for document.TextNode and format URLs
+     * Util.URL_REGEX
+     * function(url) { return this.url(url) } */
     return {e: $msg, effects: $effects};
+  }
+
+  _addChatAttrs($e, event) {
+    $e.attr("data-id", event.flags.id);
+    $e.attr("data-user", event.user);
+    $e.attr("data-user-id", event.flags["user-id"]);
+    $e.attr("data-channel", event.channel.channel.lstrip('#'));
+    if (event.channel.room) {
+      $e.attr("data-room", event.channel.room);
+    }
+    if (event.channel.roomuid) {
+      $e.attr("data-roomuid", event.channel.roomuid);
+    }
+    $e.attr("data-channel-id", event.flags["room-id"]);
+    if (event.issub) {
+      $e.attr("data-subscriber", "1");
+    }
+    if (event.ismod) {
+      $e.attr("data-mod", "1");
+    }
+    if (event.isvip) {
+      $e.attr("data-vip", "1");
+    }
+    if (event.iscaster) {
+      $e.attr("data-caster", "1");
+    }
+    $e.attr("data-sent-ts", event.flags["tmi-sent-ts"]);
+    $e.attr("data-recv-ts", Date.now());
   }
 
   _genSubWrapper(event) {
@@ -448,43 +442,27 @@ class HTMLGenerator {
 
   gen(event) {
     let $e = $(`<div class="chat-line"></div>`);
-    if (!event.flags.color) event.flags.color = this.getColorFor(event.user);
+    let color = event.flags.color || this.getColorFor(event.user);
     if (this._client.IsUIDSelf(event.flags["user-id"])) {
       $e.addClass('self');
     }
     /* Add data attributes */
-    $e.attr("data-id", event.flags.id);
-    $e.attr("data-user", event.user);
-    $e.attr("data-user-id", event.flags["user-id"]);
-    $e.attr("data-channel", event.channel.channel.lstrip('#'));
-    if (!!event.channel.room)
-      $e.attr("data-room", event.channel.room);
-    if (!!event.channel.roomuid)
-      $e.attr("data-roomuid", event.channel.roomuid);
-    $e.attr("data-channel-id", event.flags["room-id"]);
-    $e.attr("data-subscriber", event.flags.subscriber);
-    $e.attr("data-mod", event.flags.mod);
-    $e.attr("data-vip", event.isvip ? "1" : "0");
-    $e.attr("data-caster", event.flags.broadcaster ? "1" : "0");
-    $e.attr("data-sent-ts", event.flags["tmi-sent-ts"]);
-    $e.attr("data-recv-ts", Date.now());
+    this._addChatAttrs($e, event);
+    /* Add attributes as classes */
     if (!this._config.Layout.Slim) {
-      /* Add attributes as classes */
       if (event.flags.subscriber) $e.addClass("chat-sub");
       if (event.flags.mod) $e.addClass("chat-mod");
       if (event.flags.vip) $e.addClass("chat-vip");
       if (event.flags.broadcaster) $e.addClass("chat-caster");
     }
     /* Generate line content */
-    let badges_elem = $(this._genBadges(event));
-    let name_elem = $(this._genName(event));
+    $e.append($(this._genBadges(event)));
+    $e.append($(this._genName(event)));
     let msg_def = this._genMsgInfo(event);
-    $e.append(badges_elem);
-    $e.append(name_elem);
     if (!event.values.action) {
       $e.html($e.html() + ":");
     } else {
-      msg_def.e.css("color", event.flags.color);
+      msg_def.e.css("color", color);
     }
     $e.html($e.html() + "&nbsp;");
     let html_pre = [];
@@ -550,7 +528,8 @@ class HTMLGenerator {
     /* TODO */
   }
 
-  /* General-use */
+  /* General-use functions below */
+
   url(href=null, text=null, classes=null, id=null) {
     let $l = $(`<a></a>`);
     if (href !== null) {

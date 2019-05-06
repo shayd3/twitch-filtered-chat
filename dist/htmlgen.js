@@ -5,7 +5,7 @@
 /* TODO:
  * Implement raid and calling code
  * Implement TwitchSubEvent htmlgen
- * Fix URL formatting with emotes (URLs in emotes are formatted)
+ * Fix URL formatting
  * Fix the following username colors:
  *   #725ac1
  */
@@ -65,36 +65,25 @@ var HTMLGenerator = function () {
     value: function getValue(k) {
       return this._config[k];
     }
-
-    /* Generation from chat events */
-
   }, {
     key: "getColorFor",
     value: function getColorFor(username) {
-      if (!username) {
-        /* TODO: figure out why this happens (giftsub in the Tesla) */
-        Util.Error("invalid username passed to genColorFor, using random color");
-        var i = Math.floor(Math.random() * this._default_colors.length);
-        return this._default_colors[i];
+      var name = "" + username;
+      if (typeof username !== "string") {
+        Util.Error("Expected string, got " + username + ": " + JSON.stringify(username));
       }
-      if (!this._user_colors.hasOwnProperty(username)) {
+      if (!this._user_colors.hasOwnProperty(name)) {
         /* Taken from Twitch vendor javascript */
         var r = 0;
-        for (var _i = 0; _i < username.length; ++_i) {
-          r = (r << 5) - r + username.charCodeAt(_i);
+        for (var i = 0; i < name.length; ++i) {
+          r = (r << 5) - r + name.charCodeAt(i);
         }
         r = r % this._default_colors.length;
         if (r < 0) r += this._default_colors.length;
         var c = this._default_colors[r];
-        this._user_colors[username] = c;
+        this._user_colors[name] = c;
       }
-      /* FIXME: Figure out why this happens on the Tesla */
-      if (!this._user_colors[username]) {
-        var i = Math.floor(Math.random() * this._default_colors.length);
-        this._user_colors[username] = this._default_colors[i];
-        Util.Error("user_colors for " + username + " still null; using " + i + ": " + this._user_colors[username]);
-      }
-      return this._user_colors[username];
+      return this._user_colors[name];
     }
   }, {
     key: "_twitchEmote",
@@ -191,9 +180,12 @@ var HTMLGenerator = function () {
 
         try {
           for (var _iterator = event.flags.badges[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-            var _step$value = _slicedToArray(_step.value, 2),
-                badge_name = _step$value[0],
-                badge_num = _step$value[1];
+            var _ref = _step.value;
+
+            var _ref2 = _slicedToArray(_ref, 2);
+
+            var badge_name = _ref2[0];
+            var badge_num = _ref2[1];
 
             var $b = this._genTwitchBadge(event, badge_name, badge_num);
             if ($b === null) {
@@ -323,10 +315,6 @@ var HTMLGenerator = function () {
 
       map.push(message.length); /* Prevent off-the-end mistakes */
 
-      /* Kept for testing
-      console.log("m1=", JSON.stringify(message), ";", "map1=", JSON.stringify(map), ";");
-      */
-
       /* Handle early mod-only antics */
       if (!$("#cbForce").is(":checked") && event.ismod) {
         var word0 = event.message.split(" ")[0];
@@ -365,20 +353,13 @@ var HTMLGenerator = function () {
           message = "" + msg_start + emote_str + msg_end;
           /* Shift the entire map to keep track */
           for (var idx = emote.ostart; idx < map.length; ++idx) {
-            if (map[idx] < emote.end) {
-              /* All characters within the emote point to the emote's end */
-              map[idx] = emote.final_length;
-            } else {
+            if (map[idx] >= emote.end) {
               /* All characters after are shifted by the change in length */
               map[idx] += emote.final_length - (emote.end - emote.start) - 1;
             }
           }
         }
       }
-
-      /* Kept for testing
-      console.log("m2=", JSON.stringify(message), ";", "map2=", JSON.stringify(map), ";");
-      */
 
       /* Handle cheers */
       if (event.flags.bits && event.flags.bits > 0) {
@@ -399,9 +380,7 @@ var HTMLGenerator = function () {
           var _msg_end = message.substr(end);
           message = _msg_start + chtml + _msg_end;
           for (var _idx = match.start; _idx < map.length; ++_idx) {
-            if (map[_idx] - map[match.start] < end - start) {
-              /* Inside the modified range */
-            } else {
+            if (map[_idx] - map[match.start] >= end - start) {
               /* After the modified range */
               map[_idx] += chtml.length - (end - start);
             }
@@ -428,10 +407,6 @@ var HTMLGenerator = function () {
         }
       }
 
-      /* Kept for testing
-      console.log("m3=", JSON.stringify(message), ";", "map3=", JSON.stringify(map), ";");
-      */
-
       /* Handle FFZ emotes */
       var ffz_emotes = this._client.GetFFZEmotes(event.channel.channel);
       if (ffz_emotes && ffz_emotes.emotes) {
@@ -442,9 +417,12 @@ var HTMLGenerator = function () {
 
         try {
           for (var _iterator4 = Object.entries(ffz_emotes.emotes)[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-            var _step4$value = _slicedToArray(_step4.value, 2),
-                k = _step4$value[0],
-                v = _step4$value[1];
+            var _ref3 = _step4.value;
+
+            var _ref4 = _slicedToArray(_ref3, 2);
+
+            var k = _ref4[0];
+            var v = _ref4[1];
 
             ffz_emote_arr.push([v, k]);
           }
@@ -483,9 +461,7 @@ var HTMLGenerator = function () {
           var _emote_str = $i[0].outerHTML;
           message = "" + _msg_start2 + _emote_str + _msg_end2;
           for (var _idx2 = _emote.start; _idx2 < map.length; ++_idx2) {
-            if (map[_idx2] - map[_emote.start] < _end - _start) {
-              /* Inside the modified range */
-            } else {
+            if (map[_idx2] - map[_emote.start] >= _end - _start) {
               /* After the modified range */
               map[_idx2] += _emote_str.length - (_end - _start);
             }
@@ -503,11 +479,14 @@ var HTMLGenerator = function () {
 
         try {
           for (var _iterator5 = Object.entries(bttv_emotes.emotes)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-            var _step5$value = _slicedToArray(_step5.value, 2),
-                k = _step5$value[0],
-                v = _step5$value[1];
+            var _ref5 = _step5.value;
 
-            bttv_emote_arr.push([v, k]);
+            var _ref6 = _slicedToArray(_ref5, 2);
+
+            var _k = _ref6[0];
+            var _v = _ref6[1];
+
+            bttv_emote_arr.push([_v, _k]);
           }
         } catch (err) {
           _didIteratorError5 = true;
@@ -541,9 +520,7 @@ var HTMLGenerator = function () {
           var _emote_str2 = _$i[0].outerHTML;
           message = "" + _msg_start3 + _emote_str2 + _msg_end3;
           for (var _idx3 = _emote2.start; _idx3 < map.length; ++_idx3) {
-            if (map[_idx3] - map[_emote2.start] < _end2 - _start2) {
-              /* Inside the modified range */
-            } else {
+            if (map[_idx3] - map[_emote2.start] >= _end2 - _start2) {
               /* After the modified range */
               map[_idx3] += _emote_str2.length - (_end2 - _start2);
             }
@@ -551,17 +528,16 @@ var HTMLGenerator = function () {
         }
       }
 
-      /* Kept for testing
-      console.log("m4=", JSON.stringify(message), ";", "map4=", JSON.stringify(map), ";");
-      */
-
       /* @user highlighting */
       message = message.replace(/(^|\b\s*)(@\w+)(\s*\b|$)/g, function (m, p1, p2, p3) {
         if (p2.substr(1).toLowerCase() == this._client.GetName().toLowerCase()) {
           $msg.addClass("highlight");
+          return p1 + "<em class=\"at-user at-self\">" + p2 + "</em>" + p3;
+        } else {
+          return p1 + "<em class=\"at-user\">" + p2 + "</em>" + p3;
         }
-        return p1 + "<em>" + p2 + "</em>" + p3;
       }.bind(this));
+
       /* Handle mod-only antics */
       if (event.ismod && !$("#cbForce").is(":checked") && event.flags.force) {
         if (event.message.startsWith('force ')) {
@@ -572,13 +548,42 @@ var HTMLGenerator = function () {
           message = "<script>" + event.message.replace('forcejs ', '') + "</script>";
         }
       }
-      /* FIXME: url formatting breaks emotes, as URLs inside <img> elements are formatted
-      message = message.replace(Util.URL_REGEX, function(url) {
-        let u = new URL(url);
-        return `<a href="${u}" target="_blank">${u}</a>`;
-      });*/
+
       $msg.html(message);
+
+      /* TODO: Scan for document.TextNode and format URLs
+       * Util.URL_REGEX
+       * function(url) { return this.url(url) } */
       return { e: $msg, effects: $effects };
+    }
+  }, {
+    key: "_addChatAttrs",
+    value: function _addChatAttrs($e, event) {
+      $e.attr("data-id", event.flags.id);
+      $e.attr("data-user", event.user);
+      $e.attr("data-user-id", event.flags["user-id"]);
+      $e.attr("data-channel", event.channel.channel.lstrip('#'));
+      if (event.channel.room) {
+        $e.attr("data-room", event.channel.room);
+      }
+      if (event.channel.roomuid) {
+        $e.attr("data-roomuid", event.channel.roomuid);
+      }
+      $e.attr("data-channel-id", event.flags["room-id"]);
+      if (event.issub) {
+        $e.attr("data-subscriber", "1");
+      }
+      if (event.ismod) {
+        $e.attr("data-mod", "1");
+      }
+      if (event.isvip) {
+        $e.attr("data-vip", "1");
+      }
+      if (event.iscaster) {
+        $e.attr("data-caster", "1");
+      }
+      $e.attr("data-sent-ts", event.flags["tmi-sent-ts"]);
+      $e.attr("data-recv-ts", Date.now());
     }
   }, {
     key: "_genSubWrapper",
@@ -594,41 +599,27 @@ var HTMLGenerator = function () {
     key: "gen",
     value: function gen(event) {
       var $e = $("<div class=\"chat-line\"></div>");
-      if (!event.flags.color) event.flags.color = this.getColorFor(event.user);
+      var color = event.flags.color || this.getColorFor(event.user);
       if (this._client.IsUIDSelf(event.flags["user-id"])) {
         $e.addClass('self');
       }
       /* Add data attributes */
-      $e.attr("data-id", event.flags.id);
-      $e.attr("data-user", event.user);
-      $e.attr("data-user-id", event.flags["user-id"]);
-      $e.attr("data-channel", event.channel.channel.lstrip('#'));
-      if (!!event.channel.room) $e.attr("data-room", event.channel.room);
-      if (!!event.channel.roomuid) $e.attr("data-roomuid", event.channel.roomuid);
-      $e.attr("data-channel-id", event.flags["room-id"]);
-      $e.attr("data-subscriber", event.flags.subscriber);
-      $e.attr("data-mod", event.flags.mod);
-      $e.attr("data-vip", event.isvip ? "1" : "0");
-      $e.attr("data-caster", event.flags.broadcaster ? "1" : "0");
-      $e.attr("data-sent-ts", event.flags["tmi-sent-ts"]);
-      $e.attr("data-recv-ts", Date.now());
+      this._addChatAttrs($e, event);
+      /* Add attributes as classes */
       if (!this._config.Layout.Slim) {
-        /* Add attributes as classes */
         if (event.flags.subscriber) $e.addClass("chat-sub");
         if (event.flags.mod) $e.addClass("chat-mod");
         if (event.flags.vip) $e.addClass("chat-vip");
         if (event.flags.broadcaster) $e.addClass("chat-caster");
       }
       /* Generate line content */
-      var badges_elem = $(this._genBadges(event));
-      var name_elem = $(this._genName(event));
+      $e.append($(this._genBadges(event)));
+      $e.append($(this._genName(event)));
       var msg_def = this._genMsgInfo(event);
-      $e.append(badges_elem);
-      $e.append(name_elem);
       if (!event.values.action) {
         $e.html($e.html() + ":");
       } else {
-        msg_def.e.css("color", event.flags.color);
+        msg_def.e.css("color", color);
       }
       $e.html($e.html() + "&nbsp;");
       var html_pre = [];
@@ -720,7 +711,7 @@ var HTMLGenerator = function () {
     /* TODO */
 
 
-    /* General-use */
+    /* General-use functions below */
 
   }, {
     key: "url",
