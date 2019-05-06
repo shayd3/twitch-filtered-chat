@@ -409,12 +409,13 @@ var HTMLGenerator = function () {
           var end_words = _msg_end.trimStart().split(" ");
           /* Scan words after the cheer for effects */
           while (end_words.length > 0) {
+            var word = end_words[0].toLowerCase();
             var s = null;
             /* CSSCheerStyles and ColorNames have our valid styles */
-            if (CSSCheerStyles.hasOwnProperty(end_words[0])) {
-              s = CSSCheerStyles[end_words[0]];
-            } else if (ColorNames.hasOwnProperty(end_words[0])) {
-              s = CSSColorStyle(ColorNames[end_words[0]]);
+            if (CSSCheerStyles.hasOwnProperty(word)) {
+              s = CSSCheerStyles[word];
+            } else if (ColorNames.hasOwnProperty(word)) {
+              s = CSSColorStyle(ColorNames[word]);
             }
             if (s == null) break;
             if (!s._disabled) {
