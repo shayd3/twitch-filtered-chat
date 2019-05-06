@@ -59,9 +59,12 @@ function parse_query_string(config) {
 
   try {
     for (var _iterator = Object.entries(qs_data)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-      var _step$value = _slicedToArray(_step.value, 2),
-          k = _step$value[0],
-          v = _step$value[1];
+      var _ref = _step.value;
+
+      var _ref2 = _slicedToArray(_ref, 2);
+
+      var k = _ref2[0];
+      var v = _ref2[1];
 
       var key = k; /* config key */
       var val = v; /* config val */
@@ -563,9 +566,9 @@ function check_filtered(module, event) {
 
     try {
       for (var _iterator6 = rules.IncludeUser[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-        var _s = _step6.value;
+        var s = _step6.value;
 
-        if (_s.toLowerCase() == event.user.toLowerCase()) {
+        if (s.toLowerCase() == event.user.toLowerCase()) {
           return true;
         }
       }
@@ -590,9 +593,9 @@ function check_filtered(module, event) {
 
     try {
       for (var _iterator7 = rules.IncludeKeyword[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-        var _s2 = _step7.value;
+        var _s = _step7.value;
 
-        if (event.message.toLowerCase().indexOf(_s2.toLowerCase()) > -1) {
+        if (event.message.toLowerCase().indexOf(_s.toLowerCase()) > -1) {
           return true;
         }
       }
@@ -617,9 +620,9 @@ function check_filtered(module, event) {
 
     try {
       for (var _iterator8 = rules.ExcludeUser[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-        var _s3 = _step8.value;
+        var _s2 = _step8.value;
 
-        if (_s3.toLowerCase() == event.user.toLowerCase()) {
+        if (_s2.toLowerCase() == event.user.toLowerCase()) {
           return false;
         }
       }
@@ -644,9 +647,9 @@ function check_filtered(module, event) {
 
     try {
       for (var _iterator9 = rules.ExcludeStartsWith[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-        var _s4 = _step9.value;
+        var _s3 = _step9.value;
 
-        if (event.message.startsWith(_s4)) {
+        if (event.message.startsWith(_s3)) {
           return false;
         }
       }
@@ -672,9 +675,9 @@ function check_filtered(module, event) {
 
       try {
         for (var _iterator10 = rules.FromChannel[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-          var s = _step10.value;
+          var _s4 = _step10.value;
 
-          var c = s.indexOf('#') == -1 ? '#' + s : s;
+          var c = _s4.indexOf('#') == -1 ? '#' + _s4 : _s4;
           if (event.channel.channel.toLowerCase() != c.toLowerCase()) {
             return false;
           }
@@ -713,12 +716,20 @@ function add_pre(content) {
 
 /* Shortcut for adding a <div class="notice"> element */
 function add_notice(content) {
-  add_html($("<div class=\"notice\"></div>").html(content));
+  var pre = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+  var e = $("<div class=\"notice\"></div>").html(content);
+  if (pre) e.addClass("pre");
+  add_html(e);
 }
 
 /* Shortcut for adding a <div class="error"> element */
 function add_error(content) {
-  add_html($("<div class=\"error\"></div>").html(content));
+  var pre = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+  var e = $("<div class=\"error\"></div>").html(content);
+  if (pre) e.addClass("pre");
+  add_html(e);
 }
 
 /* Handle a chat command */
@@ -736,8 +747,14 @@ function handle_command(value, client) {
   var arg = function arg(s) {
     return "<span class=\"arg\">" + s.escape() + "</span>";
   };
+  var helpcmd = function helpcmd(k) {
+    return "<span class=\"help helpcmd\">" + k + "</span>";
+  };
+  var helpmsg = function helpmsg(k) {
+    return "<span class=\"help helpmsg\">" + k + "</span>";
+  };
   var helpline = function helpline(k, v) {
-    return "<div class=\"helpline\"><span class=\"help helpcmd\">" + k + "</span><span class=\"help helpmsg\">" + v + "</span></div>";
+    return "<div class=\"helpline\">" + helpcmd(k) + helpmsg(v) + "</div>";
   };
   var help = function help(s) {
     return "<div class=\"help\">" + s + "</div>";
@@ -761,9 +778,12 @@ function handle_command(value, client) {
 
         try {
           for (var _iterator11 = Object.entries(logs)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-            var _step11$value = _slicedToArray(_step11.value, 2),
-                i = _step11$value[0],
-                l = _step11$value[1];
+            var _ref3 = _step11.value;
+
+            var _ref4 = _slicedToArray(_ref3, 2);
+
+            var i = _ref4[0];
+            var l = _ref4[1];
 
             add_help(i + ": " + JSON.stringify(l).escape());
           }
@@ -847,8 +867,12 @@ function handle_command(value, client) {
         if (config.AutoReconnect) {
           qs_push("reconnect", "1");
         }
-        if (get_css_var("--body_font_size") != get_css_var("--body-font-size-default")) {
-          qs_push("size", get_css_var("--body_font_size").replace(/[^0-9]/g, ''));
+        {
+          var font_size = get_css_var("--body-font-size");
+          var font_size_default = get_css_var("--body-font-size-default");
+          if (font_size != font_size_default) {
+            qs_push("size", font_size.replace(/[^0-9]/g, ''));
+          }
         }
         if (config.Plugins) {
           qs_push("plugins", "1");
@@ -865,7 +889,7 @@ function handle_command(value, client) {
       } else if (config.hasOwnProperty(tokens[0])) {
         add_helpline(tokens[0], JSON.stringify(config[tokens[0]]));
       } else {
-        add_html("<div class=\"pre error\">Unknown config key &quot;" + tokens[0] + "&quot;</div>");
+        add_error("Unknown config key &quot;" + tokens[0] + "&quot;", true);
       }
     } else {
       var wincfgs = [];
@@ -875,9 +899,12 @@ function handle_command(value, client) {
 
       try {
         for (var _iterator12 = Object.entries(config)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-          var _step12$value = _slicedToArray(_step12.value, 2),
-              k = _step12$value[0],
-              v = _step12$value[1];
+          var _ref5 = _step12.value;
+
+          var _ref6 = _slicedToArray(_ref5, 2);
+
+          var k = _ref6[0];
+          var v = _ref6[1];
 
           if ((typeof v === "undefined" ? "undefined" : _typeof(v)) == "object" && v.Name && v.Name.length > 1) {
             /* It's a window configuration */
@@ -910,20 +937,26 @@ function handle_command(value, client) {
 
       try {
         for (var _iterator13 = wincfgs[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-          var _step13$value = _slicedToArray(_step13.value, 2),
-              k = _step13$value[0],
-              v = _step13$value[1];
+          var _ref7 = _step13.value;
 
-          add_help("Module <span class=\"arg\">" + k + "</span>: &quot;" + v.Name + "&quot;:");
+          var _ref8 = _slicedToArray(_ref7, 2);
+
+          var _k = _ref8[0];
+          var _v = _ref8[1];
+
+          add_help("Module <span class=\"arg\">" + _k + "</span>: &quot;" + _v.Name + "&quot;:");
           var _iteratorNormalCompletion14 = true;
           var _didIteratorError14 = false;
           var _iteratorError14 = undefined;
 
           try {
-            for (var _iterator14 = Object.entries(v)[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-              var _step14$value = _slicedToArray(_step14.value, 2),
-                  cfgk = _step14$value[0],
-                  cfgv = _step14$value[1];
+            for (var _iterator14 = Object.entries(_v)[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+              var _ref9 = _step14.value;
+
+              var _ref10 = _slicedToArray(_ref9, 2);
+
+              var cfgk = _ref10[0];
+              var cfgv = _ref10[1];
 
               if (cfgk === "Name") continue;
               add_helpline(cfgk, "&quot;" + cfgv + "&quot;");
@@ -988,19 +1021,24 @@ function handle_command(value, client) {
 
     try {
       for (var _iterator15 = Object.entries(client.GetGlobalBadges())[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-        var _step15$value = _slicedToArray(_step15.value, 2),
-            bname = _step15$value[0],
-            badge = _step15$value[1];
+        var _ref11 = _step15.value;
 
+        var _ref12 = _slicedToArray(_ref11, 2);
+
+        var bname = _ref12[0];
+        var badge = _ref12[1];
         var _iteratorNormalCompletion16 = true;
         var _didIteratorError16 = false;
         var _iteratorError16 = undefined;
 
         try {
           for (var _iterator16 = Object.entries(badge.versions)[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
-            var _step16$value = _slicedToArray(_step16.value, 2),
-                bv = _step16$value[0],
-                bdef = _step16$value[1];
+            var _ref13 = _step16.value;
+
+            var _ref14 = _slicedToArray(_ref13, 2);
+
+            var bv = _ref14[0];
+            var bdef = _ref14[1];
 
             var u = bdef.image_url_2x;
             var s = 36;
@@ -1045,7 +1083,9 @@ function handle_command(value, client) {
 
     add_notice(all_badges.join(''));
   } else if (command == "//help") {
-    if (tokens.length > 0 && tokens[0].startsWith('//')) tokens[0] = tokens[0].substr(2);
+    if (tokens.length > 0 && tokens[0].startsWith('//')) {
+      tokens[0] = tokens[0].substr(2);
+    }
     if (tokens.length == 0) {
       var lines = [];
       lines.push(["clear", "clears all chat windows of their contents"]);
@@ -1065,9 +1105,12 @@ function handle_command(value, client) {
 
       try {
         for (var _iterator17 = lines[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
-          var _step17$value = _slicedToArray(_step17.value, 2),
-              c = _step17$value[0],
-              m = _step17$value[1];
+          var _ref15 = _step17.value;
+
+          var _ref16 = _slicedToArray(_ref15, 2);
+
+          var c = _ref16[0];
+          var m = _ref16[1];
 
           add_helpline("//" + c, m);
         }
@@ -1115,9 +1158,12 @@ function handle_command(value, client) {
 
     try {
       for (var _iterator18 = Object.entries(Plugins.plugins)[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
-        var _step18$value = _slicedToArray(_step18.value, 2),
-            n = _step18$value[0],
-            p = _step18$value[1];
+        var _ref17 = _step18.value;
+
+        var _ref18 = _slicedToArray(_ref17, 2);
+
+        var n = _ref18[0];
+        var p = _ref18[1];
 
         var msg = n + ": " + p.file + " @ " + p.order;
         if (p._error) {
@@ -1170,7 +1216,7 @@ function handle_command(value, client) {
       }
     }
   } else if (command.startsWith('//')) {
-    add_html("<div class=\"pre error\">Unknown command \"" + command.escape() + "\"</div>");
+    add_error("Unknown command \"" + command.escape() + "\"", true);
   } else {
     return false;
   }
@@ -1182,6 +1228,7 @@ function show_context_window(client, cw, line) {
   var $cw = $(cw);
   var $l = $(line);
   $(cw).html(""); /* Clear everything from the last time */
+
   /* Attributes of the host line */
   var id = $l.attr("data-id");
   var user = $l.attr("data-user");
@@ -1194,6 +1241,7 @@ function show_context_window(client, cw, line) {
   var caster = $l.attr("data-caster") === "1";
   var timestamp = Number.parseInt($l.attr("data-sent-ts"));
   var time = new Date(timestamp);
+
   /* Set the attributes for the context window */
   $cw.attr("data-id", id);
   $cw.attr("data-user", user);
@@ -1205,6 +1253,7 @@ function show_context_window(client, cw, line) {
   $cw.attr("data-vip", vip);
   $cw.attr("data-caster", caster);
   $cw.attr("data-id", id);
+
   /* Define functions for building elements */
   var $Line = function $Line(s) {
     return $("<div class=\"item\">" + s + "</div>");
@@ -1218,11 +1267,13 @@ function show_context_window(client, cw, line) {
   var $EmItem = function $EmItem(s) {
     return $(Em(s)).css('margin-left', '0.5em');
   };
+
   /* Add general user information */
   var $username = $l.find('.username');
   var color = "color: " + $username.css("color");
   var classes = $username.attr("class");
   $cw.append($Line("<span class=\"" + classes + "\" style=\"" + color + "\">" + user + "</span> in " + Em(channel)));
+
   /* Add link to timeout user */
   if (client.IsMod(channel)) {
     var $tl = $("<div class=\"cw-timeout\">Timeout:</div>");
@@ -1266,7 +1317,8 @@ function show_context_window(client, cw, line) {
 
     $cw.append($tl);
   }
-  /* Add link which populates "/ban <user>" into the chat */
+
+  /* Add link which places "/ban <user>" into the chat textbox */
   if (client.IsMod(channel)) {
     var $ba = $(Link("cw-ban-" + user, "Ban"));
     $ba.attr("data-channel", channel);
@@ -1276,12 +1328,14 @@ function show_context_window(client, cw, line) {
     });
     $cw.append($ba);
   }
+
   /* Add other information */
   var sent_ts = Util.FormatDate(time);
   var ago_ts = Util.FormatInterval((Date.now() - timestamp) / 1000);
   $cw.append($Line("Sent: " + sent_ts + " (" + ago_ts + " ago)"));
   $cw.append($Line("UserID: " + userid));
   $cw.append($Line("MsgUID: " + id));
+
   /* Add roles (and ability to remove roles, for the caster) */
   if (mod || vip || sub || caster) {
     var $roles = $Line("User Role:");
@@ -1309,6 +1363,7 @@ function show_context_window(client, cw, line) {
       }
     }
   }
+
   /* Add the ability to add roles (for the caster) */
   if (client.IsCaster(channel) && !client.IsUIDSelf(user_id)) {
     if (!mod) {
@@ -1318,8 +1373,10 @@ function show_context_window(client, cw, line) {
       $cw.append($Line(Link('cw-make-vip', 'Make VIP')));
     }
   }
+
   var l_off = $l.offset();
-  $cw.fadeIn().offset({ top: l_off.top + $l.outerHeight() + 2, left: l_off.left });
+  var offset = { top: l_off.top + $l.outerHeight() + 2, left: l_off.left };
+  $cw.fadeIn().offset(offset);
 };
 
 /* CSS functions {{{0 */
@@ -1410,24 +1467,6 @@ function update_transparency(transparent) {
 }
 
 /* End CSS functions 0}}} */
-
-/* Handle tab completion */
-function complete($e, value, selIdx, client) {
-  var tabIndex = Number($e.attr("tab-index"));
-  var wordStartIdx = value.lastIndexOf(' ', selIdx == 0 ? 0 : selIdx - 1);
-  if (wordStartIdx == -1) wordStartIdx = 0;
-  var wordEndIdx = value.indexOf(' ', selIdx);
-  if (wordEndIdx == -1) wordEndIdx = value.length;
-  var word = value.substring(wordStartIdx, wordEndIdx);
-  var wordLeft = value.substring(wordStartIdx, selIdx);
-  var wordRight = value.substring(selIdx, wordEndIdx);
-  return {
-    value: value,
-    selIdx: selIdx,
-    origValue: null,
-    tabOffset: -1
-  };
-}
 
 /* Called once when the document loads */
 function client_main(layout) {
@@ -1573,16 +1612,6 @@ function client_main(layout) {
         e.target.selectionStart = e.target.value.length;
         e.target.selectionEnd = e.target.value.length;
       });
-    }
-    /* Handle tab-completion */
-    if (e.keyCode == KeyEvent.DOM_VK_TAB) {
-      var result = complete($(e), e.target.value, e.target.selectionStart, client);
-      e.preventDefault();
-      return false;
-    } else {
-      /* Reset tab-completion variables */
-      $(e).attr("tab-index", "-1");
-      $(e).attr("tab-word", "");
     }
   });
 

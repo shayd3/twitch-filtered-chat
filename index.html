@@ -57,8 +57,6 @@ function Main(global) {
     let $ChatBox = $(`<textarea id="txtChat"></textarea>`);
     $ChatBox.attr("placeholder", "Send a message");
     $ChatBox.attr("hist-index", "-1");
-    $ChatBox.attr("tab-index", "-1");
-    $ChatBox.attr("tab-word", "");
     let $Chat = $(`<div id="chat"></div>`).append($ChatBox);
 
     let $Column1 = $("#column1");

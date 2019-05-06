@@ -474,13 +474,17 @@ function add_pre(content) {
 }
 
 /* Shortcut for adding a <div class="notice"> element */
-function add_notice(content) {
-  add_html($(`<div class="notice"></div>`).html(content));
+function add_notice(content, pre=false) {
+  let e = $(`<div class="notice"></div>`).html(content);
+  if (pre) e.addClass("pre");
+  add_html(e);
 }
 
 /* Shortcut for adding a <div class="error"> element */
-function add_error(content) {
-  add_html($(`<div class="error"></div>`).html(content));
+function add_error(content, pre=false) {
+  let e = $(`<div class="error"></div>`).html(content);
+  if (pre) e.addClass("pre");
+  add_html(e);
 }
 
 /* Handle a chat command */
@@ -496,7 +500,9 @@ function handle_command(value, client) {
 
   /* Shortcuts for usages/help messages */
   let arg = (s) => `<span class="arg">${s.escape()}</span>`;
-  let helpline = (k, v) => `<div class="helpline"><span class="help helpcmd">${k}</span><span class="help helpmsg">${v}</span></div>`;
+  let helpcmd = (k) => `<span class="help helpcmd">${k}</span>`;
+  let helpmsg = (k) => `<span class="help helpmsg">${k}</span>`;
+  let helpline = (k, v) => `<div class="helpline">${helpcmd(k)}${helpmsg(v)}</div>`;
   let help = (s) => `<div class="help">${s}</div>`;
   let add_helpline = (k, v) => add_pre(helpline(k, v));
   let add_help = (s) => add_pre(help(s));
@@ -544,8 +550,12 @@ function handle_command(value, client) {
           qs_push('channels', config.Channels.join(","));
         }
         if (tokens.indexOf("auth") > -1) {
-          if (config.Name && config.Name.length > 0) { qs_push('user', config.Name); }
-          if (config.Pass && config.Pass.length > 0) { qs_push('pass', config.Pass); }
+          if (config.Name && config.Name.length > 0) {
+            qs_push('user', config.Name);
+          }
+          if (config.Pass && config.Pass.length > 0) {
+            qs_push('pass', config.Pass);
+          }
         }
         if (config.NoAssets) { qs_push('noassets', config.NoAssets); }
         if (config.NoFFZ) { qs_push('noffz', config.NoFFZ); }
@@ -556,8 +566,12 @@ function handle_command(value, client) {
         qs_push("layout", FormatLayout(config.Layout));
         if (config.Transparent) { qs_push("trans", "1"); }
         if (config.AutoReconnect) { qs_push("reconnect", "1"); }
-        if (get_css_var("--body_font_size") != get_css_var("--body-font-size-default")) {
-          qs_push("size", get_css_var("--body_font_size").replace(/[^0-9]/g, ''));
+        {
+          let font_size = get_css_var("--body-font-size");
+          let font_size_default = get_css_var("--body-font-size-default");
+          if (font_size != font_size_default) {
+            qs_push("size", font_size.replace(/[^0-9]/g, ''));
+          }
         }
         if (config.Plugins) { qs_push("plugins", "1"); }
         if (config.MaxMessages != TwitchClient.DEFAULT_MAX_MESSAGES) {
@@ -572,7 +586,7 @@ function handle_command(value, client) {
       } else if (config.hasOwnProperty(tokens[0])) {
         add_helpline(tokens[0], JSON.stringify(config[tokens[0]]));
       } else {
-        add_html(`<div class="pre error">Unknown config key &quot;${tokens[0]}&quot;</div>`);
+        add_error(`Unknown config key &quot;${tokens[0]}&quot;`, true);
       }
     } else {
       let wincfgs = [];
@@ -635,7 +649,9 @@ function handle_command(value, client) {
     }
     add_notice(all_badges.join(''));
   } else if (command == "//help") {
-    if (tokens.length > 0 && tokens[0].startsWith('//')) tokens[0] = tokens[0].substr(2);
+    if (tokens.length > 0 && tokens[0].startsWith('//')) {
+      tokens[0] = tokens[0].substr(2);
+    }
     if (tokens.length == 0) {
       let lines = [];
       lines.push([`clear`, `clears all chat windows of their contents`]);
@@ -693,7 +709,7 @@ function handle_command(value, client) {
       cmd({line: value, command: command, tokens: tokens});
     }
   } else if (command.startsWith('//')) {
-    add_html(`<div class="pre error">Unknown command "${command.escape()}"</div>`);
+    add_error(`Unknown command "${command.escape()}"`, true);
   } else {
     return false;
   }
@@ -705,6 +721,7 @@ function show_context_window(client, cw, line) {
   let $cw = $(cw);
   let $l = $(line);
   $(cw).html(""); /* Clear everything from the last time */
+
   /* Attributes of the host line */
   let id = $l.attr("data-id");
   let user = $l.attr("data-user");
@@ -717,6 +734,7 @@ function show_context_window(client, cw, line) {
   let caster = $l.attr("data-caster") === "1";
   let timestamp = Number.parseInt($l.attr("data-sent-ts"));
   let time = new Date(timestamp);
+
   /* Set the attributes for the context window */
   $cw.attr("data-id", id);
   $cw.attr("data-user", user);
@@ -728,16 +746,19 @@ function show_context_window(client, cw, line) {
   $cw.attr("data-vip", vip);
   $cw.attr("data-caster", caster);
   $cw.attr("data-id", id);
+
   /* Define functions for building elements */
   let $Line = (s) => $(`<div class="item">${s}</div>`);
   let Link = (id, text) => client.get('HTMLGen').url(null, text, "cw-link", id);
   let Em = (t) => `<span class="em">${t}</span>`;
   let $EmItem = (s) => $(Em(s)).css('margin-left', '0.5em');
+
   /* Add general user information */
   let $username = $l.find('.username');
   let color = `color: ${$username.css("color")}`;
   let classes = $username.attr("class");
   $cw.append($Line(`<span class="${classes}" style="${color}">${user}</span> in ${Em(channel)}`));
+
   /* Add link to timeout user */
   if (client.IsMod(channel)) {
     let $tl = $(`<div class="cw-timeout">Timeout:</div>`);
@@ -759,7 +780,8 @@ function show_context_window(client, cw, line) {
     }
     $cw.append($tl);
   }
-  /* Add link which populates "/ban <user>" into the chat */
+
+  /* Add link which places "/ban <user>" into the chat textbox */
   if (client.IsMod(channel)) {
     let $ba = $(Link(`cw-ban-${user}`, "Ban"));
     $ba.attr("data-channel", channel);
@@ -769,12 +791,14 @@ function show_context_window(client, cw, line) {
     });
     $cw.append($ba);
   }
+
   /* Add other information */
   let sent_ts = Util.FormatDate(time);
   let ago_ts = Util.FormatInterval((Date.now() - timestamp) / 1000);
   $cw.append($Line(`Sent: ${sent_ts} (${ago_ts} ago)`));
   $cw.append($Line(`UserID: ${userid}`));
   $cw.append($Line(`MsgUID: ${id}`));
+
   /* Add roles (and ability to remove roles, for the caster) */
   if (mod || vip || sub || caster) {
     let $roles = $Line(`User Role:`);
@@ -790,13 +814,16 @@ function show_context_window(client, cw, line) {
       if (vip) { $cw.append($Line(Link('cw-unvip', 'Remove VIP'))); }
     }
   }
+
   /* Add the ability to add roles (for the caster) */
   if (client.IsCaster(channel) && !client.IsUIDSelf(user_id)) {
     if (!mod) { $cw.append($Line(Link('cw-make-mod', 'Make Mod'))); }
     if (!vip) { $cw.append($Line(Link('cw-make-vip', 'Make VIP'))); }
   }
+
   let l_off = $l.offset();
-  $cw.fadeIn().offset({top: l_off.top + $l.outerHeight() + 2, left: l_off.left});
+  let offset = {top: l_off.top + $l.outerHeight() + 2, left: l_off.left};
+  $cw.fadeIn().offset(offset);
 };
 
 /* CSS functions {{{0 */
@@ -840,24 +867,6 @@ function update_transparency(transparent) {
 }
 
 /* End CSS functions 0}}} */
-
-/* Handle tab completion */
-function complete($e, value, selIdx, client) {
-  let tabIndex = Number($e.attr("tab-index"));
-  let wordStartIdx = value.lastIndexOf(' ', selIdx == 0 ? 0 : selIdx-1);
-  if (wordStartIdx == -1) wordStartIdx = 0;
-  let wordEndIdx = value.indexOf(' ', selIdx);
-  if (wordEndIdx == -1) wordEndIdx = value.length;
-  let word = value.substring(wordStartIdx, wordEndIdx);
-  let wordLeft = value.substring(wordStartIdx, selIdx);
-  let wordRight = value.substring(selIdx, wordEndIdx);
-  return {
-    value: value,
-    selIdx: selIdx,
-    origValue: null,
-    tabOffset: -1
-  };
-}
 
 /* Called once when the document loads */
 function client_main(layout) {
@@ -983,16 +992,6 @@ function client_main(layout) {
         e.target.selectionStart = e.target.value.length;
         e.target.selectionEnd = e.target.value.length;
       });
-    }
-    /* Handle tab-completion */
-    if (e.keyCode == KeyEvent.DOM_VK_TAB) {
-      let result = complete($(e), e.target.value, e.target.selectionStart, client);
-      e.preventDefault();
-      return false;
-    } else {
-      /* Reset tab-completion variables */
-      $(e).attr("tab-index", "-1");
-      $(e).attr("tab-word", "");
     }
   });
 
