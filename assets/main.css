@@ -350,6 +350,11 @@ input:disabled {
   font-weight: bold;
 }
 
+.module .content .line .info {
+  border: 2px solid forestgreen;
+  font-weight: bold;
+}
+
 .module .content .line .notice {
   border: 2px solid yellow;
   font-weight: bold;

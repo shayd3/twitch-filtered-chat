@@ -3,10 +3,9 @@
 "use strict";
 
 /* TODO:
- * Implement "light" and "dark" colorschemes
+ * Add ?font to query string
+ * Add clip information
  * Fade-out username context window when clicking the same name again
- * Implement TwitchSubEvent
- *   (Verify HTMLGen.sub and HTMLGen.anonsubgift)
  * Hide get_config_object() within client_main()
  */
 
@@ -176,6 +175,7 @@ function get_config_object() {
   if (config.hasOwnProperty('Debug')) delete config["Debug"];
   if (config.hasOwnProperty('AutoReconnect')) delete config["AutoReconnect"];
   if (config.hasOwnProperty('Layout')) delete config['Layout'];
+  if (config.hasOwnProperty('Plugins')) delete config['Plugins'];
   if (!config.hasOwnProperty("MaxMessages")) {
     config.MaxMessages = TwitchClient.DEFAULT_MAX_MESSAGES;
   }
@@ -484,6 +484,13 @@ function add_pre(content) {
   add_html($(`<div class="pre"></div>`).html(content));
 }
 
+/* Shortcut for adding a <div class="info"> element */
+function add_info(content, pre=false) {
+  let e = $(`<div class="info"></div>`).html(content);
+  if (pre) e.addClass("pre");
+  add_html(e);
+}
+
 /* Shortcut for adding a <div class="notice"> element */
 function add_notice(content, pre=false) {
   let e = $(`<div class="notice"></div>`).html(content);
@@ -503,6 +510,12 @@ function handle_command(value, client) {
   let tokens = value.split(" ");
   let command = tokens.shift();
   let config = get_config_object();
+  try {
+    CHAT_COMMANDS;
+  }
+  catch (e) {
+    window.CHAT_COMMANDS = {};
+  }
 
   /* Clear empty tokens at the end (\r\n related) */
   while (tokens.length > 0 && tokens[tokens.length-1].length == 0) {
@@ -511,7 +524,7 @@ function handle_command(value, client) {
 
   /* Shortcuts for usages/help messages */
   let arg = (s) => `<span class="arg">${s.escape()}</span>`;
-  let barg = (s) => `&lt;${arg(s)}&lt;`;
+  let barg = (s) => `&lt;${arg(s)}&gt;`;
   let helpcmd = (k) => `<span class="help helpcmd">${k}</span>`;
   let helpmsg = (k) => `<span class="help helpmsg">${k}</span>`;
   let helpline = (k, v) => `<div class="helpline">${helpcmd(k)}${helpmsg(v)}</div>`;
@@ -708,7 +721,7 @@ function handle_command(value, client) {
     }
     if (tokens.length == 0) {
       let lines = [];
-      lines.push([`clear`, `clears all chat windows of their contents`]);
+      lines.push([`clear`, `clears all chat windows`]);
       lines.push([`config`, `display configuration`]);
       lines.push([`config purge`, `purge active configuration`]);
       lines.push([`config [${arg('key')}]`, `display ${arg('key')} value`]);
@@ -716,17 +729,23 @@ function handle_command(value, client) {
       lines.push([`part ${barg('ch')}`, `leave ${barg('ch')}`]);
       lines.push([`leave ${barg('ch')}`, `leave ${barg('ch')}`]);
       lines.push([`badges`, `show the global badges`]);
-      lines.push([`help`, `this message`]);
       lines.push([`help ${barg('command')}`, `help for ${barg('command')}`]);
       add_help(`Commands:`);
       for (let [c, m] of lines) {
         add_helpline(`//${c}`, m);
       }
-      for (let [n, p] of Object.entries(Plugins.plugins)) {
-        if (p._loaded && p.commands) {
-          for (let c of p.commands) {
-            add_helpline(c, `added by ${n}`);
+      try {
+        for (let [n, p] of Object.entries(Plugins.plugins)) {
+          if (p._loaded && p.commands) {
+            for (let c of p.commands) {
+              add_helpline(c, `added by ${n}`);
+            }
           }
+        }
+      }
+      catch (e) {
+        if (e.name !== "ReferenceError") {
+          throw e;
         }
       }
     } else if (tokens[0] == "clear") {
@@ -752,16 +771,25 @@ function handle_command(value, client) {
       add_help(`//help: No such command "${tokens[0].escape()}"`);
     }
   } else if (command === "//plugins") {
-    for (let [n, p] of Object.entries(Plugins.plugins)) {
-      let msg = `${n}: ${p.file} @ ${p.order}`;
-      if (p._error) {
-        add_error(`${msg}: Failed: ${JSON.stringify(p._error_obj)}`);
-      } else if (p._loaded) {
-        msg = `${msg}: Loaded`;
-        if (p.commands) {
-          msg = `${msg}: Commands: ${p.commands.join(" ")}`;
+    try {
+      for (let [n, p] of Object.entries(Plugins.plugins)) {
+        let msg = `${n}: ${p.file} @ ${p.order}`;
+        if (p._error) {
+          add_error(`${msg}: Failed: ${JSON.stringify(p._error_obj)}`);
+        } else if (p._loaded) {
+          msg = `${msg}: Loaded`;
+          if (p.commands) {
+            msg = `${msg}: Commands: ${p.commands.join(" ")}`;
+          }
+          add_pre(msg);
         }
-        add_pre(msg);
+      }
+    }
+    catch (e) {
+      if (e.name === "ReferenceError") {
+        add_error("Plugin information unavailable");
+      } else {
+        throw e;
       }
     }
   } else if (CHAT_COMMANDS.hasOwnProperty(command)) {
@@ -918,23 +946,27 @@ function update_transparency(transparent) {
 function client_main(layout) {
   /* Hook Logger messages */
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
+    let msg = JSON.stringify(args.length == 1 ? args[0] : args);
     if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
-      add_html("ERROR: " + JSON.stringify(args.length == 1 ? args[0] : args).escape());
+      add_error("ERROR: " + msg.escape());
     }
   }, "ERROR");
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
+    let msg = JSON.stringify(args.length == 1 ? args[0] : args);
     if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
-      add_html("WARN: " + JSON.stringify(args.length == 1 ? args[0] : args).escape());
+      add_notice("WARNING: " + msg.escape());
     }
   }, "WARN");
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
+    let msg = JSON.stringify(args.length == 1 ? args[0] : args);
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
-      add_html("DEBUG: " + JSON.stringify(args.length == 1 ? args[0] : args).escape());
+      add_html("DEBUG: " + msg.escape());
     }
   }, "DEBUG");
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
+    let msg = JSON.stringify(args.length == 1 ? args[0] : args);
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
-      add_html("TRACE: " + JSON.stringify(args.length == 1 ? args[0] : args).escape());
+      add_html("TRACE: " + msg.escape());
     }
   }, "TRACE");
 
@@ -994,7 +1026,16 @@ function client_main(layout) {
 
   /* Construct the plugins */
   if (ConfigCommon.Plugins) {
-    Plugins.LoadAll(client);
+    try {
+      Plugins.LoadAll(client);
+    }
+    catch (e) {
+      if (e.name !== "ReferenceError") {
+        throw e;
+      } else {
+        Util.Warn("Plugins object not present");
+      }
+    }
   }
 
   /* Allow JS access if debugging is enabled */
@@ -1228,7 +1269,7 @@ function client_main(layout) {
       } else {
         notes.push("(unauthenticated)");
       }
-      add_notice(`Connected ${notes.join(" ")}`);
+      add_info(`Connected ${notes.join(" ")}`);
     }
   });
 
@@ -1254,7 +1295,7 @@ function client_main(layout) {
   client.bind('twitch-join', function _on_twitch_join(e) {
     if (!Util.Browser.IsOBS && !layout.Slim) {
       if (e.user == client.GetName().toLowerCase()) {
-        add_notice(`Joined ${e.channel.channel}`);
+        add_info(`Joined ${e.channel.channel}`);
       }
     }
   });
@@ -1263,7 +1304,7 @@ function client_main(layout) {
   client.bind('twitch-part', function _on_twitch_part(e) {
     if (!Util.Browser.IsOBS && !layout.Slim) {
       if (e.user == client.GetName().toLowerCase()) {
-        add_notice(`Left ${e.channel.channel}`);
+        add_info(`Left ${e.channel.channel}`);
       }
     }
   });
@@ -1273,7 +1314,9 @@ function client_main(layout) {
     /* Some notices are benign */
     if (e.flags['msg-id'] == 'host_on') { }
     else if (e.flags['msg-id'] == 'host_target_went_offline') { }
-    else {
+    else if (e.flags['msg-id'] == 'cmds_available') {
+      add_info("Use //help to see Twitch Filtered Chat commands");
+    } else {
       Util.Warn(e);
     }
     let channel = Twitch.FormatChannel(e.channel);

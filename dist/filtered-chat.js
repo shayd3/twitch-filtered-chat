@@ -3,10 +3,9 @@
 "use strict";
 
 /* TODO:
- * Implement "light" and "dark" colorschemes
+ * Add ?font to query string
+ * Add clip information
  * Fade-out username context window when clicking the same name again
- * Implement TwitchSubEvent
- *   (Verify HTMLGen.sub and HTMLGen.anonsubgift)
  * Hide get_config_object() within client_main()
  */
 
@@ -240,6 +239,7 @@ function get_config_object() {
   if (config.hasOwnProperty('Debug')) delete config["Debug"];
   if (config.hasOwnProperty('AutoReconnect')) delete config["AutoReconnect"];
   if (config.hasOwnProperty('Layout')) delete config['Layout'];
+  if (config.hasOwnProperty('Plugins')) delete config['Plugins'];
   if (!config.hasOwnProperty("MaxMessages")) {
     config.MaxMessages = TwitchClient.DEFAULT_MAX_MESSAGES;
   }
@@ -725,6 +725,15 @@ function add_pre(content) {
   add_html($("<div class=\"pre\"></div>").html(content));
 }
 
+/* Shortcut for adding a <div class="info"> element */
+function add_info(content) {
+  var pre = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+  var e = $("<div class=\"info\"></div>").html(content);
+  if (pre) e.addClass("pre");
+  add_html(e);
+}
+
 /* Shortcut for adding a <div class="notice"> element */
 function add_notice(content) {
   var pre = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
@@ -748,6 +757,11 @@ function handle_command(value, client) {
   var tokens = value.split(" ");
   var command = tokens.shift();
   var config = get_config_object();
+  try {
+    CHAT_COMMANDS;
+  } catch (e) {
+    window.CHAT_COMMANDS = {};
+  }
 
   /* Clear empty tokens at the end (\r\n related) */
   while (tokens.length > 0 && tokens[tokens.length - 1].length == 0) {
@@ -759,7 +773,7 @@ function handle_command(value, client) {
     return "<span class=\"arg\">" + s.escape() + "</span>";
   };
   var barg = function barg(s) {
-    return "&lt;" + arg(s) + "&lt;";
+    return "&lt;" + arg(s) + "&gt;";
   };
   var helpcmd = function helpcmd(k) {
     return "<span class=\"help helpcmd\">" + k + "</span>";
@@ -1197,7 +1211,7 @@ function handle_command(value, client) {
     }
     if (tokens.length == 0) {
       var _lines = [];
-      _lines.push(["clear", "clears all chat windows of their contents"]);
+      _lines.push(["clear", "clears all chat windows"]);
       _lines.push(["config", "display configuration"]);
       _lines.push(["config purge", "purge active configuration"]);
       _lines.push(["config [" + arg('key') + "]", "display " + arg('key') + " value"]);
@@ -1205,7 +1219,6 @@ function handle_command(value, client) {
       _lines.push(["part " + barg('ch'), "leave " + barg('ch')]);
       _lines.push(["leave " + barg('ch'), "leave " + barg('ch')]);
       _lines.push(["badges", "show the global badges"]);
-      _lines.push(["help", "this message"]);
       _lines.push(["help " + barg('command'), "help for " + barg('command')]);
       add_help("Commands:");
       var _iteratorNormalCompletion19 = true;
@@ -1238,58 +1251,64 @@ function handle_command(value, client) {
         }
       }
 
-      var _iteratorNormalCompletion20 = true;
-      var _didIteratorError20 = false;
-      var _iteratorError20 = undefined;
-
       try {
-        for (var _iterator20 = Object.entries(Plugins.plugins)[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
-          var _ref21 = _step20.value;
+        var _iteratorNormalCompletion20 = true;
+        var _didIteratorError20 = false;
+        var _iteratorError20 = undefined;
 
-          var _ref22 = _slicedToArray(_ref21, 2);
+        try {
+          for (var _iterator20 = Object.entries(Plugins.plugins)[Symbol.iterator](), _step20; !(_iteratorNormalCompletion20 = (_step20 = _iterator20.next()).done); _iteratorNormalCompletion20 = true) {
+            var _ref21 = _step20.value;
 
-          var n = _ref22[0];
-          var p = _ref22[1];
+            var _ref22 = _slicedToArray(_ref21, 2);
 
-          if (p._loaded && p.commands) {
-            var _iteratorNormalCompletion21 = true;
-            var _didIteratorError21 = false;
-            var _iteratorError21 = undefined;
+            var n = _ref22[0];
+            var p = _ref22[1];
 
-            try {
-              for (var _iterator21 = p.commands[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
-                var _c = _step21.value;
+            if (p._loaded && p.commands) {
+              var _iteratorNormalCompletion21 = true;
+              var _didIteratorError21 = false;
+              var _iteratorError21 = undefined;
 
-                add_helpline(_c, "added by " + n);
-              }
-            } catch (err) {
-              _didIteratorError21 = true;
-              _iteratorError21 = err;
-            } finally {
               try {
-                if (!_iteratorNormalCompletion21 && _iterator21.return) {
-                  _iterator21.return();
+                for (var _iterator21 = p.commands[Symbol.iterator](), _step21; !(_iteratorNormalCompletion21 = (_step21 = _iterator21.next()).done); _iteratorNormalCompletion21 = true) {
+                  var _c = _step21.value;
+
+                  add_helpline(_c, "added by " + n);
                 }
+              } catch (err) {
+                _didIteratorError21 = true;
+                _iteratorError21 = err;
               } finally {
-                if (_didIteratorError21) {
-                  throw _iteratorError21;
+                try {
+                  if (!_iteratorNormalCompletion21 && _iterator21.return) {
+                    _iterator21.return();
+                  }
+                } finally {
+                  if (_didIteratorError21) {
+                    throw _iteratorError21;
+                  }
                 }
               }
             }
           }
-        }
-      } catch (err) {
-        _didIteratorError20 = true;
-        _iteratorError20 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion20 && _iterator20.return) {
-            _iterator20.return();
-          }
+        } catch (err) {
+          _didIteratorError20 = true;
+          _iteratorError20 = err;
         } finally {
-          if (_didIteratorError20) {
-            throw _iteratorError20;
+          try {
+            if (!_iteratorNormalCompletion20 && _iterator20.return) {
+              _iterator20.return();
+            }
+          } finally {
+            if (_didIteratorError20) {
+              throw _iteratorError20;
+            }
           }
+        }
+      } catch (e) {
+        if (e.name !== "ReferenceError") {
+          throw e;
         }
       }
     } else if (tokens[0] == "clear") {
@@ -1315,42 +1334,50 @@ function handle_command(value, client) {
       add_help("//help: No such command \"" + tokens[0].escape() + "\"");
     }
   } else if (command === "//plugins") {
-    var _iteratorNormalCompletion22 = true;
-    var _didIteratorError22 = false;
-    var _iteratorError22 = undefined;
-
     try {
-      for (var _iterator22 = Object.entries(Plugins.plugins)[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
-        var _ref23 = _step22.value;
+      var _iteratorNormalCompletion22 = true;
+      var _didIteratorError22 = false;
+      var _iteratorError22 = undefined;
 
-        var _ref24 = _slicedToArray(_ref23, 2);
+      try {
+        for (var _iterator22 = Object.entries(Plugins.plugins)[Symbol.iterator](), _step22; !(_iteratorNormalCompletion22 = (_step22 = _iterator22.next()).done); _iteratorNormalCompletion22 = true) {
+          var _ref23 = _step22.value;
 
-        var _n = _ref24[0];
-        var _p = _ref24[1];
+          var _ref24 = _slicedToArray(_ref23, 2);
 
-        var msg = _n + ": " + _p.file + " @ " + _p.order;
-        if (_p._error) {
-          add_error(msg + ": Failed: " + JSON.stringify(_p._error_obj));
-        } else if (_p._loaded) {
-          msg = msg + ": Loaded";
-          if (_p.commands) {
-            msg = msg + ": Commands: " + _p.commands.join(" ");
+          var _n = _ref24[0];
+          var _p = _ref24[1];
+
+          var msg = _n + ": " + _p.file + " @ " + _p.order;
+          if (_p._error) {
+            add_error(msg + ": Failed: " + JSON.stringify(_p._error_obj));
+          } else if (_p._loaded) {
+            msg = msg + ": Loaded";
+            if (_p.commands) {
+              msg = msg + ": Commands: " + _p.commands.join(" ");
+            }
+            add_pre(msg);
           }
-          add_pre(msg);
+        }
+      } catch (err) {
+        _didIteratorError22 = true;
+        _iteratorError22 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion22 && _iterator22.return) {
+            _iterator22.return();
+          }
+        } finally {
+          if (_didIteratorError22) {
+            throw _iteratorError22;
+          }
         }
       }
-    } catch (err) {
-      _didIteratorError22 = true;
-      _iteratorError22 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion22 && _iterator22.return) {
-          _iterator22.return();
-        }
-      } finally {
-        if (_didIteratorError22) {
-          throw _iteratorError22;
-        }
+    } catch (e) {
+      if (e.name === "ReferenceError") {
+        add_error("Plugin information unavailable");
+      } else {
+        throw e;
       }
     }
   } else if (CHAT_COMMANDS.hasOwnProperty(command)) {
@@ -1621,39 +1648,43 @@ function update_transparency(transparent) {
 function client_main(layout) {
   /* Hook Logger messages */
   Util.Logger.add_hook(function (sev, with_stack) {
-    if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
-      for (var _len = arguments.length, args = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-        args[_key - 2] = arguments[_key];
-      }
+    for (var _len = arguments.length, args = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+      args[_key - 2] = arguments[_key];
+    }
 
-      add_html("ERROR: " + JSON.stringify(args.length == 1 ? args[0] : args).escape());
+    var msg = JSON.stringify(args.length == 1 ? args[0] : args);
+    if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
+      add_error("ERROR: " + msg.escape());
     }
   }, "ERROR");
   Util.Logger.add_hook(function (sev, with_stack) {
-    if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
-      for (var _len2 = arguments.length, args = Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
-        args[_key2 - 2] = arguments[_key2];
-      }
+    for (var _len2 = arguments.length, args = Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
+      args[_key2 - 2] = arguments[_key2];
+    }
 
-      add_html("WARN: " + JSON.stringify(args.length == 1 ? args[0] : args).escape());
+    var msg = JSON.stringify(args.length == 1 ? args[0] : args);
+    if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
+      add_notice("WARNING: " + msg.escape());
     }
   }, "WARN");
   Util.Logger.add_hook(function (sev, with_stack) {
-    if (Util.DebugLevel >= Util.LEVEL_TRACE) {
-      for (var _len3 = arguments.length, args = Array(_len3 > 2 ? _len3 - 2 : 0), _key3 = 2; _key3 < _len3; _key3++) {
-        args[_key3 - 2] = arguments[_key3];
-      }
+    for (var _len3 = arguments.length, args = Array(_len3 > 2 ? _len3 - 2 : 0), _key3 = 2; _key3 < _len3; _key3++) {
+      args[_key3 - 2] = arguments[_key3];
+    }
 
-      add_html("DEBUG: " + JSON.stringify(args.length == 1 ? args[0] : args).escape());
+    var msg = JSON.stringify(args.length == 1 ? args[0] : args);
+    if (Util.DebugLevel >= Util.LEVEL_TRACE) {
+      add_html("DEBUG: " + msg.escape());
     }
   }, "DEBUG");
   Util.Logger.add_hook(function (sev, with_stack) {
-    if (Util.DebugLevel >= Util.LEVEL_TRACE) {
-      for (var _len4 = arguments.length, args = Array(_len4 > 2 ? _len4 - 2 : 0), _key4 = 2; _key4 < _len4; _key4++) {
-        args[_key4 - 2] = arguments[_key4];
-      }
+    for (var _len4 = arguments.length, args = Array(_len4 > 2 ? _len4 - 2 : 0), _key4 = 2; _key4 < _len4; _key4++) {
+      args[_key4 - 2] = arguments[_key4];
+    }
 
-      add_html("TRACE: " + JSON.stringify(args.length == 1 ? args[0] : args).escape());
+    var msg = JSON.stringify(args.length == 1 ? args[0] : args);
+    if (Util.DebugLevel >= Util.LEVEL_TRACE) {
+      add_html("TRACE: " + msg.escape());
     }
   }, "TRACE");
 
@@ -1713,7 +1744,15 @@ function client_main(layout) {
 
   /* Construct the plugins */
   if (ConfigCommon.Plugins) {
-    Plugins.LoadAll(client);
+    try {
+      Plugins.LoadAll(client);
+    } catch (e) {
+      if (e.name !== "ReferenceError") {
+        throw e;
+      } else {
+        Util.Warn("Plugins object not present");
+      }
+    }
   }
 
   /* Allow JS access if debugging is enabled */
@@ -1996,7 +2035,7 @@ function client_main(layout) {
       } else {
         notes.push("(unauthenticated)");
       }
-      add_notice("Connected " + notes.join(" "));
+      add_info("Connected " + notes.join(" "));
     }
   });
 
@@ -2022,7 +2061,7 @@ function client_main(layout) {
   client.bind('twitch-join', function _on_twitch_join(e) {
     if (!Util.Browser.IsOBS && !layout.Slim) {
       if (e.user == client.GetName().toLowerCase()) {
-        add_notice("Joined " + e.channel.channel);
+        add_info("Joined " + e.channel.channel);
       }
     }
   });
@@ -2031,7 +2070,7 @@ function client_main(layout) {
   client.bind('twitch-part', function _on_twitch_part(e) {
     if (!Util.Browser.IsOBS && !layout.Slim) {
       if (e.user == client.GetName().toLowerCase()) {
-        add_notice("Left " + e.channel.channel);
+        add_info("Left " + e.channel.channel);
       }
     }
   });
@@ -2039,7 +2078,9 @@ function client_main(layout) {
   /* Notice (or warning) from Twitch */
   client.bind('twitch-notice', function _on_twitch_notice(e) {
     /* Some notices are benign */
-    if (e.flags['msg-id'] == 'host_on') {} else if (e.flags['msg-id'] == 'host_target_went_offline') {} else {
+    if (e.flags['msg-id'] == 'host_on') {} else if (e.flags['msg-id'] == 'host_target_went_offline') {} else if (e.flags['msg-id'] == 'cmds_available') {
+      add_info("Use //help to see Twitch Filtered Chat commands");
+    } else {
       Util.Warn(e);
     }
     var channel = Twitch.FormatChannel(e.channel);
