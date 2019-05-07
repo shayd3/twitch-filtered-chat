@@ -1663,7 +1663,11 @@ function client_main(layout) {
     }
 
     var msg = JSON.stringify(args.length == 1 ? args[0] : args);
-    if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
+    if (args.length == 1 && args[0] instanceof TwitchEvent) {
+      if (Util.DebugLevel >= Util.LEVEL_TRACE) {
+        add_notice("WARNING: " + args[0].repr());
+      }
+    } else if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
       add_notice("WARNING: " + msg.escape());
     }
   }, "WARN");
@@ -1984,16 +1988,28 @@ function client_main(layout) {
   $(document).click(function (e) {
     var $t = $(e.target);
     var $cw = $("#username_context");
-    /* TODO: clicking off input.name with module settings open: close settings */
-    if ($t.attr("data-reconnect") == '1') {
-      /* Clicked on a reconnect link */
-      add_notice("Reconnecting...");
-      client.Connect();
-    } else if ($t.attr('data-username') == '1') {
-      /* Clicked on a username; show context window */
-      show_context_window(client, $cw, $t.parent());
-    } else if (Util.PointIsOn(e.clientX, e.clientY, $cw[0])) {
-      /* Clicked on the context window */
+    var $m1s = $("#module1 .settings");
+    var $m2s = $("#module2 .settings");
+    /* Clicking off of module1 settings: hide it */
+    if ($m1s.length > 0 && $m1s.is(":visible")) {
+      if (!Util.PointIsOn(e.clientX, e.clientY, $m1s[0]) && !Util.PointIsOn(e.clientX, e.clientY, $("#module1 .header")[0])) {
+        update_module_config();
+        var $tb = $m1s.siblings("input.name").hide();
+        $m1s.siblings("label.name").html($tb.val()).show();
+        $m1s.fadeOut();
+      }
+    }
+    /* Clicking off of module2 settings: hide it */
+    if ($m2s.length > 0 && $m2s.is(":visible")) {
+      if (!Util.PointIsOn(e.clientX, e.clientY, $m2s[0]) && !Util.PointIsOn(e.clientX, e.clientY, $("#module2 .header")[0])) {
+        update_module_config();
+        var _$tb = $m2s.siblings("input.name").hide();
+        $m2s.siblings("label.name").html(_$tb.val()).show();
+        $m2s.fadeOut();
+      }
+    }
+    /* Clicking on the username context window */
+    if (Util.PointIsOn(e.clientX, e.clientY, $cw[0])) {
       var ch = $cw.attr("data-channel");
       var user = $cw.attr("data-user");
       var userid = $cw.attr("data-userid");
@@ -2016,9 +2032,19 @@ function client_main(layout) {
           client.SendMessage(ch, "/vip " + user);
         }
       }
+    } else if ($t.attr('data-username') == '1') {
+      /* Clicked on a username; show context window */
+      /* TODO: if username == cw username and window open, hide window */
+      show_context_window(client, $cw, $t.parent());
     } else if ($cw.is(":visible")) {
       /* Clicked somewhere else: close context window */
       $cw.fadeOut();
+    }
+    /* Clicking on a "Reconnect" link */
+    if ($t.attr("data-reconnect") == '1') {
+      /* Clicked on a reconnect link */
+      add_notice("Reconnecting...");
+      client.Connect();
     }
   });
 
@@ -2078,10 +2104,16 @@ function client_main(layout) {
   /* Notice (or warning) from Twitch */
   client.bind('twitch-notice', function _on_twitch_notice(e) {
     /* Some notices are benign */
-    if (e.flags['msg-id'] == 'host_on') {} else if (e.flags['msg-id'] == 'host_target_went_offline') {} else if (e.flags['msg-id'] == 'cmds_available') {
-      add_info("Use //help to see Twitch Filtered Chat commands");
-    } else {
-      Util.Warn(e);
+    switch (e.usernotice_msgid) {
+      case "host_on":
+        break;
+      case "host_target_went_offline":
+        break;
+      case "cmds_available":
+        add_info("Use //help to see Twitch Filtered Chat commands");
+        break;
+      default:
+        Util.Warn(e);
     }
     var channel = Twitch.FormatChannel(e.channel);
     var message = e.message.escape();
@@ -2184,7 +2216,7 @@ function client_main(layout) {
     });
   });
 
-  /* Received clearchat event */
+  /* Received CLEARCHAT event */
   client.bind('twitch-clearchat', function _on_twitch_clearchat(e) {
     if (e.has_flag("target-user-id")) {
       /* Moderator timed out a user */
@@ -2197,31 +2229,31 @@ function client_main(layout) {
     }
   });
 
-  /* Received clearmsg event */
+  /* Received CLEARMSG event */
   client.bind('twitch-clearmsg', function _on_twitch_clearmsg(e) {
     Util.StorageAppend("debug-msg-log", e);
     Util.Warn("Unhandled CLEARMSG:", e);
   });
 
-  /* Subscribe */
+  /* User subscribed */
   client.bind('twitch-sub', function _on_twitch_sub(e) {
     Util.StorageAppend("debug-msg-log", e);
     add_html(client.get('HTMLGen').sub(e));
   });
 
-  /* Resubscribe */
+  /* User resubscribed */
   client.bind('twitch-resub', function _on_twitch_resub(e) {
     Util.StorageAppend("debug-msg-log", e);
     add_html(client.get('HTMLGen').resub(e));
   });
 
-  /* Gift subscription */
+  /* User gifted a subscription */
   client.bind('twitch-giftsub', function _on_twitch_giftsub(e) {
     Util.StorageAppend("debug-msg-log", e);
     add_html(client.get('HTMLGen').giftsub(e));
   });
 
-  /* Anonymous gift subscription */
+  /* Anonymous user gifted a subscription */
   client.bind('twitch-anongiftsub', function _on_twitch_anongiftsub(e) {
     Util.StorageAppend("debug-msg-log", e);
     add_html(client.get('HTMLGen').anongiftsub(e));
