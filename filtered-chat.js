@@ -1312,12 +1312,16 @@ function client_main(layout) {
   /* Notice (or warning) from Twitch */
   client.bind('twitch-notice', function _on_twitch_notice(e) {
     /* Some notices are benign */
-    if (e.flags['msg-id'] == 'host_on') { }
-    else if (e.flags['msg-id'] == 'host_target_went_offline') { }
-    else if (e.flags['msg-id'] == 'cmds_available') {
-      add_info("Use //help to see Twitch Filtered Chat commands");
-    } else {
-      Util.Warn(e);
+    switch (e.usernotice_msgid) {
+      case "host_on":
+        break;
+      case "host_target_went_offline":
+        break;
+      case "cmds_available":
+        add_info("Use //help to see Twitch Filtered Chat commands");
+        break;
+      default:
+        Util.Warn(e);
     }
     let channel = Twitch.FormatChannel(e.channel);
     let message = e.message.escape();
