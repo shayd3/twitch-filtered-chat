@@ -335,6 +335,7 @@ var HTMLGenerator = function () {
           event.flags.force = true;
         }
       }
+
       /* Handle emotes */
       if (event.flags.emotes) {
         var emotes = event.flags.emotes.map(function (e) {
@@ -351,10 +352,9 @@ var HTMLGenerator = function () {
           var msg_end = message.substr(emote.end + 1);
           var emote_str = this._twitchEmote(emote);
           message = "" + msg_start + emote_str + msg_end;
-          /* Shift the entire map to keep track */
+          /* Adjust the map */
           for (var idx = emote.ostart; idx < map.length; ++idx) {
             if (map[idx] >= emote.end) {
-              /* All characters after are shifted by the change in length */
               map[idx] += emote.final_length - (emote.end - emote.start) - 1;
             }
           }
@@ -375,30 +375,27 @@ var HTMLGenerator = function () {
           var start = map[match.start];
           var end = map[match.end];
           var chtml = this._genCheer(cheer, bits);
-          /* Place the cheer HTML in the proper spot */
           var _msg_start = message.substr(0, start);
           var _msg_end = message.substr(end);
           message = _msg_start + chtml + _msg_end;
+          /* Adjust the map */
           for (var _idx = match.start; _idx < map.length; ++_idx) {
             if (map[_idx] - map[match.start] >= end - start) {
-              /* After the modified range */
               map[_idx] += chtml.length - (end - start);
             }
           }
           var end_words = _msg_end.trimStart().split(" ");
-          /* Scan words after the cheer for effects */
+          /* Scan for cheer effects */
           while (end_words.length > 0) {
             var word = end_words[0].toLowerCase();
-            var s = null;
-            /* CSSCheerStyles and ColorNames have our valid styles */
-            if (CSSCheerStyles.hasOwnProperty(word)) {
-              s = CSSCheerStyles[word];
-            } else if (ColorNames.hasOwnProperty(word)) {
-              s = CSSColorStyle(ColorNames[word]);
+            var s = GetCheerStyle(word);
+            if (!s) {
+              break;
             }
-            if (s == null) break;
             if (!s._disabled) {
-              if (bits_left < s.cost) break;
+              if (bits_left < s.cost) {
+                break;
+              }
               $effects.push(s);
               bits_left -= s.cost;
             }
@@ -460,9 +457,9 @@ var HTMLGenerator = function () {
           var _msg_end2 = message.substr(mend);
           var _emote_str = $i[0].outerHTML;
           message = "" + _msg_start2 + _emote_str + _msg_end2;
+          /* Adjust the map */
           for (var _idx2 = _emote.start; _idx2 < map.length; ++_idx2) {
             if (map[_idx2] - map[_emote.start] >= _end - _start) {
-              /* After the modified range */
               map[_idx2] += _emote_str.length - (_end - _start);
             }
           }
@@ -519,9 +516,9 @@ var HTMLGenerator = function () {
           var _msg_end3 = message.substr(_mend);
           var _emote_str2 = _$i[0].outerHTML;
           message = "" + _msg_start3 + _emote_str2 + _msg_end3;
+          /* Adjust the map */
           for (var _idx3 = _emote2.start; _idx3 < map.length; ++_idx3) {
             if (map[_idx3] - map[_emote2.start] >= _end2 - _start2) {
-              /* After the modified range */
               map[_idx3] += _emote_str2.length - (_end2 - _start2);
             }
           }
@@ -541,20 +538,17 @@ var HTMLGenerator = function () {
       /* Handle mod-only antics */
       if (event.ismod && !$("#cbForce").is(":checked") && event.flags.force) {
         if (event.message.startsWith('force ')) {
-          /* Force: undo everything above and put the message, unescaped, as-is */
-          message = event.message.replace('force ', '');
+          /* "force": use raw message with no formatting */
+          message = event.message.substr('force '.length);
         } else if (event.message.startsWith('forcejs ')) {
-          /* Forcejs: undo everything above and wrap unescaped message in script tags */
-          message = "<script>" + event.message.replace('forcejs ', '') + "</script>";
+          /* "forcejs": use raw message wrapped in script tags */
+          message = "<script>" + event.message.substr('forcejs '.length) + "</script>";
         }
       }
 
       $msg.html(message);
 
-      /* TODO: Scan for document.TextNode and format URLs
-       * Util.URL_REGEX
-       * function(url) { return this.url(url) } */
-      return { e: $msg, effects: $effects };
+      return { e: this.formatLinks($msg), effects: $effects };
     }
   }, {
     key: "_addChatAttrs",
@@ -815,24 +809,56 @@ var HTMLGenerator = function () {
       return $e[0].outerHTML;
     }
   }, {
-    key: "client",
-    set: function set(c) {
-      this._client = c;
-    }
-  }, {
-    key: "bgcolors",
-    set: function set(colors) {
-      this._bg_colors = [];
+    key: "formatLinks",
+    value: function formatLinks(msg) {
+      /* Clone msg */
+      var $m = $(msg[0].outerHTML);
+      /* Format links in $m */
       var _iteratorNormalCompletion9 = true;
       var _didIteratorError9 = false;
       var _iteratorError9 = undefined;
 
       try {
-        for (var _iterator9 = colors[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-          var c = _step9.value;
+        for (var _iterator9 = Object.entries($m.contents())[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+          var _ref7 = _step9.value;
 
-          this._bg_colors.push(c);
+          var _ref8 = _slicedToArray(_ref7, 2);
+
+          var i = _ref8[0];
+          var e = _ref8[1];
+
+          if (e.nodeType === document.TEXT_NODE) {
+            var m = e.nodeValue.match(Util.URL_REGEX);
+            if (m && m.length > 0) {
+              var _iteratorNormalCompletion10 = true;
+              var _didIteratorError10 = false;
+              var _iteratorError10 = undefined;
+
+              try {
+                for (var _iterator10 = m[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+                  var url = _step10.value;
+
+                  /* TODO: replace the node entirely */
+                  e.nodeValue = e.nodeValue.replace(url, this.url(url));
+                }
+              } catch (err) {
+                _didIteratorError10 = true;
+                _iteratorError10 = err;
+              } finally {
+                try {
+                  if (!_iteratorNormalCompletion10 && _iterator10.return) {
+                    _iterator10.return();
+                  }
+                } finally {
+                  if (_didIteratorError10) {
+                    throw _iteratorError10;
+                  }
+                }
+              }
+            }
+          }
         }
+        /* TODO: return $m over msg */
       } catch (err) {
         _didIteratorError9 = true;
         _iteratorError9 = err;
@@ -844,6 +870,42 @@ var HTMLGenerator = function () {
         } finally {
           if (_didIteratorError9) {
             throw _iteratorError9;
+          }
+        }
+      }
+
+      return msg;
+    }
+  }, {
+    key: "client",
+    set: function set(c) {
+      this._client = c;
+    }
+  }, {
+    key: "bgcolors",
+    set: function set(colors) {
+      this._bg_colors = [];
+      var _iteratorNormalCompletion11 = true;
+      var _didIteratorError11 = false;
+      var _iteratorError11 = undefined;
+
+      try {
+        for (var _iterator11 = colors[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+          var c = _step11.value;
+
+          this._bg_colors.push(c);
+        }
+      } catch (err) {
+        _didIteratorError11 = true;
+        _iteratorError11 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion11 && _iterator11.return) {
+            _iterator11.return();
+          }
+        } finally {
+          if (_didIteratorError11) {
+            throw _iteratorError11;
           }
         }
       }

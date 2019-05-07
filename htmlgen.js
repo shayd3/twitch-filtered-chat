@@ -243,6 +243,7 @@ class HTMLGenerator {
         event.flags.force = true;
       }
     }
+
     /* Handle emotes */
     if (event.flags.emotes) {
       let emotes = event.flags.emotes.map(function(e) {
@@ -257,10 +258,9 @@ class HTMLGenerator {
         let msg_end = message.substr(emote.end+1);
         let emote_str = this._twitchEmote(emote);
         message = `${msg_start}${emote_str}${msg_end}`;
-        /* Shift the entire map to keep track */
+        /* Adjust the map */
         for (let idx = emote.ostart; idx < map.length; ++idx) {
           if (map[idx] >= emote.end) {
-            /* All characters after are shifted by the change in length */
             map[idx] += emote.final_length - (emote.end - emote.start) - 1;
           }
         }
@@ -279,30 +279,23 @@ class HTMLGenerator {
         let start = map[match.start];
         let end = map[match.end];
         let chtml = this._genCheer(cheer, bits);
-        /* Place the cheer HTML in the proper spot */
         let msg_start = message.substr(0, start);
         let msg_end = message.substr(end);
         message = msg_start + chtml + msg_end;
+        /* Adjust the map */
         for (let idx = match.start; idx < map.length; ++idx) {
           if (map[idx] - map[match.start] >= (end - start)) {
-            /* After the modified range */
             map[idx] += chtml.length - (end - start);
           }
         }
         let end_words = msg_end.trimStart().split(" ");
-        /* Scan words after the cheer for effects */
+        /* Scan for cheer effects */
         while (end_words.length > 0) {
           let word = end_words[0].toLowerCase();
-          let s = null;
-          /* CSSCheerStyles and ColorNames have our valid styles */
-          if (CSSCheerStyles.hasOwnProperty(word)) {
-            s = CSSCheerStyles[word];
-          } else if (ColorNames.hasOwnProperty(word)) {
-            s = CSSColorStyle(ColorNames[word]);
-          }
-          if (s == null) break;
+          let s = GetCheerStyle(word);
+          if (!s) { break; }
           if (!s._disabled) {
-            if (bits_left < s.cost) break;
+            if (bits_left < s.cost) { break; }
             $effects.push(s);
             bits_left -= s.cost;
           }
@@ -335,9 +328,9 @@ class HTMLGenerator {
         let msg_end = message.substr(mend);
         let emote_str = $i[0].outerHTML;
         message = `${msg_start}${emote_str}${msg_end}`;
+        /* Adjust the map */
         for (let idx = emote.start; idx < map.length; ++idx) {
           if (map[idx] - map[emote.start] >= (end - start)) {
-            /* After the modified range */
             map[idx] += emote_str.length - (end - start);
           }
         }
@@ -365,9 +358,9 @@ class HTMLGenerator {
         let msg_end = message.substr(mend);
         let emote_str = $i[0].outerHTML;
         message = `${msg_start}${emote_str}${msg_end}`;
+        /* Adjust the map */
         for (let idx = emote.start; idx < map.length; ++idx) {
           if (map[idx] - map[emote.start] >= (end - start)) {
-            /* After the modified range */
             map[idx] += emote_str.length - (end - start);
           }
         }
@@ -387,20 +380,17 @@ class HTMLGenerator {
     /* Handle mod-only antics */
     if (event.ismod && !$("#cbForce").is(":checked") && event.flags.force) {
       if (event.message.startsWith('force ')) {
-        /* Force: undo everything above and put the message, unescaped, as-is */
-        message = event.message.replace('force ', '');
+        /* "force": use raw message with no formatting */
+        message = event.message.substr('force '.length);
       } else if (event.message.startsWith('forcejs ')) {
-        /* Forcejs: undo everything above and wrap unescaped message in script tags */
-        message = `<script>${event.message.replace('forcejs ', '')}</script>`;
+        /* "forcejs": use raw message wrapped in script tags */
+        message = `<script>${event.message.substr('forcejs '.length)}</script>`;
       }
     }
 
     $msg.html(message);
 
-    /* TODO: Scan for document.TextNode and format URLs
-     * Util.URL_REGEX
-     * function(url) { return this.url(url) } */
-    return {e: $msg, effects: $effects};
+    return {e: this.formatLinks($msg), effects: $effects};
   }
 
   _addChatAttrs($e, event) {
@@ -576,5 +566,24 @@ class HTMLGenerator {
       $e.attr("checked", "checked");
     }
     return $e[0].outerHTML;
+  }
+
+  formatLinks(msg) {
+    /* Clone msg */
+    let $m = $(msg[0].outerHTML);
+    /* Format links in $m */
+    for (let [i, e] of Object.entries($m.contents())) {
+      if (e.nodeType === document.TEXT_NODE) {
+        let m = e.nodeValue.match(Util.URL_REGEX);
+        if (m && m.length > 0) {
+          for (let url of m) {
+            /* TODO: replace the node entirely */
+            e.nodeValue = e.nodeValue.replace(url, this.url(url));
+          }
+        }
+      }
+    }
+    /* TODO: return $m over msg */
+    return msg;
   }
 }
