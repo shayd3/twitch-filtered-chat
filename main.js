@@ -6,22 +6,33 @@
  * on jQuery or any of the other script dependencies being available.
  */
 
-const MOD_SELF = 'twitch-filtered-chat';
+const USE_DIST = !!window.location.search.match(/\busedist\b/);
+const MOD_TFC = 'twitch-filtered-chat';
 const MOD_TWAPI = 'twitch-api';
-const IS_GIT = `${window.location}`.indexOf('github.io') > -1;
-const IS_LOCAL = window.location.protocol === "file:";
 var ASSETS = [];
 
-const IS_TESLA = !!navigator.userAgent.match(/\bTesla\b/);
-
 function GetAssetURL(file, tree) {
-  if (tree === MOD_TWAPI) {
-    if (IS_TESLA || window.location.search.indexOf('usedist=1') > -1) {
-      return `${MOD_TWAPI}/dist/${file}`;
+  const URI = `${window.location}`;
+  const IS_TESLA = !!navigator.userAgent.match(/\bTesla\b/);
+  const IS_GIT = URI.indexOf('github.io') > -1;
+  const BASE_URI = URI.substr(0, URI.indexOf(MOD_TFC)).replace(/\/$/, '');
+  const SELF_URI = URI.replace(/\/index.html(\?.*)?$/, '');
+  let root = '';
+  if (tree === MOD_TFC) {
+    if (IS_TESLA || USE_DIST) {
+      root = `${SELF_URI}/dist`;
     } else if (IS_GIT) {
-      return `${MOD_TWAPI}/${file}`;
+      root = SELF_URI;
     } else {
-      return `../${MOD_TWAPI}/${file}`;
+      root = SELF_URI;
+    }
+  } else if (tree === MOD_TWAPI) {
+    if (IS_TESLA || USE_DIST) {
+      root = `${BASE_URI}/${MOD_TWAPI}/dist`;
+    } else if (IS_GIT) {
+      root = `${BASE_URI}/${MOD_TWAPI}`;
+    } else {
+      root = `${BASE_URI}/${MOD_TWAPI}`;
     }
   } else if (file.startsWith('//')) {
     if (window.location.protocol === "https:") {
@@ -32,10 +43,10 @@ function GetAssetURL(file, tree) {
       return `http:${file}`;
     }
   }
-  return file;
+  return `${root}/${file}`;
 }
 
-function AddAsset(src, tree=null, errcb=null) {
+function AddAsset(src, tree=null, loadcb=null, errcb=null) {
   ASSETS.push({});
   let asset = ASSETS[ASSETS.length - 1];
   asset.src = GetAssetURL(src, tree);
@@ -48,6 +59,7 @@ function AddAsset(src, tree=null, errcb=null) {
   asset.script.onload = function() {
     console.log(`${asset.src} loaded`);
     asset.loaded = true;
+    if (loadcb) { loadcb(asset); }
   }
   asset.script.onerror = function(e) {
     if (errcb) { errorcb(asset, e); }
@@ -136,5 +148,131 @@ function onReady(func) {
     alert("Fail: " + e.toString());
     throw e;
   }
+}
+
+function asset_error(asset, e) {
+  let m = e.toString();
+  m = m + "\n";
+  m = JSON.stringify(asset);
+  m + m + "\n";
+  m = JSON.stringify(e);
+  m = m + "\n";
+  if (e.stack) m = m + e.stack;
+  alert("asset error: " + m);
+}
+
+/* Add top-level assets */
+AddAsset("config.js", MOD_TFC, null, asset_error);
+AddAsset("colors.js", MOD_TFC, null, asset_error);
+AddAsset("htmlgen.js", MOD_TFC, null, asset_error);
+AddAsset("filtered-chat.js", MOD_TFC, null, asset_error);
+if (!USE_DIST) {
+  AddAsset("plugins/plugins.js", MOD_TFC, null, asset_error);
+}
+
+/* Called by body.onload */
+function Main(global) {
+  /* Populate the debug div with text */
+  function debug_msg(msg) {
+    let d = document.getElementById("debug");
+    if (d) {
+      d.innerHTML = `${msg}<br />${d.innerHTML}`;
+    }
+  }
+  global.debug_msg = debug_msg;
+
+  AddAsset("utility.js", MOD_TWAPI);
+  AddAsset("twitch-utility.js", MOD_TWAPI);
+  AddAsset("colors.js", MOD_TWAPI);
+  AddAsset("client.js", MOD_TWAPI);
+
+  /* Populate templates and load the client */
+  function index_main() {
+    Util.LogOnly("Assets loaded; initializing page...");
+
+    /* Parse layout */
+    let layout_raw = Util.ParseQueryString().layout;
+    if (layout_raw === undefined) layout_raw = "double:chat";
+    let layout = ParseLayout(layout_raw);
+
+    /* Remove the top-level "Loading" message */
+    $("#wrapper #wrapper-loading").remove();
+    /* Create the chat input elements */
+    let $ChatBox = $(`<textarea id="txtChat"></textarea>`);
+    $ChatBox.attr("placeholder", "Send a message");
+    $ChatBox.attr("hist-index", "-1");
+    let $Chat = $(`<div id="chat"></div>`).append($ChatBox);
+
+    let $Column1 = $("#column1");
+    let $Column2 = $("#column2");
+    let $Columns = $(".column");
+    let $Module1 = $("#module1");
+    let $Module2 = $("#module2");
+    let $Modules = $(".module");
+    $Modules.find('.clear-chat-icon')
+            .attr("width", "1.1em")
+            .attr("height", "1.1em");
+    $Modules.find('.header .settings input[type="checkbox"]')
+            .attr('checked', 'checked');
+    $Modules.find('.header label.name').val('Chat');
+    $Modules.find('.header input.name').attr("value", 'Chat');
+
+    if (layout.Cols == "single") {
+      $Column1.removeClass("left");
+      $Column1.addClass("full");
+      $Module1.removeClass("left");
+      $Module1.addClass('full');
+      $Column1.show();
+      $Column2.remove();
+    } else {
+      $Columns.show();
+    }
+
+    let $ChatModule = null;
+    if (layout.Chat) {
+      $ChatModule = layout.Cols == "single" ? $Module1 : $Module2;
+    }
+    if ($ChatModule !== null) {
+      $ChatModule.removeClass("no-chat");
+      $ChatModule.addClass("has-chat");
+      $ChatModule.find(".content").append($Chat);
+    }
+
+    /* Shrink the content for the Tesla */
+    if (layout.Tesla) {
+      //$(".module").css("height", "calc(100% - 2em)");
+      $(".module .content").css("height", "calc(100% - 2em)");
+    }
+
+    /* If slim layout, remove the entire header */
+    if (layout.Slim) {
+      $(".header").hide();
+      $(".content").addClass("slim");
+      $("#settings_button").hide();
+    }
+
+    Util.LogOnly("Waiting for document to finish rendering...");
+
+    /* Once rerendering is complete, start up the client */
+    $(document).ready(function() {
+      try {
+        Util.LogOnly("Document rendered; setting up TFC...");
+        client_main(layout);
+        /* After that, focus on the chat box (if present) */
+        let $c = $("#txtChat");
+        if ($c && $c.length > 0 && !$c.attr("focused")) {
+          $c.attr("focused", "1");
+          $c[0].focus();
+        }
+      } catch(e) {
+        alert("client_main error: " + e.toString());
+        alert("Stacktrace: " + e.stack ? e.stack.toString() : "no stack");
+        throw e;
+      }
+    });
+  }
+
+  /* Once the document is loaded, wait for the scripts, then do layout */
+  onReady(index_main);
 }
 
