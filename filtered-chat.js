@@ -511,6 +511,7 @@ function handle_command(value, client) {
 
   /* Shortcuts for usages/help messages */
   let arg = (s) => `<span class="arg">${s.escape()}</span>`;
+  let barg = (s) => `&lt;${arg(s)}&lt;`;
   let helpcmd = (k) => `<span class="help helpcmd">${k}</span>`;
   let helpmsg = (k) => `<span class="help helpmsg">${k}</span>`;
   let helpline = (k, v) => `<div class="helpline">${helpcmd(k)}${helpmsg(v)}</div>`;
@@ -670,7 +671,7 @@ function handle_command(value, client) {
         add_pre(`Already in channel ${ch}`);
       }
     } else {
-      add_pre(`Usage: //join &lt;${arg('channel')}&gt;`);
+      add_pre(`Usage: //join ${barg('channel')}`);
     }
   } else if (command == "//part" || command == "//leave") {
     if (tokens.length > 0) {
@@ -681,22 +682,23 @@ function handle_command(value, client) {
         add_pre(`Not in channel ${ch}`);
       }
     } else {
-      add_pre(`Usage: //leave &lt;${arg("channel")}&gt;`);
+      add_pre(`Usage: //leave ${barg("channel")}`);
     }
   } else if (command == "//badges") {
     let all_badges = [];
     for (let [bname, badge] of Object.entries(client.GetGlobalBadges())) {
       for (let [bv, bdef] of Object.entries(badge.versions)) {
-        let u = bdef.image_url_2x;
-        let s = 36;
+        let url = bdef.image_url_2x;
+        let size = 36;
         if (tokens.indexOf("small") > -1) {
-          u = bdef.image_url_1x;
-          s = 18;
+          url = bdef.image_url_1x;
+          size = 18;
         } else if (tokens.indexOf("large") > -1) {
-          u = bdef.image_url_4x;
-          s = 72;
+          url = bdef.image_url_4x;
+          size = 72;
         }
-        all_badges.push(`<img src="${u}" width="${s}" height="${s}" title="${bname}" />`);
+        let attr = `width="${size}" height="${size}" title="${bname}"`;
+        all_badges.push(`<img src="${url}" ${attr} alt="${bname}" />`);
       }
     }
     add_notice(all_badges.join(''));
@@ -708,38 +710,44 @@ function handle_command(value, client) {
       let lines = [];
       lines.push([`clear`, `clears all chat windows of their contents`]);
       lines.push([`config`, `display configuration`]);
-      lines.push([`config purge`, `purge localStorage of active configuration`]);
-      lines.push([`config [${arg('key')}]`, `display configuration for ${arg('key')}`]);
-      lines.push([`join &lt;${arg('ch')}&gt;`, `join channel &lt;${arg('ch')}&gt;`]);
-      lines.push([`part &lt;${arg('ch')}&gt;`, `leave channel &lt;${arg('ch')}&gt;`]);
-      lines.push([`leave &lt;${arg('ch')}&gt;`, `leave channel &lt;${arg('ch')}&gt;`]);
+      lines.push([`config purge`, `purge active configuration`]);
+      lines.push([`config [${arg('key')}]`, `display ${arg('key')} value`]);
+      lines.push([`join ${barg('ch')}`, `join ${barg('ch')}`]);
+      lines.push([`part ${barg('ch')}`, `leave ${barg('ch')}`]);
+      lines.push([`leave ${barg('ch')}`, `leave ${barg('ch')}`]);
       lines.push([`badges`, `show the global badges`]);
       lines.push([`help`, `this message`]);
-      lines.push([`help &lt;${arg('command')}&gt;`, `help for a specific command`]);
+      lines.push([`help ${barg('command')}`, `help for ${barg('command')}`]);
       add_help(`Commands:`);
       for (let [c, m] of lines) {
         add_helpline(`//${c}`, m);
       }
+      for (let [n, p] of Object.entries(Plugins.plugins)) {
+        if (p._loaded && p.commands) {
+          for (let c of p.commands) {
+            add_helpline(c, `added by ${n}`);
+          }
+        }
+      }
     } else if (tokens[0] == "clear") {
       add_help(`//clear: Clears all chats`);
     } else if (tokens[0] == "config") {
-      add_help(`//config: Display current configuration. Both ClientID and OAuth token are omitted for security reasons`);
+      add_help(`//config: Display current configuration, excluding ClientID and OAuth`);
       add_help(`//config clientid: Display current ClientID`);
       add_help(`//config oauth: Display current OAuth token`);
       add_help(`//config purge: Purge the current key from localStorage`);
       add_help(`//config url: Generate a URL from the current configuration (CONTAINS AUTHID)`);
-      add_help(`//config url git: As above, but target https://kaedenn.github.io`);
-      add_help(`//config url file: As above, but target file:///home/kaedenn`);
-      add_help(`//config url [git|file] text: Prevent base64 encoding URL`);
-      add_help(`//config &lt;${arg("key")}&gt;: Display configuration item &lt;${arg("key")}&gt;`);
+      add_help(`//config url git: As above, using https://kaedenn.github.io`);
+      add_help(`//config url git text: Prevent base64 encoding URL`);
+      add_help(`//config ${barg("key")}: Display configuration item ${barg("key")}`);
     } else if (tokens[0] == "join") {
-      add_help(`//join &lt;${arg("ch")}&gt;: Join the specified channel. Channel may or may not include leading #`);
+      add_help(`//join ${barg("ch")}: Join the specified channel`);
     } else if (tokens[0] == "part" || tokens[0] == "leave") {
-      add_help(`//part &lt;${arg("ch")}&gt;: Disconnect from the specified channel. Channel may or may not include leading #`);
-      add_help(`//leave &lt;${arg("ch")}&gt;: Disconnect from the specified channel. Channel may or may not include leading #`);
+      add_help(`//part ${barg("ch")}: Disconnect from the specified channel`);
+      add_help(`//leave ${barg("ch")}: Disconnect from the specified channel`);
     } else if (tokens[0] == "help") {
       add_help(`//help: Displays a list of recognized commands and their usage`);
-      add_help(`//help &lt;${arg("command")}&gt;: Displays help for a specific command`);
+      add_help(`//help ${barg("command")}: Displays help for a specific command`);
     } else {
       add_help(`//help: No such command "${tokens[0].escape()}"`);
     }
@@ -960,7 +968,7 @@ function client_main(layout) {
       if (config.Layout.Chat) {
         /* Change the chat placeholder and border to reflect read-only */
         $("#txtChat").attr("placeholder", "Authentication needed to send messages");
-        Util.CSS.SetProperty('--chat-border-color', '#cd143c');
+        Util.CSS.SetProperty('--chat-border', '#cd143c');
       }
     }
 
@@ -994,11 +1002,10 @@ function client_main(layout) {
     window.client = client;
   }
 
-  let is_up = (k) => (k == KeyEvent.DOM_VK_UP);
-  let is_down = (k) => (k == KeyEvent.DOM_VK_DOWN);
-
   /* Sending a chat message */
   $("#txtChat").keydown(function(e) {
+    const isUp = (e.keyCode === KeyEvent.DOM_VK_UP);
+    const isDown = (e.keyCode === KeyEvent.DOM_VK_DOWN);
     if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
       /* Prevent sending empty messages by mistake */
       if (e.target.value.trim().length > 0) {
@@ -1012,14 +1019,14 @@ function client_main(layout) {
       /* Prevent bubbling */
       e.preventDefault();
       return false;
-    } else if (is_up(e.keyCode) || is_down(e.keyCode)) {
+    } else if (isUp || isDown) {
       /* Handle traversing message history */
       let i = Number.parseInt($(e.target).attr("hist-index"));
       let l = client.GetHistoryLength();
-      if (is_up(e.keyCode)) {
+      if (isUp) {
         /* Going up */
         i = (i + 1 >= l - 1 ? l - 1 : i + 1);
-      } else if (is_down(e.keyCode)) {
+      } else if (isDown) {
         /* Going down */
         i = (i - 1 < 0 ? -1 : i - 1);
       }
@@ -1138,10 +1145,10 @@ function client_main(layout) {
 
   /* Pressing enter on the module's name text box */
   $('.module .header input.name').on('keyup', function(e) {
-    let $settings = $(this).parent().children(".settings");
-    let $lbl = $(this).parent().children('label.name');
-    let $tb = $(this).parent().children('input.name');
     if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
+      let $settings = $(this).parent().children(".settings");
+      let $lbl = $(this).parent().children('label.name');
+      let $tb = $(this).parent().children('input.name');
       update_module_config();
       $tb.hide();
       $lbl.html($tb.val()).show();
@@ -1169,13 +1176,13 @@ function client_main(layout) {
   /* Clicking anywhere else on the document: reconnect, username context window */
   $(document).click(function(e) {
     let $t = $(e.target);
-    /* Clicking on a reconnect link */
+    let $cw = $("#username_context");
+    /* TODO: clicking off input.name with module settings open: close settings */
     if ($t.attr("data-reconnect") == '1') {
+      /* Clicked on a reconnect link */
       add_notice(`Reconnecting...`);
       client.Connect();
-    }
-    let $cw = $("#username_context");
-    if ($t.attr('data-username') == '1') {
+    } else if ($t.attr('data-username') == '1') {
       /* Clicked on a username; show context window */
       show_context_window(client, $cw, $t.parent());
     } else if (Util.PointIsOn(e.clientX, e.clientY, $cw[0])) {
@@ -1202,7 +1209,7 @@ function client_main(layout) {
           client.SendMessage(ch, `/vip ${user}`);
         }
       }
-    } else {
+    } else if ($cw.is(":visible")) {
       /* Clicked somewhere else: close context window */
       $cw.fadeOut();
     }
@@ -1265,6 +1272,7 @@ function client_main(layout) {
   client.bind('twitch-notice', function _on_twitch_notice(e) {
     /* Some notices are benign */
     if (e.flags['msg-id'] == 'host_on') { }
+    else if (e.flags['msg-id'] == 'host_target_went_offline') { }
     else {
       Util.Warn(e);
     }
