@@ -134,7 +134,7 @@ class PluginStorageClass {
     }
   }
 
-  AddChatCommand(command, plugin, action) {
+  AddChatCommand(command, plugin, action, desc=null) {
     if (!command.startsWith('//')) {
       command = '//' + command;
     }
@@ -158,6 +158,10 @@ let Plugins = new PluginStorageClass();
 Plugins.Add({"ctor": "SamplePlugin",
              "args": [],
              "file": "plugin-sample.js",
+             "order": 1000});
+Plugins.Add({"ctor": "SamplePlugin2",
+             "args": [],
+             "file": "plugin-sample-2.js",
              "order": 1000});
 /* */
 

@@ -12,7 +12,6 @@ class SamplePlugin {
         add_pre(`You entered "${line}" with ${tokens.length} tokens`);
       }
     });
-    this.loaded = true; /* unused */
     resolve(this);
   }
 
