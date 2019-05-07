@@ -97,3 +97,13 @@ function CSSColorStyle(colorname) {
     style: "color: " + AllColors[colorname]
   };
 }
+
+/* Obtain a style definition for the given word */
+function GetCheerStyle(word) {
+  if (CSSCheerStyles.hasOwnProperty(word)) {
+    return CSSCheerStyles[word];
+  } else if (ColorNames.hasOwnProperty(word)) {
+    return CSSColorStyle(word);
+  }
+  return null;
+}

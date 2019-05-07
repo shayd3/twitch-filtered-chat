@@ -3,9 +3,18 @@
 "use strict";
 
 /* TODO:
+ * Implement "light" and "dark" colorschemes
+ * Fade-out username context window when clicking the same name again
  * Implement TwitchSubEvent
  *   (Verify HTMLGen.sub and HTMLGen.anonsubgift)
  * Hide get_config_object() within client_main()
+ */
+
+/* NOTES:
+ * Filtering ws "recv>" messages:
+ *   Util.Logger.add_filter(((m) => !`${m}`.startsWith('recv> ')), 'DEBUG');
+ * Filtering ws PRIVMSG messages:
+ *   Util.Logger.add_filter(((m) => `${m}`.indexOf(' PRIVMSG ') == -1, 'DEBUG');
  */
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
@@ -123,7 +132,7 @@ function parse_query_string(config) {
         key = "AutoReconnect";
         val = true;
       } else if (k == "size") {
-        set_css_var("--body-font-size", v + "pt");
+        Util.CSS.SetProperty('--body-font-size', v + "pt");
       } else if (k == "plugins") {
         key = "Plugins";
         val = !!v;
@@ -678,8 +687,10 @@ function check_filtered(module, event) {
           var _s4 = _step10.value;
 
           var c = _s4.indexOf('#') == -1 ? '#' + _s4 : _s4;
-          if (event.channel.channel.toLowerCase() != c.toLowerCase()) {
-            return false;
+          if (event.channel && event.channel.channel) {
+            if (event.channel.channel.toLowerCase() != c.toLowerCase()) {
+              return false;
+            }
           }
         }
       } catch (err) {
@@ -962,8 +973,8 @@ function handle_command(value, client) {
           qs_push("reconnect", "1");
         }
         {
-          var font_size = get_css_var("--body-font-size");
-          var font_size_default = get_css_var("--body-font-size-default");
+          var font_size = Util.CSS.GetProperty("--body-font-size");
+          var font_size_default = Util.CSS.GetProperty("--body-font-size-default");
           if (font_size != font_size_default) {
             qs_push("size", font_size.replace(/[^0-9]/g, ''));
           }
@@ -1473,18 +1484,6 @@ function show_context_window(client, cw, line) {
   $cw.fadeIn().offset(offset);
 };
 
-/* CSS functions {{{0 */
-
-/* Change a variable in main.css :root */
-function set_css_var(varname, value) {
-  Util.CSS.SetProperty(varname, value);
-}
-
-/* Obtain a variable from main.css :root */
-function get_css_var(varname) {
-  return Util.CSS.GetProperty(varname);
-}
-
 /* Set or unset transparency */
 function update_transparency(transparent) {
   var ss = Util.CSS.GetSheet("main.css");
@@ -1534,12 +1533,12 @@ function update_transparency(transparent) {
 
       if (transparent) {
         /* Set them all to transparent */
-        set_css_var(_prop, 'transparent');
+        Util.CSS.SetProperty(_prop, 'transparent');
         $(".module").addClass("transparent");
         $("body").addClass("transparent");
       } else {
         /* Set them all to default */
-        set_css_var(_prop, "var(" + _prop + "-default)");
+        Util.CSS.SetProperty(_prop, "var(" + _prop + "-default)");
         $(".module").removeClass("transparent");
         $("body").removeClass("transparent");
       }
@@ -1559,8 +1558,6 @@ function update_transparency(transparent) {
     }
   }
 }
-
-/* End CSS functions 0}}} */
 
 /* Called once when the document loads */
 function client_main(layout) {
@@ -1632,7 +1629,7 @@ function client_main(layout) {
       if (config.Layout.Chat) {
         /* Change the chat placeholder and border to reflect read-only */
         $("#txtChat").attr("placeholder", "Authentication needed to send messages");
-        set_css_var('--chat-border-color', '#dc143c');
+        Util.CSS.SetProperty('--chat-border-color', '#cd143c');
       }
     }
 

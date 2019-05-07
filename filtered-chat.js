@@ -3,9 +3,18 @@
 "use strict";
 
 /* TODO:
+ * Implement "light" and "dark" colorschemes
+ * Fade-out username context window when clicking the same name again
  * Implement TwitchSubEvent
  *   (Verify HTMLGen.sub and HTMLGen.anonsubgift)
  * Hide get_config_object() within client_main()
+ */
+
+/* NOTES:
+ * Filtering ws "recv>" messages:
+ *   Util.Logger.add_filter(((m) => !`${m}`.startsWith('recv> ')), 'DEBUG');
+ * Filtering ws PRIVMSG messages:
+ *   Util.Logger.add_filter(((m) => `${m}`.indexOf(' PRIVMSG ') == -1, 'DEBUG');
  */
 
 const CACHED_VALUE = "Cached";
@@ -95,7 +104,7 @@ function parse_query_string(config, qs=null) {
       key = "AutoReconnect";
       val = true;
     } else if (k == "size") {
-      set_css_var("--body-font-size", `${v}pt`);
+      Util.CSS.SetProperty('--body-font-size', `${v}pt`);
     } else if (k == "plugins") {
       key = "Plugins";
       val = !!v;
@@ -451,8 +460,10 @@ function check_filtered(module, event) {
     if (rules.FromChannel.length > 0) {
       for (let s of rules.FromChannel) {
         let c = s.indexOf('#') == -1 ? '#' + s : s;
-        if (event.channel.channel.toLowerCase() != c.toLowerCase()) {
-          return false;
+        if (event.channel && event.channel.channel) {
+          if (event.channel.channel.toLowerCase() != c.toLowerCase()) {
+            return false;
+          }
         }
       }
     }
@@ -608,8 +619,8 @@ function handle_command(value, client) {
         if (config.Transparent) { qs_push("trans", "1"); }
         if (config.AutoReconnect) { qs_push("reconnect", "1"); }
         {
-          let font_size = get_css_var("--body-font-size");
-          let font_size_default = get_css_var("--body-font-size-default");
+          let font_size = Util.CSS.GetProperty("--body-font-size");
+          let font_size_default = Util.CSS.GetProperty("--body-font-size-default");
           if (font_size != font_size_default) {
             qs_push("size", font_size.replace(/[^0-9]/g, ''));
           }
@@ -867,18 +878,6 @@ function show_context_window(client, cw, line) {
   $cw.fadeIn().offset(offset);
 };
 
-/* CSS functions {{{0 */
-
-/* Change a variable in main.css :root */
-function set_css_var(varname, value) {
-  Util.CSS.SetProperty(varname, value);
-}
-
-/* Obtain a variable from main.css :root */
-function get_css_var(varname) {
-  return Util.CSS.GetProperty(varname);
-}
-
 /* Set or unset transparency */
 function update_transparency(transparent) {
   let ss = Util.CSS.GetSheet("main.css");
@@ -895,19 +894,17 @@ function update_transparency(transparent) {
   for (let prop of props) {
     if (transparent) {
       /* Set them all to transparent */
-      set_css_var(prop, 'transparent');
+      Util.CSS.SetProperty(prop, 'transparent');
       $(".module").addClass("transparent");
       $("body").addClass("transparent");
     } else {
       /* Set them all to default */
-      set_css_var(prop, `var(${prop}-default)`);
+      Util.CSS.SetProperty(prop, `var(${prop}-default)`);
       $(".module").removeClass("transparent");
       $("body").removeClass("transparent");
     }
   }
 }
-
-/* End CSS functions 0}}} */
 
 /* Called once when the document loads */
 function client_main(layout) {
@@ -963,7 +960,7 @@ function client_main(layout) {
       if (config.Layout.Chat) {
         /* Change the chat placeholder and border to reflect read-only */
         $("#txtChat").attr("placeholder", "Authentication needed to send messages");
-        set_css_var('--chat-border-color', '#dc143c');
+        Util.CSS.SetProperty('--chat-border-color', '#cd143c');
       }
     }
 
