@@ -1312,6 +1312,7 @@ function client_main(layout) {
   /* Notice (or warning) from Twitch */
   client.bind('twitch-notice', function _on_twitch_notice(e) {
     /* Some notices are benign */
+    /* TODO: Add more */
     switch (e.usernotice_msgid) {
       case "host_on":
         break;
