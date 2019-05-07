@@ -80,8 +80,7 @@ var HTMLGenerator = function () {
         }
         r = r % this._default_colors.length;
         if (r < 0) r += this._default_colors.length;
-        var c = this._default_colors[r];
-        this._user_colors[name] = c;
+        this._user_colors[name] = this._default_colors[r];
       }
       return this._user_colors[name];
     }

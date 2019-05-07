@@ -69,14 +69,13 @@ class HTMLGenerator {
     }
     if (!this._user_colors.hasOwnProperty(name)) {
       /* Taken from Twitch vendor javascript */
-      var r = 0;
+      let r = 0;
       for (let i = 0; i < name.length; ++i) {
         r = (r << 5) - r + name.charCodeAt(i);
       }
       r = r % this._default_colors.length;
       if (r < 0) r += this._default_colors.length;
-      let c = this._default_colors[r];
-      this._user_colors[name] = c;
+      this._user_colors[name] = this._default_colors[r];
     }
     return this._user_colors[name];
   }
