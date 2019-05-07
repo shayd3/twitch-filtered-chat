@@ -8,6 +8,7 @@
  * Fix URL formatting
  * Fix the following username colors:
  *   #725ac1
+ * Implement "light" and "dark" colorschemes
  */
 
 /** Chat message structure
