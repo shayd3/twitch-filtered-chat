@@ -1,4 +1,3 @@
-# Custom additions
 
 # Ignore files not meant for distribution
 plugins/dwangoAC.js
@@ -11,18 +10,15 @@ node_modules/
 package-lock.json
 .eslintrc*
 
-# Ignore compiled Python files
-*.pyc
-*.pyo
-
 # Ignore reference material
+notes.txt
 ref/
 
-# Ignore notes files
-notes.txt
-
-# Ignore swap files
+# Ignore swap/temporary/compiled files
+*.pyc
+*.pyo
 .*.swp
 .*.swo
 .swp
 .swo
+.checkin-status
