@@ -163,7 +163,6 @@ function asset_error(asset, e) {
 
 /* Add top-level assets */
 AddAsset("config.js", MOD_TFC, null, asset_error);
-AddAsset("colors.js", MOD_TFC, null, asset_error);
 AddAsset("htmlgen.js", MOD_TFC, null, asset_error);
 AddAsset("filtered-chat.js", MOD_TFC, null, asset_error);
 if (!USE_DIST) {
