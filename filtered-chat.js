@@ -159,14 +159,6 @@ function get_config_object() {
   let config = Util.GetWebStorage();
   if (!config) config = {};
 
-  /* Ensure certain keys are present and have expected values */
-  if (!config.hasOwnProperty("Channels") || !Util.IsArray(config.Channels)) {
-    config.Channels = [];
-  }
-  if (typeof(config.Name) != "string") config.Name = "";
-  if (typeof(config.ClientID) != "string") config.ClientID = "";
-  if (typeof(config.Pass) != "string") config.Pass = "";
-
   /* Persist the config key */
   config.key = Util.GetWebStorageKey();
 
@@ -176,9 +168,17 @@ function get_config_object() {
   if (config.hasOwnProperty('AutoReconnect')) delete config["AutoReconnect"];
   if (config.hasOwnProperty('Layout')) delete config['Layout'];
   if (config.hasOwnProperty('Plugins')) delete config['Plugins'];
+
+  /* Ensure certain keys are present and have expected values */
   if (!config.hasOwnProperty("MaxMessages")) {
     config.MaxMessages = TwitchClient.DEFAULT_MAX_MESSAGES;
   }
+  if (!config.hasOwnProperty("Channels") || !Util.IsArray(config.Channels)) {
+    config.Channels = [];
+  }
+  if (typeof(config.Name) != "string") config.Name = "";
+  if (typeof(config.ClientID) != "string") config.ClientID = "";
+  if (typeof(config.Pass) != "string") config.Pass = "";
 
   /* Parse the query string */
   query_remove = parse_query_string(config, qs);
@@ -186,7 +186,6 @@ function get_config_object() {
   /* Parse div#settings config */
   let txtChannel = $('input#txtChannel')[0];
   let txtNick = $('input#txtNick')[0];
-  let txtClientID = $('input#txtClientID')[0];
   let txtPass = $('input#txtPass')[0];
   if (txtChannel.value) {
     for (let ch of txtChannel.value.split(',')) {
@@ -198,9 +197,6 @@ function get_config_object() {
   }
   if (txtNick.value && txtNick.value != AUTOGEN_VALUE) {
     config.Name = txtNick.value;
-  }
-  if (txtClientID.value && txtClientID.value != CACHED_VALUE) {
-    config.ClientID = txtClientID.value;
   }
   if (txtPass.value && txtPass.value != CACHED_VALUE) {
     config.Pass = txtPass.value;
@@ -1023,6 +1019,11 @@ function client_main(layout) {
     ConfigCommon.Layout = config.Layout;
     ConfigCommon.Transparent = config.Transparent;
     ConfigCommon.MaxMessages = config.MaxMessages || 100;
+
+    /* If no channels are configured, show the settings panel */
+    if (config.Channels.length == 0) {
+      $("#settings").fadeIn();
+    }
   })();
 
   /* Construct the HTML Generator and tell it and the client about each other */
@@ -1102,9 +1103,6 @@ function client_main(layout) {
       $("#txtChannel").val(config.Channels.join(","));
       $("#txtNick").attr("disabled", "disabled")
         .val(!!config.Name ? config.Name : AUTOGEN_VALUE);
-      if (config.ClientID && config.ClientID.length == 30) {
-        $("#txtClientID").attr("disabled", "disabled").val(CACHED_VALUE);
-      }
       if (config.Pass && config.Pass.length > 0) {
         $("#txtPass").attr("disabled", "disabled").hide();
         $("#txtPassDummy").show();
@@ -1298,6 +1296,9 @@ function client_main(layout) {
         notes.push("(unauthenticated)");
       }
       add_info(`Connected ${notes.join(" ")}`);
+    }
+    if (get_config_object().Channels.length == 0) {
+      add_info("No channels configured; type //join &lt;channel&gt; to join one!");
     }
   });
 
