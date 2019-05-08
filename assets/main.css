@@ -477,7 +477,7 @@ body.transparent #chat textarea  {
 
 /* End chat textbox 0}}} */
 
-/* Settings {{{0 */
+/* Top-level settings {{{0 */
 
 #settings {
   color: #dddddd;
@@ -520,6 +520,15 @@ body.transparent #chat textarea  {
   vertical-align: text-bottom;
 }
 
+#settings a.help {
+  font-size: smaller;
+  vertical-align: text-top;
+  text-decoration: underline;
+  font-size: 0.6em;
+  content: "?";
+  cursor: pointer;
+}
+
 #settings footer {
   line-height: 30px;
   padding-top: 0.2em;
@@ -553,7 +562,7 @@ body.transparent #chat textarea  {
   float: right;
 }
 
-/* End settings 0}}} */
+/* End top-level settings 0}}} */
 
 /* Username context window {{{0 */
 
