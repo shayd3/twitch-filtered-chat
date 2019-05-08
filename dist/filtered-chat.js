@@ -1767,9 +1767,9 @@ function client_main(layout) {
 
   /* Sending a chat message */
   $("#txtChat").keydown(function (e) {
-    var isUp = e.keyCode === KeyEvent.DOM_VK_UP;
-    var isDown = e.keyCode === KeyEvent.DOM_VK_DOWN;
-    if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
+    var isUp = e.keyCode === Util.Key.UP;
+    var isDown = e.keyCode === Util.Key.DOWN;
+    if (e.keyCode == Util.Key.RETURN) {
       /* Prevent sending empty messages by mistake */
       if (e.target.value.trim().length > 0) {
         if (!handle_command(e.target.value, client)) {
@@ -1805,7 +1805,7 @@ function client_main(layout) {
 
   /* Pressing enter while on the settings box */
   $("#settings").keyup(function (e) {
-    if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
+    if (e.keyCode == Util.Key.RETURN) {
       update_module_config();
       $("#settings_button").click();
     }
@@ -1839,7 +1839,7 @@ function client_main(layout) {
     var fmt_ch = function fmt_ch(ch) {
       return Twitch.FormatChannel(Twitch.ParseChannel(ch));
     };
-    if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
+    if (e.keyCode == Util.Key.RETURN) {
       var new_chs = $(this).val().split(",").map(fmt_ch);
       var old_chs = client.GetJoinedChannels().map(fmt_ch);
       var to_join = new_chs.filter(function (c) {
@@ -1917,7 +1917,7 @@ function client_main(layout) {
 
   /* Changing the value for "background image" */
   $("#txtBGImage").keyup(function (e) {
-    if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
+    if (e.keyCode == Util.Key.RETURN) {
       $(".module").css("background-image", $(this).val());
     }
   });
@@ -1954,7 +1954,7 @@ function client_main(layout) {
 
   /* Pressing enter on the module's name text box */
   $('.module .header input.name').on('keyup', function (e) {
-    if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
+    if (e.keyCode == Util.Key.RETURN) {
       var $settings = $(this).parent().children(".settings");
       var $lbl = $(this).parent().children('label.name');
       var $tb = $(this).parent().children('input.name');
@@ -1969,7 +1969,7 @@ function client_main(layout) {
   $('.module .settings input[type="text"]').on('keyup', function (e) {
     var v = $(this).val();
     if (v.length > 0) {
-      if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
+      if (e.keyCode == Util.Key.RETURN) {
         var $cli = $(this).closest('li');
         var cls = $cli.attr('class').replace('textbox', '').trim();
         var cb = client.get('HTMLGen').checkbox(v, null, cls, true);
