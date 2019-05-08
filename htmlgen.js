@@ -46,7 +46,7 @@ class HTMLGenerator {
       "darkorchid",
       "crimson"];
     this._user_colors = {};
-    this._bg_colors = [];
+    this._bg_colors = ["#1d1d1d", "#0a0a0a", "#d1d1d1"];
 
     /* Ensure config has certain values */
     if (!this._config.Layout) this._config.Layout = {};
@@ -202,15 +202,12 @@ class HTMLGenerator {
     $e.addClass('username');
     $e.attr('data-username', '1');
     $e.css('color', color);
-    /* Calculate "brightness" of the username */
-    let luma = (new Util.Color(color)).yiq[0];
-    if (luma >= 128) {
-      $e.addClass("luma-dark");
-    } else if (luma >= 120) {
-      $e.addClass("luma-mid");
-    } else {
-      $e.addClass("luma-light");
-    }
+    /* Determine the best border color to use */
+    let border = Util.GetMaxContrast(color, this._bg_colors);
+    $e.css("text-shadow", `-0.8px -0.8px 0 ${border},
+                            0.8px -0.8px 0 ${border},
+                           -0.8px  0.8px 0 ${border},
+                            0.8px  0.8px 0 ${border}`);
     $e.text(user);
     return $e[0].outerHTML;
   }

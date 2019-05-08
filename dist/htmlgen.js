@@ -290,13 +290,16 @@ var HTMLGenerator = function () {
       $e.css('color', color);
       /* Calculate "brightness" of the username */
       var luma = new Util.Color(color).yiq[0];
-      if (luma >= 128) {
+      var border = Util.GetMaxContrast(color, '#1d1d1d', '#0a0a0a', '#d1d1d1');
+      var style = "-0.8px -0.8px 0 " + border + ", 0.8px -0.8px 0 " + border + ", -0.8px 0.8px 0 " + border + ", 0.8px 0.8px 0 " + border;
+      $e.css("text-shadow", style);
+      /*if (luma >= 128) {
         $e.addClass("luma-dark");
       } else if (luma >= 120) {
         $e.addClass("luma-mid");
       } else {
         $e.addClass("luma-light");
-      }
+      }*/
       $e.text(user);
       return $e[0].outerHTML;
     }
