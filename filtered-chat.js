@@ -912,16 +912,30 @@ function show_context_window(client, cw, line) {
 
 /* Set or unset transparency */
 function update_transparency(transparent) {
-  let ss = Util.CSS.GetSheet("main.css");
-  if (!ss) { Util.Error("Can't find main.css object"); return; }
-  let rule = Util.CSS.GetRule(ss, ":root");
-  if (!rule) { Util.Error("Can't find main.css :root rule"); return; }
   let props = [];
-  /* Find the prop="--<name>-color" rules */
-  for (let prop of Util.CSS.GetPropertyNames(rule)) {
-    if (prop.match(/^--[a-z-]+-color$/)) {
-      props.push(prop);
+  try {
+    let ss = Util.CSS.GetSheet("main.css");
+    let rule = Util.CSS.GetRule(ss, ":root");
+    /* Find the prop="--<name>-color" rules */
+    for (let prop of Util.CSS.GetPropertyNames(rule)) {
+      if (prop.match(/^--[a-z-]+-color$/)) {
+        props.push(prop);
+      }
     }
+  }
+  catch (e) {
+    /* Unable to enumerate properties; use hard-coded ones */
+    Util.Error("Failed getting main.css :root", e);
+    props = [
+      "--body-color",
+      "--header-color",
+      "--menudiv-color",
+      "--module-color",
+      "--odd-line-color",
+      "--sub-color",
+      "--chat-color",
+      "--textarea-color",
+    ];
   }
   for (let prop of props) {
     if (transparent) {

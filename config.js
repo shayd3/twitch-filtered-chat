@@ -107,6 +107,7 @@ function GetCheerStyle(word) {
   return null;
 }
 
+/* Colors usable in cheer effects */
 var ColorNames = {
   "dust": "#b2996e",
   "tea": "#65ab7c",

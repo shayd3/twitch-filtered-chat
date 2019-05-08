@@ -1567,43 +1567,42 @@ function show_context_window(client, cw, line) {
 
 /* Set or unset transparency */
 function update_transparency(transparent) {
-  var ss = Util.CSS.GetSheet("main.css");
-  if (!ss) {
-    Util.Error("Can't find main.css object");return;
-  }
-  var rule = Util.CSS.GetRule(ss, ":root");
-  if (!rule) {
-    Util.Error("Can't find main.css :root rule");return;
-  }
   var props = [];
-  /* Find the prop="--<name>-color" rules */
-  var _iteratorNormalCompletion25 = true;
-  var _didIteratorError25 = false;
-  var _iteratorError25 = undefined;
-
   try {
-    for (var _iterator25 = Util.CSS.GetPropertyNames(rule)[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
-      var prop = _step25.value;
+    var ss = Util.CSS.GetSheet("main.css");
+    var rule = Util.CSS.GetRule(ss, ":root");
+    /* Find the prop="--<name>-color" rules */
+    var _iteratorNormalCompletion25 = true;
+    var _didIteratorError25 = false;
+    var _iteratorError25 = undefined;
 
-      if (prop.match(/^--[a-z-]+-color$/)) {
-        props.push(prop);
-      }
-    }
-  } catch (err) {
-    _didIteratorError25 = true;
-    _iteratorError25 = err;
-  } finally {
     try {
-      if (!_iteratorNormalCompletion25 && _iterator25.return) {
-        _iterator25.return();
+      for (var _iterator25 = Util.CSS.GetPropertyNames(rule)[Symbol.iterator](), _step25; !(_iteratorNormalCompletion25 = (_step25 = _iterator25.next()).done); _iteratorNormalCompletion25 = true) {
+        var prop = _step25.value;
+
+        if (prop.match(/^--[a-z-]+-color$/)) {
+          props.push(prop);
+        }
       }
+    } catch (err) {
+      _didIteratorError25 = true;
+      _iteratorError25 = err;
     } finally {
-      if (_didIteratorError25) {
-        throw _iteratorError25;
+      try {
+        if (!_iteratorNormalCompletion25 && _iterator25.return) {
+          _iterator25.return();
+        }
+      } finally {
+        if (_didIteratorError25) {
+          throw _iteratorError25;
+        }
       }
     }
+  } catch (e) {
+    /* Unable to enumerate properties; use hard-coded ones */
+    Util.Error("Failed getting main.css :root", e);
+    props = ["--body-color", "--header-color", "--menudiv-color", "--module-color", "--odd-line-color", "--sub-color", "--chat-color", "--textarea-color"];
   }
-
   var _iteratorNormalCompletion26 = true;
   var _didIteratorError26 = false;
   var _iteratorError26 = undefined;
