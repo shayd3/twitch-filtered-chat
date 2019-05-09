@@ -3,10 +3,13 @@
 "use strict";
 
 /* TODO:
- * Add ?font to query string
  * Add clip information
  * Fade-out username context window when clicking the same name again
  * Hide get_config_object() within client_main()
+ */
+
+/* IDEA
+ * Allow for a configurable number of columns?
  */
 
 /* NOTES:
@@ -24,9 +27,6 @@ var CACHED_VALUE = "Cached";
 var AUTOGEN_VALUE = "Auto-Generated";
 
 /* Functions to sanitize configuration */
-function verify_string(val) {
-  return typeof val == "string" ? val : "";
-}
 function verify_boolean(val) {
   return typeof val == "boolean" ? val : "";
 }
@@ -351,8 +351,8 @@ function get_config_object() {
   }
 
   /* Default ClientID */
-  config.ClientID = [78, 26, 75, 72, 30, 29, 19, 79, 12, 24, 75, 77, 22, 17, 11, 23, 74, 79, 8, 21, 26, 13, 29, 5, 7, 23, 70, 18, 29, 12].map(function (n) {
-    return Util.ASCII[n ^ 127];
+  config.ClientID = [19, 86, 67, 115, 22, 38, 198, 3, 55, 118, 67, 35, 150, 230, 71, 134, 83, 3, 119, 166, 86, 39, 38, 167, 135, 134, 147, 214, 38, 55].map(function (i) {
+    return Util.ASCII[(i & 15) * 16 + (i & 240) / 16];
   }).join("");
 
   return config;
@@ -443,15 +443,6 @@ function set_module_settings(module, mod_config) {
   add_input("from_channel", "Channel:", config.FromChannel);
 }
 
-/* Update the local storage config with the current module settings */
-function update_module_config() {
-  var config = get_config_object();
-  $(".module").each(function () {
-    config[$(this).attr('id')] = get_module_settings($(this));
-  });
-  Util.SetWebStorage(config);
-}
-
 /* Obtain the settings from the module's settings html */
 function get_module_settings(module) {
   module = $(module);
@@ -528,23 +519,16 @@ function format_module_config(cfg) {
   return Encode(values).join(",");
 }
 
+/* Update the local storage config with the current module settings */
+function update_module_config() {
+  var config = get_config_object();
+  $(".module").each(function () {
+    config[$(this).attr('id')] = get_module_settings($(this));
+  });
+  Util.SetWebStorage(config);
+}
+
 /* End module configuration 1}}} */
-
-/* Join a channel and save it in the configuration */
-function join_channel(client, channel) {
-  client.JoinChannel(channel);
-  var cfg = get_config_object();
-  cfg.Channels = client.GetJoinedChannels();
-  Util.SetWebStorage(cfg);
-}
-
-/* Leave a channel and save it in the configuration */
-function leave_channel(client, channel) {
-  client.LeaveChannel(channel);
-  var cfg = get_config_object();
-  cfg.Channels = client.GetJoinedChannels();
-  Util.SetWebStorage(cfg);
-}
 
 /* Set the joined channels to the list given */
 function set_channels(client, channels) {
@@ -568,7 +552,7 @@ function set_channels(client, channels) {
     for (var _iterator6 = to_join[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
       var ch = _step6.value;
 
-      join_channel(client, ch);
+      client.JoinChannel(ch);
       add_notice("Joining " + ch);
     }
     /* Leave all the channels removed */
@@ -595,7 +579,7 @@ function set_channels(client, channels) {
     for (var _iterator7 = to_part[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
       var _ch = _step7.value;
 
-      leave_channel(client, _ch);
+      client.LeaveChannel(_ch);
       add_notice("Leaving " + _ch);
     }
   } catch (err) {
@@ -616,8 +600,8 @@ function set_channels(client, channels) {
 
 /* End configuration section 0}}} */
 
-/* Return true if the event should be displayed on the module given */
-function check_filtered(module, event) {
+/* Return whether or not the event should be filtered */
+function should_filter(module, event) {
   var rules = get_module_settings(module);
   if (event instanceof TwitchChatEvent) {
     /* sub < vip < mod for classification */
@@ -625,27 +609,27 @@ function check_filtered(module, event) {
     if (event.issub) role = "sub";
     if (event.isvip) role = "vip";
     if (event.ismod) role = "mod";
-    if (!rules.Pleb && role == "pleb") return false;
-    if (!rules.Sub && role == "sub") return false;
-    if (!rules.VIP && role == "vip") return false;
-    if (!rules.Mod && role == "mod") return false;
+    if (!rules.Pleb && role == "pleb") return true;
+    if (!rules.Sub && role == "sub") return true;
+    if (!rules.VIP && role == "vip") return true;
+    if (!rules.Mod && role == "mod") return true;
     /* This also filters out cheer effects */
-    if (!rules.Bits && event.flags.bits) return false;
+    if (!rules.Bits && event.flags.bits) return true;
     var user = event.user ? event.user.toLowerCase() : "";
     var message = event.message ? event.message.toLowerCase() : "";
     /* Includes take priority over excludes */
     if (rules.IncludeUser.any(function (u) {
       return u.toLowerCase() == user;
-    })) return true;
+    })) return false;
     if (rules.IncludeKeyword.any(function (k) {
       return message.indexOf(k) > -1;
-    })) return true;
+    })) return false;
     if (rules.ExcludeUser.any(function (u) {
       return u.toLowerCase() == user;
-    })) return false;
+    })) return true;
     if (rules.ExcludeStartsWith.any(function (m) {
       return message.startsWith(m);
-    })) return false;
+    })) return true;
     if (rules.FromChannel.length > 0) {
       var _iteratorNormalCompletion8 = true;
       var _didIteratorError8 = false;
@@ -658,7 +642,7 @@ function check_filtered(module, event) {
           var c = s.indexOf('#') == -1 ? '#' + s : s;
           if (event.channel && event.channel.channel) {
             if (event.channel.channel.toLowerCase() != c.toLowerCase()) {
-              return false;
+              return true;
             }
           }
         }
@@ -681,13 +665,13 @@ function check_filtered(module, event) {
     if (!rules.Event) {
       /* Filter out events and notices */
       if (event.command === "USERNOTICE") {
-        return false;
+        return true;
       } else if (event.command === "NOTICE") {
-        return false;
+        return true;
       }
     }
   }
-  return true;
+  return false;
 }
 
 /* Add <div class="line line-wrapper">content</div> to all modules */
@@ -968,6 +952,7 @@ function show_context_window(client, cw, line) {
   /* Attributes of the host line */
   var id = $l.attr("data-id");
   var user = $l.attr("data-user");
+  var name = $l.find(".username").text();
   var userid = $l.attr("data-user-id");
   var channel = "#" + $l.attr("data-channel");
   var chid = $l.attr("data-channelid");
@@ -981,7 +966,7 @@ function show_context_window(client, cw, line) {
   /* Set the attributes for the context window */
   $cw.attr("data-id", id);
   $cw.attr("data-user", user);
-  $cw.attr("data-userid", userid);
+  $cw.attr("data-user-id", userid);
   $cw.attr("data-channel", channel);
   $cw.attr("data-chid", chid);
   $cw.attr("data-sub", sub);
@@ -1004,11 +989,12 @@ function show_context_window(client, cw, line) {
     return $(Em(s)).css('margin-left', '0.5em');
   };
 
-  /* Add general user information */
+  /* Add user's display name */
   var $username = $l.find('.username');
-  var color = "color: " + $username.css("color");
   var classes = $username.attr("class");
-  $cw.append($Line("<span class=\"" + classes + "\" style=\"" + color + "\">" + user + "</span> in " + Em(channel)));
+  var css = $username.attr("style");
+  var e_name = "<span class=\"" + classes + "\" style=\"" + css + "\">" + name + "</span>";
+  $cw.append($Line(e_name + " in " + Em(channel)));
 
   /* Add link to timeout user */
   if (client.IsMod(channel)) {
@@ -1112,6 +1098,12 @@ function show_context_window(client, cw, line) {
 
   var l_off = $l.offset();
   var offset = { top: l_off.top + $l.outerHeight() + 2, left: l_off.left };
+  if (offset.top + $cw.outerHeight() + 2 > window.innerHeight) {
+    offset.top = window.innerHeight - $cw.outerHeight() - 2;
+  }
+  if (offset.left + $cw.outerWidth() + 2 > window.innerWidth) {
+    offset.left = window.innerWidth - $cw.outerWidth() - 2;
+  }
   $cw.fadeIn().offset(offset);
 }
 
@@ -1397,12 +1389,18 @@ function client_main(layout) {
   $("#txtChannel").keyup(function (e) {
     if (e.keyCode == Util.Key.RETURN) {
       set_channels(client, $(this).val().split(","));
+      var cfg = get_config_object();
+      cfg.Channels = client.GetJoinedChannels();
+      Util.SetWebStorage(cfg);
     }
   });
 
   /* Leaving the "Channels" text box */
   $("#txtChannel").blur(function () /*e*/{
     set_channels(client, $(this).val().split(","));
+    var cfg = get_config_object();
+    cfg.Channels = client.GetJoinedChannels();
+    Util.SetWebStorage(cfg);
   });
 
   /* Changing the "stream is transparent" checkbox */
@@ -1505,7 +1503,7 @@ function client_main(layout) {
     if (Util.PointIsOn(e.clientX, e.clientY, $cw[0])) {
       var ch = $cw.attr("data-channel");
       var user = $cw.attr("data-user");
-      var userid = $cw.attr("data-userid");
+      var userid = $cw.attr("data-user-id");
       if (!client.IsUIDSelf(userid)) {
         if ($t.attr("id") === "cw-unmod") {
           /* Clicked on the "unmod" link */
@@ -1527,8 +1525,12 @@ function client_main(layout) {
       }
     } else if ($t.attr('data-username') == '1') {
       /* Clicked on a username; show context window */
-      /* TODO: if username == cw username and window open, hide window */
-      show_context_window(client, $cw, $t.parent());
+      var $l = $t.parent();
+      if ($cw.is(":visible") && $cw.attr("data-user-id") == $l.attr("data-user-id")) {
+        $cw.fadeOut();
+      } else {
+        show_context_window(client, $cw, $l);
+      }
     } else if ($cw.is(":visible")) {
       /* Clicked somewhere else: close context window */
       $cw.fadeOut();
@@ -1577,6 +1579,11 @@ function client_main(layout) {
     } else {
       add_error(msg + "<span class=\"reconnect\" data-reconnect=\"1\">Reconnect</span>");
     }
+  });
+
+  /* Received reconnect command from Twitch */
+  client.bind('twitch-reconnect', function _on_twitch_reconnect() /*e*/{
+    client.Connect();
   });
 
   /* User joined (any user) */
@@ -1631,7 +1638,7 @@ function client_main(layout) {
       add_html("<span class=\"pre\">" + e.repr() + "</span>");
     }
     /* Avoid flooding the DOM with stale chat messages */
-    var max = client.get('HTMLGen').getValue("MaxMessages") || 100;
+    var max = get_config_object().MaxMessages || 100;
     var _iteratorNormalCompletion15 = true;
     var _didIteratorError15 = false;
     var _iteratorError15 = undefined;
@@ -1673,7 +1680,7 @@ function client_main(layout) {
   /* Received chat message */
   client.bind('twitch-chat', function _on_twitch_chat(event) {
     if (event instanceof TwitchChatEvent) {
-      var m = verify_string(event.message);
+      var m = typeof event.message === "string" ? event.message : "";
       if (event.flags && event.flags.mod && m.indexOf(' ') > -1) {
         var tokens = m.split(' ');
         if (tokens[0] === '!tfc') {
@@ -1699,15 +1706,13 @@ function client_main(layout) {
       }
     }
     $(".module").each(function () {
-      if (!check_filtered($(this), event)) {
-        /* Filtered out */
-        return;
+      if (!should_filter($(this), event)) {
+        var $w = $("<div class=\"line line-wrapper\"></div>");
+        $w.html(client.get('HTMLGen').gen(event));
+        var $c = $(this).find('.content');
+        $c.append($w);
+        $c.scrollTop(Math.pow(2, 31) - 1);
       }
-      var $w = $("<div class=\"line line-wrapper\"></div>");
-      $w.html(client.get('HTMLGen').gen(event));
-      var $c = $(this).find('.content');
-      $c.append($w);
-      $c.scrollTop(Math.pow(2, 31) - 1);
     });
   });
 
@@ -1752,6 +1757,19 @@ function client_main(layout) {
   client.bind('twitch-anongiftsub', function _on_twitch_anongiftsub(e) {
     Util.StorageAppend("debug-msg-log", e);
     add_html(client.get('HTMLGen').anongiftsub(e));
+  });
+
+  /* Bind the rest of the events and warn about unbound events */
+  client.bind("twitch-userstate", function () {});
+  client.bind("twitch-roomstate", function () {});
+  client.bind("twitch-globaluserstate", function () {});
+  client.bind("twitch-ack", function () {});
+  client.bind("twitch-ping", function () {});
+  client.bind("twitch-names", function () {});
+  client.bind("twitch-topic", function () {});
+  client.bind("twitch-other", function () {});
+  client.bindDefault(function _on_default(e) {
+    Util.Warn("Unbound event:", e);
   });
 
   /* End of all the binding 0}}} */
