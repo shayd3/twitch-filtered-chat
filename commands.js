@@ -1,5 +1,10 @@
 /* Twitch Filtered Chat Commands */
 
+/* TODO:
+ * command_config
+ * command_badges
+ */
+
 class TFCChatCommandStore {
   constructor() {
     this._commands = {};

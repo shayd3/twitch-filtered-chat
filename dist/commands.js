@@ -10,6 +10,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 /* Twitch Filtered Chat Commands */
 
+/* TODO:
+ * command_config
+ * command_badges
+ */
+
 var TFCChatCommandStore = function () {
   function TFCChatCommandStore() {
     _classCallCheck(this, TFCChatCommandStore);
