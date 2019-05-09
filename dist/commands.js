@@ -18,6 +18,7 @@ var TFCChatCommandStore = function () {
     this._aliases = {};
     this.add("help", this.command_help.bind(this), "Obtain help for a specific command or all commands");
     this.add_alias("?", "help");
+    this.add_alias("", "help");
     this.add_usage("help", null, "Obtain help for all commands");
     this.add_usage("help", "command", "Obtain the usage information for <command>");
   }
@@ -49,10 +50,12 @@ var TFCChatCommandStore = function () {
   }, {
     key: "add_usage",
     value: function add_usage(command, argstr, usagestr) {
+      var opts = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+
       if (this.has_command(command, true)) {
         var c = this.get_command(command);
         if (!c.usage) c.usage = [];
-        c.usage.push({ args: argstr, usage: usagestr });
+        c.usage.push({ args: argstr, usage: usagestr, opts: opts || {} });
       } else {
         Util.Error("Invalid command: " + command);
       }
@@ -140,6 +143,28 @@ var TFCChatCommandStore = function () {
 
       var usages = [];
       if (cmd.usage) {
+        var _loop = function _loop(entry) {
+          var fmtArg = function fmtArg(a) {
+            return _this.arg(a);
+          };
+          if (entry.opts.literal) fmtArg = function fmtArg(a) {
+            return a;
+          };
+          var argstr = "";
+          var usagestr = _this.format_args(entry.usage);
+          if (Util.IsArray(entry.args)) {
+            argstr = entry.args.map(function (a) {
+              return fmtArg(a);
+            }).join(" ");
+            usages.push(_this.helpline("//" + cmd.name + " " + argstr, usagestr));
+          } else if (entry.args) {
+            argstr = fmtArg(entry.args);
+            usages.push(_this.helpline("//" + cmd.name + " " + argstr, usagestr));
+          } else {
+            usages.push(_this.helpline("//" + cmd.name, usagestr));
+          }
+        };
+
         var _iteratorNormalCompletion = true;
         var _didIteratorError = false;
         var _iteratorError = undefined;
@@ -148,19 +173,7 @@ var TFCChatCommandStore = function () {
           for (var _iterator = cmd.usage[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
             var entry = _step.value;
 
-            var argstr = "";
-            var usagestr = this.format_args(entry.usage);
-            if (Util.IsArray(entry.args)) {
-              argstr = entry.args.map(function (a) {
-                return _this.arg(a);
-              }).join(" ");
-              usages.push(this.helpline("//" + cmd.name + " " + argstr, usagestr));
-            } else if (entry.args) {
-              argstr = this.arg(entry.args);
-              usages.push(this.helpline("//" + cmd.name + " " + argstr, usagestr));
-            } else {
-              usages.push(this.helpline("//" + cmd.name, usagestr));
-            }
+            _loop(entry);
           }
         } catch (err) {
           _didIteratorError = true;
@@ -360,7 +373,7 @@ var TFCChatCommandStore = function () {
       var _this2 = this;
 
       return s.replace(/<([^>]+)>/g, function (m, g) {
-        return _this2.arg(g);
+        return '&lt;' + _this2.arg(g) + '&gt;';
       });
     }
 
@@ -379,6 +392,7 @@ var TFCChatCommandStore = function () {
   }, {
     key: "print_usage",
     value: function print_usage(cmdobj) {
+      this.print_help("Usage:");
       var _iteratorNormalCompletion7 = true;
       var _didIteratorError7 = false;
       var _iteratorError7 = undefined;
@@ -408,8 +422,6 @@ var TFCChatCommandStore = function () {
 
   return TFCChatCommandStore;
 }();
-
-var ChatCommands = new TFCChatCommandStore();
 
 function command_log(cmd, tokens /*, client*/) {
   var logs = Util.GetWebStorage("debug-msg-log") || [];
@@ -535,13 +547,21 @@ function command_log(cmd, tokens /*, client*/) {
   }
 }
 
-function command_clear() /*cmd, tokens, client*/{
-  $(".content").find(".line-wrapper").remove();
+function command_clear(cmd, tokens /*, client*/) {
+  if (tokens.length == 0) {
+    $(".content").find(".line-wrapper").remove();
+  } else if (tokens[0] == "module1") {
+    $("#module1").find(".line-wrapper").remove();
+  } else if (tokens[0] == "module2") {
+    $("#module2").find(".line-wrapper").remove();
+  } else {
+    this.print_usage();
+  }
 }
 
 function command_join(cmd, tokens, client) {
   if (tokens.length > 0) {
-    join_channel(client, tokens[0]);
+    client.JoinChannel(tokens[0]);
   } else {
     this.print_usage();
   }
@@ -549,7 +569,7 @@ function command_join(cmd, tokens, client) {
 
 function command_part(cmd, tokens, client) {
   if (tokens.length > 0) {
-    leave_channel(client, tokens[0]);
+    client.LeaveChannel(tokens[0]);
   } else {
     this.print_usage();
   }
@@ -671,16 +691,20 @@ function command_plugins() /*cmd, tokens, client*/{
   }
 }
 
+var ChatCommands = new TFCChatCommandStore();
+
 ChatCommands.add("log", command_log, "Display logged messages");
 ChatCommands.add_alias("logs", "log");
 ChatCommands.add_usage("log", null, "Obtain all logged messages");
-ChatCommands.add_usage("log", "number", "Obtain logged message <number>");
-ChatCommands.add_usage("log", "shift", "Remove the first logged message");
-ChatCommands.add_usage("log", "pop", "Remove the last logged message");
+ChatCommands.add_usage("log", "number", "Display the message numbered <number>");
+ChatCommands.add_usage("log", "summary", "Display a summary of the logged messages", { literal: true });
+ChatCommands.add_usage("log", "shift", "Remove the first logged message", { literal: true });
+ChatCommands.add_usage("log", "pop", "Remove the last logged message", { literal: true });
 
 ChatCommands.add("clear", command_clear, "Clears all text from all visible modules");
 ChatCommands.add_usage("clear", null, "Clears all text from all visible modules");
-ChatCommands.add_usage("clear", "module", "Clears all text from <module> (either &quot;module1&quot; or &quot;module2&quot;)");
+ChatCommands.add_usage("clear", "module1", "Clears all text from module1", { literal: true });
+ChatCommands.add_usage("clear", "module2", "Clears all text from module2", { literal: true });
 
 ChatCommands.add("join", command_join, "Join a channel");
 ChatCommands.add_usage("join", "channel", "Connect to <channel>; leading # is optional");

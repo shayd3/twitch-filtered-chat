@@ -4,10 +4,10 @@ class TFCChatCommandStore {
   constructor() {
     this._commands = {};
     this._aliases = {};
-    this.add("help",
-             this.command_help.bind(this),
+    this.add("help", this.command_help.bind(this),
              "Obtain help for a specific command or all commands");
     this.add_alias("?", "help");
+    this.add_alias("", "help");
     this.add_usage("help", null, "Obtain help for all commands");
     this.add_usage("help", "command", "Obtain the usage information for <command>");
   }
@@ -29,11 +29,11 @@ class TFCChatCommandStore {
     this._aliases[command] = referred_command;
   }
 
-  add_usage(command, argstr, usagestr) {
+  add_usage(command, argstr, usagestr, opts=null) {
     if (this.has_command(command, true)) {
       let c = this.get_command(command);
       if (!c.usage) c.usage = [];
-      c.usage.push({args: argstr, usage: usagestr});
+      c.usage.push({args: argstr, usage: usagestr, opts: opts || {}});
     } else {
       Util.Error(`Invalid command: ${command}`);
     }
@@ -109,13 +109,15 @@ class TFCChatCommandStore {
     let usages = [];
     if (cmd.usage) {
       for (let entry of cmd.usage) {
+        let fmtArg = (a) => this.arg(a);
+        if (entry.opts.literal) fmtArg = (a) => a;
         let argstr = "";
         let usagestr = this.format_args(entry.usage);
         if (Util.IsArray(entry.args)) {
-          argstr = entry.args.map((a) => this.arg(a)).join(" ");
+          argstr = entry.args.map((a) => fmtArg(a)).join(" ");
           usages.push(this.helpline(`//${cmd.name} ${argstr}`, usagestr));
         } else if (entry.args) {
-          argstr = this.arg(entry.args);
+          argstr = fmtArg(entry.args);
           usages.push(this.helpline(`//${cmd.name} ${argstr}`, usagestr));
         } else {
           usages.push(this.helpline(`//${cmd.name}`, usagestr));
@@ -164,28 +166,45 @@ class TFCChatCommandStore {
   }
 
   /* Specific formatters */
-  arg(s) { return `<span class="arg">${s.escape()}</span>`; }
-  helpcmd(s) { return `<span class="help helpcmd">${s}</span>`; }
-  helpmsg(s) { return `<span class="help helpmsg">${s}</span>`; }
-  helpline(k, v) { return `<div class="helpline">${this.helpcmd(k)}${this.helpmsg(v)}</div>`; }
+
+  arg(s) {
+    return `<span class="arg">${s.escape()}</span>`;
+  }
+  
+  helpcmd(s) {
+    return `<span class="help helpcmd">${s}</span>`;
+  }
+  
+  helpmsg(s) {
+    return `<span class="help helpmsg">${s}</span>`;
+  }
+
+  helpline(k, v) {
+    return `<div class="helpline">${this.helpcmd(k)}${this.helpmsg(v)}</div>`;
+  }
 
   format_args(s) {
-    return s.replace(/<([^>]+)>/g, (m, g) => this.arg(g));
+    return s.replace(/<([^>]+)>/g, (m, g) => '&lt;' + this.arg(g) + '&gt;');
   }
 
   /* Display functions */
-  print_helpline(k, v) { add_pre(this.helpline(k, v)); }
-  print_help(s) { add_pre(`<div class="help">${s}</div>`); }
+
+  print_helpline(k, v) {
+    add_pre(this.helpline(k, v));
+  }
+
+  print_help(s) {
+    add_pre(`<div class="help">${s}</div>`);
+  }
 
   print_usage(cmdobj) {
+    this.print_help("Usage:");
     for (let line of this.format_usage(cmdobj)) {
       this.print_help(line);
     }
   }
 
 }
-
-var ChatCommands = new TFCChatCommandStore();
 
 function command_log(cmd, tokens/*, client*/) {
   let logs = Util.GetWebStorage("debug-msg-log") || [];
@@ -242,13 +261,21 @@ function command_log(cmd, tokens/*, client*/) {
   }
 }
 
-function command_clear(/*cmd, tokens, client*/) {
-  $(".content").find(".line-wrapper").remove();
+function command_clear(cmd, tokens/*, client*/) {
+  if (tokens.length == 0) {
+    $(".content").find(".line-wrapper").remove();
+  } else if (tokens[0] == "module1") {
+    $("#module1").find(".line-wrapper").remove();
+  } else if (tokens[0] == "module2") {
+    $("#module2").find(".line-wrapper").remove();
+  } else {
+    this.print_usage();
+  }
 }
 
 function command_join(cmd, tokens, client) {
   if (tokens.length > 0) {
-    join_channel(client, tokens[0]);
+    client.JoinChannel(tokens[0]);
   } else {
     this.print_usage();
   }
@@ -256,7 +283,7 @@ function command_join(cmd, tokens, client) {
 
 function command_part(cmd, tokens, client) {
   if (tokens.length > 0) {
-    leave_channel(client, tokens[0]);
+    client.LeaveChannel(tokens[0]);
   } else {
     this.print_usage();
   }
@@ -306,16 +333,20 @@ function command_plugins(/*cmd, tokens, client*/) {
   }
 }
 
+var ChatCommands = new TFCChatCommandStore();
+
 ChatCommands.add("log", command_log, "Display logged messages");
 ChatCommands.add_alias("logs", "log");
 ChatCommands.add_usage("log", null, "Obtain all logged messages");
-ChatCommands.add_usage("log", "number", "Obtain logged message <number>");
-ChatCommands.add_usage("log", "shift", "Remove the first logged message");
-ChatCommands.add_usage("log", "pop", "Remove the last logged message");
+ChatCommands.add_usage("log", "number", "Display the message numbered <number>");
+ChatCommands.add_usage("log", "summary", "Display a summary of the logged messages", {literal: true});
+ChatCommands.add_usage("log", "shift", "Remove the first logged message", {literal: true});
+ChatCommands.add_usage("log", "pop", "Remove the last logged message", {literal: true});
 
 ChatCommands.add("clear", command_clear, "Clears all text from all visible modules");
 ChatCommands.add_usage("clear", null, "Clears all text from all visible modules");
-ChatCommands.add_usage("clear", "module", "Clears all text from <module> (either &quot;module1&quot; or &quot;module2&quot;)");
+ChatCommands.add_usage("clear", "module1", "Clears all text from module1", {literal: true});
+ChatCommands.add_usage("clear", "module2", "Clears all text from module2", {literal: true});
 
 ChatCommands.add("join", command_join, "Join a channel");
 ChatCommands.add_usage("join", "channel", "Connect to <channel>; leading # is optional");
