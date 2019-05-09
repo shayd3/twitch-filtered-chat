@@ -49,6 +49,7 @@ function GetAssetURL(file, tree) {
 function AddAsset(src, tree=null, loadcb=null, errcb=null) {
   ASSETS.push({});
   let asset = ASSETS[ASSETS.length - 1];
+  asset.file = src;
   asset.src = GetAssetURL(src, tree);
   asset.tree = tree;
   asset.loaded = false;
@@ -62,7 +63,7 @@ function AddAsset(src, tree=null, loadcb=null, errcb=null) {
     if (loadcb) { loadcb(asset); }
   }
   asset.script.onerror = function(e) {
-    if (errcb) { errorcb(asset, e); }
+    if (errcb) { errcb(asset, e); }
     console.error("Failed loading", asset, e);
     asset.error = true;
   }
@@ -79,7 +80,7 @@ function AssetsLoaded() {
 }
 
 /* Parse layout= query string value */
-function ParseLayout(str) {
+function ParseLayout(str) { /* exported ParseLayout */
   let layout = {Cols: null, Chat: true, Slim: false};
   if (str.indexOf(':') > -1) {
     let v1 = str.substr(0, str.indexOf(':'));
@@ -116,7 +117,7 @@ function ParseLayout(str) {
 }
 
 /* Generate layout= query string value */
-function FormatLayout(layout) {
+function FormatLayout(layout) { /* exported FormatLayout */
   let k = "";
   let v = "";
   if (layout.Tesla) {
@@ -164,13 +165,14 @@ function asset_error(asset, e) {
 /* Add top-level assets */
 AddAsset("config.js", MOD_TFC, null, asset_error);
 AddAsset("htmlgen.js", MOD_TFC, null, asset_error);
+AddAsset("commands.js", MOD_TFC, null, asset_error);
 AddAsset("filtered-chat.js", MOD_TFC, null, asset_error);
 if (!USE_DIST) {
   AddAsset("plugins/plugins.js", MOD_TFC, null, asset_error);
 }
 
 /* Called by body.onload */
-function Main(global) {
+function Main(global) { /* exported Main */
   /* Populate the debug div with text */
   function debug_msg(msg) {
     let d = document.getElementById("debug");
@@ -180,10 +182,11 @@ function Main(global) {
   }
   global.debug_msg = debug_msg;
 
-  AddAsset("utility.js", MOD_TWAPI);
-  AddAsset("twitch-utility.js", MOD_TWAPI);
-  AddAsset("colors.js", MOD_TWAPI);
-  AddAsset("client.js", MOD_TWAPI);
+  /* Add TWAPI assets */
+  AddAsset("utility.js", MOD_TWAPI, null, asset_error);
+  AddAsset("twitch-utility.js", MOD_TWAPI, null, asset_error);
+  AddAsset("colors.js", MOD_TWAPI, null, asset_error);
+  AddAsset("client.js", MOD_TWAPI, null, asset_error);
 
   /* Populate templates and load the client */
   function index_main() {

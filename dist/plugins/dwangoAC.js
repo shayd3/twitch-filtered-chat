@@ -9,20 +9,20 @@ var DwangoACPlugin = function () {
     _classCallCheck(this, DwangoACPlugin);
 
     this._debug = client.GetDebug();
-    Plugins.AddChatCommand("//tastree5", this, function (obj) {
+    Plugins.AddChatCommand("//tastree5", this, function (cmd, tokens, client) {
       client.SendMessageToAll("tasbTASBot ".repeat(1).trim());
       client.SendMessageToAll("tasbTASBot ".repeat(2).trim());
       client.SendMessageToAll("tasbTASBot ".repeat(3).trim());
       client.SendMessageToAll("tasbTASBot ".repeat(2).trim());
       client.SendMessageToAll("tasbTASBot ".repeat(1).trim());
     }.bind(this));
-    Plugins.AddChatCommand("//spamtree", this, function (obj) {
+    Plugins.AddChatCommand("//spamtree", this, function (cmd, tokens, client) {
       var n = 0;
-      if (obj.tokens.length > 1 && obj.tokens[0].match(/^[0-9]+$/)) {
-        n = Number(obj.tokens[0]);
-        obj.tokens.shift();
+      if (tokens.length > 1 && tokens[0].match(/^[0-9]+$/)) {
+        n = Number(tokens[0]);
+        tokens.shift();
       }
-      var msg = obj.tokens.join(" ");
+      var msg = tokens.join(" ");
       for (var i = 1; i < n * 2; ++i) {
         var c = i < Math.floor(n) ? i : n * 2 - i;
         var msgi = (msg + " ").repeat(c).trim();
@@ -36,6 +36,11 @@ var DwangoACPlugin = function () {
     key: "toString",
     value: function toString() {
       return "[object DwangoACPlugin]";
+    }
+  }, {
+    key: "name",
+    get: function get() {
+      return "DwangoACPlugin";
     }
   }]);
 

@@ -34,6 +34,7 @@
  *  data-recv-ts
  */
 
+/* exported HTMLGenerator */
 class HTMLGenerator {
   constructor(client, config=null) {
     this._client = client;
@@ -100,7 +101,6 @@ class HTMLGenerator {
   _genCheer(cheer, bits) {
     /* Use the highest tier that doesn't exceed the cheered bits */
     let t = cheer.tiers.filter((t) => bits >= t.min_bits).max((t) => t.min_bits);
-    let color = t.color;
     /* Use the smallest scale available */
     let url = t.images.dark.animated[cheer.scales.min((s) => +s)];
     let $w = $(`<span class="cheer cheermote"></span>`);
@@ -127,10 +127,10 @@ class HTMLGenerator {
       $b.attr('tw-badge-scope', 'global');
     } else if (this._client.IsChannelBadge(event.channel, badge_name)) {
       let badge_info = this._client.GetChannelBadge(event.channel, badge_name);
-      let badge_src = !!badge_info.alpha ? badge_info.alpha : badge_info.image;
+      let badge_src = badge_info.alpha ? badge_info.alpha : badge_info.image;
       $b.attr('src', badge_src);
       $b.attr('tw-badge', JSON.stringify(badge_info));
-      if (!!event.channel) {
+      if (event.channel) {
         $b.attr('tw-badge-scope', 'channel');
         $b.attr('tw-badge-channel', event.channel.channel.lstrip('#'));
       }
@@ -162,7 +162,7 @@ class HTMLGenerator {
       for (let [badge_name, badge_num] of event.flags.badges) {
         let $b = this._genTwitchBadge(event, badge_name, badge_num);
         if ($b === null) {
-          console.warn('Unknown badge', badge_name, badge_num, 'for', event);
+          Util.Warn('Unknown badge', badge_name, badge_num, 'for', event);
           continue;
         } else {
           $bc.append($b);
@@ -182,15 +182,15 @@ class HTMLGenerator {
         $bc.append($b);
       }
     }
+    /* For if BTTV ever adds badges
     if (event.flags['bttv-badges']) {
       for (let badge of Object.values(event.flags['bttv-badges'])) {
         let $b = $(`<img class="badge bttv-badge" width="18px" height="18px" />`);
         $b.attr('data-badge', '1');
         $b.attr('data-ffz-badge', '1');
         $b.attr('tw-badge-scope', 'ffz');
-        /* For if BTTV ever adds badges */
       }
-    }
+    } */
     return $bc;
   }
 
@@ -513,6 +513,7 @@ class HTMLGenerator {
 
   raid(event) {
     /* TODO */
+    return event.repr();
   }
 
   /* General-use functions below */
@@ -566,20 +567,18 @@ class HTMLGenerator {
   }
 
   formatLinks(msg) {
-    /* Clone msg */
+    /* TODO: replace node entirely
     let $m = $(msg[0].outerHTML);
-    /* Format links in $m */
     for (let [i, e] of Object.entries($m.contents())) {
       if (e.nodeType === document.TEXT_NODE) {
         let m = e.nodeValue.match(Util.URL_REGEX);
         if (m && m.length > 0) {
           for (let url of m) {
-            /* TODO: replace the node entirely */
             e.nodeValue = e.nodeValue.replace(url, this.url(url));
           }
         }
       }
-    }
+    }*/
     /* TODO: return $m over msg */
     return msg;
   }

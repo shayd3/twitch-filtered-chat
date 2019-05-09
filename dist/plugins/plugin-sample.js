@@ -10,13 +10,10 @@ var SamplePlugin = function () {
 
     this._debug = client.GetDebug();
     Plugins.AddChatCommand("//sample-plugin", this, this._say_hi.bind(this));
-    Plugins.AddChatCommand("//sample-plugin-2", this, function (obj) {
-      var line = obj.line;
-      var command = obj.command;
-      var tokens = obj.tokens;
+    Plugins.AddChatCommand("//sample-plugin-2", this, function (cmd, tokens /*, client*/) {
       add_pre("SamplePlugin was here!");
       if (tokens.length > 0) {
-        add_pre("You entered \"" + line + "\" with " + tokens.length + " tokens");
+        add_pre("You entered " + tokens.length + " tokens: " + tokens.join(" ").escape());
       }
     });
     resolve(this);
@@ -31,6 +28,11 @@ var SamplePlugin = function () {
     key: "toString",
     value: function toString() {
       return "[object SamplePlugin]";
+    }
+  }, {
+    key: "name",
+    get: function get() {
+      return "SamplePlugin";
     }
   }]);
 

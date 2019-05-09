@@ -34,6 +34,8 @@
  *  data-recv-ts
  */
 
+/* exported HTMLGenerator */
+
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -111,7 +113,6 @@ var HTMLGenerator = function () {
       }).max(function (t) {
         return t.min_bits;
       });
-      var color = t.color;
       /* Use the smallest scale available */
       var url = t.images.dark.animated[cheer.scales.min(function (s) {
         return +s;
@@ -141,10 +142,10 @@ var HTMLGenerator = function () {
         $b.attr('tw-badge-scope', 'global');
       } else if (this._client.IsChannelBadge(event.channel, badge_name)) {
         var _badge_info = this._client.GetChannelBadge(event.channel, badge_name);
-        var badge_src = !!_badge_info.alpha ? _badge_info.alpha : _badge_info.image;
+        var badge_src = _badge_info.alpha ? _badge_info.alpha : _badge_info.image;
         $b.attr('src', badge_src);
         $b.attr('tw-badge', JSON.stringify(_badge_info));
-        if (!!event.channel) {
+        if (event.channel) {
           $b.attr('tw-badge-scope', 'channel');
           $b.attr('tw-badge-channel', event.channel.channel.lstrip('#'));
         }
@@ -189,7 +190,7 @@ var HTMLGenerator = function () {
 
             var $b = this._genTwitchBadge(event, badge_name, badge_num);
             if ($b === null) {
-              console.warn('Unknown badge', badge_name, badge_num, 'for', event);
+              Util.Warn('Unknown badge', badge_name, badge_num, 'for', event);
               continue;
             } else {
               $bc.append($b);
@@ -244,36 +245,15 @@ var HTMLGenerator = function () {
           }
         }
       }
+      /* For if BTTV ever adds badges
       if (event.flags['bttv-badges']) {
-        var _iteratorNormalCompletion3 = true;
-        var _didIteratorError3 = false;
-        var _iteratorError3 = undefined;
-
-        try {
-          for (var _iterator3 = Object.values(event.flags['bttv-badges'])[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-            var _badge = _step3.value;
-
-            var _$b2 = $("<img class=\"badge bttv-badge\" width=\"18px\" height=\"18px\" />");
-            _$b2.attr('data-badge', '1');
-            _$b2.attr('data-ffz-badge', '1');
-            _$b2.attr('tw-badge-scope', 'ffz');
-            /* For if BTTV ever adds badges */
-          }
-        } catch (err) {
-          _didIteratorError3 = true;
-          _iteratorError3 = err;
-        } finally {
-          try {
-            if (!_iteratorNormalCompletion3 && _iterator3.return) {
-              _iterator3.return();
-            }
-          } finally {
-            if (_didIteratorError3) {
-              throw _iteratorError3;
-            }
-          }
+        for (let badge of Object.values(event.flags['bttv-badges'])) {
+          let $b = $(`<img class="badge bttv-badge" width="18px" height="18px" />`);
+          $b.attr('data-badge', '1');
+          $b.attr('data-ffz-badge', '1');
+          $b.attr('tw-badge-scope', 'ffz');
         }
-      }
+      } */
       return $bc;
     }
   }, {
@@ -402,13 +382,13 @@ var HTMLGenerator = function () {
       var ffz_emotes = this._client.GetFFZEmotes(event.channel.channel);
       if (ffz_emotes && ffz_emotes.emotes) {
         var ffz_emote_arr = [];
-        var _iteratorNormalCompletion4 = true;
-        var _didIteratorError4 = false;
-        var _iteratorError4 = undefined;
+        var _iteratorNormalCompletion3 = true;
+        var _didIteratorError3 = false;
+        var _iteratorError3 = undefined;
 
         try {
-          for (var _iterator4 = Object.entries(ffz_emotes.emotes)[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-            var _ref3 = _step4.value;
+          for (var _iterator3 = Object.entries(ffz_emotes.emotes)[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+            var _ref3 = _step3.value;
 
             var _ref4 = _slicedToArray(_ref3, 2);
 
@@ -418,16 +398,16 @@ var HTMLGenerator = function () {
             ffz_emote_arr.push([v, k]);
           }
         } catch (err) {
-          _didIteratorError4 = true;
-          _iteratorError4 = err;
+          _didIteratorError3 = true;
+          _iteratorError3 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion4 && _iterator4.return) {
-              _iterator4.return();
+            if (!_iteratorNormalCompletion3 && _iterator3.return) {
+              _iterator3.return();
             }
           } finally {
-            if (_didIteratorError4) {
-              throw _iteratorError4;
+            if (_didIteratorError3) {
+              throw _iteratorError3;
             }
           }
         }
@@ -464,13 +444,13 @@ var HTMLGenerator = function () {
       var bttv_emotes = this._client.GetBTTVEmotes(event.channel.channel);
       if (bttv_emotes && bttv_emotes.emotes) {
         var bttv_emote_arr = [];
-        var _iteratorNormalCompletion5 = true;
-        var _didIteratorError5 = false;
-        var _iteratorError5 = undefined;
+        var _iteratorNormalCompletion4 = true;
+        var _didIteratorError4 = false;
+        var _iteratorError4 = undefined;
 
         try {
-          for (var _iterator5 = Object.entries(bttv_emotes.emotes)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-            var _ref5 = _step5.value;
+          for (var _iterator4 = Object.entries(bttv_emotes.emotes)[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+            var _ref5 = _step4.value;
 
             var _ref6 = _slicedToArray(_ref5, 2);
 
@@ -480,16 +460,16 @@ var HTMLGenerator = function () {
             bttv_emote_arr.push([_v, _k]);
           }
         } catch (err) {
-          _didIteratorError5 = true;
-          _iteratorError5 = err;
+          _didIteratorError4 = true;
+          _iteratorError4 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion5 && _iterator5.return) {
-              _iterator5.return();
+            if (!_iteratorNormalCompletion4 && _iterator4.return) {
+              _iterator4.return();
             }
           } finally {
-            if (_didIteratorError5) {
-              throw _iteratorError5;
+            if (_didIteratorError4) {
+              throw _iteratorError4;
             }
           }
         }
@@ -613,13 +593,13 @@ var HTMLGenerator = function () {
       var html_pre = [];
       var html_post = [];
       if (msg_def.effects.length > 0) {
-        var _iteratorNormalCompletion6 = true;
-        var _didIteratorError6 = false;
-        var _iteratorError6 = undefined;
+        var _iteratorNormalCompletion5 = true;
+        var _didIteratorError5 = false;
+        var _iteratorError5 = undefined;
 
         try {
-          for (var _iterator6 = msg_def.effects[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-            var effect = _step6.value;
+          for (var _iterator5 = msg_def.effects[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+            var effect = _step5.value;
 
             if (effect.class) msg_def.e.addClass(effect.class);
             if (effect.style) msg_def.e.attr("style", effect.style);
@@ -629,16 +609,16 @@ var HTMLGenerator = function () {
             if (effect.html_post) html_post.unshift(effect.html_post);
           }
         } catch (err) {
-          _didIteratorError6 = true;
-          _iteratorError6 = err;
+          _didIteratorError5 = true;
+          _iteratorError5 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion6 && _iterator6.return) {
-              _iterator6.return();
+            if (!_iteratorNormalCompletion5 && _iterator5.return) {
+              _iterator5.return();
             }
           } finally {
-            if (_didIteratorError6) {
-              throw _iteratorError6;
+            if (_didIteratorError5) {
+              throw _iteratorError5;
             }
           }
         }
@@ -695,9 +675,10 @@ var HTMLGenerator = function () {
     }
   }, {
     key: "raid",
-    value: function raid(event) {}
-    /* TODO */
-
+    value: function raid(event) {
+      /* TODO */
+      return event.repr();
+    }
 
     /* General-use functions below */
 
@@ -726,27 +707,27 @@ var HTMLGenerator = function () {
         if (typeof classes === "string") {
           $l.addClass(classes);
         } else {
-          var _iteratorNormalCompletion7 = true;
-          var _didIteratorError7 = false;
-          var _iteratorError7 = undefined;
+          var _iteratorNormalCompletion6 = true;
+          var _didIteratorError6 = false;
+          var _iteratorError6 = undefined;
 
           try {
-            for (var _iterator7 = classes[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-              var c = _step7.value;
+            for (var _iterator6 = classes[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+              var c = _step6.value;
 
               $l.addClass(c);
             }
           } catch (err) {
-            _didIteratorError7 = true;
-            _iteratorError7 = err;
+            _didIteratorError6 = true;
+            _iteratorError6 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion7 && _iterator7.return) {
-                _iterator7.return();
+              if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                _iterator6.return();
               }
             } finally {
-              if (_didIteratorError7) {
-                throw _iteratorError7;
+              if (_didIteratorError6) {
+                throw _iteratorError6;
               }
             }
           }
@@ -772,27 +753,27 @@ var HTMLGenerator = function () {
       if (typeof classes === "string") {
         $e.addClass(classes);
       } else {
-        var _iteratorNormalCompletion8 = true;
-        var _didIteratorError8 = false;
-        var _iteratorError8 = undefined;
+        var _iteratorNormalCompletion7 = true;
+        var _didIteratorError7 = false;
+        var _iteratorError7 = undefined;
 
         try {
-          for (var _iterator8 = classes[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-            var c = _step8.value;
+          for (var _iterator7 = classes[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+            var c = _step7.value;
 
             $e.addClass(c);
           }
         } catch (err) {
-          _didIteratorError8 = true;
-          _iteratorError8 = err;
+          _didIteratorError7 = true;
+          _iteratorError7 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion8 && _iterator8.return) {
-              _iterator8.return();
+            if (!_iteratorNormalCompletion7 && _iterator7.return) {
+              _iterator7.return();
             }
           } finally {
-            if (_didIteratorError8) {
-              throw _iteratorError8;
+            if (_didIteratorError7) {
+              throw _iteratorError7;
             }
           }
         }
@@ -805,69 +786,19 @@ var HTMLGenerator = function () {
   }, {
     key: "formatLinks",
     value: function formatLinks(msg) {
-      /* Clone msg */
-      var $m = $(msg[0].outerHTML);
-      /* Format links in $m */
-      var _iteratorNormalCompletion9 = true;
-      var _didIteratorError9 = false;
-      var _iteratorError9 = undefined;
-
-      try {
-        for (var _iterator9 = Object.entries($m.contents())[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-          var _ref7 = _step9.value;
-
-          var _ref8 = _slicedToArray(_ref7, 2);
-
-          var i = _ref8[0];
-          var e = _ref8[1];
-
-          if (e.nodeType === document.TEXT_NODE) {
-            var m = e.nodeValue.match(Util.URL_REGEX);
-            if (m && m.length > 0) {
-              var _iteratorNormalCompletion10 = true;
-              var _didIteratorError10 = false;
-              var _iteratorError10 = undefined;
-
-              try {
-                for (var _iterator10 = m[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-                  var url = _step10.value;
-
-                  /* TODO: replace the node entirely */
-                  e.nodeValue = e.nodeValue.replace(url, this.url(url));
-                }
-              } catch (err) {
-                _didIteratorError10 = true;
-                _iteratorError10 = err;
-              } finally {
-                try {
-                  if (!_iteratorNormalCompletion10 && _iterator10.return) {
-                    _iterator10.return();
-                  }
-                } finally {
-                  if (_didIteratorError10) {
-                    throw _iteratorError10;
-                  }
-                }
-              }
+      /* TODO: replace node entirely
+      let $m = $(msg[0].outerHTML);
+      for (let [i, e] of Object.entries($m.contents())) {
+        if (e.nodeType === document.TEXT_NODE) {
+          let m = e.nodeValue.match(Util.URL_REGEX);
+          if (m && m.length > 0) {
+            for (let url of m) {
+              e.nodeValue = e.nodeValue.replace(url, this.url(url));
             }
           }
         }
-        /* TODO: return $m over msg */
-      } catch (err) {
-        _didIteratorError9 = true;
-        _iteratorError9 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion9 && _iterator9.return) {
-            _iterator9.return();
-          }
-        } finally {
-          if (_didIteratorError9) {
-            throw _iteratorError9;
-          }
-        }
-      }
-
+      }*/
+      /* TODO: return $m over msg */
       return msg;
     }
   }, {
@@ -879,27 +810,27 @@ var HTMLGenerator = function () {
     key: "bgcolors",
     set: function set(colors) {
       this._bg_colors = [];
-      var _iteratorNormalCompletion11 = true;
-      var _didIteratorError11 = false;
-      var _iteratorError11 = undefined;
+      var _iteratorNormalCompletion8 = true;
+      var _didIteratorError8 = false;
+      var _iteratorError8 = undefined;
 
       try {
-        for (var _iterator11 = colors[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-          var c = _step11.value;
+        for (var _iterator8 = colors[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+          var c = _step8.value;
 
           this._bg_colors.push(c);
         }
       } catch (err) {
-        _didIteratorError11 = true;
-        _iteratorError11 = err;
+        _didIteratorError8 = true;
+        _iteratorError8 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion11 && _iterator11.return) {
-            _iterator11.return();
+          if (!_iteratorNormalCompletion8 && _iterator8.return) {
+            _iterator8.return();
           }
         } finally {
-          if (_didIteratorError11) {
-            throw _iteratorError11;
+          if (_didIteratorError8) {
+            throw _iteratorError8;
           }
         }
       }

@@ -32,7 +32,7 @@
 
 /* CSS cheer styles */
 
-var CSSCheerStyles = {
+var CSSCheerStyles = { /* exported CSSCheerStyles */
   cssmarquee: {
     _disabled: true,
     cost: 1,
@@ -92,6 +92,7 @@ var CSSCheerStyles = {
 
 /* Generate a CSSCheerStyle for the color given */
 function CSSColorStyle(colorname) {
+  /* exported CSSColorStyle */
   return {
     cost: 1,
     style: "color: " + AllColors[colorname]
@@ -100,6 +101,7 @@ function CSSColorStyle(colorname) {
 
 /* Obtain a style definition for the given word */
 function GetCheerStyle(word) {
+  /* exported GetCheerStyle */
   if (CSSCheerStyles.hasOwnProperty(word)) {
     return CSSCheerStyles[word];
   } else if (ColorNames.hasOwnProperty(word)) {
@@ -109,7 +111,7 @@ function GetCheerStyle(word) {
 }
 
 /* Colors usable in cheer effects */
-var ColorNames = {
+var ColorNames = { /* exported ColorNames */
   "dust": "#b2996e",
   "tea": "#65ab7c",
   "cement": "#a5a391",

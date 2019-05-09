@@ -21,7 +21,6 @@ const AUTOGEN_VALUE = "Auto-Generated";
 
 /* Functions to sanitize configuration */
 function verify_string(val) { return (typeof(val) == "string" ? val : ""); }
-function verify_number(val) { return (typeof(val) == "number" ? val : ""); }
 function verify_boolean(val) { return (typeof(val) == "boolean" ? val : ""); }
 function verify_array(val) { return Util.IsArray(val) ? val : []; }
 
@@ -72,20 +71,20 @@ function parse_query_string(config, qs=null) {
         } else if (v === "trace") {
           val = Util.LEVEL_TRACE;
         } else {
-          val = !!v ? 1 : 0;
+          val = v ? 1 : 0;
         }
       }
       if (val < Util.LEVEL_MIN) val = Util.LEVEL_MIN;
       if (val > Util.LEVEL_MAX) val = Util.LEVEL_MAX;
     } else if (k === "noassets") {
       key = "NoAssets";
-      val = !!v;
+      val = v ? true : false;
     } else if (k === "noffz") {
       key = "NoFFZ";
-      val = !!v;
+      val = v ? true : false;
     } else if (k === "nobttv") {
       key = "NoBTTV";
-      val = !!v;
+      val = v ? true : false;
     } else if (k === "hmax") {
       key = "HistorySize";
       val = typeof(v) === "number" ? v : TwitchClient.DEFAULT_HISTORY_SIZE;
@@ -107,7 +106,7 @@ function parse_query_string(config, qs=null) {
       val = `${v}pt`;
     } else if (k == "plugins") {
       key = "Plugins";
-      val = !!v;
+      val = v ? true : false;
     } else if (k == "disable") {
       for (let e of `${v}`.split(',')) {
         if (CSSCheerStyles[e]) {
@@ -389,7 +388,6 @@ function parse_module_config(value) {
 
 /* Format the module configuration into a query string component */
 function format_module_config(cfg) {
-  let B = (b) => !!b ? "1" : "0";
   let Encode = (vals) => vals.map((v) => encodeURIComponent(v));
   let bits = [cfg.Pleb, cfg.Sub, cfg.VIP, cfg.Mod, cfg.Event, cfg.Bits];
   let values = [
@@ -524,15 +522,19 @@ function add_error(content, pre=false) {
 
 /* Handle a chat command */
 function handle_command(value, client) {
+  if (ChatCommands.is_command_str(value)) {
+    let command = value.split(" ")[0];
+    if (ChatCommands.has_command(command)) {
+      ChatCommands.execute(value, client);
+      return true;
+    }
+  } else {
+    return false;
+  }
+
   let tokens = value.split(" ");
   let command = tokens.shift();
   let config = get_config_object();
-  try {
-    CHAT_COMMANDS;
-  }
-  catch (e) {
-    window.CHAT_COMMANDS = {};
-  }
 
   /* Clear empty tokens at the end (\r\n related) */
   while (tokens.length > 0 && tokens[tokens.length-1].length == 0) {
@@ -540,8 +542,6 @@ function handle_command(value, client) {
   }
 
   /* Shortcuts for usages/help messages */
-  let arg = (s) => `<span class="arg">${s.escape()}</span>`;
-  let barg = (s) => `&lt;${arg(s)}&gt;`;
   let helpcmd = (k) => `<span class="help helpcmd">${k}</span>`;
   let helpmsg = (k) => `<span class="help helpmsg">${k}</span>`;
   let helpline = (k, v) => `<div class="helpline">${helpcmd(k)}${helpmsg(v)}</div>`;
@@ -550,62 +550,7 @@ function handle_command(value, client) {
   let add_help = (s) => add_pre(help(s));
 
   /* Handle each of the commands */
-  if (command == "//log" || command == "//logs") {
-    let logs = Util.GetWebStorage("debug-msg-log") || [];
-    add_help(`Debug message log length: ${logs.length}`);
-    if (tokens.length > 0) {
-      if (tokens[0] == "show") {
-        if (tokens.length > 1) {
-          let idx = Number.parseInt(tokens[1]);
-          add_help(`${idx}: ${JSON.stringify(logs[idx]).escape()}`);
-        } else {
-          for (let [i, l] of Object.entries(logs)) {
-            add_help(`${i}: ${JSON.stringify(l).escape()}`);
-          }
-        }
-      } else if (tokens[0] == "summary") {
-        let lines = [];
-        let line = [];
-        for (let [i, l] of Object.entries(logs)) {
-          let desc = '';
-          if (l._cmd) {
-            desc = l._cmd;
-          } else {
-            desc = JSON.stringify(l).substr(0, 10);
-          }
-          line.push(desc);
-          if (line.length >= 10) {
-            lines.push(line);
-            line = [];
-          }
-        }
-        if (line.length > 0) lines.push(line);
-        let lidx = 0;
-        for (let [i, l] of Object.entries(lines)) {
-          add_help(`${lidx}-${lidx+l.length}: ${JSON.stringify(l)}`);
-          lidx += l.length;
-        }
-      } else if (tokens[0] == "shift") {
-        logs.shift();
-        add_help(`New logs length: ${logs.length}`);
-        Util.SetWebStorage(logs, "debug-msg-log");
-      } else if (tokens[0] == "pop") {
-        logs.pop();
-        add_help(`New logs length: ${logs.length}`);
-        Util.SetWebStorage(logs, "debug-msg-log");
-      } else {
-        add_help(`Unknown argument "${tokens[0]}"`);
-      }
-    } else {
-      add_help(`Use //log summary to view a summary`);
-      add_help(`Use //log show to view them all`);
-      add_help(`Use //log show &lt;N&gt; to show item &lt;N&gt;`);
-      add_help(`Use //log shift to remove one entry from the start`);
-      add_help(`Use //log pop to remove one entry from the end`);
-    }
-  } else if (command == '//clear') {
-    $(".content").find(".line-wrapper").remove();
-  } else if (command == "//config") {
+  if (command == "//config") {
     if (tokens.length > 0) {
       if (tokens[0] == "clientid") {
         add_helpline("ClientID", config.ClientID);
@@ -692,32 +637,10 @@ function handle_command(value, client) {
         }
       }
     }
-  } else if (command == "//join") {
-    if (tokens.length > 0) {
-      let ch = Twitch.FormatChannel(tokens[0]);
-      if (!client.IsInChannel(ch)) {
-        join_channel(client, ch);
-      } else {
-        add_pre(`Already in channel ${ch}`);
-      }
-    } else {
-      add_pre(`Usage: //join ${barg('channel')}`);
-    }
-  } else if (command == "//part" || command == "//leave") {
-    if (tokens.length > 0) {
-      let ch = Twitch.FormatChannel(tokens[0]);
-      if (client.IsInChannel(ch)) {
-        leave_channel(client, ch);
-      } else {
-        add_pre(`Not in channel ${ch}`);
-      }
-    } else {
-      add_pre(`Usage: //leave ${barg("channel")}`);
-    }
   } else if (command == "//badges") {
     let all_badges = [];
     for (let [bname, badge] of Object.entries(client.GetGlobalBadges())) {
-      for (let [bv, bdef] of Object.entries(badge.versions)) {
+      for (let bdef of Object.values(badge.versions)) {
         let url = bdef.image_url_2x;
         let size = 36;
         if (tokens.indexOf("small") > -1) {
@@ -732,89 +655,6 @@ function handle_command(value, client) {
       }
     }
     add_notice(all_badges.join(''));
-  } else if (command == "//help") {
-    if (tokens.length > 0 && tokens[0].startsWith('//')) {
-      tokens[0] = tokens[0].substr(2);
-    }
-    if (tokens.length == 0) {
-      let lines = [];
-      lines.push([`clear`, `clears all chat windows`]);
-      lines.push([`config`, `display configuration`]);
-      lines.push([`config purge`, `purge active configuration`]);
-      lines.push([`config [${arg('key')}]`, `display ${arg('key')} value`]);
-      lines.push([`join ${barg('ch')}`, `join ${barg('ch')}`]);
-      lines.push([`part ${barg('ch')}`, `leave ${barg('ch')}`]);
-      lines.push([`leave ${barg('ch')}`, `leave ${barg('ch')}`]);
-      lines.push([`badges`, `show the global badges`]);
-      lines.push([`help ${barg('command')}`, `help for ${barg('command')}`]);
-      add_help(`Commands:`);
-      for (let [c, m] of lines) {
-        add_helpline(`//${c}`, m);
-      }
-      try {
-        for (let [n, p] of Object.entries(Plugins.plugins)) {
-          if (p._loaded && p.commands) {
-            for (let c of p.commands) {
-              add_helpline(c, `added by ${n}`);
-            }
-          }
-        }
-      }
-      catch (e) {
-        if (e.name !== "ReferenceError") {
-          throw e;
-        }
-      }
-    } else if (tokens[0] == "clear") {
-      add_help(`//clear: Clears all chats`);
-    } else if (tokens[0] == "config") {
-      add_help(`//config: Display current configuration, excluding ClientID and OAuth`);
-      add_help(`//config clientid: Display current ClientID`);
-      add_help(`//config oauth: Display current OAuth token`);
-      add_help(`//config purge: Purge the current key from localStorage`);
-      add_help(`//config url: Generate a URL from the current configuration (CONTAINS AUTHID)`);
-      add_help(`//config url git: As above, using https://kaedenn.github.io`);
-      add_help(`//config url git text: Prevent base64 encoding URL`);
-      add_help(`//config ${barg("key")}: Display configuration item ${barg("key")}`);
-    } else if (tokens[0] == "join") {
-      add_help(`//join ${barg("ch")}: Join the specified channel`);
-    } else if (tokens[0] == "part" || tokens[0] == "leave") {
-      add_help(`//part ${barg("ch")}: Disconnect from the specified channel`);
-      add_help(`//leave ${barg("ch")}: Disconnect from the specified channel`);
-    } else if (tokens[0] == "help") {
-      add_help(`//help: Displays a list of recognized commands and their usage`);
-      add_help(`//help ${barg("command")}: Displays help for a specific command`);
-    } else {
-      add_help(`//help: No such command "${tokens[0].escape()}"`);
-    }
-  } else if (command === "//plugins") {
-    try {
-      for (let [n, p] of Object.entries(Plugins.plugins)) {
-        let msg = `${n}: ${p.file} @ ${p.order}`;
-        if (p._error) {
-          add_error(`${msg}: Failed: ${JSON.stringify(p._error_obj)}`);
-        } else if (p._loaded) {
-          msg = `${msg}: Loaded`;
-          if (p.commands) {
-            msg = `${msg}: Commands: ${p.commands.join(" ")}`;
-          }
-          add_pre(msg);
-        }
-      }
-    }
-    catch (e) {
-      if (e.name === "ReferenceError") {
-        add_error("Plugin information unavailable");
-      } else {
-        throw e;
-      }
-    }
-  } else if (CHAT_COMMANDS.hasOwnProperty(command)) {
-    for (let cmd of CHAT_COMMANDS[command]) {
-      cmd({line: value, command: command, tokens: tokens});
-    }
-  } else if (command.startsWith('//')) {
-    add_error(`Unknown command "${command.escape()}"`, true);
   } else {
     return false;
   }
@@ -914,14 +754,14 @@ function show_context_window(client, cw, line) {
     /* Remove the last comma */
     $roles[0].removeChild($roles[0].lastChild);
     $cw.append($roles);
-    if (client.IsCaster(channel) && !client.IsUIDSelf(user_id)) {
+    if (client.IsCaster(channel) && !client.IsUIDSelf(userid)) {
       if (mod) { $cw.append($Line(Link('cw-unmod', 'Remove Mod'))); }
       if (vip) { $cw.append($Line(Link('cw-unvip', 'Remove VIP'))); }
     }
   }
 
   /* Add the ability to add roles (for the caster) */
-  if (client.IsCaster(channel) && !client.IsUIDSelf(user_id)) {
+  if (client.IsCaster(channel) && !client.IsUIDSelf(userid)) {
     if (!mod) { $cw.append($Line(Link('cw-make-mod', 'Make Mod'))); }
     if (!vip) { $cw.append($Line(Link('cw-make-vip', 'Make VIP'))); }
   }
@@ -929,7 +769,7 @@ function show_context_window(client, cw, line) {
   let l_off = $l.offset();
   let offset = {top: l_off.top + $l.outerHeight() + 2, left: l_off.left};
   $cw.fadeIn().offset(offset);
-};
+}
 
 /* Set or unset transparency */
 function update_transparency(transparent) {
@@ -974,7 +814,7 @@ function update_transparency(transparent) {
 }
 
 /* Called once when the document loads */
-function client_main(layout) {
+function client_main(layout) { /* exported client_main */
   let client;
   let ConfigCommon = {};
 
@@ -1061,7 +901,7 @@ function client_main(layout) {
     });
 
     /* Set values we'll want to use later */
-    ConfigCommon.Plugins = !!config.Plugins;
+    ConfigCommon.Plugins = config.Plugins ? true : false;
     ConfigCommon.Layout = config.Layout;
     ConfigCommon.Transparent = config.Transparent;
     ConfigCommon.MaxMessages = config.MaxMessages || 100;
@@ -1079,6 +919,7 @@ function client_main(layout) {
   if (ConfigCommon.Plugins) {
     try {
       Plugins.LoadAll(client);
+      Plugins.set_commands_obj(ChatCommands);
     }
     catch (e) {
       if (e.name !== "ReferenceError") {
@@ -1145,7 +986,7 @@ function client_main(layout) {
       let config = get_config_object();
       $("#txtChannel").val(config.Channels.join(","));
       $("#txtNick").attr("disabled", "disabled")
-        .val(!!config.Name ? config.Name : AUTOGEN_VALUE);
+        .val(config.Name ? config.Name : AUTOGEN_VALUE);
       if (config.Pass && config.Pass.length > 0) {
         $("#txtPass").attr("disabled", "disabled").hide();
         $("#txtPassDummy").show();
@@ -1169,7 +1010,7 @@ function client_main(layout) {
   });
 
   /* Leaving the "Channels" text box */
-  $("#txtChannel").blur(function(e) {
+  $("#txtChannel").blur(function(/*e*/) {
     set_channels(client, $(this).val().split(","));
   });
 
@@ -1314,7 +1155,7 @@ function client_main(layout) {
   /* Bind to numerous TwitchEvent events {{{0 */
 
   /* WebSocket opened */
-  client.bind('twitch-open', function _on_twitch_open(e) {
+  client.bind('twitch-open', function _on_twitch_open(/*e*/) {
     $(".loading").remove();
     $("#debug").hide();
     if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
@@ -1424,7 +1265,6 @@ function client_main(layout) {
     if (event instanceof TwitchChatEvent) {
       let m = verify_string(event.message);
       if (event.flags && event.flags.mod && m.indexOf(' ') > -1) {
-        let user = event.user.escape();
         let tokens = m.split(' ');
         if (tokens[0] === '!tfc') {
           if (tokens[1] === "reload") {
