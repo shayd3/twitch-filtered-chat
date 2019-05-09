@@ -732,19 +732,8 @@ function add_error(content) {
 
 /* Handle a chat command */
 function handle_command(value, client) {
-  if (ChatCommands.is_command_str(value)) {
-    var _command = value.split(" ")[0];
-    if (ChatCommands.has_command(_command)) {
-      ChatCommands.execute(value, client);
-      return true;
-    }
-  } else {
-    return false;
-  }
-
   var tokens = value.split(" ");
   var command = tokens.shift();
-  var config = get_config_object();
 
   /* Clear empty tokens at the end (\r\n related) */
   while (tokens.length > 0 && tokens[tokens.length - 1].length == 0) {
@@ -771,8 +760,16 @@ function handle_command(value, client) {
     return add_pre(help(s));
   };
 
-  /* Handle each of the commands */
+  if (ChatCommands.is_command_str(value)) {
+    if (ChatCommands.has_command(command)) {
+      ChatCommands.execute(value, client);
+      return true;
+    }
+  }
+
+  /* Handle config command */
   if (command == "//config") {
+    var config = get_config_object();
     if (tokens.length > 0) {
       if (tokens[0] == "clientid") {
         add_helpline("ClientID", config.ClientID);
@@ -956,71 +953,6 @@ function handle_command(value, client) {
         }
       }
     }
-  } else if (command == "//badges") {
-    var all_badges = [];
-    var _iteratorNormalCompletion12 = true;
-    var _didIteratorError12 = false;
-    var _iteratorError12 = undefined;
-
-    try {
-      for (var _iterator12 = Object.entries(client.GetGlobalBadges())[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-        var _ref9 = _step12.value;
-
-        var _ref10 = _slicedToArray(_ref9, 2);
-
-        var bname = _ref10[0];
-        var badge = _ref10[1];
-        var _iteratorNormalCompletion13 = true;
-        var _didIteratorError13 = false;
-        var _iteratorError13 = undefined;
-
-        try {
-          for (var _iterator13 = Object.values(badge.versions)[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-            var bdef = _step13.value;
-
-            var _url = bdef.image_url_2x;
-            var size = 36;
-            if (tokens.indexOf("small") > -1) {
-              _url = bdef.image_url_1x;
-              size = 18;
-            } else if (tokens.indexOf("large") > -1) {
-              _url = bdef.image_url_4x;
-              size = 72;
-            }
-            var attr = "width=\"" + size + "\" height=\"" + size + "\" title=\"" + bname + "\"";
-            all_badges.push("<img src=\"" + _url + "\" " + attr + " alt=\"" + bname + "\" />");
-          }
-        } catch (err) {
-          _didIteratorError13 = true;
-          _iteratorError13 = err;
-        } finally {
-          try {
-            if (!_iteratorNormalCompletion13 && _iterator13.return) {
-              _iterator13.return();
-            }
-          } finally {
-            if (_didIteratorError13) {
-              throw _iteratorError13;
-            }
-          }
-        }
-      }
-    } catch (err) {
-      _didIteratorError12 = true;
-      _iteratorError12 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion12 && _iterator12.return) {
-          _iterator12.return();
-        }
-      } finally {
-        if (_didIteratorError12) {
-          throw _iteratorError12;
-        }
-      }
-    }
-
-    add_notice(all_badges.join(''));
   } else {
     return false;
   }
@@ -1081,13 +1013,13 @@ function show_context_window(client, cw, line) {
   /* Add link to timeout user */
   if (client.IsMod(channel)) {
     var $tl = $("<div class=\"cw-timeout\">Timeout:</div>");
-    var _iteratorNormalCompletion14 = true;
-    var _didIteratorError14 = false;
-    var _iteratorError14 = undefined;
+    var _iteratorNormalCompletion12 = true;
+    var _didIteratorError12 = false;
+    var _iteratorError12 = undefined;
 
     try {
-      for (var _iterator14 = "1s 10s 60s 10m 30m 1h 12h 24h".split(" ")[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-        var dur = _step14.value;
+      for (var _iterator12 = "1s 10s 60s 10m 30m 1h 12h 24h".split(" ")[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+        var dur = _step12.value;
 
         var $ta = $(Link("cw-timeout-" + user + "-" + dur, dur));
         $ta.addClass("cw-timeout-dur");
@@ -1105,16 +1037,16 @@ function show_context_window(client, cw, line) {
         $tl.append($ta);
       }
     } catch (err) {
-      _didIteratorError14 = true;
-      _iteratorError14 = err;
+      _didIteratorError12 = true;
+      _iteratorError12 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion14 && _iterator14.return) {
-          _iterator14.return();
+        if (!_iteratorNormalCompletion12 && _iterator12.return) {
+          _iterator12.return();
         }
       } finally {
-        if (_didIteratorError14) {
-          throw _iteratorError14;
+        if (_didIteratorError12) {
+          throw _iteratorError12;
         }
       }
     }
@@ -1190,29 +1122,29 @@ function update_transparency(transparent) {
     var ss = Util.CSS.GetSheet("main.css");
     var rule = Util.CSS.GetRule(ss, ":root");
     /* Find the prop="--<name>-color" rules */
-    var _iteratorNormalCompletion15 = true;
-    var _didIteratorError15 = false;
-    var _iteratorError15 = undefined;
+    var _iteratorNormalCompletion13 = true;
+    var _didIteratorError13 = false;
+    var _iteratorError13 = undefined;
 
     try {
-      for (var _iterator15 = Util.CSS.GetPropertyNames(rule)[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-        var prop = _step15.value;
+      for (var _iterator13 = Util.CSS.GetPropertyNames(rule)[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+        var prop = _step13.value;
 
         if (prop.match(/^--[a-z-]+-color$/)) {
           props.push(prop);
         }
       }
     } catch (err) {
-      _didIteratorError15 = true;
-      _iteratorError15 = err;
+      _didIteratorError13 = true;
+      _iteratorError13 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion15 && _iterator15.return) {
-          _iterator15.return();
+        if (!_iteratorNormalCompletion13 && _iterator13.return) {
+          _iterator13.return();
         }
       } finally {
-        if (_didIteratorError15) {
-          throw _iteratorError15;
+        if (_didIteratorError13) {
+          throw _iteratorError13;
         }
       }
     }
@@ -1221,13 +1153,13 @@ function update_transparency(transparent) {
     Util.Error("Failed getting main.css :root", e);
     props = ["--body-color", "--header-color", "--menudiv-color", "--module-color", "--odd-line-color", "--sub-color", "--chat-color", "--textarea-color"];
   }
-  var _iteratorNormalCompletion16 = true;
-  var _didIteratorError16 = false;
-  var _iteratorError16 = undefined;
+  var _iteratorNormalCompletion14 = true;
+  var _didIteratorError14 = false;
+  var _iteratorError14 = undefined;
 
   try {
-    for (var _iterator16 = props[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
-      var _prop = _step16.value;
+    for (var _iterator14 = props[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+      var _prop = _step14.value;
 
       if (transparent) {
         /* Set them all to transparent */
@@ -1242,16 +1174,16 @@ function update_transparency(transparent) {
       }
     }
   } catch (err) {
-    _didIteratorError16 = true;
-    _iteratorError16 = err;
+    _didIteratorError14 = true;
+    _iteratorError14 = err;
   } finally {
     try {
-      if (!_iteratorNormalCompletion16 && _iterator16.return) {
-        _iterator16.return();
+      if (!_iteratorNormalCompletion14 && _iterator14.return) {
+        _iterator14.return();
       }
     } finally {
-      if (_didIteratorError16) {
-        throw _iteratorError16;
+      if (_didIteratorError14) {
+        throw _iteratorError14;
       }
     }
   }
@@ -1700,29 +1632,29 @@ function client_main(layout) {
     }
     /* Avoid flooding the DOM with stale chat messages */
     var max = client.get('HTMLGen').getValue("MaxMessages") || 100;
-    var _iteratorNormalCompletion17 = true;
-    var _didIteratorError17 = false;
-    var _iteratorError17 = undefined;
+    var _iteratorNormalCompletion15 = true;
+    var _didIteratorError15 = false;
+    var _iteratorError15 = undefined;
 
     try {
-      for (var _iterator17 = $(".content")[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
-        var c = _step17.value;
+      for (var _iterator15 = $(".content")[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+        var c = _step15.value;
 
         while ($(c).find(".line-wrapper").length > max) {
           $(c).find(".line-wrapper").first().remove();
         }
       }
     } catch (err) {
-      _didIteratorError17 = true;
-      _iteratorError17 = err;
+      _didIteratorError15 = true;
+      _iteratorError15 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion17 && _iterator17.return) {
-          _iterator17.return();
+        if (!_iteratorNormalCompletion15 && _iterator15.return) {
+          _iterator15.return();
         }
       } finally {
-        if (_didIteratorError17) {
-          throw _iteratorError17;
+        if (_didIteratorError15) {
+          throw _iteratorError15;
         }
       }
     }

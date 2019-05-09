@@ -10,11 +10,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 /* Twitch Filtered Chat Commands */
 
-/* TODO:
- * command_config
- * command_badges
- */
-
 var TFCChatCommandStore = function () {
   function TFCChatCommandStore() {
     _classCallCheck(this, TFCChatCommandStore);
@@ -560,24 +555,87 @@ function command_part(cmd, tokens, client) {
   }
 }
 
-function command_badges() /*cmd, tokens, client*/{
-  /* TODO */
+function command_badges(cmd, tokens, client) {
+  var all_badges = [];
+  var _iteratorNormalCompletion11 = true;
+  var _didIteratorError11 = false;
+  var _iteratorError11 = undefined;
+
+  try {
+    for (var _iterator11 = Object.entries(client.GetGlobalBadges())[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+      var _ref5 = _step11.value;
+
+      var _ref6 = _slicedToArray(_ref5, 2);
+
+      var bname = _ref6[0];
+      var badge = _ref6[1];
+      var _iteratorNormalCompletion12 = true;
+      var _didIteratorError12 = false;
+      var _iteratorError12 = undefined;
+
+      try {
+        for (var _iterator12 = Object.values(badge.versions)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+          var bdef = _step12.value;
+
+          var url = bdef.image_url_2x;
+          var size = 36;
+          if (tokens.indexOf("small") > -1) {
+            url = bdef.image_url_1x;
+            size = 18;
+          } else if (tokens.indexOf("large") > -1) {
+            url = bdef.image_url_4x;
+            size = 72;
+          }
+          var attr = "width=\"" + size + "\" height=\"" + size + "\" title=\"" + bname + "\"";
+          all_badges.push("<img src=\"" + url + "\" " + attr + " alt=\"" + bname + "\" />");
+        }
+      } catch (err) {
+        _didIteratorError12 = true;
+        _iteratorError12 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion12 && _iterator12.return) {
+            _iterator12.return();
+          }
+        } finally {
+          if (_didIteratorError12) {
+            throw _iteratorError12;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    _didIteratorError11 = true;
+    _iteratorError11 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion11 && _iterator11.return) {
+        _iterator11.return();
+      }
+    } finally {
+      if (_didIteratorError11) {
+        throw _iteratorError11;
+      }
+    }
+  }
+
+  add_notice(all_badges.join(''));
 }
 
 function command_plugins() /*cmd, tokens, client*/{
   try {
-    var _iteratorNormalCompletion11 = true;
-    var _didIteratorError11 = false;
-    var _iteratorError11 = undefined;
+    var _iteratorNormalCompletion13 = true;
+    var _didIteratorError13 = false;
+    var _iteratorError13 = undefined;
 
     try {
-      for (var _iterator11 = Object.entries(Plugins.plugins)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-        var _ref5 = _step11.value;
+      for (var _iterator13 = Object.entries(Plugins.plugins)[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+        var _ref7 = _step13.value;
 
-        var _ref6 = _slicedToArray(_ref5, 2);
+        var _ref8 = _slicedToArray(_ref7, 2);
 
-        var n = _ref6[0];
-        var p = _ref6[1];
+        var n = _ref8[0];
+        var p = _ref8[1];
 
         var msg = n + ": " + p.file + " @ " + p.order;
         if (p._error) {
@@ -591,16 +649,16 @@ function command_plugins() /*cmd, tokens, client*/{
         }
       }
     } catch (err) {
-      _didIteratorError11 = true;
-      _iteratorError11 = err;
+      _didIteratorError13 = true;
+      _iteratorError13 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion11 && _iterator11.return) {
-          _iterator11.return();
+        if (!_iteratorNormalCompletion13 && _iterator13.return) {
+          _iterator13.return();
         }
       } finally {
-        if (_didIteratorError11) {
-          throw _iteratorError11;
+        if (_didIteratorError13) {
+          throw _iteratorError13;
         }
       }
     }

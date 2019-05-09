@@ -1,10 +1,5 @@
 /* Twitch Filtered Chat Commands */
 
-/* TODO:
- * command_config
- * command_badges
- */
-
 class TFCChatCommandStore {
   constructor() {
     this._commands = {};
@@ -267,8 +262,24 @@ function command_part(cmd, tokens, client) {
   }
 }
 
-function command_badges(/*cmd, tokens, client*/) {
-  /* TODO */
+function command_badges(cmd, tokens, client) {
+  let all_badges = [];
+  for (let [bname, badge] of Object.entries(client.GetGlobalBadges())) {
+    for (let bdef of Object.values(badge.versions)) {
+      let url = bdef.image_url_2x;
+      let size = 36;
+      if (tokens.indexOf("small") > -1) {
+        url = bdef.image_url_1x;
+        size = 18;
+      } else if (tokens.indexOf("large") > -1) {
+        url = bdef.image_url_4x;
+        size = 72;
+      }
+      let attr = `width="${size}" height="${size}" title="${bname}"`;
+      all_badges.push(`<img src="${url}" ${attr} alt="${bname}" />`);
+    }
+  }
+  add_notice(all_badges.join(''));
 }
 
 function command_plugins(/*cmd, tokens, client*/) {

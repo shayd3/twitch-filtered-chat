@@ -522,19 +522,8 @@ function add_error(content, pre=false) {
 
 /* Handle a chat command */
 function handle_command(value, client) {
-  if (ChatCommands.is_command_str(value)) {
-    let command = value.split(" ")[0];
-    if (ChatCommands.has_command(command)) {
-      ChatCommands.execute(value, client);
-      return true;
-    }
-  } else {
-    return false;
-  }
-
   let tokens = value.split(" ");
   let command = tokens.shift();
-  let config = get_config_object();
 
   /* Clear empty tokens at the end (\r\n related) */
   while (tokens.length > 0 && tokens[tokens.length-1].length == 0) {
@@ -549,8 +538,16 @@ function handle_command(value, client) {
   let add_helpline = (k, v) => add_pre(helpline(k, v));
   let add_help = (s) => add_pre(help(s));
 
-  /* Handle each of the commands */
+  if (ChatCommands.is_command_str(value)) {
+    if (ChatCommands.has_command(command)) {
+      ChatCommands.execute(value, client);
+      return true;
+    }
+  }
+
+  /* Handle config command */
   if (command == "//config") {
+    let config = get_config_object();
     if (tokens.length > 0) {
       if (tokens[0] == "clientid") {
         add_helpline("ClientID", config.ClientID);
@@ -637,24 +634,6 @@ function handle_command(value, client) {
         }
       }
     }
-  } else if (command == "//badges") {
-    let all_badges = [];
-    for (let [bname, badge] of Object.entries(client.GetGlobalBadges())) {
-      for (let bdef of Object.values(badge.versions)) {
-        let url = bdef.image_url_2x;
-        let size = 36;
-        if (tokens.indexOf("small") > -1) {
-          url = bdef.image_url_1x;
-          size = 18;
-        } else if (tokens.indexOf("large") > -1) {
-          url = bdef.image_url_4x;
-          size = 72;
-        }
-        let attr = `width="${size}" height="${size}" title="${bname}"`;
-        all_badges.push(`<img src="${url}" ${attr} alt="${bname}" />`);
-      }
-    }
-    add_notice(all_badges.join(''));
   } else {
     return false;
   }
