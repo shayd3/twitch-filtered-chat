@@ -103,7 +103,8 @@ function parse_query_string(config, qs=null) {
       key = "AutoReconnect";
       val = true;
     } else if (k == "size") {
-      Util.CSS.SetProperty('--body-font-size', `${v}pt`);
+      key = "Size";
+      val = `${v}pt`;
     } else if (k == "plugins") {
       key = "Plugins";
       val = !!v;
@@ -116,6 +117,9 @@ function parse_query_string(config, qs=null) {
     } else if (k == "max") {
       key = "MaxMessages";
       val = typeof(v) === "number" ? v : TwitchClient.DEFAULT_MAX_MESSAGES;
+    } else if (k == "font") {
+      key = "Font";
+      val = `${v}`;
     }
     config[key] = val;
   }
@@ -366,14 +370,15 @@ function parse_module_config(value) {
   let Decode = (vals) => vals.map((v) => decodeURIComponent(v));
   let parts = Decode(value.split(/,/g));
   while (parts.length < 7) parts.push("");
+  let bits = Util.DecodeFlags(parts[1], 6);
   let config = {};
   config.Name = parts[0];
-  config.Pleb = parts[1][0] == "1";
-  config.Sub = parts[1][1] == "1";
-  config.VIP = parts[1][2] == "1";
-  config.Mod = parts[1][3] == "1";
-  config.Event = parts[1][4] == "1";
-  config.Bits = parts[1][5] == "1";
+  config.Pleb = bits[0];
+  config.Sub = bits[1];
+  config.VIP = bits[2];
+  config.Mod = bits[3];
+  config.Event = bits[4];
+  config.Bits = bits[5];
   config.IncludeKeyword = parts[2] ? Decode(parts[2].split(/,/g)) : [];
   config.IncludeUser = parts[3] ? Decode(parts[3].split(/,/g)) : [];
   config.ExcludeUser = parts[4] ? Decode(parts[4].split(/,/g)) : [];
@@ -389,7 +394,7 @@ function format_module_config(cfg) {
   let bits = [cfg.Pleb, cfg.Sub, cfg.VIP, cfg.Mod, cfg.Event, cfg.Bits];
   let values = [
     cfg.Name,
-    bits.map((b) => B(b)).join(""),
+    Util.EncodeFlags(bits, false),
     Encode(cfg.IncludeKeyword).join(","),
     Encode(cfg.IncludeUser).join(","),
     Encode(cfg.ExcludeUser).join(","),
@@ -417,13 +422,33 @@ function leave_channel(client, channel) {
   Util.SetWebStorage(cfg);
 }
 
+/* Set the joined channels to the list given */
+function set_channels(client, channels) {
+  let fmt_ch = (ch) => Twitch.FormatChannel(Twitch.ParseChannel(ch));
+  let new_chs = channels.map(fmt_ch);
+  let old_chs = client.GetJoinedChannels().map(fmt_ch);
+  let to_join = new_chs.filter((c) => old_chs.indexOf(c) == -1);
+  let to_part = old_chs.filter((c) => new_chs.indexOf(c) == -1);
+  /* Join all the channels added */
+  for (let ch of to_join) {
+    join_channel(client, ch);
+    add_notice(`Joining ${ch}`);
+  }
+  /* Leave all the channels removed */
+  for (let ch of to_part) {
+    leave_channel(client, ch);
+    add_notice(`Leaving ${ch}`);
+  }
+}
+
 /* End configuration section 0}}} */
 
 /* Return true if the event should be displayed on the module given */
 function check_filtered(module, event) {
   let rules = get_module_settings(module);
-  let role = "pleb";
   if (event instanceof TwitchChatEvent) {
+    /* sub < vip < mod for classification */
+    let role = "pleb";
     if (event.issub) role = "sub";
     if (event.isvip) role = "vip";
     if (event.ismod) role = "mod";
@@ -431,28 +456,15 @@ function check_filtered(module, event) {
     if (!rules.Sub && role == "sub") return false;
     if (!rules.VIP && role == "vip") return false;
     if (!rules.Mod && role == "mod") return false;
-    /* FIXME: rules.Event is unused */
+    /* This also filters out cheer effects */
     if (!rules.Bits && event.flags.bits) return false;
-    for (let s of rules.IncludeUser) {
-      if (s.toLowerCase() == event.user.toLowerCase()) {
-        return true;
-      }
-    }
-    for (let s of rules.IncludeKeyword) {
-      if (event.message.toLowerCase().indexOf(s.toLowerCase()) > -1) {
-        return true;
-      }
-    }
-    for (let s of rules.ExcludeUser) {
-      if (s.toLowerCase() == event.user.toLowerCase()) {
-        return false;
-      }
-    }
-    for (let s of rules.ExcludeStartsWith) {
-      if (event.message.startsWith(s)) {
-        return false;
-      }
-    }
+    let user = event.user ? event.user.toLowerCase() : "";
+    let message = event.message ? event.message.toLowerCase() : "";
+    /* Includes take priority over excludes */
+    if (rules.IncludeUser.any((u) => (u.toLowerCase() == user))) return true;
+    if (rules.IncludeKeyword.any((k) => (message.indexOf(k) > -1))) return true;
+    if (rules.ExcludeUser.any((u) => (u.toLowerCase() == user))) return false;
+    if (rules.ExcludeStartsWith.any((m) => (message.startsWith(m)))) return false;
     if (rules.FromChannel.length > 0) {
       for (let s of rules.FromChannel) {
         let c = s.indexOf('#') == -1 ? '#' + s : s;
@@ -463,11 +475,20 @@ function check_filtered(module, event) {
         }
       }
     }
+  } else if (event instanceof TwitchEvent) {
+    if (!rules.Event) {
+      /* Filter out events and notices */
+      if (event.command === "USERNOTICE") {
+        return false;
+      } else if (event.command === "NOTICE") {
+        return false;
+      }
+    }
   }
   return true;
 }
 
-/* Add direct HTML to all modules */
+/* Add <div class="line line-wrapper">content</div> to all modules */
 function add_html(content) {
   let line = `<div class="line line-wrapper"></div>`;
   let $Content = $(".module").find($(".content"));
@@ -954,6 +975,9 @@ function update_transparency(transparent) {
 
 /* Called once when the document loads */
 function client_main(layout) {
+  let client;
+  let ConfigCommon = {};
+
   /* Hook Logger messages */
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
     let msg = JSON.stringify(args.length == 1 ? args[0] : args);
@@ -989,17 +1013,15 @@ function client_main(layout) {
     get_config_key(),
     ["NoAssets", "NoFFZ", "NoBTTV", "Transparent", "Layout",
      "AutoReconnect", "Debug"]);
-  $(".module").each(function() {
-    let id = $(this).attr("id");
-    let cfg = config_obj.getValue(id);
+  for (let m of $(".module")) {
+    let cfg = config_obj.getValue($(m).attr("id"));
     if (cfg) {
-      set_module_settings(this, cfg);
+      set_module_settings(m, cfg);
     }
-  });
+  }
   */
-  /* Obtain the config and construct the client */
-  let client;
-  let ConfigCommon = {};
+
+  /* Obtain configuration, construct client */
   (function() {
     let config = get_config_object();
     client = new TwitchClient(config);
@@ -1021,6 +1043,16 @@ function client_main(layout) {
     /* Simulate clicking cbTransparent if config.Transparent is set */
     if (config.Transparent) {
       update_transparency(true);
+    }
+
+    /* Set the text size if given */
+    if (config.Size) {
+      Util.CSS.SetProperty('--body-font-size', config.Size);
+    }
+
+    /* Set the font if given */
+    if (config.Font) {
+      Util.CSS.SetProperty("--body-font", config.Font);
     }
 
     /* After all that, sync the final settings up with the html */
@@ -1067,7 +1099,6 @@ function client_main(layout) {
     const isUp = (e.keyCode === Util.Key.UP);
     const isDown = (e.keyCode === Util.Key.DOWN);
     if (e.keyCode == Util.Key.RETURN) {
-      /* Prevent sending empty messages by mistake */
       if (e.target.value.trim().length > 0) {
         if (!handle_command(e.target.value, client)) {
           client.SendMessageToAll(e.target.value);
@@ -1084,10 +1115,8 @@ function client_main(layout) {
       let i = Number.parseInt($(e.target).attr("hist-index"));
       let l = client.GetHistoryLength();
       if (isUp) {
-        /* Going up */
         i = (i + 1 >= l - 1 ? l - 1 : i + 1);
       } else if (isDown) {
-        /* Going down */
         i = (i - 1 < 0 ? -1 : i - 1);
       }
       e.target.value = (i > -1 ? client.GetHistoryItem(i) : "");
@@ -1134,28 +1163,14 @@ function client_main(layout) {
 
   /* Pressing enter on the "Channels" text box */
   $("#txtChannel").keyup(function(e) {
-    let fmt_ch = (ch) => Twitch.FormatChannel(Twitch.ParseChannel(ch));
     if (e.keyCode == Util.Key.RETURN) {
-      let new_chs = $(this).val().split(",").map(fmt_ch);
-      let old_chs = client.GetJoinedChannels().map(fmt_ch);
-      let to_join = new_chs.filter((c) => old_chs.indexOf(c) == -1);
-      let to_part = old_chs.filter((c) => new_chs.indexOf(c) == -1);
-      /* Join all the channels added */
-      for (let ch of to_join) {
-        join_channel(client, ch);
-        add_notice(`Joining ${ch}`);
-      }
-      /* Leave all the channels removed */
-      for (let ch of to_part) {
-        leave_channel(client, ch);
-        client.LeaveChannel(ch);
-        add_notice(`Leaving ${ch}`);
-      }
-      /* Save the new configuration */
-      let current_cfg = get_config_object();
-      current_cfg.Channels = client.GetJoinedChannels().map(fmt_ch);
-      Util.SetWebStorage(current_cfg);
+      set_channels(client, $(this).val().split(","));
     }
+  });
+
+  /* Leaving the "Channels" text box */
+  $("#txtChannel").blur(function(e) {
+    set_channels(client, $(this).val().split(","));
   });
 
   /* Changing the "stream is transparent" checkbox */
@@ -1178,7 +1193,7 @@ function client_main(layout) {
     client.SetDebug(v);
   });
 
-  /* Reconnect */
+  /* Clicking on the reconnect link in the settings box */
   $("#reconnect").click(function() {
     client.Connect();
   });
@@ -1355,7 +1370,7 @@ function client_main(layout) {
   /* Notice (or warning) from Twitch */
   client.bind('twitch-notice', function _on_twitch_notice(e) {
     /* Some notices are benign */
-    switch (e.usernotice_msgid) {
+    switch (e.notice_msgid) {
       case "host_on":
         break;
       case "host_target_went_offline":
@@ -1368,7 +1383,7 @@ function client_main(layout) {
     }
     let channel = Twitch.FormatChannel(e.channel);
     let message = e.message.escape();
-    add_notice(`Notice from ${channel}: ${message}`);
+    add_notice(`${channel}: ${message}`);
   });
 
   /* Error from Twitch or Twitch Client API */
