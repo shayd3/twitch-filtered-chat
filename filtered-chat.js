@@ -1341,6 +1341,7 @@ function client_main(layout) { /* exported client_main */
   client.bind("twitch-ping", function() {});
   client.bind("twitch-names", function() {});
   client.bind("twitch-topic", function() {});
+  client.bind("twitch-privmsg", function() {});
   client.bind("twitch-other", function() {});
   client.bindDefault(function _on_default(e) { Util.Warn("Unbound event:", e); });
 
