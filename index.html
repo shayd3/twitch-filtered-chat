@@ -7,6 +7,11 @@
   <link href="assets/main.css" rel="stylesheet" type="text/css" />
   <script type="text/javascript" src="assets/jquery-3.4.0.js"></script>
   <script type="text/javascript" src="main.js"></script>
+  <style type="text/css">
+#txtPassDummy {
+  display: none;
+}
+  </style>
 </head>
 <body onload="Main(window)">
   <!-- Debugging -->
@@ -14,6 +19,7 @@
   <!-- Content wrapper -->
   <div id="wrapper">
     <div id="wrapper-loading" class="loading">Loading Panels...</div>
+    <!-- Module 1 -->
     <div class="column left" id="column1" style="display: none">
       <div class="module left no-chat" id="module1">
         <div class="header">
@@ -34,8 +40,8 @@
               <li><label><input type="checkbox" class="sub" />Subscribers</label></li>
               <li><label><input type="checkbox" class="vip" />VIPs</label></li>
               <li><label><input type="checkbox" class="mod" />Moderators</label></li>
-              <li><label><input type="checkbox" class="event" />Channel events</label></li>
-              <li><label><input type="checkbox" class="bits" />Bit messages</label></li>
+              <li><label><input type="checkbox" class="event" />Events</label></li>
+              <li><label><input type="checkbox" class="bits" />Cheers</label></li>
               <li class="textbox include_user">
                 <label>From user:</label>
                 <input type="text" />
@@ -70,6 +76,7 @@
         <div class="content"><div class="loading">Loading...</div></div>
       </div>
     </div>
+    <!-- Module 2 -->
     <div class="column right" id="column2" style="display: none">
       <div class="module right no-chat" id="module2">
         <div class="header">
@@ -79,7 +86,7 @@
             <div></div>
           </div>
           <span class="clear-chat">
-            <a class="clear-chat-link" href="javascript:void(0)" title="Clear" alt="Clear">
+            <a class="clear-chat-link" title="Clear" alt="Clear">
               <img class="clear-chat-icon" src="assets/no-entry.svg" />
             </a>
           </span>
@@ -90,8 +97,8 @@
               <li><label><input type="checkbox" class="sub" />Subscribers</label></li>
               <li><label><input type="checkbox" class="vip" />VIPs</label></li>
               <li><label><input type="checkbox" class="mod" />Moderators</label></li>
-              <li><label><input type="checkbox" class="event" />Channel events</label></li>
-              <li><label><input type="checkbox" class="bits" />Bit messages</label></li>
+              <li><label><input type="checkbox" class="event" />Events</label></li>
+              <li><label><input type="checkbox" class="bits" />Cheers</label></li>
               <li class="textbox include_user">
                 <label>From user:</label>
                 <input type="text" />
@@ -127,7 +134,7 @@
       </div>
     </div>
   </div>
-  <!-- Settings -->
+  <!-- Global settings -->
   <div id="settings">
     <header>Settings<a class="help" id="settings-help">?</a></header>
     <ul>
@@ -142,18 +149,27 @@
       <li>
         <label>OAuth:</label>
         <input type="password" id="txtPass" />
-        <input type="text" id="txtPassDummy"
-               value="Cached"
-               style="display: none"
-               disabled />
+        <input type="text" id="txtPassDummy" value="Cached" disabled />
+      </li>
+      <li>
+        <label>BG CSS:</label>
+        <input type="text" id="txtBGImage" />
+      </li>
+      <li>
+        <label>Scrollbars:</label>
+        <input type="checkbox" id="cbScroll" class="middle" />
       </li>
       <li>
         <label>Transparent:</label>
         <input type="checkbox" id="cbTransparent" class="middle" />
       </li>
       <li>
-        <label>BG CSS:</label>
-        <input type="text" id="txtBGImage" />
+        <label>Show Clips:</label>
+        <input type="checkbox" id="cbClips" class="middle" />
+      </li>
+      <li>
+        <label>No Force:</label>
+        <input type="checkbox" id="cbForce" class="middle" />
       </li>
       <li>
         <label>Debugging:</label>
@@ -162,10 +178,6 @@
           <option value="1">Debug</option>
           <option value="2">Trace</option>
         </select>
-      </li>
-      <li>
-        <label>No Force:</label>
-        <input type="checkbox" id="cbForce" class="middle" />
       </li>
     </ul>
     <footer>
@@ -178,3 +190,4 @@
   <div id="username_context" class="username_context" style="display: none"></div>
 </body>
 </html>
+

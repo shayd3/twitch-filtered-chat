@@ -56,7 +56,7 @@ function parse_query_string(config, qs=null) {
       key = "ClientID";
       config.__clientid_override = true;
       query_remove.push(k);
-    } else if (k === "user" || k === "name") {
+    } else if (k === "user" || k === "name" || k === "nick") {
       key = "Name";
     } else if (k === "pass") {
       key = "Pass";
@@ -121,6 +121,12 @@ function parse_query_string(config, qs=null) {
     } else if (k == "font") {
       key = "Font";
       val = `${v}`;
+    } else if (k == "scroll") {
+      key = "Scroll";
+      val = v ? true : false;
+    } else if (k == "clips") {
+      key = "ShowClips";
+      val = v ? true : false;
     }
     config[key] = val;
   }
@@ -184,6 +190,13 @@ function get_config_object() {
   if (typeof(config.Name) != "string") config.Name = "";
   if (typeof(config.ClientID) != "string") config.ClientID = "";
   if (typeof(config.Pass) != "string") config.Pass = "";
+  if (typeof(config.Scroll) == "boolean") {
+    if (config.Scroll) {
+      $("#cbScroll").attr("checked", "checked");
+    } else {
+      $("#cbScroll").removeAttr("checked");
+    }
+  }
 
   /* Parse the query string */
   query_remove = parse_query_string(config, qs);
@@ -206,13 +219,14 @@ function get_config_object() {
   if (txtPass.value && txtPass.value != CACHED_VALUE) {
     config.Pass = txtPass.value;
   }
+  if (typeof(config.Scroll) !== "boolean") {
+    config.Scroll = $("#cbScroll").is(":checked");
+  }
 
   /* Populate configs for each module */
   $('.module').each(function() {
     let id = $(this).attr('id');
-    if (!config[id]) {
-      config[id] = get_module_settings($(this));
-    }
+    if (!config[id]) { config[id] = get_module_settings($(this)); }
     config[id].Pleb = verify_boolean(config[id].Pleb);
     config[id].Sub = verify_boolean(config[id].Sub);
     config[id].VIP = verify_boolean(config[id].VIP);
@@ -259,42 +273,19 @@ function get_config_object() {
 /* Module configuration {{{1 */
 
 /* Set the module's settings to the values given */
-function set_module_settings(module, mod_config) {
-  let config = mod_config;
+function set_module_settings(module, config) {
   if (config.Name) {
     $(module).find('label.name').html(config.Name);
     $(module).find('input.name').val(config.Name);
   }
-  if (config.Pleb) {
-    $(module).find('input.pleb').attr('checked', 'checked');
-  } else {
-    $(module).find('input.pleb').removeAttr('checked');
-  }
-  if (config.Sub) {
-    $(module).find('input.sub').attr('checked', 'checked');
-  } else {
-    $(module).find('input.sub').removeAttr('checked');
-  }
-  if (config.VIP) {
-    $(module).find('input.vip').attr('checked', 'checked');
-  } else {
-    $(module).find('input.vip').removeAttr('checked');
-  }
-  if (config.Mod) {
-    $(module).find('input.mod').attr('checked', 'checked');
-  } else {
-    $(module).find('input.mod').removeAttr('checked');
-  }
-  if (config.Event) {
-    $(module).find('input.event').attr('checked', 'checked');
-  } else {
-    $(module).find('input.event').removeAttr('checked');
-  }
-  if (config.Bits) {
-    $(module).find('input.bits').attr('checked', 'checked');
-  } else {
-    $(module).find('input.bits').removeAttr('checked');
-  }
+  function check(sel) { $(module).find(sel).attr('checked', 'checked'); }
+  function uncheck(sel) { $(module).find(sel).removeAttr('checked'); }
+  if (config.Pleb) { check('input.pleb'); } else { uncheck('input.pleb'); }
+  if (config.Sub) { check('input.sub'); } else { uncheck('input.sub'); }
+  if (config.Vip) { check('input.vip'); } else { uncheck('input.vip'); }
+  if (config.Mod) { check('input.mod'); } else { uncheck('input.mod'); }
+  if (config.Event) { check('input.event'); } else { uncheck('input.event'); }
+  if (config.Bits) { check('input.bits'); } else { uncheck('input.bits'); }
   function add_input(cls, label, values) {
     if (values && values.length > 0) {
       for (let val of values) {
@@ -835,7 +826,7 @@ function client_main(layout) { /* exported client_main */
   */
 
   /* Obtain configuration, construct client */
-  (function() {
+  (function _configure_construct_client() {
     let config = get_config_object();
     client = new TwitchClient(config);
     Util.DebugLevel = config.Debug;
@@ -867,6 +858,13 @@ function client_main(layout) { /* exported client_main */
     if (config.Font) {
       Util.CSS.SetProperty("--body-font", config.Font);
     }
+
+    /* If scrollbars are configured; enable them */
+    if (config.Scroll) {
+      $(".module .content").css("overflow-y", "scroll");
+    }
+
+    client.get("HTMLGen").setValue("ShowClips", config.ShowClips);
 
     /* After all that, sync the final settings up with the html */
     $(".module").each(function() {
@@ -958,8 +956,7 @@ function client_main(layout) { /* exported client_main */
     } else {
       let config = get_config_object();
       $("#txtChannel").val(config.Channels.join(","));
-      $("#txtNick").attr("disabled", "disabled")
-        .val(config.Name ? config.Name : AUTOGEN_VALUE);
+      $("#txtNick").val(config.Name ? config.Name : AUTOGEN_VALUE);
       if (config.Pass && config.Pass.length > 0) {
         $("#txtPass").attr("disabled", "disabled").hide();
         $("#txtPassDummy").show();
@@ -993,6 +990,18 @@ function client_main(layout) { /* exported client_main */
     Util.SetWebStorage(cfg);
   });
 
+  /* Changing the "Scrollbars" checkbox */
+  $("#cbScroll").change(function() {
+    let cfg = get_config_object();
+    cfg.Scroll = $(this).is(":checked");
+    Util.SetWebStorage(cfg);
+    if (cfg.Scroll) {
+      $(".module .content").css("overflow-y", "scroll");
+    } else {
+      $(".module .content").css("overflow-y", "hidden");
+    }
+  });
+
   /* Changing the "stream is transparent" checkbox */
   $("#cbTransparent").change(function() {
     return update_transparency($(this).is(":checked"));
@@ -1002,6 +1011,15 @@ function client_main(layout) { /* exported client_main */
   $("#txtBGImage").keyup(function(e) {
     if (e.keyCode == Util.Key.RETURN) {
       $(".module").css("background-image", $(this).val());
+    }
+  });
+
+  /* Changing the "Show Clips" checkbox */
+  $("#cbClips").change(function() {
+    if ($(this).is(":checked")) {
+      client.get("HTMLGen").setValue("ShowClips", true);
+    } else {
+      client.get("HTMLGen").setValue("ShowClips", false);
     }
   });
 
