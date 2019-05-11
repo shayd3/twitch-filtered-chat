@@ -25,7 +25,6 @@
 
   /* Default colors (not used by ?trans=1) */
   --chat-border-default: #7d5bbe;
-  --disabled-input-default: #dddddd;
 
   /* The following colors are affected by ?trans=1 */
   --body-color: var(--body-color-default);
@@ -39,7 +38,6 @@
 
   /* The following colors are not */
   --chat-border: var(--chat-border-default);
-  --disabled-input: var(--disabled-input-default);
 
   /* Font and text information */
   --body-font-default: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -257,6 +255,12 @@ input {
   width: 145px;
 }
 
+.module .settings input[type="password"] {
+  display: inline-block;
+  padding: 1px;
+  width: 145px;
+}
+
 .module .settings .textbox {
   padding-left: 17px;
 }
@@ -267,16 +271,11 @@ input {
   font-size: 0.9em;
 }
 
-input:disabled {
-  background: var(--disabled-input, var(--disabled-input-default));
-}
-
 /* End settings 0}}} */
 
 /* Line CSS {{{0 */
 
-.module .content .line-wrapper {
-}
+.module .content .line-wrapper { }
 
 .module .content .line-wrapper:nth-child(2n) {
   background: var(--odd-line-color, var(--odd-line-color-default));
@@ -474,8 +473,7 @@ body.transparent #chat textarea  {
   font-size: 0.9em;
 }
 
-#settings ul li input {
-}
+#settings ul li input { }
 
 #settings ul li input.middle {
   vertical-align: text-bottom;
@@ -650,6 +648,10 @@ body.transparent #chat textarea  {
   background-image: linear-gradient(to right, #F00, #FF0, #0F0, #0FF, #00F, #F0F, #F00);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+.line-rainbow {
+  /*background-image: linear-gradient(to right, #444, #111);*/
 }
 
 /* End CSS cheer effects 0}}} */

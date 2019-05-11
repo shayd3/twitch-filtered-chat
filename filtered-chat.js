@@ -3,8 +3,8 @@
 "use strict";
 
 /* TODO:
+ * Add layout selection box to #settings (reloads page on change)
  * Add clip information
- * Fade-out username context window when clicking the same name again
  * Hide get_config_object() within client_main()
  */
 
@@ -190,13 +190,6 @@ function get_config_object() {
   if (typeof(config.Name) != "string") config.Name = "";
   if (typeof(config.ClientID) != "string") config.ClientID = "";
   if (typeof(config.Pass) != "string") config.Pass = "";
-  if (typeof(config.Scroll) == "boolean") {
-    if (config.Scroll) {
-      $("#cbScroll").attr("checked", "checked");
-    } else {
-      $("#cbScroll").removeAttr("checked");
-    }
-  }
 
   /* Parse the query string */
   query_remove = parse_query_string(config, qs);
@@ -219,8 +212,13 @@ function get_config_object() {
   if (txtPass.value && txtPass.value != CACHED_VALUE) {
     config.Pass = txtPass.value;
   }
+
   if (typeof(config.Scroll) !== "boolean") {
     config.Scroll = $("#cbScroll").is(":checked");
+  }
+
+  if (typeof(config.ShowClips) !== "boolean") {
+    config.ShowClips = $("#cbClips").is(":checked");
   }
 
   /* Populate configs for each module */
@@ -282,7 +280,7 @@ function set_module_settings(module, config) {
   function uncheck(sel) { $(module).find(sel).removeAttr('checked'); }
   if (config.Pleb) { check('input.pleb'); } else { uncheck('input.pleb'); }
   if (config.Sub) { check('input.sub'); } else { uncheck('input.sub'); }
-  if (config.Vip) { check('input.vip'); } else { uncheck('input.vip'); }
+  if (config.VIP) { check('input.vip'); } else { uncheck('input.vip'); }
   if (config.Mod) { check('input.mod'); } else { uncheck('input.mod'); }
   if (config.Event) { check('input.event'); } else { uncheck('input.event'); }
   if (config.Bits) { check('input.bits'); } else { uncheck('input.bits'); }
@@ -859,12 +857,13 @@ function client_main(layout) { /* exported client_main */
       Util.CSS.SetProperty("--body-font", config.Font);
     }
 
-    /* If scrollbars are configured; enable them */
+    /* If scrollbars are configured, enable them */
     if (config.Scroll) {
       $(".module .content").css("overflow-y", "scroll");
+      $("#cbScroll").attr("checked", "checked");
+    } else {
+      $("#cbScroll").removeAttr("checked");
     }
-
-    client.get("HTMLGen").setValue("ShowClips", config.ShowClips);
 
     /* After all that, sync the final settings up with the html */
     $(".module").each(function() {
@@ -872,14 +871,22 @@ function client_main(layout) { /* exported client_main */
     });
 
     /* Set values we'll want to use later */
+    ConfigCommon = JSON.parse(JSON.stringify(config));
+    delete ConfigCommon["Pass"];
+    delete ConfigCommon["ClientID"];
     ConfigCommon.Plugins = config.Plugins ? true : false;
-    ConfigCommon.Layout = config.Layout;
-    ConfigCommon.Transparent = config.Transparent;
     ConfigCommon.MaxMessages = config.MaxMessages || 100;
 
     /* If no channels are configured, show the settings panel */
     if (config.Channels.length == 0) {
       $("#settings").fadeIn();
+    }
+
+    /* Apply the show-clips config to the settings div */
+    if (config.ShowClips) {
+      $("#cbClips").attr("checked", "checked");
+    } else {
+      $("#cbClips").removeAttr("checked");
     }
   })();
 
@@ -1008,7 +1015,7 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Changing the value for "background image" */
-  $("#txtBGImage").keyup(function(e) {
+  $("#txtBGStyle").keyup(function(e) {
     if (e.keyCode == Util.Key.RETURN) {
       $(".module").css("background-image", $(this).val());
     }
@@ -1360,6 +1367,7 @@ function client_main(layout) { /* exported client_main */
   client.bind("twitch-names", function() {});
   client.bind("twitch-topic", function() {});
   client.bind("twitch-privmsg", function() {});
+  client.bind("twitch-whisper", function() {});
   client.bind("twitch-other", function() {});
   client.bindDefault(function _on_default(e) { Util.Warn("Unbound event:", e); });
 
