@@ -56,6 +56,7 @@ var HTMLGenerator = function () {
 
     /* Ensure config has certain values */
     if (!this._config.Layout) this._config.Layout = {};
+    if (!this._config.ShowClips) this._config.ShowClips = false;
   }
 
   _createClass(HTMLGenerator, [{
@@ -275,42 +276,8 @@ var HTMLGenerator = function () {
       return $e[0].outerHTML;
     }
   }, {
-    key: "_genMsgInfo",
-    value: function _genMsgInfo(event) {
-      var $msg = $("<span class=\"message\" data-message=\"1\"></span>");
-      var $effects = [];
-
-      /* Escape the message, keeping track of how characters move */
-
-      var _Util$EscapeWithMap = Util.EscapeWithMap(event.message),
-          _Util$EscapeWithMap2 = _slicedToArray(_Util$EscapeWithMap, 2),
-          message = _Util$EscapeWithMap2[0],
-          map = _Util$EscapeWithMap2[1];
-
-      map.push(message.length); /* Prevent off-the-end mistakes */
-
-      /* Handle early mod-only antics */
-      if (!$("#cbForce").is(":checked") && event.ismod) {
-        var word0 = event.message.split(" ")[0];
-        if (word0 == "force") {
-          event.flags.force = true;
-        } else if (word0 == "forcejs") {
-          event.flags.force = true;
-        } else if (word0 == "forcebits" || word0 == "forcecheer") {
-          /* Modify both message and event.message, as they're both used below */
-          if (word0.length == 9) {
-            event.values.message = "cheer1000" + event.message.substr(9);
-            message = "cheer1000" + message.substr(9);
-          } else if (word0.length == 10) {
-            event.values.message = "cheer1000" + event.message.substr(10);
-            message = "cheer1000 " + message.substr(10);
-          }
-          event.flags.bits = 1000;
-          event.flags.force = true;
-        }
-      }
-
-      /* Handle emotes */
+    key: "_msgEmotesTransform",
+    value: function _msgEmotesTransform(event, message, map /*, $msg, $effects*/) {
       if (event.flags.emotes) {
         var emotes = event.flags.emotes.map(function (e) {
           return { 'id': e.id, 'name': e.name,
@@ -334,8 +301,11 @@ var HTMLGenerator = function () {
           }
         }
       }
-
-      /* Handle cheers */
+      return message;
+    }
+  }, {
+    key: "_msgCheersTransform",
+    value: function _msgCheersTransform(event, message, map, $msg, $effects) {
       if (event.flags.bits && event.flags.bits > 0) {
         var bits_left = event.flags.bits;
         var matches = this._client.FindCheers(event.channel.channel, event.message);
@@ -349,16 +319,16 @@ var HTMLGenerator = function () {
           var start = map[match.start];
           var end = map[match.end];
           var chtml = this._genCheer(cheer, bits);
-          var _msg_start = message.substr(0, start);
-          var _msg_end = message.substr(end);
-          message = _msg_start + chtml + _msg_end;
+          var msg_start = message.substr(0, start);
+          var msg_end = message.substr(end);
+          message = msg_start + chtml + msg_end;
           /* Adjust the map */
-          for (var _idx = match.start; _idx < map.length; ++_idx) {
-            if (map[_idx] - map[match.start] >= end - start) {
-              map[_idx] += chtml.length - (end - start);
+          for (var idx = match.start; idx < map.length; ++idx) {
+            if (map[idx] - map[match.start] >= end - start) {
+              map[idx] += chtml.length - (end - start);
             }
           }
-          var end_words = _msg_end.trimStart().split(" ");
+          var end_words = msg_end.trimStart().split(" ");
           /* Scan for cheer effects */
           while (end_words.length > 0) {
             var word = end_words[0].toLowerCase();
@@ -377,8 +347,11 @@ var HTMLGenerator = function () {
           }
         }
       }
-
-      /* Handle FFZ emotes */
+      return message;
+    }
+  }, {
+    key: "_msgFFZEmotesTransform",
+    value: function _msgFFZEmotesTransform(event, message, map /*, $msg, $effects*/) {
       var ffz_emotes = this._client.GetFFZEmotes(event.channel.channel);
       if (ffz_emotes && ffz_emotes.emotes) {
         var ffz_emote_arr = [];
@@ -417,30 +390,33 @@ var HTMLGenerator = function () {
           return a.start - b.start;
         });
         while (results.length > 0) {
-          var _emote = results.pop();
-          var _start = _emote.start;
-          var _end = _emote.end + 1;
-          var mstart = map[_start];
-          var mend = map[_end];
-          var url = _emote.id.urls[Object.keys(_emote.id.urls).min()];
-          var $i = $("<img class=\"emote ffz-emote\" ffz-emote-id=" + _emote.id.id + " />");
+          var emote = results.pop();
+          var start = emote.start;
+          var end = emote.end + 1;
+          var mstart = map[start];
+          var mend = map[end];
+          var url = emote.id.urls[Object.keys(emote.id.urls).min()];
+          var $i = $("<img class=\"emote ffz-emote\" ffz-emote-id=" + emote.id.id + " />");
           $i.attr('src', url);
-          $i.attr('width', _emote.id.width);
-          $i.attr('height', _emote.id.height);
-          var _msg_start2 = message.substr(0, mstart);
-          var _msg_end2 = message.substr(mend);
-          var _emote_str = $i[0].outerHTML;
-          message = "" + _msg_start2 + _emote_str + _msg_end2;
+          $i.attr('width', emote.id.width);
+          $i.attr('height', emote.id.height);
+          var msg_start = message.substr(0, mstart);
+          var msg_end = message.substr(mend);
+          var emote_str = $i[0].outerHTML;
+          message = "" + msg_start + emote_str + msg_end;
           /* Adjust the map */
-          for (var _idx2 = _emote.start; _idx2 < map.length; ++_idx2) {
-            if (map[_idx2] - map[_emote.start] >= _end - _start) {
-              map[_idx2] += _emote_str.length - (_end - _start);
+          for (var idx = emote.start; idx < map.length; ++idx) {
+            if (map[idx] - map[emote.start] >= end - start) {
+              map[idx] += emote_str.length - (end - start);
             }
           }
         }
       }
-
-      /* Handle BTTV emotes */
+      return message;
+    }
+  }, {
+    key: "_msgBTTVEmotesTransform",
+    value: function _msgBTTVEmotesTransform(event, message, map /*, $msg, $effects*/) {
       var bttv_emotes = this._client.GetBTTVEmotes(event.channel.channel);
       if (bttv_emotes && bttv_emotes.emotes) {
         var bttv_emote_arr = [];
@@ -454,10 +430,10 @@ var HTMLGenerator = function () {
 
             var _ref6 = _slicedToArray(_ref5, 2);
 
-            var _k = _ref6[0];
-            var _v = _ref6[1];
+            var k = _ref6[0];
+            var v = _ref6[1];
 
-            bttv_emote_arr.push([_v, _k]);
+            bttv_emote_arr.push([v, k]);
           }
         } catch (err) {
           _didIteratorError4 = true;
@@ -474,32 +450,35 @@ var HTMLGenerator = function () {
           }
         }
 
-        var _results = Twitch.ScanEmotes(event.message, bttv_emote_arr);
-        _results.sort(function (a, b) {
+        var results = Twitch.ScanEmotes(event.message, bttv_emote_arr);
+        results.sort(function (a, b) {
           return a.start - b.start;
         });
-        while (_results.length > 0) {
-          var _emote2 = _results.pop();
-          var _start2 = _emote2.start;
-          var _end2 = _emote2.end + 1;
-          var _mstart = map[_start2];
-          var _mend = map[_end2];
-          var _$i = $("<img class=\"emote bttv-emote\" bttv-emote-id=\"" + _emote2.id.id + "\" />");
-          _$i.attr("src", _emote2.id.url);
-          var _msg_start3 = message.substr(0, _mstart);
-          var _msg_end3 = message.substr(_mend);
-          var _emote_str2 = _$i[0].outerHTML;
-          message = "" + _msg_start3 + _emote_str2 + _msg_end3;
+        while (results.length > 0) {
+          var emote = results.pop();
+          var start = emote.start;
+          var end = emote.end + 1;
+          var mstart = map[start];
+          var mend = map[end];
+          var $i = $("<img class=\"emote bttv-emote\" bttv-emote-id=\"" + emote.id.id + "\" />");
+          $i.attr("src", emote.id.url);
+          var msg_start = message.substr(0, mstart);
+          var msg_end = message.substr(mend);
+          var emote_str = $i[0].outerHTML;
+          message = "" + msg_start + emote_str + msg_end;
           /* Adjust the map */
-          for (var _idx3 = _emote2.start; _idx3 < map.length; ++_idx3) {
-            if (map[_idx3] - map[_emote2.start] >= _end2 - _start2) {
-              map[_idx3] += _emote_str2.length - (_end2 - _start2);
+          for (var idx = emote.start; idx < map.length; ++idx) {
+            if (map[idx] - map[emote.start] >= end - start) {
+              map[idx] += emote_str.length - (end - start);
             }
           }
         }
       }
-
-      /* @user highlighting */
+      return message;
+    }
+  }, {
+    key: "_msgAtUserTransform",
+    value: function _msgAtUserTransform(event, message, map, $msg /*, $effects */) {
       message = message.replace(/(^|\b\s*)(@\w+)(\s*\b|$)/g, function (m, p1, p2, p3) {
         if (p2.substr(1).toLowerCase() == this._client.GetName().toLowerCase()) {
           $msg.addClass("highlight");
@@ -508,6 +487,182 @@ var HTMLGenerator = function () {
           return p1 + "<em class=\"at-user\">" + p2 + "</em>" + p3;
         }
       }.bind(this));
+      return message;
+    }
+  }, {
+    key: "_msgURLTransform",
+    value: function _msgURLTransform(event, message /*, map, $msg, $effects*/) {
+      var $m = $("<span></span>").html(message);
+      /* SearchTree predicate */
+      function text_and_has_url(elem) {
+        if (elem.nodeType === Node.TEXT_NODE) {
+          if (elem.nodeValue.match(Util.URL_REGEX)) {
+            return true;
+          }
+        }
+        return false;
+      }
+      /* SplitByMatches map function */
+      function to_url(u) {
+        return new URL(Util.URL(u));
+      }
+      /* Obtain text nodes with URLs */
+      var nodes = Util.SearchTree($m[0], text_and_has_url);
+      var replace_info = [];
+      /* Populate nodes and their new contents */
+      var _iteratorNormalCompletion5 = true;
+      var _didIteratorError5 = false;
+      var _iteratorError5 = undefined;
+
+      try {
+        for (var _iterator5 = nodes[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+          var node = _step5.value;
+
+          var matches = node.nodeValue.match(Util.URL_REGEX);
+          var parts = Util.SplitByMatches(node.nodeValue, matches, to_url);
+          var newNodes = [];
+          var _iteratorNormalCompletion7 = true;
+          var _didIteratorError7 = false;
+          var _iteratorError7 = undefined;
+
+          try {
+            for (var _iterator7 = parts[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+              var part = _step7.value;
+
+              newNodes.push(Util.CreateNode(part));
+            }
+          } catch (err) {
+            _didIteratorError7 = true;
+            _iteratorError7 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                _iterator7.return();
+              }
+            } finally {
+              if (_didIteratorError7) {
+                throw _iteratorError7;
+              }
+            }
+          }
+
+          replace_info.push([node.parentNode, newNodes]);
+        }
+        /* Replace the nodes' contents with the new children */
+      } catch (err) {
+        _didIteratorError5 = true;
+        _iteratorError5 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion5 && _iterator5.return) {
+            _iterator5.return();
+          }
+        } finally {
+          if (_didIteratorError5) {
+            throw _iteratorError5;
+          }
+        }
+      }
+
+      var _iteratorNormalCompletion6 = true;
+      var _didIteratorError6 = false;
+      var _iteratorError6 = undefined;
+
+      try {
+        for (var _iterator6 = replace_info[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+          var _ref7 = _step6.value;
+
+          var _ref8 = _slicedToArray(_ref7, 2);
+
+          var _node = _ref8[0];
+          var children = _ref8[1];
+
+          _node.innerHTML = "";
+          var _iteratorNormalCompletion8 = true;
+          var _didIteratorError8 = false;
+          var _iteratorError8 = undefined;
+
+          try {
+            for (var _iterator8 = children[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+              var child = _step8.value;
+
+              _node.innerHTML += Util.GetHTML(child);
+            }
+          } catch (err) {
+            _didIteratorError8 = true;
+            _iteratorError8 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion8 && _iterator8.return) {
+                _iterator8.return();
+              }
+            } finally {
+              if (_didIteratorError8) {
+                throw _iteratorError8;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        _didIteratorError6 = true;
+        _iteratorError6 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion6 && _iterator6.return) {
+            _iterator6.return();
+          }
+        } finally {
+          if (_didIteratorError6) {
+            throw _iteratorError6;
+          }
+        }
+      }
+
+      return $m[0].innerHTML;
+    }
+  }, {
+    key: "_genMsgInfo",
+    value: function _genMsgInfo(event) {
+      var $msg = $("<span class=\"message\" data-message=\"1\"></span>");
+      var $effects = [];
+
+      /* Escape the message, keeping track of how characters move */
+
+      var _Util$EscapeWithMap = Util.EscapeWithMap(event.message),
+          _Util$EscapeWithMap2 = _slicedToArray(_Util$EscapeWithMap, 2),
+          message = _Util$EscapeWithMap2[0],
+          map = _Util$EscapeWithMap2[1];
+
+      map.push(message.length); /* Prevent off-the-end mistakes */
+
+      /* Handle early mod-only antics */
+      if (!$("#cbForce").is(":checked") && event.ismod) {
+        var word0 = event.message.split(" ")[0];
+        if (word0 == "force") {
+          event.flags.force = true;
+        } else if (word0 == "forcejs") {
+          event.flags.force = true;
+        } else if (word0 == "forcebits" || word0 == "forcecheer") {
+          var wordlen = word0.length;
+          var msgprefix = "cheer1000";
+          while (msgprefix.length < word0.length) {
+            msgprefix += ' ';
+          }
+          /* Modify both message and event.message, as they're both used below */
+          event.values.message = msgprefix + event.message.substr(wordlen);
+          message = msgprefix + message.substr(wordlen);
+          event.flags.bits = 1000;
+          event.flags.force = true;
+        }
+      }
+
+      /* Apply message transformations */
+      message = this._msgEmotesTransform(event, message, map, $msg, $effects);
+      message = this._msgCheersTransform(event, message, map, $msg, $effects);
+      message = this._msgFFZEmotesTransform(event, message, map, $msg, $effects);
+      message = this._msgBTTVEmotesTransform(event, message, map, $msg, $effects);
+      message = this._msgAtUserTransform(event, message, map, $msg, $effects);
+      message = this._msgURLTransform(event, message, map, $msg, $effects);
 
       /* Handle mod-only antics */
       if (event.ismod && !$("#cbForce").is(":checked") && event.flags.force) {
@@ -522,7 +677,7 @@ var HTMLGenerator = function () {
 
       $msg.html(message);
 
-      return { e: this.formatLinks($msg), effects: $effects };
+      return { e: $msg, effects: $effects };
     }
   }, {
     key: "_addChatAttrs",
@@ -593,13 +748,13 @@ var HTMLGenerator = function () {
       var html_pre = [];
       var html_post = [];
       if (msg_def.effects.length > 0) {
-        var _iteratorNormalCompletion5 = true;
-        var _didIteratorError5 = false;
-        var _iteratorError5 = undefined;
+        var _iteratorNormalCompletion9 = true;
+        var _didIteratorError9 = false;
+        var _iteratorError9 = undefined;
 
         try {
-          for (var _iterator5 = msg_def.effects[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-            var effect = _step5.value;
+          for (var _iterator9 = msg_def.effects[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+            var effect = _step9.value;
 
             if (effect.class) msg_def.e.addClass(effect.class);
             if (effect.style) msg_def.e.attr("style", effect.style);
@@ -609,16 +764,16 @@ var HTMLGenerator = function () {
             if (effect.html_post) html_post.unshift(effect.html_post);
           }
         } catch (err) {
-          _didIteratorError5 = true;
-          _iteratorError5 = err;
+          _didIteratorError9 = true;
+          _iteratorError9 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion5 && _iterator5.return) {
-              _iterator5.return();
+            if (!_iteratorNormalCompletion9 && _iterator9.return) {
+              _iterator9.return();
             }
           } finally {
-            if (_didIteratorError5) {
-              throw _iteratorError5;
+            if (_didIteratorError9) {
+              throw _iteratorError9;
             }
           }
         }
@@ -707,27 +862,27 @@ var HTMLGenerator = function () {
         if (typeof classes === "string") {
           $l.addClass(classes);
         } else {
-          var _iteratorNormalCompletion6 = true;
-          var _didIteratorError6 = false;
-          var _iteratorError6 = undefined;
+          var _iteratorNormalCompletion10 = true;
+          var _didIteratorError10 = false;
+          var _iteratorError10 = undefined;
 
           try {
-            for (var _iterator6 = classes[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-              var c = _step6.value;
+            for (var _iterator10 = classes[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+              var c = _step10.value;
 
               $l.addClass(c);
             }
           } catch (err) {
-            _didIteratorError6 = true;
-            _iteratorError6 = err;
+            _didIteratorError10 = true;
+            _iteratorError10 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion6 && _iterator6.return) {
-                _iterator6.return();
+              if (!_iteratorNormalCompletion10 && _iterator10.return) {
+                _iterator10.return();
               }
             } finally {
-              if (_didIteratorError6) {
-                throw _iteratorError6;
+              if (_didIteratorError10) {
+                throw _iteratorError10;
               }
             }
           }
@@ -753,27 +908,27 @@ var HTMLGenerator = function () {
       if (typeof classes === "string") {
         $e.addClass(classes);
       } else {
-        var _iteratorNormalCompletion7 = true;
-        var _didIteratorError7 = false;
-        var _iteratorError7 = undefined;
+        var _iteratorNormalCompletion11 = true;
+        var _didIteratorError11 = false;
+        var _iteratorError11 = undefined;
 
         try {
-          for (var _iterator7 = classes[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-            var c = _step7.value;
+          for (var _iterator11 = classes[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+            var c = _step11.value;
 
             $e.addClass(c);
           }
         } catch (err) {
-          _didIteratorError7 = true;
-          _iteratorError7 = err;
+          _didIteratorError11 = true;
+          _iteratorError11 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion7 && _iterator7.return) {
-              _iterator7.return();
+            if (!_iteratorNormalCompletion11 && _iterator11.return) {
+              _iterator11.return();
             }
           } finally {
-            if (_didIteratorError7) {
-              throw _iteratorError7;
+            if (_didIteratorError11) {
+              throw _iteratorError11;
             }
           }
         }
@@ -784,24 +939,6 @@ var HTMLGenerator = function () {
       return $e[0].outerHTML;
     }
   }, {
-    key: "formatLinks",
-    value: function formatLinks(msg) {
-      /* TODO: replace node entirely
-      let $m = $(msg[0].outerHTML);
-      for (let [i, e] of Object.entries($m.contents())) {
-        if (e.nodeType === document.TEXT_NODE) {
-          let m = e.nodeValue.match(Util.URL_REGEX);
-          if (m && m.length > 0) {
-            for (let url of m) {
-              e.nodeValue = e.nodeValue.replace(url, this.url(url));
-            }
-          }
-        }
-      }*/
-      /* TODO: return $m over msg */
-      return msg;
-    }
-  }, {
     key: "client",
     set: function set(c) {
       this._client = c;
@@ -810,27 +947,27 @@ var HTMLGenerator = function () {
     key: "bgcolors",
     set: function set(colors) {
       this._bg_colors = [];
-      var _iteratorNormalCompletion8 = true;
-      var _didIteratorError8 = false;
-      var _iteratorError8 = undefined;
+      var _iteratorNormalCompletion12 = true;
+      var _didIteratorError12 = false;
+      var _iteratorError12 = undefined;
 
       try {
-        for (var _iterator8 = colors[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-          var c = _step8.value;
+        for (var _iterator12 = colors[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+          var c = _step12.value;
 
           this._bg_colors.push(c);
         }
       } catch (err) {
-        _didIteratorError8 = true;
-        _iteratorError8 = err;
+        _didIteratorError12 = true;
+        _iteratorError12 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion8 && _iterator8.return) {
-            _iterator8.return();
+          if (!_iteratorNormalCompletion12 && _iterator12.return) {
+            _iterator12.return();
           }
         } finally {
-          if (_didIteratorError8) {
-            throw _iteratorError8;
+          if (_didIteratorError12) {
+            throw _iteratorError12;
           }
         }
       }

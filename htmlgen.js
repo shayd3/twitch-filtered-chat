@@ -51,6 +51,7 @@ class HTMLGenerator {
 
     /* Ensure config has certain values */
     if (!this._config.Layout) this._config.Layout = {};
+    if (!this._config.ShowClips) this._config.ShowClips = false;
   }
 
   set client(c) { this._client = c; }
@@ -212,36 +213,7 @@ class HTMLGenerator {
     return $e[0].outerHTML;
   }
 
-  _genMsgInfo(event) {
-    let $msg = $(`<span class="message" data-message="1"></span>`);
-    let $effects = [];
-
-    /* Escape the message, keeping track of how characters move */
-    let [message, map] = Util.EscapeWithMap(event.message);
-    map.push(message.length); /* Prevent off-the-end mistakes */
-
-    /* Handle early mod-only antics */
-    if (!$("#cbForce").is(":checked") && event.ismod) {
-      let word0 = event.message.split(" ")[0];
-      if (word0 == "force") {
-        event.flags.force = true;
-      } else if (word0 == "forcejs") {
-        event.flags.force = true;
-      } else if (word0 == "forcebits" || word0 == "forcecheer") {
-        /* Modify both message and event.message, as they're both used below */
-        if (word0.length == 9) {
-          event.values.message = "cheer1000" + event.message.substr(9);
-          message = "cheer1000" + message.substr(9);
-        } else if (word0.length == 10) {
-          event.values.message = "cheer1000" + event.message.substr(10);
-          message = "cheer1000 " + message.substr(10);
-        }
-        event.flags.bits = 1000;
-        event.flags.force = true;
-      }
-    }
-
-    /* Handle emotes */
+  _msgEmotesTransform(event, message, map/*, $msg, $effects*/) {
     if (event.flags.emotes) {
       let emotes = event.flags.emotes.map(function(e) {
         return {'id': e.id, 'name': e.name,
@@ -263,8 +235,10 @@ class HTMLGenerator {
         }
       }
     }
+    return message;
+  }
 
-    /* Handle cheers */
+  _msgCheersTransform(event, message, map, $msg, $effects) {
     if (event.flags.bits && event.flags.bits > 0) {
       let bits_left = event.flags.bits;
       let matches = this._client.FindCheers(event.channel.channel, event.message);
@@ -300,8 +274,10 @@ class HTMLGenerator {
         }
       }
     }
+    return message;
+  }
 
-    /* Handle FFZ emotes */
+  _msgFFZEmotesTransform(event, message, map/*, $msg, $effects*/) {
     let ffz_emotes = this._client.GetFFZEmotes(event.channel.channel);
     if (ffz_emotes && ffz_emotes.emotes) {
       let ffz_emote_arr = [];
@@ -333,8 +309,10 @@ class HTMLGenerator {
         }
       }
     }
+    return message;
+  }
 
-    /* Handle BTTV emotes */
+  _msgBTTVEmotesTransform(event, message, map/*, $msg, $effects*/) {
     let bttv_emotes = this._client.GetBTTVEmotes(event.channel.channel);
     if (bttv_emotes && bttv_emotes.emotes) {
       let bttv_emote_arr = [];
@@ -363,8 +341,10 @@ class HTMLGenerator {
         }
       }
     }
+    return message;
+  }
 
-    /* @user highlighting */
+  _msgAtUserTransform(event, message, map, $msg/*, $effects */) {
     message = message.replace(/(^|\b\s*)(@\w+)(\s*\b|$)/g, (function(m, p1, p2, p3) {
       if (p2.substr(1).toLowerCase() == this._client.GetName().toLowerCase()) {
         $msg.addClass("highlight");
@@ -373,6 +353,83 @@ class HTMLGenerator {
         return `${p1}<em class="at-user">${p2}</em>${p3}`;
       }
     }).bind(this));
+    return message;
+  }
+
+  _msgURLTransform(event, message/*, map, $msg, $effects*/) {
+    let $m = $("<span></span>").html(message);
+    /* SearchTree predicate */
+    function text_and_has_url(elem) {
+      if (elem.nodeType === Node.TEXT_NODE) {
+        if (elem.nodeValue.match(Util.URL_REGEX)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    /* SplitByMatches map function */
+    function to_url(u) {
+      return new URL(Util.URL(u));
+    }
+    /* Obtain text nodes with URLs */
+    let nodes = Util.SearchTree($m[0], text_and_has_url);
+    let replace_info = [];
+    /* Populate nodes and their new contents */
+    for (let node of nodes) {
+      let matches = node.nodeValue.match(Util.URL_REGEX);
+      let parts = Util.SplitByMatches(node.nodeValue, matches, to_url);
+      let newNodes = [];
+      for (let part of parts) {
+        newNodes.push(Util.CreateNode(part));
+      }
+      replace_info.push([node.parentNode, newNodes]);
+    }
+    /* Replace the nodes' contents with the new children */
+    for (let [node, children] of replace_info) {
+      node.innerHTML = "";
+      for (let child of children) {
+        node.innerHTML += Util.GetHTML(child);
+      }
+    }
+    return $m[0].innerHTML;
+  }
+
+  _genMsgInfo(event) {
+    let $msg = $(`<span class="message" data-message="1"></span>`);
+    let $effects = [];
+
+    /* Escape the message, keeping track of how characters move */
+    let [message, map] = Util.EscapeWithMap(event.message);
+    map.push(message.length); /* Prevent off-the-end mistakes */
+
+    /* Handle early mod-only antics */
+    if (!$("#cbForce").is(":checked") && event.ismod) {
+      let word0 = event.message.split(" ")[0];
+      if (word0 == "force") {
+        event.flags.force = true;
+      } else if (word0 == "forcejs") {
+        event.flags.force = true;
+      } else if (word0 == "forcebits" || word0 == "forcecheer") {
+        let wordlen = word0.length;
+        let msgprefix = "cheer1000";
+        while (msgprefix.length < word0.length) {
+          msgprefix += ' ';
+        }
+        /* Modify both message and event.message, as they're both used below */
+        event.values.message = msgprefix + event.message.substr(wordlen);
+        message = msgprefix + message.substr(wordlen);
+        event.flags.bits = 1000;
+        event.flags.force = true;
+      }
+    }
+
+    /* Apply message transformations */
+    message = this._msgEmotesTransform(event, message, map, $msg, $effects);
+    message = this._msgCheersTransform(event, message, map, $msg, $effects);
+    message = this._msgFFZEmotesTransform(event, message, map, $msg, $effects);
+    message = this._msgBTTVEmotesTransform(event, message, map, $msg, $effects);
+    message = this._msgAtUserTransform(event, message, map, $msg, $effects);
+    message = this._msgURLTransform(event, message, map, $msg, $effects);
 
     /* Handle mod-only antics */
     if (event.ismod && !$("#cbForce").is(":checked") && event.flags.force) {
@@ -387,7 +444,7 @@ class HTMLGenerator {
 
     $msg.html(message);
 
-    return {e: this.formatLinks($msg), effects: $effects};
+    return {e: $msg, effects: $effects};
   }
 
   _addChatAttrs($e, event) {
@@ -566,20 +623,5 @@ class HTMLGenerator {
     return $e[0].outerHTML;
   }
 
-  formatLinks(msg) {
-    /* TODO: replace node entirely
-    let $m = $(msg[0].outerHTML);
-    for (let [i, e] of Object.entries($m.contents())) {
-      if (e.nodeType === document.TEXT_NODE) {
-        let m = e.nodeValue.match(Util.URL_REGEX);
-        if (m && m.length > 0) {
-          for (let url of m) {
-            e.nodeValue = e.nodeValue.replace(url, this.url(url));
-          }
-        }
-      }
-    }*/
-    /* TODO: return $m over msg */
-    return msg;
-  }
 }
+
