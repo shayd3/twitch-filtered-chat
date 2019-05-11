@@ -1,0 +1,321 @@
+<!DOCTYPE xhtml>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>URL Formatter Test</title>
+  <meta charset="utf-8" />
+  <script type="text/javascript" src="https://kaedenn.github.io/twitch-filtered-chat/assets/jquery-3.3.1.min.js"></script>
+  <style type="text/css">
+.content {
+  counter-reset: content_line;
+  min-height: calc(100% - 8em);
+  height: calc(100% - 8em);
+  border: 1px solid black;
+}
+.line {
+  display: block;
+  line-height: 1em;
+}
+.line:before {
+  counter-increment: content_line;
+  content: counter(content_line);
+  display: inline-block;
+  border-right: 1px solid gray;
+  padding: 0 0.5em;
+  margin-right: 0.5em;
+  font-family: monospace;
+  min-width: 16px;
+  text-align: right;
+}
+.im {
+  font-weight: bold;
+}
+
+pre {
+  display: inline;
+  margin-top: 0px;
+  margin-bottom: 0px;
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
+.pre {
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+#store {
+  counter-reset: store_line;
+  position: absolute;
+  top: calc(100% - 8em);
+  left: 1em;
+  right: 1em;
+  padding-left: 0em;
+  padding-right: 0em;
+  margin-left: 0em;
+  margin-right: 0em;
+  height: 6em;
+  border: 1px solid black;
+  overflow: scroll;
+  background-color: #d1d1d1;
+}
+
+#store .store-line {
+  display: block;
+  line-height: 1em;
+  font-family: monospace;
+  font-size: 0.9em;
+  line-height: 1em;
+}
+
+#store .store-line:before {
+  counter-increment: store_line;
+  content: counter(store_line);
+  display: inline-block;
+  border-right: 1px solid gray;
+  padding: 0 0.5em;
+  margin-right: 0.5em;
+  font-family: monospace;
+  min-width: 2em;
+  text-align: right;
+}
+
+.username {
+  font-weight: bold;
+  color: cyan;
+  text-decoration: underline;
+  background-color: black;
+}
+
+.message:before {
+  color: black;
+  background-color: #d1d1d1;
+  font-weight: normal;
+  content: ": ";
+  text-decoration: none;
+}
+
+.message {
+}
+
+  </style>
+  <script type="text/javascript">
+
+RegExp.escape = function(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+function write(s, raw=false, cls=null) {
+  let $d = $(`<div class="line pre"></div>`);
+  if (raw) {
+    $d.text(s);
+  } else {
+    $d.html(s);
+  }
+  if (cls) {
+    $d.addClass(cls);
+  }
+  $("div.content")[0].appendChild($d[0]);
+}
+
+(function console_log(console_) {
+  let func = console_.log.bind(console_);
+  let format_stack = function() {
+    let location_re = new RegExp(RegExp.escape(`${window.location}`), "g");
+    let stack_raw = (function() {
+      try { throw new Error("stack"); }
+      catch (e) { return e.stack; }
+    })().replace(/\s+$/, "");
+    stack = stack_raw.replace(location_re, "").split(/\n/);
+    stack.shift() /* stack_raw anonymous */;
+    stack.shift() /* format_stack */;
+    stack.shift() /* console_log */;
+    /* Remove jQuery document.ready stuff */
+    while (stack[stack.length-1].indexOf('assets/jquery') > -1) stack.pop();
+    /* Remove run_tests driver */
+    if (stack[stack.length-1].split('@')[0] === "run_tests") stack.pop();
+    /* caller -> callee */
+    return stack.reverse().join(" -> ");
+  };
+  return console_.log = (function(...args) {
+    console_.group(format_stack());
+    func(...args);
+    console_.groupEnd();
+  }).bind(console_);
+})(console);
+
+function store(elem) {
+  $("#store").append($(`<div class="store-line"></div>`).html(elem));
+}
+
+const URL_REGEX = /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi;
+
+function* url_scan_walker(rootNode) {
+  for (let elem of rootNode.childNodes) {
+    if (elem.nodeType === document.TEXT_NODE) {
+      let m = elem.nodeValue.match(URL_REGEX);
+      if (m) {
+        yield [elem, m];
+      }
+    } else if (elem.childNodes) {
+      yield* url_scan_walker(elem);
+    }
+  }
+}
+
+function format_url(urlstr) {
+  let proto = window.location.protocol;
+  let url = urlstr.replace(/^[\/]+/, "");
+  if (!urlstr.match(/^([\w-]+):\/\//)) {
+    if (proto === "file:") {
+      return new URL("http://" + url);
+    } else {
+      return new URL(proto + "//" + url);
+    }
+  } else {
+    return new URL(url);
+  }
+}
+
+function split_by_matches(text, matches, mapfunc=null) {
+  let result = [];
+  let pos = 0;
+  for (let i = 0; i < matches.length; ++i) {
+    let mpos = text.indexOf(matches[i], pos);
+    result.push(text.substr(pos, mpos - pos));
+    if (mapfunc) {
+      result.push(mapfunc(matches[i]));
+    } else {
+      result.push(matches[i]);
+    }
+    pos = mpos + matches[i].length;
+  }
+  if (pos < text.length) {
+    result.push(text.substr(pos));
+  }
+  return result;
+}
+
+function escape_html(s) {
+  return s.replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&apos;")
+}
+
+function url_to_anchor(url) {
+  let a = document.createElement('a');
+  a.setAttribute("href", url.href);
+  a.setAttribute("target", "_blank");
+  a.textContent = url.href;
+  return a;
+}
+
+function jsobj_to_node(obj) {
+  if (typeof(obj) === "string") {
+    return new Text(obj);
+  } else if (obj instanceof URL) {
+    return url_to_anchor(obj);
+  } else {
+    return new Text(JSON.stringify(obj));
+  }
+}
+
+function node_to_html(node) {
+  if (node.outerHTML) {
+    return node.outerHTML;
+  } else if (node.nodeValue) {
+    return escape_html(node.nodeValue);
+  }
+}
+
+function replace_urls(root, inplace=false) {
+  let $e = inplace ? $(root) : $(root).clone();
+  let replacements = [];
+  console.log("replace_urls: e: " + $e.html());
+  for (let [elem, matches] of url_scan_walker($e.unwrap()[0])) {
+    console.log(elem, matches);
+    let parent = elem.parentNode;
+    let parts = split_by_matches(elem.nodeValue, matches, format_url);
+    let html = "";
+    for (let part of parts) {
+      if (typeof(part) === "string") html += escape_html(part);
+      if (part instanceof URL) html += url_to_anchor(part).outerHTML;
+    }
+    console.log(parts);
+    console.log(html);
+    replacements.push([parent, html]);
+  }
+  for (let [e, html] of replacements) {
+    e.innerHTML = html;
+  }
+  console.log($e.html());
+  /*
+    parent.removeChild(elem);
+    for (let part of parts) {
+      console.log("Appending match " + part);
+      if (typeof(part) === "string") {
+        let te = new Text(part);
+        parent.appendChild(te);
+      } else {
+        parent.appendChild(url_to_anchor(part));
+      }
+    }
+  }*/
+  return $e;
+}
+
+function test1() {
+  let $e = $(`<span class="line-wrapper"><span class="badges"><img class="badge" /><img class="badge" /></span><span class="username">Kaedenn</span><span class="message">This is a message &lt; &gt; https://www.example.com and https://kaedenn.net and www.google.com</span></span>`);
+  write("e1: " + $e.html(), true);
+  store($e);
+  let $e2 = replace_urls($e, true);
+  store($e2);
+  write("e2: " + $e2.html(), true);
+  for (let e of url_scan_walker($e.children('.message').unwrap()[0])) {
+    let [elem, matches] = e;
+    write(`${elem} ${JSON.toString(matches)}`);
+  }
+}
+
+/*
+function test2() {
+  let html = `
+<span class="line-wrapper">
+  <span class="badges">
+    <img class="badge" />
+    <img class="badge" />
+  </span>
+  <span class="username">Kaedenn</span>
+  <span class="message">
+    <span class="effect-bold">
+      <span class="effect-marquee>This is a message https://www.example.com and https://kaedenn.net and www.google.com</span>
+    </span>
+  </span>
+</span>`;
+  for (let line of html.split(/\n/)) { write(line, true); }
+  let $e = $(html);
+  store($e);
+  for (let [e, m] of url_scan_walker($e.children('.message').unwrap()[0])) {
+    write(e.textContent, true);
+    write(JSON.stringify(m), true);
+    replace_urls($e, false);
+  }
+}
+*/
+
+function run_tests() {
+  test1();
+  //test2();
+}
+
+$(document).ready(run_tests);
+  </script>
+</head>
+<body>
+<!-- Content to display, with line numbers -->
+<div class="content">
+</div>
+<!-- Storage bucket for elements not intended for display -->
+<div id="store" class="elemStore">
+</div>
+</body>
+</html>
