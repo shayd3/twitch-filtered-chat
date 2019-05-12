@@ -3,9 +3,9 @@
 /** Plugin registration and usage
  *
  * To add your own plugins, place them in this directory and call
- * P.Add with the plugin's definition (see below).
+ * P.add with the plugin's definition (see below).
  *
- * P.Add expects an object with (at least) the following
+ * P.add expects an object with (at least) the following
  * attributes:
  *    ctor: function that, when called, constructs the plugin
  *    args: if present, will be added to the constructor
@@ -41,9 +41,12 @@ class PluginStorageClass {
     this._plugins = {};
   }
 
-  get plugins() { return JSON.parse(JSON.stringify(this._plugins)); }
+  get plugins() {
+    return Util.JSONClone(this._plugins);
+  }
 
-  _path(plugin_def) {
+  /* Resolve the path to a plugin */
+  _path(plugin_def) { /* TODO: allow remote plugins */
     let base = window.location.pathname;
     if (base.endsWith('/index.html')) {
       base = base.substr(0, base.lastIndexOf('/'));
@@ -51,6 +54,7 @@ class PluginStorageClass {
     return `${base}/plugins/${plugin_def.file}`;
   }
 
+  /* Sanitize a plugin's constructor to accepted characters */
   _ctor(plugin_def) {
     if (plugin_def.ctor.match(/^[A-Za-z0-9_]+$/)) {
       return window[plugin_def.ctor];
@@ -59,6 +63,7 @@ class PluginStorageClass {
     }
   }
 
+  /* Return which plugin (by name) loads first */
   _cmp(n1, n2) {
     let p1 = this._plugins[n1];
     let p2 = this._plugins[n2];
@@ -114,7 +119,7 @@ class PluginStorageClass {
     });
   }
 
-  Add(plugin_def) {
+  add(plugin_def) {
     this._plugins[plugin_def.ctor] = plugin_def;
     plugin_def._loaded = false;
   }
@@ -139,20 +144,21 @@ class PluginStorageClass {
 }
 
 let Plugins = new PluginStorageClass();
-/* Un-comment this to enable the sample plugin */
-Plugins.Add({"ctor": "SamplePlugin",
+/* Two example plugins; see plugins/<file> for their contents */
+Plugins.add({"ctor": "SamplePlugin",
              "args": [],
              "file": "plugin-sample.js",
              "order": 1000});
-Plugins.Add({"ctor": "SamplePlugin2",
+Plugins.add({"ctor": "SamplePlugin2",
              "args": [],
              "file": "plugin-sample-2.js",
              "order": 1000});
-/* */
 
 /* The following plugin is not distributed */
-Plugins.Add({"ctor": "DwangoACPlugin",
-             "silent": true,
-             "args": [],
-             "file": "dwangoAC.js",
-             "order": 999});
+if (window.location.protocol === "file:") {
+  Plugins.add({"ctor": "DwangoACPlugin",
+               "silent": true,
+               "args": [],
+               "file": "dwangoAC.js",
+               "order": 999});
+}

@@ -8,85 +8,6 @@ const MOD_TFC = 'twitch-filtered-chat';
 const MOD_TWAPI = 'twitch-api';
 var ASSETS = [];
 
-function GetAssetURL(file, tree) {
-  const URI = `${window.location}`;
-  const IS_GIT = URI.indexOf('github.io') > -1;
-  const BASE_URI = URI.substr(0, URI.indexOf(MOD_TFC)).replace(/\/$/, '');
-  const SELF_URI = URI.replace(/\/index.html(\?.*)?$/, '');
-  let root = '';
-  if (tree === MOD_TFC) {
-    if (USE_DIST) {
-      root = `${SELF_URI}/dist`;
-    } else if (IS_GIT) {
-      root = SELF_URI;
-    } else {
-      root = SELF_URI;
-    }
-  } else if (tree === MOD_TWAPI) {
-    if (USE_DIST) {
-      root = `${BASE_URI}/${MOD_TWAPI}/dist`;
-    } else if (IS_GIT) {
-      root = `${BASE_URI}/${MOD_TWAPI}`;
-    } else {
-      root = `${BASE_URI}/${MOD_TWAPI}`;
-    }
-  } else if (file.startsWith('//')) {
-    if (window.location.protocol === "https:") {
-      return `https:${file}`;
-    } else if (window.location.protocol === "http:") {
-      return `http:${file}`;
-    } else if (window.location.protocol === "file:") {
-      return `http:${file}`;
-    } else {
-      return `http:${file}`;
-    }
-  } else if (!file.match(/^[\w-]+:/)) {
-    if (window.location.protocol === "https:") {
-      return `https://${file}`;
-    } else if (window.location.protocol === "http:") {
-      return `http://${file}`;
-    } else if (window.location.protocol === "file:") {
-      return `http://${file}`;
-    } else {
-      return `http://${file}`;
-    }
-  }
-  return `${root}/${file}`;
-}
-
-function AddAsset(src, tree=null, loadcb=null, errcb=null) {
-  ASSETS.push({});
-  let asset = ASSETS[ASSETS.length - 1];
-  asset.file = src;
-  asset.src = GetAssetURL(src, tree);
-  asset.tree = tree;
-  asset.loaded = false;
-  asset.error = false;
-  asset.script = document.createElement("script");
-  asset.script.setAttribute("type", "text/javascript");
-  asset.script.setAttribute("src", asset.src);
-  asset.script.onload = function() {
-    console.log(`${asset.src} loaded`);
-    asset.loaded = true;
-    if (loadcb) { loadcb(asset); }
-  }
-  asset.script.onerror = function(e) {
-    console.error("Failed loading", asset, e);
-    asset.error = true;
-    if (errcb) { errcb(asset, e); }
-  }
-  document.head.appendChild(asset.script);
-}
-
-function AssetsLoaded() {
-  for (let a of ASSETS) {
-    if (a.loaded !== true) {
-      return false;
-    }
-  }
-  return true;
-}
-
 /* Parse layout= query string value */
 function ParseLayout(str) { /* exported ParseLayout */
   let layout = {Cols: null, Chat: true, Slim: false};
@@ -145,37 +66,100 @@ function FormatLayout(layout) { /* exported FormatLayout */
   return `${k}:${v}`;
 }
 
-function onReady(func) {
-  try {
-    if (AssetsLoaded()) {
-      func();
+function GetAssetURL(file, tree) {
+  const URI = `${window.location}`;
+  const IS_GIT = URI.indexOf('github.io') > -1;
+  const BASE_URI = URI.substr(0, URI.indexOf(MOD_TFC)).replace(/\/$/, '');
+  const SELF_URI = URI.replace(/\/index.html(\?.*)?$/, '');
+  let root = '';
+  if (tree === MOD_TFC) {
+    if (USE_DIST) {
+      root = `${SELF_URI}/dist`;
+    } else if (IS_GIT) {
+      root = SELF_URI;
     } else {
-      window.setTimeout(onReady.bind(window, func), 50);
+      root = SELF_URI;
+    }
+  } else if (tree === MOD_TWAPI) {
+    if (USE_DIST) {
+      root = `${BASE_URI}/${MOD_TWAPI}/dist`;
+    } else if (IS_GIT) {
+      root = `${BASE_URI}/${MOD_TWAPI}`;
+    } else {
+      root = `${BASE_URI}/${MOD_TWAPI}`;
+    }
+  } else if (file.startsWith('//')) {
+    if (window.location.protocol === "https:") {
+      return `https:${file}`;
+    } else if (window.location.protocol === "http:") {
+      return `http:${file}`;
+    } else if (window.location.protocol === "file:") {
+      return `http:${file}`;
+    } else {
+      return `http:${file}`;
+    }
+  } else if (!file.match(/^[\w-]+:/)) {
+    if (window.location.protocol === "https:") {
+      return `https://${file}`;
+    } else if (window.location.protocol === "http:") {
+      return `http://${file}`;
+    } else if (window.location.protocol === "file:") {
+      return `http://${file}`;
+    } else {
+      return `http://${file}`;
     }
   }
-  catch (e) {
-    alert("Fail: " + e.toString());
-    throw e;
-  }
+  return `${root}/${file}`;
 }
 
-function onAssetError(asset, e) {
-  let m = e.toString();
-  m = m + "\n";
-  m = JSON.stringify(asset);
-  m + m + "\n";
-  m = JSON.stringify(e);
-  m = m + "\n";
-  if (e.stack) m = m + e.stack;
-  alert("asset error: " + m);
+function AddAsset(src, tree=null, loadcb=null, errcb=null) {
+  ASSETS.push({});
+  let asset = ASSETS[ASSETS.length - 1];
+  return new Promise(function(resolve, reject) {
+    asset.file = src;
+    asset.src = GetAssetURL(src, tree);
+    asset.tree = tree;
+    asset.loaded = false;
+    asset.error = false;
+    asset.script = document.createElement("script");
+    asset.script.setAttribute("type", "text/javascript");
+    asset.script.setAttribute("src", asset.src);
+    asset.script.onload = function() {
+      console.log(`${asset.src} loaded`);
+      asset.loaded = true;
+      if (loadcb) { loadcb(asset); }
+      resolve(asset);
+    }
+    asset.script.onerror = function(e) {
+      console.error("Failed loading", asset, e);
+      asset.error = true;
+      if (errcb) { errcb(asset, e); }
+      reject(e);
+    }
+    document.head.appendChild(asset.script);
+  });
 }
 
-/* Add top-level assets */
-AddAsset("config.js", MOD_TFC, null, onAssetError);
-AddAsset("htmlgen.js", MOD_TFC, null, onAssetError);
-AddAsset("commands.js", MOD_TFC, null, onAssetError);
-AddAsset("filtered-chat.js", MOD_TFC, null, onAssetError);
-if (!USE_DIST) { AddAsset("plugins/plugins.js", MOD_TFC, null, onAssetError); }
+/* Load TWAPI */
+function loadTWAPI() {
+  return Promise.all([
+    AddAsset("utility.js", MOD_TWAPI, null, null),
+    AddAsset("twitch-utility.js", MOD_TWAPI, null, null),
+    AddAsset("colors.js", MOD_TWAPI, null, null),
+    AddAsset("client.js", MOD_TWAPI, null, null)
+  ]);
+}
+
+/* Load TFC */
+function loadTFC() {
+  return Promise.all([
+    AddAsset("config.js", MOD_TFC, null, null),
+    AddAsset("htmlgen.js", MOD_TFC, null, null),
+    AddAsset("commands.js", MOD_TFC, null, null),
+    AddAsset("filtered-chat.js", MOD_TFC, null, null),
+    !USE_DIST ? AddAsset("plugins/plugins.js", MOD_TFC, null, null) : null
+  ]);
+}
 
 /* Called by body.onload */
 function Main(global) { /* exported Main */
@@ -187,12 +171,6 @@ function Main(global) { /* exported Main */
     }
   }
   global.debug_msg = debug_msg;
-
-  /* Add TWAPI assets */
-  AddAsset("utility.js", MOD_TWAPI, null, onAssetError);
-  AddAsset("twitch-utility.js", MOD_TWAPI, null, onAssetError);
-  AddAsset("colors.js", MOD_TWAPI, null, onAssetError);
-  AddAsset("client.js", MOD_TWAPI, null, onAssetError);
 
   /* Populate templates and load the client */
   function index_main() {
@@ -280,7 +258,14 @@ function Main(global) { /* exported Main */
     });
   }
 
-  /* Once the document is loaded, wait for the scripts, then do layout */
-  onReady(index_main);
+  /* Add TWAPI assets */
+  loadTWAPI().then((v1) => {
+    console.log("TWAPI loaded:", v1);
+    /* Add top-level assets */
+    loadTFC().then((v2) => {
+      console.log("TFC loaded:", v2);
+      index_main();
+    });
+  });
 }
 

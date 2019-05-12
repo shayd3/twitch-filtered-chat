@@ -865,7 +865,7 @@ function client_main(layout) { /* exported client_main */
     });
 
     /* Set values we'll want to use later */
-    ConfigCommon = JSON.parse(JSON.stringify(config));
+    ConfigCommon = Util.JSONClone(config);
     delete ConfigCommon["Pass"];
     delete ConfigCommon["ClientID"];
     ConfigCommon.Plugins = config.Plugins ? true : false;
