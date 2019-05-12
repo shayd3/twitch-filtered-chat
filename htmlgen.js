@@ -5,9 +5,7 @@
 /* TODO:
  * Implement raid and calling code
  * Implement TwitchSubEvent htmlgen
- * Fix URL formatting
- * Fix the following username colors:
- *   #725ac1
+ * Add clip formatting code (this._config.ShowClips)
  * Implement "light" and "dark" colorschemes
  */
 
@@ -68,7 +66,7 @@ class HTMLGenerator {
   getColorFor(username) {
     let name = `${username}`;
     if (typeof(username) !== "string") {
-      Util.Error(`Expected string, got ${username}: ${JSON.stringify(username)}`);
+      Util.Error(`Expected string, got ${typeof(username)}: ${JSON.stringify(username)}`);
     }
     if (!this._user_colors.hasOwnProperty(name)) {
       /* Taken from Twitch vendor javascript */
@@ -81,6 +79,57 @@ class HTMLGenerator {
       this._user_colors[name] = this._default_colors[r];
     }
     return this._user_colors[name];
+  }
+
+  genName(name, color) {
+    let $e = $(`<span class="username" data-username="1"></span>`);
+    $e.addClass('username');
+    $e.attr('data-username', '1');
+    $e.css('color', color);
+    /* Determine the best border color to use */
+    let border = Util.GetMaxContrast(color, this._bg_colors);
+    $e.css("text-shadow", `-0.8px -0.8px 0 ${border},
+                            0.8px -0.8px 0 ${border},
+                           -0.8px  0.8px 0 ${border},
+                            0.8px  0.8px 0 ${border}`);
+    $e.text(name);
+    return $e[0].outerHTML;
+  }
+
+  formatURLs(message) {
+    let $m = $("<span></span>").html(message);
+    /* SearchTree predicate */
+    function text_and_has_url(elem) {
+      if (elem.nodeType === Node.TEXT_NODE) {
+        if (elem.nodeValue.match(Util.URL_REGEX)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    /* SplitByMatches map function */
+    let to_url = (u) => new URL(Util.URL(u));
+    /* Obtain text nodes with URLs */
+    let nodes = Util.SearchTree($m[0], text_and_has_url);
+    let replace_info = [];
+    /* Populate nodes and their new contents */
+    for (let node of nodes) {
+      let matches = node.nodeValue.match(Util.URL_REGEX);
+      let parts = Util.SplitByMatches(node.nodeValue, matches, to_url);
+      let newNodes = [];
+      for (let part of parts) {
+        newNodes.push(Util.CreateNode(part));
+      }
+      replace_info.push([node.parentNode, newNodes]);
+    }
+    /* Replace the nodes' contents with the new children */
+    for (let [node, children] of replace_info) {
+      node.innerHTML = "";
+      for (let child of children) {
+        node.innerHTML += Util.GetHTML(child);
+      }
+    }
+    return $m[0].innerHTML;
   }
 
   _twitchEmote(emote) {
@@ -128,7 +177,7 @@ class HTMLGenerator {
       $b.attr('tw-badge-scope', 'global');
     } else if (this._client.IsChannelBadge(event.channel, badge_name)) {
       let badge_info = this._client.GetChannelBadge(event.channel, badge_name);
-      let badge_src = badge_info.alpha ? badge_info.alpha : badge_info.image;
+      let badge_src = badge_info.alpha || badge_info.image;
       $b.attr('src', badge_src);
       $b.attr('tw-badge', JSON.stringify(badge_info));
       if (event.channel) {
@@ -199,18 +248,7 @@ class HTMLGenerator {
     let user = event.flags["display-name"] || event.user;
     let color = event.flags.color || this.getColorFor(event.user);
     if (!color) { color = '#ffffff'; }
-    let $e = $(`<span class="username" data-username="1"></span>`);
-    $e.addClass('username');
-    $e.attr('data-username', '1');
-    $e.css('color', color);
-    /* Determine the best border color to use */
-    let border = Util.GetMaxContrast(color, this._bg_colors);
-    $e.css("text-shadow", `-0.8px -0.8px 0 ${border},
-                            0.8px -0.8px 0 ${border},
-                           -0.8px  0.8px 0 ${border},
-                            0.8px  0.8px 0 ${border}`);
-    $e.text(user);
-    return $e[0].outerHTML;
+    return this.genName(user, color);
   }
 
   _msgEmotesTransform(event, message, map/*, $msg, $effects*/) {
@@ -247,8 +285,7 @@ class HTMLGenerator {
         let match = matches.pop();
         let cheer = match.cheer;
         let bits = match.bits;
-        let start = map[match.start];
-        let end = map[match.end];
+        let [start, end] = [map[match.start], map[match.end]];
         let chtml = this._genCheer(cheer, bits);
         let msg_start = message.substr(0, start);
         let msg_end = message.substr(end);
@@ -288,10 +325,8 @@ class HTMLGenerator {
       results.sort((a, b) => (a.start - b.start));
       while (results.length > 0) {
         let emote = results.pop();
-        let start = emote.start;
-        let end = emote.end+1;
-        let mstart = map[start];
-        let mend = map[end];
+        let [start, end] = [emote.start, emote.end+1];
+        let [mstart, mend] = [map[start], map[end]];
         let url = emote.id.urls[Object.keys(emote.id.urls).min()];
         let $i = $(`<img class="emote ffz-emote" ffz-emote-id=${emote.id.id} />`);
         $i.attr('src', url);
@@ -323,10 +358,8 @@ class HTMLGenerator {
       results.sort((a, b) => (a.start - b.start));
       while (results.length > 0) {
         let emote = results.pop();
-        let start = emote.start;
-        let end = emote.end+1;
-        let mstart = map[start];
-        let mend = map[end];
+        let [start, end] = [emote.start, emote.end+1];
+        let [mstart, mend] = [map[start], map[end]];
         let $i = $(`<img class="emote bttv-emote" bttv-emote-id="${emote.id.id}" />`);
         $i.attr("src", emote.id.url);
         let msg_start = message.substr(0, mstart);
@@ -357,41 +390,7 @@ class HTMLGenerator {
   }
 
   _msgURLTransform(event, message/*, map, $msg, $effects*/) {
-    let $m = $("<span></span>").html(message);
-    /* SearchTree predicate */
-    function text_and_has_url(elem) {
-      if (elem.nodeType === Node.TEXT_NODE) {
-        if (elem.nodeValue.match(Util.URL_REGEX)) {
-          return true;
-        }
-      }
-      return false;
-    }
-    /* SplitByMatches map function */
-    function to_url(u) {
-      return new URL(Util.URL(u));
-    }
-    /* Obtain text nodes with URLs */
-    let nodes = Util.SearchTree($m[0], text_and_has_url);
-    let replace_info = [];
-    /* Populate nodes and their new contents */
-    for (let node of nodes) {
-      let matches = node.nodeValue.match(Util.URL_REGEX);
-      let parts = Util.SplitByMatches(node.nodeValue, matches, to_url);
-      let newNodes = [];
-      for (let part of parts) {
-        newNodes.push(Util.CreateNode(part));
-      }
-      replace_info.push([node.parentNode, newNodes]);
-    }
-    /* Replace the nodes' contents with the new children */
-    for (let [node, children] of replace_info) {
-      node.innerHTML = "";
-      for (let child of children) {
-        node.innerHTML += Util.GetHTML(child);
-      }
-    }
-    return $m[0].innerHTML;
+    return this.formatURLs(message);
   }
 
   _genMsgInfo(event) {
@@ -562,6 +561,7 @@ class HTMLGenerator {
   }
 
   anongiftsub(event) {
+    /* TODO */
     let user = event.flags['msg-param-recipient-user-name'];
     let gifter = event.flags.login;
     let months = event.flags['msg-param-sub-months'];
