@@ -137,7 +137,7 @@ class HTMLGenerator {
     if (emote.id !== null) {
       let $e = $(`<img class="emote twitch-emote" />`);
       $e.attr('tw-emote-id', emote.id);
-      $e.attr('src', Twitch.URL.Emote(emote.id));
+      $e.attr('src', this._client.GetEmote(emote.id));
       if (emote.name) {
         $e.attr('alt', emote.name);
         $e.attr('title', emote.name);

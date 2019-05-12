@@ -69,7 +69,7 @@ TEST_MESSAGES.EFFECT3 = BuildMessage({"bits": "100"}, "PRIVMSG",
 function inject_message(msg) {
   let e = new Event('message');
   e.data = msg;
-  client.OnWebsocketMessage(e);
+  client._onWebsocketMessage(e);
 }
 
 /* Tests:

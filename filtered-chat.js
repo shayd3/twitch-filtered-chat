@@ -3,6 +3,7 @@
 "use strict";
 
 /* TODO:
+ * Persist "Show Clips" beyond reload
  * Add layout selection box to #settings (reloads page on change)
  * Add target to #settings help link
  * Add clip information
@@ -49,6 +50,12 @@ class Content { /* exported Content */
     let e = $(`<div class="error"></div>`).html(content);
     if (pre) e.addClass("pre");
     Content.addHTML(e);
+  }
+  static addHelp(s) {
+    ChatCommands.printHelp(s);
+  }
+  static addHelpLine(c, s) {
+    ChatCommands.printHelpLine(c, s);
   }
 }
 
@@ -454,6 +461,8 @@ function setChannels(client, channels) {
 function shouldFilter(module, event) {
   let rules = getModuleSettings(module);
   if (event instanceof TwitchChatEvent) {
+    let user = event.user ? event.user.toLowerCase() : "";
+    let message = event.message ? event.message.toLowerCase() : "";
     /* sub < vip < mod for classification */
     let role = "pleb";
     if (event.issub) role = "sub";
@@ -462,17 +471,18 @@ function shouldFilter(module, event) {
     /* Includes take priority over excludes */
     if (rules.IncludeUser.any((u) => (u.toLowerCase() == user))) return false;
     if (rules.IncludeKeyword.any((k) => (message.indexOf(k) > -1))) return false;
+    /* Role filtering */
     if (!rules.Pleb && role == "pleb") return true;
     if (!rules.Sub && role == "sub") return true;
     if (!rules.VIP && role == "vip") return true;
     if (!rules.Mod && role == "mod") return true;
-    /* "Bits" also filters out cheer effects */
+    /* Content filtering ("Bits" also filters out cheer effects) */
     if (!rules.Bits && event.flags.bits) return true;
     if (!rules.Me && event.flags.action) return true;
-    let user = event.user ? event.user.toLowerCase() : "";
-    let message = event.message ? event.message.toLowerCase() : "";
+    /* Exclude filtering */
     if (rules.ExcludeUser.any((u) => (u.toLowerCase() == user))) return true;
     if (rules.ExcludeStartsWith.any((m) => (message.startsWith(m)))) return true;
+    /* Filtering to permitted channels (default: permit all) */
     if (rules.FromChannel.length > 0) {
       for (let s of rules.FromChannel) {
         let c = s.indexOf("#") == -1 ? "#" + s : s;
@@ -506,7 +516,7 @@ function handleCommand(value, client) {
     tokens.pop();
   }
 
-  if (ChatCommands.is_command_str(value)) {
+  if (ChatCommands.isCommandStr(value)) {
     if (ChatCommands.has_command(command)) {
       ChatCommands.execute(value, client);
       return true;
@@ -518,9 +528,9 @@ function handleCommand(value, client) {
     let config = getConfigObject();
     if (tokens.length > 0) {
       if (tokens[0] == "clientid") {
-        ChatCommands.addHelpLine("ClientID", config.ClientID);
+        Content.addHelpLine("ClientID", config.ClientID);
       } else if (tokens[0] == "pass") {
-        ChatCommands.addHelpLine("Pass", config.Pass);
+        Content.addHelpLine("Pass", config.Pass);
       } else if (tokens[0] == "purge") {
         Util.SetWebStorage({});
         Content.addNotice(`Purged storage "${Util.GetWebStorageKey()}"`);
@@ -533,7 +543,9 @@ function handleCommand(value, client) {
         }
         let qs = [];
         let qsAdd = (k, v) => (qs.push(`${k}=${encodeURIComponent(v)}`));
-        if (config.Debug > 0) { qsAdd("debug", config.Debug); }
+        if (config.Debug > 0) {
+          qsAdd("debug", config.Debug);
+        }
         if (config.__clientid_override) {
           if (config.ClientID && config.ClientID.length == 30) {
             qsAdd("clientid", config.ClientID);
@@ -561,8 +573,7 @@ function handleCommand(value, client) {
         if (config.AutoReconnect) { qsAdd("reconnect", "1"); }
         {
           let font_size = Util.CSS.GetProperty("--body-font-size");
-          let font_size_default = Util.CSS.GetProperty("--body-font-size-default");
-          if (font_size != font_size_default) {
+          if (font_size != Util.CSS.GetProperty("--body-font-size-default")) {
             qsAdd("size", font_size.replace(/[^0-9]/g, ""));
           }
         }
@@ -570,36 +581,43 @@ function handleCommand(value, client) {
         if (config.MaxMessages != TwitchClient.DEFAULT_MAX_MESSAGES) {
           qsAdd("max", `${config.MaxMessages}`);
         }
-        if (USE_DIST) { qsAdd("usedist", "1"); }
+        if (config.Font) {
+          qsAdd("font", config.Font);
+        }
+        if (config.Scroll) { qsAdd("scroll", "1"); }
+        if (config.ShowClips) { qsAdd("clips", "1"); }
+        /* Format QS object */
         if (tokens[tokens.length-1] === "text") {
           url += "?" + qs.join("&");
         } else {
           url += "?base64=" + encodeURIComponent(btoa(qs.join("&")));
         }
-        ChatCommands.addHelp(client.get("HTMLGen").url(url));
+        Content.addHelp(client.get("HTMLGen").url(url));
       } else if (config.hasOwnProperty(tokens[0])) {
-        ChatCommands.addHelpLine(tokens[0], JSON.stringify(config[tokens[0]]));
+        Content.addHelpLine(tokens[0], JSON.stringify(config[tokens[0]]));
       } else {
         Content.addError(`Unknown config key &quot;${tokens[0]}&quot;`, true);
       }
     } else {
       let wincfgs = [];
       for (let [k, v] of Object.entries(config)) {
-        if (typeof(v) == "object" && v.Name && v.Name.length > 1) {
+        if (k === "Layout") {
+          Content.addHelpLine(k, FormatLayout(v));
+        } else if (typeof(v) == "object" && v.Name && v.Name.length > 1) {
           /* It's a window configuration */
           wincfgs.push([k, v]);
         } else if (k == "ClientID" || k == "Pass") {
-          ChatCommands.addHelpLine(k, `Omitted for security; use //config ${k.toLowerCase()} to show`);
+          Content.addHelpLine(k, `Omitted for security; use //config ${k.toLowerCase()} to show`);
         } else {
-          ChatCommands.addHelpLine(k, v);
+          Content.addHelpLine(k, v);
         }
       }
-      ChatCommands.addHelp(`Window Configurations:`);
+      Content.addHelp(`Window Configurations:`);
       for (let [k, v] of wincfgs) {
-        ChatCommands.addHelp(`Module <span class="arg">${k}</span>: &quot;${v.Name}&quot;:`);
+        Content.addHelp(`Module <span class="arg">${k}</span>: &quot;${v.Name}&quot;:`);
         for (let [cfgk, cfgv] of Object.entries(v)) {
           if (cfgk === "Name") continue;
-          ChatCommands.addHelpLine(cfgk, `&quot;${cfgv}&quot;`);
+          Content.addHelpLine(cfgk, `&quot;${cfgv}&quot;`);
         }
       }
     }
@@ -804,19 +822,6 @@ function client_main(layout) { /* exported client_main */
     }
   }, "TRACE");
 
-  /*
-  let config_obj = new ConfigStore(
-    getConfigKey(),
-    ["NoAssets", "NoFFZ", "NoBTTV", "Transparent", "Layout",
-     "AutoReconnect", "Debug"]);
-  for (let m of $(".module")) {
-    let cfg = config_obj.getValue($(m).attr("id"));
-    if (cfg) {
-      setModuleSettings(m, cfg);
-    }
-  }
-  */
-
   /* Obtain configuration, construct client */
   (function _configure_construct_client() {
     let config = getConfigObject();
@@ -886,6 +891,17 @@ function client_main(layout) { /* exported client_main */
 
   /* Construct the HTML Generator and tell it and the client about each other */
   client.set("HTMLGen", new HTMLGenerator(client, ConfigCommon));
+
+  /* Call to sync configuration to HTMLGen */
+  function updateHTMLGenConfig() {
+    let config = Util.JSONClone(getConfigObject());
+    delete config["Pass"];
+    delete config["ClientID"];
+    config.Plugins = Boolean(config.Plugins);
+    for (let [k, v] of Object.entries(config)) {
+      client.get("HTMLGen").setValue(k, v);
+    }
+  }
 
   /* Construct the plugins */
   if (ConfigCommon.Plugins) {
@@ -1012,7 +1028,9 @@ function client_main(layout) { /* exported client_main */
 
   /* Changing the "stream is transparent" checkbox */
   $("#cbTransparent").change(function() {
-    return updateTransparency($(this).is(":checked"));
+    let val = $(this).is(":checked");
+    updateTransparency(val);
+    updateHTMLGenConfig();
   });
 
   /* Changing the value for "background image" */
@@ -1024,11 +1042,11 @@ function client_main(layout) { /* exported client_main */
 
   /* Changing the "Show Clips" checkbox */
   $("#cbClips").change(function() {
-    if ($(this).is(":checked")) {
-      client.get("HTMLGen").setValue("ShowClips", true);
-    } else {
-      client.get("HTMLGen").setValue("ShowClips", false);
-    }
+    let val = Boolean($(this).is(":checked"));
+    let cfg = getConfigObject();
+    cfg.ShowClips = val;
+    Util.SetWebStorage(cfg);
+    updateHTMLGenConfig();
   });
 
   /* Changing the debug level */
@@ -1372,6 +1390,8 @@ function client_main(layout) { /* exported client_main */
   client.bind("twitch-topic", function() {});
   client.bind("twitch-privmsg", function() {});
   client.bind("twitch-whisper", function() {});
+  client.bind("twitch-hosttarget", function() {});
+  client.bind("twitch-mode", function() {});
   client.bind("twitch-other", function() {});
   client.bindDefault(function _on_default(e) { Util.Warn("Unbound event:", e); });
 

@@ -33,8 +33,8 @@ class TFCChatCommandStore {
   }
 
   addUsage(command, argstr, usagestr, opts=null) {
-    if (this.has_command(command, true)) {
-      let c = this.get_command(command);
+    if (this.hasCommand(command, true)) {
+      let c = this.getCommand(command);
       if (!c.usage) c.usage = [];
       c.usage.push({args: argstr, usage: usagestr, opts: opts || {}});
     } else {
@@ -55,11 +55,11 @@ class TFCChatCommandStore {
     this._help_text.push(t);
   }
 
-  is_command_str(msg) {
+  isCommandStr(msg) {
     return !!msg.match(/^\/\//);
   }
 
-  has_command(msg, native_only=false) {
+  hasCommand(msg, native_only=false) {
     let cmd = msg.replace(/^\/\//, "");
     if (this._commands.hasOwnProperty(cmd)) {
       return true;
@@ -70,12 +70,23 @@ class TFCChatCommandStore {
   }
 
   execute(msg, client) {
-    if (this.is_command_str(msg)) {
+    if (this.isCommandStr(msg)) {
       let cmd = msg.split(" ")[0].replace(/^\/\//, "");
-      if (this.has_command(cmd)) {
+      if (this.hasCommand(cmd)) {
         let tokens = msg.replace(/[\s]*$/, "").split(" ").slice(1);
         try {
-          this._do_execute(cmd, tokens, client);
+          let c = this.getCommand(cmd);
+          let obj = Object.create(this);
+          obj.formatUsage = this.formatUsage.bind(this, c);
+          obj.printUsage = this.printUsage.bind(this, c);
+          obj.command = cmd;
+          obj.cmd_func = c.func;
+          obj.cmd_desc = c.desc;
+          if (c.dflt_args) {
+            c.func.bind(obj)(cmd, tokens, client, ...c.dflt_args);
+          } else {
+            c.func.bind(obj)(cmd, tokens, client);
+          }
         }
         catch (e) {
           Content.addError(`${cmd}: ${e.name}: ${e.message}`);
@@ -89,26 +100,11 @@ class TFCChatCommandStore {
     }
   }
 
-  _do_execute(cmd, tokens, client) {
-    let c = this.get_command(cmd);
-    let obj = Object.create(this);
-    obj.format_usage = this.format_usage.bind(this, c);
-    obj.printUsage = this.printUsage.bind(this, c);
-    obj.command = cmd;
-    obj.cmd_func = c.func;
-    obj.cmd_desc = c.desc;
-    if (c.dflt_args) {
-      c.func.bind(obj)(cmd, tokens, client, ...c.dflt_args);
-    } else {
-      c.func.bind(obj)(cmd, tokens, client);
-    }
-  }
-
-  get_commands() {
+  getCommands() {
     return Object.keys(this._commands);
   }
 
-  get_command(cmd, native_only=false) {
+  getCommand(cmd, native_only=false) {
     let cname = cmd.replace(/^\/\//, "");
     let c = this._commands[cname];
     if (!c && !native_only && this._commands[this._aliases[cname]]) {
@@ -117,11 +113,11 @@ class TFCChatCommandStore {
     return c;
   }
 
-  format_help(cmd) {
+  formatHelp(cmd) {
     return this.helpLine("//" + cmd.name.escape(), cmd.desc.escape());
   }
 
-  format_usage(cmd) {
+  formatUsage(cmd) {
     let usages = [];
     if (cmd.usage) {
       for (let entry of cmd.usage) {
@@ -150,15 +146,15 @@ class TFCChatCommandStore {
     if (tokens.length == 0) {
       this.printHelp("Commands:");
       for (let c of Object.values(this._command_list)) {
-        this.printHelp(this.format_help(this._commands[c]));
+        this.printHelp(this.formatHelp(this._commands[c]));
       }
       for (let line of this._help_text) {
         this.printHelp(line);
       }
-    } else if (this.has_command(tokens[0])) {
+    } else if (this.hasCommand(tokens[0])) {
       this.printHelp("Commands:");
-      let obj = this.get_command(tokens[0]);
-      for (let line of this.format_usage(obj)) {
+      let obj = this.getCommand(tokens[0]);
+      for (let line of this.formatUsage(obj)) {
         this.printHelp(line);
       }
     } else {
@@ -200,7 +196,7 @@ class TFCChatCommandStore {
 
   printUsage(cmdobj) {
     this.printHelp("Usage:");
-    for (let line of this.format_usage(cmdobj)) {
+    for (let line of this.formatUsage(cmdobj)) {
       this.printHelp(line);
     }
   }
@@ -304,7 +300,8 @@ function command_part(cmd, tokens, client) {
 }
 
 function command_badges(cmd, tokens, client) {
-  let all_badges = [];
+  let badges = [];
+  /* Obtain global badges */
   for (let [bname, badge] of Object.entries(client.GetGlobalBadges())) {
     for (let bdef of Object.values(badge.versions)) {
       let url = bdef.image_url_2x;
@@ -317,10 +314,21 @@ function command_badges(cmd, tokens, client) {
         size = 72;
       }
       let attr = `width="${size}" height="${size}" title="${bname}"`;
-      all_badges.push(`<img src="${url}" ${attr} alt="${bname}" />`);
+      badges.push(`<img src="${url}" ${attr} alt="${bname}" />`);
     }
   }
-  Content.addNotice(all_badges.join(''));
+  /* Print global badges */
+  Content.addNotice(badges.join(''));
+  /* Obtain channel badges */
+  for (let ch of client.GetJoinedChannels()) {
+    badges = [];
+    for (let [bname, badge] of Object.entries(client.GetChannelBadges(ch))) {
+      let url = badge.image || badge.svg || badge.alpha;
+      badges.push(`<img src="${url}" width="36" height="36" title="${bname}" alt="${bname}" />`);
+    }
+    /* Print channel badges */
+    Content.addNotice(Twitch.FormatChannel(ch) + ": " + badges.join(''));
+  }
 }
 
 function command_plugins(/*cmd, tokens, client*/) {
@@ -383,6 +391,10 @@ function command_client(cmd, tokens, client) {
   }
 }
 
+function command_raw(cmd, tokens, client) {
+  client.SendRaw(tokens.join(" "));
+}
+
 var ChatCommands = new TFCChatCommandStore();
 
 ChatCommands.add("log", command_log,
@@ -440,4 +452,9 @@ ChatCommands.addUsage("client", null,
 ChatCommands.addUsage("client", "status",
                       "Show current connection information",
                       {literal: true});
+
+ChatCommands.add("raw", command_raw,
+                 "Send a raw message to Twitch (for advanced users only!)");
+ChatCommands.addUsage("raw", "message",
+                      "Send <message> to Twitch servers (for advanced users only!)");
 
