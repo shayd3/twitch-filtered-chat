@@ -5,6 +5,7 @@
 /* TODO:
  * Implement raid and calling code
  * Implement TwitchSubEvent htmlgen
+ * Ensure /me formatting is fixed
  * Add clip formatting code (this._config.ShowClips)
  * Implement "light" and "dark" colorschemes
  */
@@ -502,7 +503,7 @@ class HTMLGenerator {
     $e.append($(this._genBadges(event)));
     $e.append($(this._genName(event)));
     let msg_def = this._genMsgInfo(event);
-    if (!event.values.action) {
+    if (!event.flags.action) {
       $e.html($e.html() + ":");
     } else {
       msg_def.e.css("color", color);
@@ -524,7 +525,7 @@ class HTMLGenerator {
     return $e[0].outerHTML;
   }
 
-  sub(event) {
+  sub(event) { /* FIXME: Use TwitchSubEvent */
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
     $m.text(`subscribed using ${event.value('sub_plan')}!`);
@@ -532,7 +533,7 @@ class HTMLGenerator {
     return $w[0].outerHTML;
   }
 
-  resub(event) {
+  resub(event) { /* FIXME: Use TwitchSubEvent */
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
     let months = event.value('sub_months');
@@ -546,7 +547,7 @@ class HTMLGenerator {
     return $w[0].outerHTML;
   }
 
-  giftsub(event) {
+  giftsub(event) { /* FIXME: Use TwitchSubEvent */
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
     if (event.flags['system-msg']) {
@@ -560,7 +561,7 @@ class HTMLGenerator {
     return $w[0].outerHTML;
   }
 
-  anongiftsub(event) {
+  anongiftsub(event) { /* FIXME: Use TwitchSubEvent */
     /* TODO */
     let user = event.flags['msg-param-recipient-user-name'];
     let gifter = event.flags.login;
@@ -568,8 +569,7 @@ class HTMLGenerator {
     return `${event.command}: ${gifter} gifted to ${user} ${months}`;
   }
 
-  raid(event) {
-    /* TODO */
+  raid(event) { /* TODO */
     return event.repr();
   }
 

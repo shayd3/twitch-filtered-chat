@@ -39,18 +39,9 @@
 class PluginStorageClass {
   constructor() {
     this._plugins = {};
-    this._chat_commands = null;
-    this._stored_chat_commands = {};
   }
 
   get plugins() { return JSON.parse(JSON.stringify(this._plugins)); }
-  set_commands_obj(obj) {
-    this._chat_commands = obj;
-    for (let [cmd, cobj] of Object.entries(this._stored_chat_commands)) {
-      let cstr = cmd.replace(/^\/\//, "");
-      this._chat_commands.add(cstr, cobj.func, cobj.desc);
-    }
-  }
 
   _path(plugin_def) {
     let base = window.location.pathname;
@@ -144,35 +135,6 @@ class PluginStorageClass {
         }
       }
     }).bind(this));
-  }
-
-  AddChatCommand(command, plugin, action, desc=null) {
-    if (!command.startsWith('//')) {
-      command = '//' + command;
-    }
-    if (this._chat_commands) {
-      let cstr = command.replace(/^\/\//, "");
-      let pname = plugin._plugin_name;
-      if (!pname) { pname = plugin.constructor.name; }
-      let descstr = `Command added by ${pname}: `;
-      if (desc) {
-        descstr += desc;
-      } else {
-        descstr += "no description given";
-      }
-      this._chat_commands.add(cstr, action, descstr);
-    } else if (!this._stored_chat_commands.hasOwnProperty(command)) {
-      this._stored_chat_commands[command] = {plugin: plugin, func: action, desc: desc};
-    } else {
-      Util.Error(`Plugin conflict: command ${command.escape()} already exists`);
-    }
-    if (this._plugins.hasOwnProperty(plugin.constructor.name)) {
-      let p = this._plugins[plugin.constructor.name];
-      if (!p.hasOwnProperty("commands")) {
-        p.commands = [];
-      }
-      p.commands.push(command);
-    }
   }
 }
 

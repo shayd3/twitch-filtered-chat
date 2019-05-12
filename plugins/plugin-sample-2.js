@@ -1,10 +1,10 @@
 
 function SamplePlugin2(resolve, reject, client) {
-  this._debug = client.GetDebug();
-  Plugins.AddChatCommand("//hi", this, function() {
-    Content.addPre("Hello there!");
-  });
   this.name = "SamplePlugin2";
+  this._debug = client.GetDebug();
+  ChatCommands.add("hi", function() {
+    Content.addPre("Hello there!");
+  }, "From plugin SamplePlugin2: Say hello");
   resolve(this);
 }
 

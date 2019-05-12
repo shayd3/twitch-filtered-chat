@@ -1,6 +1,7 @@
 
 # Ignore files not meant for distribution
 plugins/dwangoAC.js
+dist/plugins/dwangoAC.js
 
 # Ignore assets not included in project
 assets/3rdparty/

@@ -23,9 +23,6 @@
 const CACHED_VALUE = "Cached";
 const AUTOGEN_VALUE = "Auto-Generated";
 
-/* Functions to sanitize configuration */
-function toArray(val) { return Util.IsArray(val) ? val : []; }
-
 /* Document writing functions {{{0 */
 
 class Content { /* exported Content */
@@ -252,6 +249,8 @@ function getConfigObject() {
     config.ShowClips = $("#cbClips").is(":checked");
   }
 
+  function toArray(val) { return Util.IsArray(val) ? val : []; }
+
   /* Populate configs for each module */
   $(".module").each(function() {
     let id = $(this).attr("id");
@@ -262,6 +261,7 @@ function getConfigObject() {
     config[id].Mod = Boolean(config[id].Mod);
     config[id].Event = Boolean(config[id].Event);
     config[id].Bits = Boolean(config[id].Bits);
+    config[id].Me = Boolean(config[id].Me);
     config[id].IncludeKeyword = toArray(config[id].IncludeKeyword);
     config[id].IncludeUser = toArray(config[id].IncludeUser);
     config[id].ExcludeUser = toArray(config[id].ExcludeUser);
@@ -315,6 +315,7 @@ function setModuleSettings(module, config) {
   if (config.Mod) { check("input.mod"); } else { uncheck("input.mod"); }
   if (config.Event) { check("input.event"); } else { uncheck("input.event"); }
   if (config.Bits) { check("input.bits"); } else { uncheck("input.bits"); }
+  if (config.Me) { check("input.me"); } else { uncheck("input.me"); }
   function addInput(cls, label, values) {
     if (values && values.length > 0) {
       for (let val of values) {
@@ -351,6 +352,7 @@ function getModuleSettings(module) {
     Mod: module.find("input.mod").is(":checked"),
     Event: module.find("input.event").is(":checked"),
     Bits: module.find("input.bits").is(":checked"),
+    Me: module.find("input.me").is(":checked"),
     IncludeUser: [],
     IncludeKeyword: [],
     ExcludeUser: [],
@@ -382,7 +384,7 @@ function parseModuleConfig(value) {
   let Decode = (vals) => vals.map((v) => decodeURIComponent(v));
   let parts = Decode(value.split(/,/g));
   while (parts.length < 7) parts.push("");
-  let bits = Util.DecodeFlags(parts[1], 6);
+  let bits = Util.DecodeFlags(parts[1], 7);
   let config = {};
   config.Name = parts[0];
   config.Pleb = bits[0];
@@ -391,6 +393,7 @@ function parseModuleConfig(value) {
   config.Mod = bits[3];
   config.Event = bits[4];
   config.Bits = bits[5];
+  config.Me = bits[6];
   config.IncludeKeyword = parts[2] ? Decode(parts[2].split(/,/g)) : [];
   config.IncludeUser = parts[3] ? Decode(parts[3].split(/,/g)) : [];
   config.ExcludeUser = parts[4] ? Decode(parts[4].split(/,/g)) : [];
@@ -402,7 +405,7 @@ function parseModuleConfig(value) {
 /* Format the module configuration into a query string component */
 function formatModuleConfig(cfg) {
   let Encode = (vals) => vals.map((v) => encodeURIComponent(v));
-  let bits = [cfg.Pleb, cfg.Sub, cfg.VIP, cfg.Mod, cfg.Event, cfg.Bits];
+  let bits = [cfg.Pleb, cfg.Sub, cfg.VIP, cfg.Mod, cfg.Event, cfg.Bits, cfg.Me];
   let values = [
     cfg.Name,
     Util.EncodeFlags(bits, false),
@@ -456,17 +459,18 @@ function shouldFilter(module, event) {
     if (event.issub) role = "sub";
     if (event.isvip) role = "vip";
     if (event.ismod) role = "mod";
+    /* Includes take priority over excludes */
+    if (rules.IncludeUser.any((u) => (u.toLowerCase() == user))) return false;
+    if (rules.IncludeKeyword.any((k) => (message.indexOf(k) > -1))) return false;
     if (!rules.Pleb && role == "pleb") return true;
     if (!rules.Sub && role == "sub") return true;
     if (!rules.VIP && role == "vip") return true;
     if (!rules.Mod && role == "mod") return true;
-    /* This also filters out cheer effects */
+    /* "Bits" also filters out cheer effects */
     if (!rules.Bits && event.flags.bits) return true;
+    if (!rules.Me && event.flags.action) return true;
     let user = event.user ? event.user.toLowerCase() : "";
     let message = event.message ? event.message.toLowerCase() : "";
-    /* Includes take priority over excludes */
-    if (rules.IncludeUser.any((u) => (u.toLowerCase() == user))) return false;
-    if (rules.IncludeKeyword.any((k) => (message.indexOf(k) > -1))) return false;
     if (rules.ExcludeUser.any((u) => (u.toLowerCase() == user))) return true;
     if (rules.ExcludeStartsWith.any((m) => (message.startsWith(m)))) return true;
     if (rules.FromChannel.length > 0) {
@@ -566,6 +570,7 @@ function handleCommand(value, client) {
         if (config.MaxMessages != TwitchClient.DEFAULT_MAX_MESSAGES) {
           qsAdd("max", `${config.MaxMessages}`);
         }
+        if (USE_DIST) { qsAdd("usedist", "1"); }
         if (tokens[tokens.length-1] === "text") {
           url += "?" + qs.join("&");
         } else {
@@ -886,7 +891,6 @@ function client_main(layout) { /* exported client_main */
   if (ConfigCommon.Plugins) {
     try {
       Plugins.LoadAll(client);
-      Plugins.set_commands_obj(ChatCommands);
     }
     catch (e) {
       if (e.name !== "ReferenceError") {
@@ -1361,6 +1365,7 @@ function client_main(layout) { /* exported client_main */
   client.bind("twitch-userstate", function() {});
   client.bind("twitch-roomstate", function() {});
   client.bind("twitch-globaluserstate", function() {});
+  client.bind("twitch-usernotice", function() {});
   client.bind("twitch-ack", function() {});
   client.bind("twitch-ping", function() {});
   client.bind("twitch-names", function() {});

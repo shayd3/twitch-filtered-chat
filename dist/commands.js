@@ -14,6 +14,7 @@ var TFCChatCommandStore = function () {
   function TFCChatCommandStore() {
     _classCallCheck(this, TFCChatCommandStore);
 
+    this._command_list = [];
     this._commands = {};
     this._aliases = {};
     this._help_text = [];
@@ -40,6 +41,7 @@ var TFCChatCommandStore = function () {
         }
 
         c.dflt_args = args.length > 0 ? args : null;
+        this._command_list.push(command);
         this._commands[command] = c;
       }
     }
@@ -224,10 +226,10 @@ var TFCChatCommandStore = function () {
         var _iteratorError2 = undefined;
 
         try {
-          for (var _iterator2 = Object.values(this._commands)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-            var obj = _step2.value;
+          for (var _iterator2 = Object.values(this._command_list)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+            var c = _step2.value;
 
-            this.printHelp(this.format_help(obj));
+            this.printHelp(this.format_help(this._commands[c]));
           }
         } catch (err) {
           _didIteratorError2 = true;
@@ -270,13 +272,13 @@ var TFCChatCommandStore = function () {
         }
       } else if (this.has_command(tokens[0])) {
         this.printHelp("Commands:");
-        var _obj = this.get_command(tokens[0]);
+        var obj = this.get_command(tokens[0]);
         var _iteratorNormalCompletion4 = true;
         var _didIteratorError4 = false;
         var _iteratorError4 = undefined;
 
         try {
-          for (var _iterator4 = this.format_usage(_obj)[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+          for (var _iterator4 = this.format_usage(obj)[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
             var _line = _step4.value;
 
             this.printHelp(_line);
@@ -308,19 +310,19 @@ var TFCChatCommandStore = function () {
       return "<span class=\"arg\">" + s.escape() + "</span>";
     }
   }, {
-    key: "helpcmd",
-    value: function helpcmd(s) {
+    key: "fmtCmd",
+    value: function fmtCmd(s) {
       return "<span class=\"help helpcmd\">" + s + "</span>";
     }
   }, {
-    key: "helpmsg",
-    value: function helpmsg(s) {
+    key: "fmtMsg",
+    value: function fmtMsg(s) {
       return "<span class=\"help helpmsg\">" + s + "</span>";
     }
   }, {
     key: "helpLine",
     value: function helpLine(k, v) {
-      return "<div class=\"help_line\">" + this.helpcmd(k) + this.helpmsg(v) + "</div>";
+      return "<div class=\"help_line\">" + this.fmtCmd(k) + this.fmtMsg(v) + "</div>";
     }
   }, {
     key: "formatArgs",

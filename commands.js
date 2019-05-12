@@ -2,6 +2,7 @@
 
 class TFCChatCommandStore {
   constructor() {
+    this._command_list = [];
     this._commands = {};
     this._aliases = {};
     this._help_text = [];
@@ -22,6 +23,7 @@ class TFCChatCommandStore {
       c.func = func;
       c.desc = desc;
       c.dflt_args = args.length > 0 ? args : null;
+      this._command_list.push(command);
       this._commands[command] = c;
     }
   }
@@ -147,8 +149,8 @@ class TFCChatCommandStore {
   command_help(cmd, tokens/*, client*/) {
     if (tokens.length == 0) {
       this.printHelp("Commands:");
-      for (let obj of Object.values(this._commands)) {
-        this.printHelp(this.format_help(obj));
+      for (let c of Object.values(this._command_list)) {
+        this.printHelp(this.format_help(this._commands[c]));
       }
       for (let line of this._help_text) {
         this.printHelp(line);
@@ -170,16 +172,16 @@ class TFCChatCommandStore {
     return `<span class="arg">${s.escape()}</span>`;
   }
 
-  helpcmd(s) {
+  fmtCmd(s) {
     return `<span class="help helpcmd">${s}</span>`;
   }
 
-  helpmsg(s) {
+  fmtMsg(s) {
     return `<span class="help helpmsg">${s}</span>`;
   }
 
   helpLine(k, v) {
-    return `<div class="help_line">${this.helpcmd(k)}${this.helpmsg(v)}</div>`;
+    return `<div class="help_line">${this.fmtCmd(k)}${this.fmtMsg(v)}</div>`;
   }
 
   formatArgs(s) {

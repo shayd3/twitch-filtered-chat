@@ -2,18 +2,16 @@
 class SamplePlugin {
   constructor(resolve, reject, client) {
     this._debug = client.GetDebug();
-    Plugins.AddChatCommand("//sample-plugin", this, this._say_hi.bind(this), "Say hello");
-    Plugins.AddChatCommand("//sample-plugin-2", this, function(cmd, tokens /*, client*/) {
-      Content.addPre("SamplePlugin was here!");
-      if (tokens.length > 0) {
-        Content.addPre(`You entered ${tokens.length} tokens: ${tokens.join(" ").escape()}`);
-      }
-    }, "Example showing arguments");
+    let prefix = "From plugin " + this.name + ": ";
+    ChatCommands.add("sample-plugin", this._say_hi.bind(this), prefix + "Say hello");
     resolve(this);
   }
 
-  _say_hi() {
-    Content.addPre("Hi! from " + this.name + ": " + JSON.stringify(this));
+  _say_hi(cmd, tokens, client) {
+    Content.addPre(`Hi from ${this.name} ${client.GetName()}!`);
+    if (tokens && tokens.length > 0) {
+      Content.addPre("Arguments: " + JSON.stringify(tokens).escape());
+    }
   }
 
   get name() { return "SamplePlugin"; }
