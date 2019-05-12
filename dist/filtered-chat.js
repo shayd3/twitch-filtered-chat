@@ -15,9 +15,9 @@
 
 /* NOTES:
  * Filtering ws "recv>" messages:
- *   Util.Logger.add_filter(((m) => !`${m}`.startsWith('recv> ')), 'DEBUG');
+ *   Util.Logger.add_filter(((m) => !`${m}`.startsWith("recv> ")), "DEBUG");
  * Filtering ws PRIVMSG messages:
- *   Util.Logger.add_filter(((m) => `${m}`.indexOf(' PRIVMSG ') == -1, 'DEBUG');
+ *   Util.Logger.add_filter(((m) => `${m}`.indexOf(" PRIVMSG ") == -1, "DEBUG");
  */
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
@@ -147,7 +147,7 @@ function parse_query_string(config) {
         query_remove.push(k);
       } else if (k === "channel" || k === "channels") {
         key = "Channels";
-        val = v.split(',').map(function (c) {
+        val = v.split(",").map(function (c) {
           return Twitch.FormatChannel(c);
         });
       } else if (k === "debug") {
@@ -201,7 +201,7 @@ function parse_query_string(config) {
         var _iteratorError2 = undefined;
 
         try {
-          for (var _iterator2 = ("" + v).split(',')[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+          for (var _iterator2 = ("" + v).split(",")[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
             var e = _step2.value;
 
             if (CSSCheerStyles[e]) {
@@ -252,7 +252,7 @@ function parse_query_string(config) {
     }
   }
 
-  if (!config.hasOwnProperty('Layout')) {
+  if (!config.hasOwnProperty("Layout")) {
     config.Layout = ParseLayout("double:chat");
   }
   return query_remove;
@@ -260,10 +260,10 @@ function parse_query_string(config) {
 
 /* Obtain configuration key */
 function get_config_key() {
-  var config_key = 'tfc-config';
+  var config_key = "tfc-config";
   var qs = Util.ParseQueryString();
-  if (qs.hasOwnProperty('config_key')) {
-    config_key = config_key + '-' + qs.config_key.replace(/[^a-z]/g, '');
+  if (qs.hasOwnProperty("config_key")) {
+    config_key = config_key + "-" + qs.config_key.replace(/[^a-z]/g, "");
   }
   return config_key;
 }
@@ -296,11 +296,11 @@ function get_config_object() {
   config.key = Util.GetWebStorageKey();
 
   /* Certain unwanted items may be preserved in localStorage */
-  if (config.hasOwnProperty('NoAssets')) delete config["NoAssets"];
-  if (config.hasOwnProperty('Debug')) delete config["Debug"];
-  if (config.hasOwnProperty('AutoReconnect')) delete config["AutoReconnect"];
-  if (config.hasOwnProperty('Layout')) delete config['Layout'];
-  if (config.hasOwnProperty('Plugins')) delete config['Plugins'];
+  if (config.hasOwnProperty("NoAssets")) delete config["NoAssets"];
+  if (config.hasOwnProperty("Debug")) delete config["Debug"];
+  if (config.hasOwnProperty("AutoReconnect")) delete config["AutoReconnect"];
+  if (config.hasOwnProperty("Layout")) delete config["Layout"];
+  if (config.hasOwnProperty("Plugins")) delete config["Plugins"];
 
   /* Ensure certain keys are present and have expected values */
   if (!config.hasOwnProperty("MaxMessages")) {
@@ -317,16 +317,16 @@ function get_config_object() {
   query_remove = parse_query_string(config, qs);
 
   /* Parse div#settings config */
-  var txtChannel = $('input#txtChannel')[0];
-  var txtNick = $('input#txtNick')[0];
-  var txtPass = $('input#txtPass')[0];
+  var txtChannel = $("input#txtChannel")[0];
+  var txtNick = $("input#txtNick")[0];
+  var txtPass = $("input#txtPass")[0];
   if (txtChannel.value) {
     var _iteratorNormalCompletion3 = true;
     var _didIteratorError3 = false;
     var _iteratorError3 = undefined;
 
     try {
-      for (var _iterator3 = txtChannel.value.split(',')[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+      for (var _iterator3 = txtChannel.value.split(",")[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
         var ch = _step3.value;
 
         var channel = Twitch.FormatChannel(ch.toLowerCase());
@@ -365,8 +365,8 @@ function get_config_object() {
   }
 
   /* Populate configs for each module */
-  $('.module').each(function () {
-    var id = $(this).attr('id');
+  $(".module").each(function () {
+    var id = $(this).attr("id");
     if (!config[id]) {
       config[id] = get_module_settings($(this));
     }
@@ -439,44 +439,44 @@ function get_config_object() {
 /* Set the module's settings to the values given */
 function set_module_settings(module, config) {
   if (config.Name) {
-    $(module).find('label.name').html(config.Name);
-    $(module).find('input.name').val(config.Name);
+    $(module).find("label.name").html(config.Name);
+    $(module).find("input.name").val(config.Name);
   }
   function check(sel) {
-    $(module).find(sel).attr('checked', 'checked');
+    $(module).find(sel).attr("checked", "checked");
   }
   function uncheck(sel) {
-    $(module).find(sel).removeAttr('checked');
+    $(module).find(sel).removeAttr("checked");
   }
   if (config.Pleb) {
-    check('input.pleb');
+    check("input.pleb");
   } else {
-    uncheck('input.pleb');
+    uncheck("input.pleb");
   }
   if (config.Sub) {
-    check('input.sub');
+    check("input.sub");
   } else {
-    uncheck('input.sub');
+    uncheck("input.sub");
   }
   if (config.VIP) {
-    check('input.vip');
+    check("input.vip");
   } else {
-    uncheck('input.vip');
+    uncheck("input.vip");
   }
   if (config.Mod) {
-    check('input.mod');
+    check("input.mod");
   } else {
-    uncheck('input.mod');
+    uncheck("input.mod");
   }
   if (config.Event) {
-    check('input.event');
+    check("input.event");
   } else {
-    uncheck('input.event');
+    uncheck("input.event");
   }
   if (config.Bits) {
-    check('input.bits');
+    check("input.bits");
   } else {
-    uncheck('input.bits');
+    uncheck("input.bits");
   }
   function add_input(cls, label, values) {
     if (values && values.length > 0) {
@@ -528,13 +528,13 @@ function set_module_settings(module, config) {
 function get_module_settings(module) {
   module = $(module);
   var s = {
-    Name: module.find('input.name').val(),
-    Pleb: module.find('input.pleb').is(':checked'),
-    Sub: module.find('input.sub').is(':checked'),
-    VIP: module.find('input.vip').is(':checked'),
-    Mod: module.find('input.mod').is(':checked'),
-    Event: module.find('input.event').is(':checked'),
-    Bits: module.find('input.bits').is(':checked'),
+    Name: module.find("input.name").val(),
+    Pleb: module.find("input.pleb").is(":checked"),
+    Sub: module.find("input.sub").is(":checked"),
+    VIP: module.find("input.vip").is(":checked"),
+    Mod: module.find("input.mod").is(":checked"),
+    Event: module.find("input.event").is(":checked"),
+    Bits: module.find("input.bits").is(":checked"),
     IncludeUser: [],
     IncludeKeyword: [],
     ExcludeUser: [],
@@ -542,19 +542,19 @@ function get_module_settings(module) {
     FromChannel: []
   };
 
-  module.find('input.include_user:checked').each(function () {
+  module.find("input.include_user:checked").each(function () {
     s.IncludeUser.push($(this).val());
   });
-  module.find('input.include_keyword:checked').each(function () {
+  module.find("input.include_keyword:checked").each(function () {
     s.IncludeKeyword.push($(this).val());
   });
-  module.find('input.exclude_user:checked').each(function () {
+  module.find("input.exclude_user:checked").each(function () {
     s.ExcludeUser.push($(this).val());
   });
-  module.find('input.exclude_startswith:checked').each(function () {
+  module.find("input.exclude_startswith:checked").each(function () {
     s.ExcludeStartsWith.push($(this).val());
   });
-  module.find('input.from_channel:checked').each(function () {
+  module.find("input.from_channel:checked").each(function () {
     s.FromChannel.push($(this).val());
   });
 
@@ -604,7 +604,7 @@ function format_module_config(cfg) {
 function update_module_config() {
   var config = get_config_object();
   $(".module").each(function () {
-    config[$(this).attr('id')] = get_module_settings($(this));
+    config[$(this).attr("id")] = get_module_settings($(this));
   });
   Util.SetWebStorage(config);
 }
@@ -720,7 +720,7 @@ function should_filter(module, event) {
         for (var _iterator8 = rules.FromChannel[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
           var s = _step8.value;
 
-          var c = s.indexOf('#') == -1 ? '#' + s : s;
+          var c = s.indexOf("#") == -1 ? "#" + s : s;
           if (event.channel && event.channel.channel) {
             if (event.channel.channel.toLowerCase() != c.toLowerCase()) {
               return true;
@@ -784,9 +784,9 @@ function handle_command(value, client) {
         Util.SetWebStorage({});
         Content.addNotice("Purged storage \"" + Util.GetWebStorageKey() + "\"");
       } else if (tokens[0] == "url") {
-        var url = location.protocol + '//' + location.hostname + location.pathname;
+        var url = location.protocol + "//" + location.hostname + location.pathname;
         if (tokens.length > 1) {
-          if (tokens[1].startsWith('git')) {
+          if (tokens[1].startsWith("git")) {
             url = "https://kaedenn.github.io/twitch-filtered-chat/index.html";
           }
         }
@@ -795,35 +795,35 @@ function handle_command(value, client) {
           return qs.push(k + "=" + encodeURIComponent(v));
         };
         if (config.Debug > 0) {
-          qs_push('debug', config.Debug);
+          qs_push("debug", config.Debug);
         }
         if (config.__clientid_override) {
           if (config.ClientID && config.ClientID.length == 30) {
-            qs_push('clientid', config.ClientID);
+            qs_push("clientid", config.ClientID);
           }
         }
         if (config.Channels.length > 0) {
-          qs_push('channels', config.Channels.join(","));
+          qs_push("channels", config.Channels.join(","));
         }
         if (tokens.indexOf("auth") > -1) {
           if (config.Name && config.Name.length > 0) {
-            qs_push('user', config.Name);
+            qs_push("user", config.Name);
           }
           if (config.Pass && config.Pass.length > 0) {
-            qs_push('pass', config.Pass);
+            qs_push("pass", config.Pass);
           }
         }
         if (config.NoAssets) {
-          qs_push('noassets', config.NoAssets);
+          qs_push("noassets", config.NoAssets);
         }
         if (config.NoFFZ) {
-          qs_push('noffz', config.NoFFZ);
+          qs_push("noffz", config.NoFFZ);
         }
         if (config.NoBTTV) {
-          qs_push('nobttv', config.NoBTTV);
+          qs_push("nobttv", config.NoBTTV);
         }
         if (config.HistorySize) {
-          qs_push('hmax', config.HistorySize);
+          qs_push("hmax", config.HistorySize);
         }
         qs_push("module1", format_module_config(config.module1));
         qs_push("module2", format_module_config(config.module2));
@@ -838,7 +838,7 @@ function handle_command(value, client) {
           var font_size = Util.CSS.GetProperty("--body-font-size");
           var font_size_default = Util.CSS.GetProperty("--body-font-size-default");
           if (font_size != font_size_default) {
-            qs_push("size", font_size.replace(/[^0-9]/g, ''));
+            qs_push("size", font_size.replace(/[^0-9]/g, ""));
           }
         }
         if (config.Plugins) {
@@ -852,7 +852,7 @@ function handle_command(value, client) {
         } else {
           url += "?base64=" + encodeURIComponent(btoa(qs.join("&")));
         }
-        ChatCommands.addHelp(client.get('HTMLGen').url(url));
+        ChatCommands.addHelp(client.get("HTMLGen").url(url));
       } else if (config.hasOwnProperty(tokens[0])) {
         ChatCommands.addHelpLine(tokens[0], JSON.stringify(config[tokens[0]]));
       } else {
@@ -1001,17 +1001,17 @@ function show_context_window(client, cw, line) {
     return $("<div class=\"item\">" + s + "</div>");
   };
   var Link = function Link(i, text) {
-    return client.get('HTMLGen').url(null, text, "cw-link", i);
+    return client.get("HTMLGen").url(null, text, "cw-link", i);
   };
   var Em = function Em(t) {
     return "<span class=\"em\">" + t + "</span>";
   };
   var $EmItem = function $EmItem(s) {
-    return $(Em(s)).css('margin-left', '0.5em');
+    return $(Em(s)).css("margin-left", "0.5em");
   };
 
-  /* Add user's display name */
-  var $username = $l.find('.username');
+  /* Add user"s display name */
+  var $username = $l.find(".username");
   var classes = $username.attr("class");
   var css = $username.attr("style");
   var e_name = "<span class=\"" + classes + "\" style=\"" + css + "\">" + name + "</span>";
@@ -1034,11 +1034,11 @@ function show_context_window(client, cw, line) {
         $ta.attr("data-user", user);
         $ta.attr("data-duration", dur);
         $ta.click(function () {
-          var ch = $(this).attr('data-channel');
-          var u = $(this).attr('data-user');
-          var d = $(this).attr('data-duration');
+          var ch = $(this).attr("data-channel");
+          var u = $(this).attr("data-user");
+          var d = $(this).attr("data-duration");
           client.Timeout(ch, u, d);
-          Util.Log('Timed out user', u, 'from', ch, 'for', d);
+          Util.Log("Timed out user", u, "from", ch, "for", d);
           $(cw).fadeOut();
         });
         $tl.append($ta);
@@ -1067,7 +1067,7 @@ function show_context_window(client, cw, line) {
     $ba.attr("data-channel", channel);
     $ba.attr("data-user", user);
     $ba.click(function () {
-      $("#txtChat").val("/ban " + $(this).attr('data-user'));
+      $("#txtChat").val("/ban " + $(this).attr("data-user"));
     });
     $cw.append($ba);
   }
@@ -1083,26 +1083,26 @@ function show_context_window(client, cw, line) {
   if (mod || vip || sub || caster) {
     var $roles = $Line("User Role:");
     if (mod) {
-      $roles.append($EmItem('Mod'));$roles.append(",");
+      $roles.append($EmItem("Mod"));$roles.append(",");
     }
     if (vip) {
-      $roles.append($EmItem('VIP'));$roles.append(",");
+      $roles.append($EmItem("VIP"));$roles.append(",");
     }
     if (sub) {
-      $roles.append($EmItem('Sub'));$roles.append(",");
+      $roles.append($EmItem("Sub"));$roles.append(",");
     }
     if (caster) {
-      $roles.append($EmItem('Host'));$roles.append(",");
+      $roles.append($EmItem("Host"));$roles.append(",");
     }
     /* Remove the last comma */
     $roles[0].removeChild($roles[0].lastChild);
     $cw.append($roles);
     if (client.IsCaster(channel) && !client.IsUIDSelf(userid)) {
       if (mod) {
-        $cw.append($Line(Link('cw-unmod', 'Remove Mod')));
+        $cw.append($Line(Link("cw-unmod", "Remove Mod")));
       }
       if (vip) {
-        $cw.append($Line(Link('cw-unvip', 'Remove VIP')));
+        $cw.append($Line(Link("cw-unvip", "Remove VIP")));
       }
     }
   }
@@ -1110,10 +1110,10 @@ function show_context_window(client, cw, line) {
   /* Add the ability to add roles (for the caster) */
   if (client.IsCaster(channel) && !client.IsUIDSelf(userid)) {
     if (!mod) {
-      $cw.append($Line(Link('cw-make-mod', 'Make Mod')));
+      $cw.append($Line(Link("cw-make-mod", "Make Mod")));
     }
     if (!vip) {
-      $cw.append($Line(Link('cw-make-vip', 'Make VIP')));
+      $cw.append($Line(Link("cw-make-vip", "Make VIP")));
     }
   }
 
@@ -1176,7 +1176,7 @@ function update_transparency(transparent) {
 
       if (transparent) {
         /* Set them all to transparent */
-        Util.CSS.SetProperty(_prop, 'transparent');
+        Util.CSS.SetProperty(_prop, "transparent");
         $(".module").addClass("transparent");
         $("body").addClass("transparent");
       } else {
@@ -1210,21 +1210,25 @@ function client_main(layout) {
 
   /* Hook Logger messages */
   Util.Logger.add_hook(function (sev, with_stack) {
+    var _Util$Logger;
+
     for (var _len = arguments.length, args = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
       args[_key - 2] = arguments[_key];
     }
 
-    var msg = JSON.stringify(args.length == 1 ? args[0] : args);
+    var msg = (_Util$Logger = Util.Logger).stringify.apply(_Util$Logger, args);
     if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
       Content.addError("ERROR: " + msg.escape());
     }
   }, "ERROR");
   Util.Logger.add_hook(function (sev, with_stack) {
+    var _Util$Logger2;
+
     for (var _len2 = arguments.length, args = Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
       args[_key2 - 2] = arguments[_key2];
     }
 
-    var msg = JSON.stringify(args.length == 1 ? args[0] : args);
+    var msg = (_Util$Logger2 = Util.Logger).stringify.apply(_Util$Logger2, args);
     if (args.length == 1 && args[0] instanceof TwitchEvent) {
       if (Util.DebugLevel >= Util.LEVEL_TRACE) {
         Content.addNotice("WARNING: " + args[0].repr());
@@ -1234,21 +1238,25 @@ function client_main(layout) {
     }
   }, "WARN");
   Util.Logger.add_hook(function (sev, with_stack) {
+    var _Util$Logger3;
+
     for (var _len3 = arguments.length, args = Array(_len3 > 2 ? _len3 - 2 : 0), _key3 = 2; _key3 < _len3; _key3++) {
       args[_key3 - 2] = arguments[_key3];
     }
 
-    var msg = JSON.stringify(args.length == 1 ? args[0] : args);
+    var msg = (_Util$Logger3 = Util.Logger).stringify.apply(_Util$Logger3, args);
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
       Content.addHTML("DEBUG: " + msg.escape());
     }
   }, "DEBUG");
   Util.Logger.add_hook(function (sev, with_stack) {
+    var _Util$Logger4;
+
     for (var _len4 = arguments.length, args = Array(_len4 > 2 ? _len4 - 2 : 0), _key4 = 2; _key4 < _len4; _key4++) {
       args[_key4 - 2] = arguments[_key4];
     }
 
-    var msg = JSON.stringify(args.length == 1 ? args[0] : args);
+    var msg = (_Util$Logger4 = Util.Logger).stringify.apply(_Util$Logger4, args);
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
       Content.addHTML("TRACE: " + msg.escape());
     }
@@ -1282,7 +1290,7 @@ function client_main(layout) {
       if (config.Layout.Chat) {
         /* Change the chat placeholder and border to reflect read-only */
         $("#txtChat").attr("placeholder", "Authentication needed to send messages");
-        Util.CSS.SetProperty('--chat-border', '#cd143c');
+        Util.CSS.SetProperty("--chat-border", "#cd143c");
       }
     }
 
@@ -1293,7 +1301,7 @@ function client_main(layout) {
 
     /* Set the text size if given */
     if (config.Size) {
-      Util.CSS.SetProperty('--body-font-size', config.Size);
+      Util.CSS.SetProperty("--body-font-size", config.Size);
     }
 
     /* Set the font if given */
@@ -1311,7 +1319,7 @@ function client_main(layout) {
 
     /* After all that, sync the final settings up with the html */
     $(".module").each(function () {
-      set_module_settings(this, config[$(this).attr('id')]);
+      set_module_settings(this, config[$(this).attr("id")]);
     });
 
     /* Set values we'll want to use later */
@@ -1335,7 +1343,7 @@ function client_main(layout) {
   })();
 
   /* Construct the HTML Generator and tell it and the client about each other */
-  client.set('HTMLGen', new HTMLGenerator(client, ConfigCommon));
+  client.set("HTMLGen", new HTMLGenerator(client, ConfigCommon));
 
   /* Construct the plugins */
   if (ConfigCommon.Plugins) {
@@ -1410,8 +1418,8 @@ function client_main(layout) {
 
   /* Clicking the settings button */
   $("#settings_button").click(function () {
-    if ($("#settings").is(':visible')) {
-      $('#settings').fadeOut();
+    if ($("#settings").is(":visible")) {
+      $("#settings").fadeOut();
     } else {
       var config = get_config_object();
       $("#txtChannel").val(config.Channels.join(","));
@@ -1421,7 +1429,7 @@ function client_main(layout) {
         $("#txtPassDummy").show();
       }
       $("#selDebug").val("" + config.Debug);
-      $('#settings').fadeIn();
+      $("#settings").fadeIn();
     }
   });
 
@@ -1498,8 +1506,8 @@ function client_main(layout) {
   /* Opening one of the module menus */
   $(".menu").click(function () {
     var $settings = $(this).parent().children(".settings");
-    var $lbl = $(this).parent().children('label.name');
-    var $tb = $(this).parent().children('input.name');
+    var $lbl = $(this).parent().children("label.name");
+    var $tb = $(this).parent().children("input.name");
     if ($settings.is(":visible")) {
       /* Update module configurations on close */
       update_module_config();
@@ -1513,11 +1521,11 @@ function client_main(layout) {
   });
 
   /* Pressing enter on the module's name text box */
-  $('.module .header input.name').on('keyup', function (e) {
+  $(".module .header input.name").on("keyup", function (e) {
     if (e.keyCode == Util.Key.RETURN) {
       var $settings = $(this).parent().children(".settings");
-      var $lbl = $(this).parent().children('label.name');
-      var $tb = $(this).parent().children('input.name');
+      var $lbl = $(this).parent().children("label.name");
+      var $tb = $(this).parent().children("input.name");
       update_module_config();
       $tb.hide();
       $lbl.html($tb.val()).show();
@@ -1526,17 +1534,17 @@ function client_main(layout) {
   });
 
   /* Pressing enter on one of the module menu text boxes */
-  $('.module .settings input[type="text"]').on('keyup', function (e) {
+  $(".module .settings input[type=\"text\"]").on("keyup", function (e) {
     var v = $(this).val();
     if (v.length > 0) {
       if (e.keyCode == Util.Key.RETURN) {
-        var $cli = $(this).closest('li');
-        var cls = $cli.attr('class').replace('textbox', '').trim();
-        var cb = client.get('HTMLGen').checkbox(v, null, cls, true);
-        var val = $cli.find('label').html();
+        var $cli = $(this).closest("li");
+        var cls = $cli.attr("class").replace("textbox", "").trim();
+        var cb = client.get("HTMLGen").checkbox(v, null, cls, true);
+        var val = $cli.find("label").html();
         var $li = $("<li><label>" + cb + val + " " + v + "</label></li>");
         $cli.before($li);
-        $(this).val('');
+        $(this).val("");
         update_module_config();
       }
     }
@@ -1590,7 +1598,7 @@ function client_main(layout) {
           client.SendMessage(ch, "/vip " + user);
         }
       }
-    } else if ($t.attr('data-username') == '1') {
+    } else if ($t.attr("data-username") == "1") {
       /* Clicked on a username; show context window */
       var $l = $t.parent();
       if ($cw.is(":visible") && $cw.attr("data-user-id") == $l.attr("data-user-id")) {
@@ -1603,7 +1611,7 @@ function client_main(layout) {
       $cw.fadeOut();
     }
     /* Clicking on a "Reconnect" link */
-    if ($t.attr("data-reconnect") == '1') {
+    if ($t.attr("data-reconnect") == "1") {
       /* Clicked on a reconnect link */
       Content.addNotice("Reconnecting...");
       client.Connect();
@@ -1615,7 +1623,7 @@ function client_main(layout) {
   /* Bind to numerous TwitchEvent events {{{0 */
 
   /* WebSocket opened */
-  client.bind('twitch-open', function _on_twitch_open() /*e*/{
+  client.bind("twitch-open", function _on_twitch_open() /*e*/{
     $(".loading").remove();
     $("#debug").hide();
     if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
@@ -1633,7 +1641,7 @@ function client_main(layout) {
   });
 
   /* WebSocket closed */
-  client.bind('twitch-close', function _on_twitch_close(e) {
+  client.bind("twitch-close", function _on_twitch_close(e) {
     var code = e.raw_line.code;
     var reason = e.raw_line.reason;
     var msg = "Connection closed";
@@ -1651,12 +1659,12 @@ function client_main(layout) {
   });
 
   /* Received reconnect command from Twitch */
-  client.bind('twitch-reconnect', function _on_twitch_reconnect() /*e*/{
+  client.bind("twitch-reconnect", function _on_twitch_reconnect() /*e*/{
     client.Connect();
   });
 
   /* User joined (any user) */
-  client.bind('twitch-join', function _on_twitch_join(e) {
+  client.bind("twitch-join", function _on_twitch_join(e) {
     if (!Util.Browser.IsOBS && !layout.Slim) {
       if (e.user == client.GetName().toLowerCase()) {
         Content.addInfo("Joined " + e.channel.channel);
@@ -1665,7 +1673,7 @@ function client_main(layout) {
   });
 
   /* User left (any user) */
-  client.bind('twitch-part', function _on_twitch_part(e) {
+  client.bind("twitch-part", function _on_twitch_part(e) {
     if (!Util.Browser.IsOBS && !layout.Slim) {
       if (e.user == client.GetName().toLowerCase()) {
         Content.addInfo("Left " + e.channel.channel);
@@ -1674,7 +1682,7 @@ function client_main(layout) {
   });
 
   /* Notice (or warning) from Twitch */
-  client.bind('twitch-notice', function _on_twitch_notice(e) {
+  client.bind("twitch-notice", function _on_twitch_notice(e) {
     /* Some notices are benign */
     switch (e.notice_msgid) {
       case "host_on":
@@ -1693,7 +1701,7 @@ function client_main(layout) {
   });
 
   /* Error from Twitch or Twitch Client API */
-  client.bind('twitch-error', function _on_twitch_error(e) {
+  client.bind("twitch-error", function _on_twitch_error(e) {
     Util.Error(e);
     var user = e.user;
     var command = e.values.command;
@@ -1702,7 +1710,7 @@ function client_main(layout) {
   });
 
   /* Message received from Twitch */
-  client.bind('twitch-message', function _on_twitch_message(e) {
+  client.bind("twitch-message", function _on_twitch_message(e) {
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
       Content.addHTML("<span class=\"pre\">" + e.repr() + "</span>");
     }
@@ -1737,7 +1745,7 @@ function client_main(layout) {
   });
 
   /* Received streamer info */
-  client.bind('twitch-streaminfo', function _on_twitch_streaminfo(e) {
+  client.bind("twitch-streaminfo", function _on_twitch_streaminfo(e) {
     var cinfo = client.GetChannelInfo(e.channel.channel);
     if (!cinfo.online) {
       if (ConfigCommon.Layout && !ConfigCommon.Layout.Slim) {
@@ -1747,12 +1755,12 @@ function client_main(layout) {
   });
 
   /* Received chat message */
-  client.bind('twitch-chat', function _on_twitch_chat(event) {
+  client.bind("twitch-chat", function _on_twitch_chat(event) {
     if (event instanceof TwitchChatEvent) {
       var m = typeof event.message === "string" ? event.message : "";
-      if (event.flags && event.flags.mod && m.indexOf(' ') > -1) {
-        var tokens = m.split(' ');
-        if (tokens[0] === '!tfc') {
+      if (event.flags && event.flags.mod && m.indexOf(" ") > -1) {
+        var tokens = m.split(" ");
+        if (tokens[0] === "!tfc") {
           if (tokens[1] === "reload") {
             location.reload();
           } else if (tokens[1] === "force-reload") {
@@ -1777,8 +1785,8 @@ function client_main(layout) {
     $(".module").each(function () {
       if (!should_filter($(this), event)) {
         var $w = $("<div class=\"line line-wrapper\"></div>");
-        $w.html(client.get('HTMLGen').gen(event));
-        var $c = $(this).find('.content');
+        $w.html(client.get("HTMLGen").gen(event));
+        var $c = $(this).find(".content");
         $c.append($w);
         $c.scrollTop(Math.pow(2, 31) - 1);
       }
@@ -1786,7 +1794,7 @@ function client_main(layout) {
   });
 
   /* Received CLEARCHAT event */
-  client.bind('twitch-clearchat', function _on_twitch_clearchat(e) {
+  client.bind("twitch-clearchat", function _on_twitch_clearchat(e) {
     if (e.has_flag("target-user-id")) {
       /* Moderator timed out a user */
       var r = e.flags["room-id"];
@@ -1799,33 +1807,33 @@ function client_main(layout) {
   });
 
   /* Received CLEARMSG event */
-  client.bind('twitch-clearmsg', function _on_twitch_clearmsg(e) {
+  client.bind("twitch-clearmsg", function _on_twitch_clearmsg(e) {
     Util.StorageAppend("debug-msg-log", e);
     Util.Warn("Unhandled CLEARMSG:", e);
   });
 
   /* User subscribed */
-  client.bind('twitch-sub', function _on_twitch_sub(e) {
+  client.bind("twitch-sub", function _on_twitch_sub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    Content.addHTML(client.get('HTMLGen').sub(e));
+    Content.addHTML(client.get("HTMLGen").sub(e));
   });
 
   /* User resubscribed */
-  client.bind('twitch-resub', function _on_twitch_resub(e) {
+  client.bind("twitch-resub", function _on_twitch_resub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    Content.addHTML(client.get('HTMLGen').resub(e));
+    Content.addHTML(client.get("HTMLGen").resub(e));
   });
 
   /* User gifted a subscription */
-  client.bind('twitch-giftsub', function _on_twitch_giftsub(e) {
+  client.bind("twitch-giftsub", function _on_twitch_giftsub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    Content.addHTML(client.get('HTMLGen').giftsub(e));
+    Content.addHTML(client.get("HTMLGen").giftsub(e));
   });
 
   /* Anonymous user gifted a subscription */
-  client.bind('twitch-anongiftsub', function _on_twitch_anongiftsub(e) {
+  client.bind("twitch-anongiftsub", function _on_twitch_anongiftsub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    Content.addHTML(client.get('HTMLGen').anongiftsub(e));
+    Content.addHTML(client.get("HTMLGen").anongiftsub(e));
   });
 
   /* Bind the rest of the events and warn about unbound events */

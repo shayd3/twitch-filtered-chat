@@ -9,30 +9,38 @@ var DwangoACPlugin = function () {
     _classCallCheck(this, DwangoACPlugin);
 
     this._debug = client.GetDebug();
-    Plugins.AddChatCommand("//tastree5", this, function (cmd, tokens, client) {
+    Plugins.AddChatCommand("//tastree5", this, this.cmd_tastree.bind(this));
+    Plugins.AddChatCommand("//tree", this, this.cmd_spamtree.bind(this));
+    resolve(this);
+  }
+
+  _createClass(DwangoACPlugin, [{
+    key: "cmd_tastree",
+    value: function cmd_tastree(cmd, tokens, client) {
       client.SendMessageToAll("tasbTASBot ".repeat(1).trim());
       client.SendMessageToAll("tasbTASBot ".repeat(2).trim());
       client.SendMessageToAll("tasbTASBot ".repeat(3).trim());
       client.SendMessageToAll("tasbTASBot ".repeat(2).trim());
       client.SendMessageToAll("tasbTASBot ".repeat(1).trim());
-    }.bind(this));
-    Plugins.AddChatCommand("//spamtree", this, function (cmd, tokens, client) {
+    }
+  }, {
+    key: "cmd_spamtree",
+    value: function cmd_spamtree(cmd, tokens, client) {
       var n = 0;
       if (tokens.length > 1 && tokens[0].match(/^[0-9]+$/)) {
         n = Number(tokens[0]);
         tokens.shift();
+        var msg = tokens.join(" ");
+        for (var i = 1; i < n * 2; ++i) {
+          var c = i < Math.floor(n) ? i : n * 2 - i;
+          var msgi = (msg + " ").repeat(c).trim();
+          client.SendMessageToAll(msgi);
+        }
+      } else {
+        Content.addPre("Usage: //tree &lt;N&gt; &lt;msg&gt;: &lt;N&gt;-tree &lt;msg&gt;");
       }
-      var msg = tokens.join(" ");
-      for (var i = 1; i < n * 2; ++i) {
-        var c = i < Math.floor(n) ? i : n * 2 - i;
-        var msgi = (msg + " ").repeat(c).trim();
-        client.SendMessageToAll(msgi);
-      }
-    }.bind(this));
-    resolve(this);
-  }
-
-  _createClass(DwangoACPlugin, [{
+    }
+  }, {
     key: "toString",
     value: function toString() {
       return "[object DwangoACPlugin]";

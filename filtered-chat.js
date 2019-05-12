@@ -15,9 +15,9 @@
 
 /* NOTES:
  * Filtering ws "recv>" messages:
- *   Util.Logger.add_filter(((m) => !`${m}`.startsWith('recv> ')), 'DEBUG');
+ *   Util.Logger.add_filter(((m) => !`${m}`.startsWith("recv> ")), "DEBUG");
  * Filtering ws PRIVMSG messages:
- *   Util.Logger.add_filter(((m) => `${m}`.indexOf(' PRIVMSG ') == -1, 'DEBUG');
+ *   Util.Logger.add_filter(((m) => `${m}`.indexOf(" PRIVMSG ") == -1, "DEBUG");
  */
 
 const CACHED_VALUE = "Cached";
@@ -95,7 +95,7 @@ function parse_query_string(config, qs=null) {
       query_remove.push(k);
     } else if (k === "channel" || k === "channels") {
       key = "Channels";
-      val = v.split(',').map((c) => Twitch.FormatChannel(c));
+      val = v.split(",").map((c) => Twitch.FormatChannel(c));
     } else if (k === "debug") {
       key = "Debug";
       val = Number(v);
@@ -142,7 +142,7 @@ function parse_query_string(config, qs=null) {
       key = "Plugins";
       val = v ? true : false;
     } else if (k == "disable") {
-      for (let e of `${v}`.split(',')) {
+      for (let e of `${v}`.split(",")) {
         if (CSSCheerStyles[e]) {
           CSSCheerStyles[e]._disabled = true;
         }
@@ -162,7 +162,7 @@ function parse_query_string(config, qs=null) {
     }
     config[key] = val;
   }
-  if (!config.hasOwnProperty('Layout')) {
+  if (!config.hasOwnProperty("Layout")) {
     config.Layout = ParseLayout("double:chat");
   }
   return query_remove;
@@ -170,10 +170,10 @@ function parse_query_string(config, qs=null) {
 
 /* Obtain configuration key */
 function get_config_key() {
-  let config_key = 'tfc-config';
+  let config_key = "tfc-config";
   let qs = Util.ParseQueryString();
-  if (qs.hasOwnProperty('config_key')) {
-    config_key = config_key + '-' + qs.config_key.replace(/[^a-z]/g, '');
+  if (qs.hasOwnProperty("config_key")) {
+    config_key = config_key + "-" + qs.config_key.replace(/[^a-z]/g, "");
   }
   return config_key;
 }
@@ -206,11 +206,11 @@ function get_config_object() {
   config.key = Util.GetWebStorageKey();
 
   /* Certain unwanted items may be preserved in localStorage */
-  if (config.hasOwnProperty('NoAssets')) delete config["NoAssets"];
-  if (config.hasOwnProperty('Debug')) delete config["Debug"];
-  if (config.hasOwnProperty('AutoReconnect')) delete config["AutoReconnect"];
-  if (config.hasOwnProperty('Layout')) delete config['Layout'];
-  if (config.hasOwnProperty('Plugins')) delete config['Plugins'];
+  if (config.hasOwnProperty("NoAssets")) delete config["NoAssets"];
+  if (config.hasOwnProperty("Debug")) delete config["Debug"];
+  if (config.hasOwnProperty("AutoReconnect")) delete config["AutoReconnect"];
+  if (config.hasOwnProperty("Layout")) delete config["Layout"];
+  if (config.hasOwnProperty("Plugins")) delete config["Plugins"];
 
   /* Ensure certain keys are present and have expected values */
   if (!config.hasOwnProperty("MaxMessages")) {
@@ -227,11 +227,11 @@ function get_config_object() {
   query_remove = parse_query_string(config, qs);
 
   /* Parse div#settings config */
-  let txtChannel = $('input#txtChannel')[0];
-  let txtNick = $('input#txtNick')[0];
-  let txtPass = $('input#txtPass')[0];
+  let txtChannel = $("input#txtChannel")[0];
+  let txtNick = $("input#txtNick")[0];
+  let txtPass = $("input#txtPass")[0];
   if (txtChannel.value) {
-    for (let ch of txtChannel.value.split(',')) {
+    for (let ch of txtChannel.value.split(",")) {
       let channel = Twitch.FormatChannel(ch.toLowerCase());
       if (config.Channels.indexOf(channel) == -1) {
         config.Channels.push(channel);
@@ -254,8 +254,8 @@ function get_config_object() {
   }
 
   /* Populate configs for each module */
-  $('.module').each(function() {
-    let id = $(this).attr('id');
+  $(".module").each(function() {
+    let id = $(this).attr("id");
     if (!config[id]) { config[id] = get_module_settings($(this)); }
     config[id].Pleb = verify_boolean(config[id].Pleb);
     config[id].Sub = verify_boolean(config[id].Sub);
@@ -305,17 +305,17 @@ function get_config_object() {
 /* Set the module's settings to the values given */
 function set_module_settings(module, config) {
   if (config.Name) {
-    $(module).find('label.name').html(config.Name);
-    $(module).find('input.name').val(config.Name);
+    $(module).find("label.name").html(config.Name);
+    $(module).find("input.name").val(config.Name);
   }
-  function check(sel) { $(module).find(sel).attr('checked', 'checked'); }
-  function uncheck(sel) { $(module).find(sel).removeAttr('checked'); }
-  if (config.Pleb) { check('input.pleb'); } else { uncheck('input.pleb'); }
-  if (config.Sub) { check('input.sub'); } else { uncheck('input.sub'); }
-  if (config.VIP) { check('input.vip'); } else { uncheck('input.vip'); }
-  if (config.Mod) { check('input.mod'); } else { uncheck('input.mod'); }
-  if (config.Event) { check('input.event'); } else { uncheck('input.event'); }
-  if (config.Bits) { check('input.bits'); } else { uncheck('input.bits'); }
+  function check(sel) { $(module).find(sel).attr("checked", "checked"); }
+  function uncheck(sel) { $(module).find(sel).removeAttr("checked"); }
+  if (config.Pleb) { check("input.pleb"); } else { uncheck("input.pleb"); }
+  if (config.Sub) { check("input.sub"); } else { uncheck("input.sub"); }
+  if (config.VIP) { check("input.vip"); } else { uncheck("input.vip"); }
+  if (config.Mod) { check("input.mod"); } else { uncheck("input.mod"); }
+  if (config.Event) { check("input.event"); } else { uncheck("input.event"); }
+  if (config.Bits) { check("input.bits"); } else { uncheck("input.bits"); }
   function add_input(cls, label, values) {
     if (values && values.length > 0) {
       for (let val of values) {
@@ -345,13 +345,13 @@ function set_module_settings(module, config) {
 function get_module_settings(module) {
   module = $(module);
   let s = {
-    Name: module.find('input.name').val(),
-    Pleb: module.find('input.pleb').is(':checked'),
-    Sub: module.find('input.sub').is(':checked'),
-    VIP: module.find('input.vip').is(':checked'),
-    Mod: module.find('input.mod').is(':checked'),
-    Event: module.find('input.event').is(':checked'),
-    Bits: module.find('input.bits').is(':checked'),
+    Name: module.find("input.name").val(),
+    Pleb: module.find("input.pleb").is(":checked"),
+    Sub: module.find("input.sub").is(":checked"),
+    VIP: module.find("input.vip").is(":checked"),
+    Mod: module.find("input.mod").is(":checked"),
+    Event: module.find("input.event").is(":checked"),
+    Bits: module.find("input.bits").is(":checked"),
     IncludeUser: [],
     IncludeKeyword: [],
     ExcludeUser: [],
@@ -359,19 +359,19 @@ function get_module_settings(module) {
     FromChannel: []
   };
 
-  module.find('input.include_user:checked').each(function() {
+  module.find("input.include_user:checked").each(function() {
     s.IncludeUser.push($(this).val());
   });
-  module.find('input.include_keyword:checked').each(function() {
+  module.find("input.include_keyword:checked").each(function() {
     s.IncludeKeyword.push($(this).val());
   });
-  module.find('input.exclude_user:checked').each(function() {
+  module.find("input.exclude_user:checked").each(function() {
     s.ExcludeUser.push($(this).val());
   });
-  module.find('input.exclude_startswith:checked').each(function() {
+  module.find("input.exclude_startswith:checked").each(function() {
     s.ExcludeStartsWith.push($(this).val());
   });
-  module.find('input.from_channel:checked').each(function() {
+  module.find("input.from_channel:checked").each(function() {
     s.FromChannel.push($(this).val());
   });
 
@@ -420,7 +420,7 @@ function format_module_config(cfg) {
 function update_module_config() {
   let config = get_config_object();
   $(".module").each(function() {
-    config[$(this).attr('id')] = get_module_settings($(this));
+    config[$(this).attr("id")] = get_module_settings($(this));
   });
   Util.SetWebStorage(config);
 }
@@ -472,7 +472,7 @@ function should_filter(module, event) {
     if (rules.ExcludeStartsWith.any((m) => (message.startsWith(m)))) return true;
     if (rules.FromChannel.length > 0) {
       for (let s of rules.FromChannel) {
-        let c = s.indexOf('#') == -1 ? '#' + s : s;
+        let c = s.indexOf("#") == -1 ? "#" + s : s;
         if (event.channel && event.channel.channel) {
           if (event.channel.channel.toLowerCase() != c.toLowerCase()) {
             return true;
@@ -522,35 +522,35 @@ function handle_command(value, client) {
         Util.SetWebStorage({});
         Content.addNotice(`Purged storage "${Util.GetWebStorageKey()}"`);
       } else if (tokens[0] == "url") {
-        let url = location.protocol + '//' + location.hostname + location.pathname;
+        let url = location.protocol + "//" + location.hostname + location.pathname;
         if (tokens.length > 1) {
-          if (tokens[1].startsWith('git')) {
+          if (tokens[1].startsWith("git")) {
             url = "https://kaedenn.github.io/twitch-filtered-chat/index.html";
           }
         }
         let qs = [];
         let qs_push = (k, v) => (qs.push(`${k}=${encodeURIComponent(v)}`));
-        if (config.Debug > 0) { qs_push('debug', config.Debug); }
+        if (config.Debug > 0) { qs_push("debug", config.Debug); }
         if (config.__clientid_override) {
           if (config.ClientID && config.ClientID.length == 30) {
-            qs_push('clientid', config.ClientID);
+            qs_push("clientid", config.ClientID);
           }
         }
         if (config.Channels.length > 0) {
-          qs_push('channels', config.Channels.join(","));
+          qs_push("channels", config.Channels.join(","));
         }
         if (tokens.indexOf("auth") > -1) {
           if (config.Name && config.Name.length > 0) {
-            qs_push('user', config.Name);
+            qs_push("user", config.Name);
           }
           if (config.Pass && config.Pass.length > 0) {
-            qs_push('pass', config.Pass);
+            qs_push("pass", config.Pass);
           }
         }
-        if (config.NoAssets) { qs_push('noassets', config.NoAssets); }
-        if (config.NoFFZ) { qs_push('noffz', config.NoFFZ); }
-        if (config.NoBTTV) { qs_push('nobttv', config.NoBTTV); }
-        if (config.HistorySize) { qs_push('hmax', config.HistorySize); }
+        if (config.NoAssets) { qs_push("noassets", config.NoAssets); }
+        if (config.NoFFZ) { qs_push("noffz", config.NoFFZ); }
+        if (config.NoBTTV) { qs_push("nobttv", config.NoBTTV); }
+        if (config.HistorySize) { qs_push("hmax", config.HistorySize); }
         qs_push("module1", format_module_config(config.module1));
         qs_push("module2", format_module_config(config.module2));
         qs_push("layout", FormatLayout(config.Layout));
@@ -560,7 +560,7 @@ function handle_command(value, client) {
           let font_size = Util.CSS.GetProperty("--body-font-size");
           let font_size_default = Util.CSS.GetProperty("--body-font-size-default");
           if (font_size != font_size_default) {
-            qs_push("size", font_size.replace(/[^0-9]/g, ''));
+            qs_push("size", font_size.replace(/[^0-9]/g, ""));
           }
         }
         if (config.Plugins) { qs_push("plugins", "1"); }
@@ -572,7 +572,7 @@ function handle_command(value, client) {
         } else {
           url += "?base64=" + encodeURIComponent(btoa(qs.join("&")));
         }
-        ChatCommands.addHelp(client.get('HTMLGen').url(url));
+        ChatCommands.addHelp(client.get("HTMLGen").url(url));
       } else if (config.hasOwnProperty(tokens[0])) {
         ChatCommands.addHelpLine(tokens[0], JSON.stringify(config[tokens[0]]));
       } else {
@@ -639,12 +639,12 @@ function show_context_window(client, cw, line) {
 
   /* Define functions for building elements */
   let $Line = (s) => $(`<div class="item">${s}</div>`);
-  let Link = (i, text) => client.get('HTMLGen').url(null, text, "cw-link", i);
+  let Link = (i, text) => client.get("HTMLGen").url(null, text, "cw-link", i);
   let Em = (t) => `<span class="em">${t}</span>`;
-  let $EmItem = (s) => $(Em(s)).css('margin-left', '0.5em');
+  let $EmItem = (s) => $(Em(s)).css("margin-left", "0.5em");
 
-  /* Add user's display name */
-  let $username = $l.find('.username');
+  /* Add user"s display name */
+  let $username = $l.find(".username");
   let classes = $username.attr("class");
   let css = $username.attr("style");
   let e_name = `<span class="${classes}" style="${css}">${name}</span>`;
@@ -660,11 +660,11 @@ function show_context_window(client, cw, line) {
       $ta.attr("data-user", user);
       $ta.attr("data-duration", dur);
       $ta.click(function() {
-        let ch = $(this).attr('data-channel');
-        let u = $(this).attr('data-user');
-        let d = $(this).attr('data-duration');
+        let ch = $(this).attr("data-channel");
+        let u = $(this).attr("data-user");
+        let d = $(this).attr("data-duration");
         client.Timeout(ch, u, d);
-        Util.Log('Timed out user', u, 'from', ch, 'for', d);
+        Util.Log("Timed out user", u, "from", ch, "for", d);
         $(cw).fadeOut();
       });
       $tl.append($ta);
@@ -678,7 +678,7 @@ function show_context_window(client, cw, line) {
     $ba.attr("data-channel", channel);
     $ba.attr("data-user", user);
     $ba.click(function() {
-      $("#txtChat").val(`/ban ${$(this).attr('data-user')}`);
+      $("#txtChat").val(`/ban ${$(this).attr("data-user")}`);
     });
     $cw.append($ba);
   }
@@ -693,23 +693,23 @@ function show_context_window(client, cw, line) {
   /* Add roles (and ability to remove roles, for the caster) */
   if (mod || vip || sub || caster) {
     let $roles = $Line(`User Role:`);
-    if (mod) { $roles.append($EmItem('Mod')); $roles.append(","); }
-    if (vip) { $roles.append($EmItem('VIP')); $roles.append(","); }
-    if (sub) { $roles.append($EmItem('Sub')); $roles.append(","); }
-    if (caster) { $roles.append($EmItem('Host')); $roles.append(","); }
+    if (mod) { $roles.append($EmItem("Mod")); $roles.append(","); }
+    if (vip) { $roles.append($EmItem("VIP")); $roles.append(","); }
+    if (sub) { $roles.append($EmItem("Sub")); $roles.append(","); }
+    if (caster) { $roles.append($EmItem("Host")); $roles.append(","); }
     /* Remove the last comma */
     $roles[0].removeChild($roles[0].lastChild);
     $cw.append($roles);
     if (client.IsCaster(channel) && !client.IsUIDSelf(userid)) {
-      if (mod) { $cw.append($Line(Link('cw-unmod', 'Remove Mod'))); }
-      if (vip) { $cw.append($Line(Link('cw-unvip', 'Remove VIP'))); }
+      if (mod) { $cw.append($Line(Link("cw-unmod", "Remove Mod"))); }
+      if (vip) { $cw.append($Line(Link("cw-unvip", "Remove VIP"))); }
     }
   }
 
   /* Add the ability to add roles (for the caster) */
   if (client.IsCaster(channel) && !client.IsUIDSelf(userid)) {
-    if (!mod) { $cw.append($Line(Link('cw-make-mod', 'Make Mod'))); }
-    if (!vip) { $cw.append($Line(Link('cw-make-vip', 'Make VIP'))); }
+    if (!mod) { $cw.append($Line(Link("cw-make-mod", "Make Mod"))); }
+    if (!vip) { $cw.append($Line(Link("cw-make-vip", "Make VIP"))); }
   }
 
   let l_off = $l.offset();
@@ -753,7 +753,7 @@ function update_transparency(transparent) {
   for (let prop of props) {
     if (transparent) {
       /* Set them all to transparent */
-      Util.CSS.SetProperty(prop, 'transparent');
+      Util.CSS.SetProperty(prop, "transparent");
       $(".module").addClass("transparent");
       $("body").addClass("transparent");
     } else {
@@ -772,13 +772,13 @@ function client_main(layout) { /* exported client_main */
 
   /* Hook Logger messages */
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
-    let msg = JSON.stringify(args.length == 1 ? args[0] : args);
+    let msg = Util.Logger.stringify(...args);
     if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
       Content.addError("ERROR: " + msg.escape());
     }
   }, "ERROR");
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
-    let msg = JSON.stringify(args.length == 1 ? args[0] : args);
+    let msg = Util.Logger.stringify(...args);
     if (args.length == 1 && args[0] instanceof TwitchEvent) {
       if (Util.DebugLevel >= Util.LEVEL_TRACE) {
         Content.addNotice("WARNING: " + args[0].repr());
@@ -788,13 +788,13 @@ function client_main(layout) { /* exported client_main */
     }
   }, "WARN");
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
-    let msg = JSON.stringify(args.length == 1 ? args[0] : args);
+    let msg = Util.Logger.stringify(...args);
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
       Content.addHTML("DEBUG: " + msg.escape());
     }
   }, "DEBUG");
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
-    let msg = JSON.stringify(args.length == 1 ? args[0] : args);
+    let msg = Util.Logger.stringify(...args);
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
       Content.addHTML("TRACE: " + msg.escape());
     }
@@ -828,7 +828,7 @@ function client_main(layout) { /* exported client_main */
       if (config.Layout.Chat) {
         /* Change the chat placeholder and border to reflect read-only */
         $("#txtChat").attr("placeholder", "Authentication needed to send messages");
-        Util.CSS.SetProperty('--chat-border', '#cd143c');
+        Util.CSS.SetProperty("--chat-border", "#cd143c");
       }
     }
 
@@ -839,7 +839,7 @@ function client_main(layout) { /* exported client_main */
 
     /* Set the text size if given */
     if (config.Size) {
-      Util.CSS.SetProperty('--body-font-size', config.Size);
+      Util.CSS.SetProperty("--body-font-size", config.Size);
     }
 
     /* Set the font if given */
@@ -857,7 +857,7 @@ function client_main(layout) { /* exported client_main */
 
     /* After all that, sync the final settings up with the html */
     $(".module").each(function() {
-      set_module_settings(this, config[$(this).attr('id')]);
+      set_module_settings(this, config[$(this).attr("id")]);
     });
 
     /* Set values we'll want to use later */
@@ -881,7 +881,7 @@ function client_main(layout) { /* exported client_main */
   })();
 
   /* Construct the HTML Generator and tell it and the client about each other */
-  client.set('HTMLGen', new HTMLGenerator(client, ConfigCommon));
+  client.set("HTMLGen", new HTMLGenerator(client, ConfigCommon));
 
   /* Construct the plugins */
   if (ConfigCommon.Plugins) {
@@ -957,8 +957,8 @@ function client_main(layout) { /* exported client_main */
 
   /* Clicking the settings button */
   $("#settings_button").click(function() {
-    if ($("#settings").is(':visible')) {
-      $('#settings').fadeOut();
+    if ($("#settings").is(":visible")) {
+      $("#settings").fadeOut();
     } else {
       let config = get_config_object();
       $("#txtChannel").val(config.Channels.join(","));
@@ -968,7 +968,7 @@ function client_main(layout) { /* exported client_main */
         $("#txtPassDummy").show();
       }
       $("#selDebug").val(`${config.Debug}`);
-      $('#settings').fadeIn();
+      $("#settings").fadeIn();
     }
   });
 
@@ -1045,8 +1045,8 @@ function client_main(layout) { /* exported client_main */
   /* Opening one of the module menus */
   $(".menu").click(function() {
     let $settings = $(this).parent().children(".settings");
-    let $lbl = $(this).parent().children('label.name');
-    let $tb = $(this).parent().children('input.name');
+    let $lbl = $(this).parent().children("label.name");
+    let $tb = $(this).parent().children("input.name");
     if ($settings.is(":visible")) {
       /* Update module configurations on close */
       update_module_config();
@@ -1060,11 +1060,11 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Pressing enter on the module's name text box */
-  $('.module .header input.name').on('keyup', function(e) {
+  $(".module .header input.name").on("keyup", function(e) {
     if (e.keyCode == Util.Key.RETURN) {
       let $settings = $(this).parent().children(".settings");
-      let $lbl = $(this).parent().children('label.name');
-      let $tb = $(this).parent().children('input.name');
+      let $lbl = $(this).parent().children("label.name");
+      let $tb = $(this).parent().children("input.name");
       update_module_config();
       $tb.hide();
       $lbl.html($tb.val()).show();
@@ -1073,17 +1073,17 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Pressing enter on one of the module menu text boxes */
-  $('.module .settings input[type="text"]').on('keyup', function(e) {
+  $(".module .settings input[type=\"text\"]").on("keyup", function(e) {
     let v = $(this).val();
     if (v.length > 0) {
       if (e.keyCode == Util.Key.RETURN) {
-        let $cli = $(this).closest('li');
-        let cls = $cli.attr('class').replace('textbox', '').trim();
-        let cb = client.get('HTMLGen').checkbox(v, null, cls, true);
-        let val = $cli.find('label').html();
+        let $cli = $(this).closest("li");
+        let cls = $cli.attr("class").replace("textbox", "").trim();
+        let cb = client.get("HTMLGen").checkbox(v, null, cls, true);
+        let val = $cli.find("label").html();
         let $li = $(`<li><label>${cb}${val} ${v}</label></li>`);
         $cli.before($li);
-        $(this).val('');
+        $(this).val("");
         update_module_config();
       }
     }
@@ -1139,7 +1139,7 @@ function client_main(layout) { /* exported client_main */
           client.SendMessage(ch, `/vip ${user}`);
         }
       }
-    } else if ($t.attr('data-username') == '1') {
+    } else if ($t.attr("data-username") == "1") {
       /* Clicked on a username; show context window */
       let $l = $t.parent();
       if ($cw.is(":visible") && $cw.attr("data-user-id") == $l.attr("data-user-id")) {
@@ -1152,7 +1152,7 @@ function client_main(layout) { /* exported client_main */
       $cw.fadeOut();
     }
     /* Clicking on a "Reconnect" link */
-    if ($t.attr("data-reconnect") == '1') {
+    if ($t.attr("data-reconnect") == "1") {
       /* Clicked on a reconnect link */
       Content.addNotice(`Reconnecting...`);
       client.Connect();
@@ -1164,7 +1164,7 @@ function client_main(layout) { /* exported client_main */
   /* Bind to numerous TwitchEvent events {{{0 */
 
   /* WebSocket opened */
-  client.bind('twitch-open', function _on_twitch_open(/*e*/) {
+  client.bind("twitch-open", function _on_twitch_open(/*e*/) {
     $(".loading").remove();
     $("#debug").hide();
     if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
@@ -1182,7 +1182,7 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* WebSocket closed */
-  client.bind('twitch-close', function _on_twitch_close(e) {
+  client.bind("twitch-close", function _on_twitch_close(e) {
     let code = e.raw_line.code;
     let reason = e.raw_line.reason;
     let msg = "Connection closed";
@@ -1200,12 +1200,12 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Received reconnect command from Twitch */
-  client.bind('twitch-reconnect', function _on_twitch_reconnect(/*e*/) {
+  client.bind("twitch-reconnect", function _on_twitch_reconnect(/*e*/) {
     client.Connect();
   });
 
   /* User joined (any user) */
-  client.bind('twitch-join', function _on_twitch_join(e) {
+  client.bind("twitch-join", function _on_twitch_join(e) {
     if (!Util.Browser.IsOBS && !layout.Slim) {
       if (e.user == client.GetName().toLowerCase()) {
         Content.addInfo(`Joined ${e.channel.channel}`);
@@ -1214,7 +1214,7 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* User left (any user) */
-  client.bind('twitch-part', function _on_twitch_part(e) {
+  client.bind("twitch-part", function _on_twitch_part(e) {
     if (!Util.Browser.IsOBS && !layout.Slim) {
       if (e.user == client.GetName().toLowerCase()) {
         Content.addInfo(`Left ${e.channel.channel}`);
@@ -1223,7 +1223,7 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Notice (or warning) from Twitch */
-  client.bind('twitch-notice', function _on_twitch_notice(e) {
+  client.bind("twitch-notice", function _on_twitch_notice(e) {
     /* Some notices are benign */
     switch (e.notice_msgid) {
       case "host_on":
@@ -1242,7 +1242,7 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Error from Twitch or Twitch Client API */
-  client.bind('twitch-error', function _on_twitch_error(e) {
+  client.bind("twitch-error", function _on_twitch_error(e) {
     Util.Error(e);
     let user = e.user;
     let command = e.values.command;
@@ -1251,7 +1251,7 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Message received from Twitch */
-  client.bind('twitch-message', function _on_twitch_message(e) {
+  client.bind("twitch-message", function _on_twitch_message(e) {
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
       Content.addHTML(`<span class="pre">${e.repr()}</span>`);
     }
@@ -1265,7 +1265,7 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Received streamer info */
-  client.bind('twitch-streaminfo', function _on_twitch_streaminfo(e) {
+  client.bind("twitch-streaminfo", function _on_twitch_streaminfo(e) {
     let cinfo = client.GetChannelInfo(e.channel.channel);
     if (!cinfo.online) {
       if (ConfigCommon.Layout && !ConfigCommon.Layout.Slim) {
@@ -1275,12 +1275,12 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Received chat message */
-  client.bind('twitch-chat', function _on_twitch_chat(event) {
+  client.bind("twitch-chat", function _on_twitch_chat(event) {
     if (event instanceof TwitchChatEvent) {
       let m = typeof(event.message) === "string" ? event.message : "";
-      if (event.flags && event.flags.mod && m.indexOf(' ') > -1) {
-        let tokens = m.split(' ');
-        if (tokens[0] === '!tfc') {
+      if (event.flags && event.flags.mod && m.indexOf(" ") > -1) {
+        let tokens = m.split(" ");
+        if (tokens[0] === "!tfc") {
           if (tokens[1] === "reload") {
             location.reload();
           } else if (tokens[1] === "force-reload") {
@@ -1308,8 +1308,8 @@ function client_main(layout) { /* exported client_main */
     $(".module").each(function() {
       if (!should_filter($(this), event)) {
         let $w = $(`<div class="line line-wrapper"></div>`);
-        $w.html(client.get('HTMLGen').gen(event));
-        let $c = $(this).find('.content');
+        $w.html(client.get("HTMLGen").gen(event));
+        let $c = $(this).find(".content");
         $c.append($w);
         $c.scrollTop(Math.pow(2, 31) - 1);
       }
@@ -1317,7 +1317,7 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Received CLEARCHAT event */
-  client.bind('twitch-clearchat', function _on_twitch_clearchat(e) {
+  client.bind("twitch-clearchat", function _on_twitch_clearchat(e) {
     if (e.has_flag("target-user-id")) {
       /* Moderator timed out a user */
       let r = e.flags["room-id"];
@@ -1330,33 +1330,33 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Received CLEARMSG event */
-  client.bind('twitch-clearmsg', function _on_twitch_clearmsg(e) {
+  client.bind("twitch-clearmsg", function _on_twitch_clearmsg(e) {
     Util.StorageAppend("debug-msg-log", e);
     Util.Warn("Unhandled CLEARMSG:", e);
   });
 
   /* User subscribed */
-  client.bind('twitch-sub', function _on_twitch_sub(e) {
+  client.bind("twitch-sub", function _on_twitch_sub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    Content.addHTML(client.get('HTMLGen').sub(e));
+    Content.addHTML(client.get("HTMLGen").sub(e));
   });
 
   /* User resubscribed */
-  client.bind('twitch-resub', function _on_twitch_resub(e) {
+  client.bind("twitch-resub", function _on_twitch_resub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    Content.addHTML(client.get('HTMLGen').resub(e));
+    Content.addHTML(client.get("HTMLGen").resub(e));
   });
 
   /* User gifted a subscription */
-  client.bind('twitch-giftsub', function _on_twitch_giftsub(e) {
+  client.bind("twitch-giftsub", function _on_twitch_giftsub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    Content.addHTML(client.get('HTMLGen').giftsub(e));
+    Content.addHTML(client.get("HTMLGen").giftsub(e));
   });
 
   /* Anonymous user gifted a subscription */
-  client.bind('twitch-anongiftsub', function _on_twitch_anongiftsub(e) {
+  client.bind("twitch-anongiftsub", function _on_twitch_anongiftsub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    Content.addHTML(client.get('HTMLGen').anongiftsub(e));
+    Content.addHTML(client.get("HTMLGen").anongiftsub(e));
   });
 
   /* Bind the rest of the events and warn about unbound events */
