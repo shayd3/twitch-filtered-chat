@@ -233,12 +233,11 @@ function Main(global) {
     Util.LogOnly("Waiting for document to finish rendering...");
 
     /* Once rerendering is complete, start up the client */
-    $(document).ready(function () {
-      var $c = $("#txtChat");
-      if ($c && $c.length > 0 && !$c.attr("focused")) {
-        $c.attr("focused", "1");
-        $c[0].focus();
-      }
+    requestAnimationFrame(function () {
+      /* Focus on the chat texarea */
+      var c = document.getElementById("txtChat");
+      if (c && c.focus) c.focus();
+      /* Call client_main to construct the filtered chat */
       Util.LogOnly("Document rendered; setting up TFC...");
       try {
         client_main(layout);
