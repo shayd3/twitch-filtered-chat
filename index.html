@@ -32,11 +32,11 @@ function onLoad() {
     <div class="column left" id="column1" style="display: none">
       <div class="module left no-chat" id="module1">
         <div class="header">
-          <!-- Menu button (generated via CSS) -->
+          <!-- Menu button (formatted via CSS) -->
           <div class="menu"><div></div><div></div><div></div></div>
           <!-- Button to clear chat -->
           <span class="clear-chat">
-            <a class="clear-chat-link" title="Clear" alt="Clear">
+            <a class="clear-chat-link" data-for="module1" title="Clear" alt="Clear">
               <img class="clear-chat-icon" src="assets/no-entry.svg" />
             </a>
           </span>
@@ -88,11 +88,11 @@ function onLoad() {
     <div class="column right" id="column2" style="display: none">
       <div class="module right no-chat" id="module2">
         <div class="header">
-          <!-- Menu button (generated via CSS) -->
+          <!-- Menu button (formatted via CSS) -->
           <div class="menu"><div></div><div></div><div></div></div>
           <!-- Button to clear chat -->
           <span class="clear-chat">
-            <a class="clear-chat-link" title="Clear" alt="Clear">
+            <a class="clear-chat-link" data-for="module2" title="Clear" alt="Clear">
               <img class="clear-chat-icon" src="assets/no-entry.svg" />
             </a>
           </span>
@@ -188,13 +188,13 @@ function onLoad() {
       </li>
     </ul>
     <footer>
-      <span class="fl"><a onclick="$('#settings_button').click();">Close</a></span>
+      <span class="fl"><a onclick="$('#btnSettings').click();">Close</a></span>
       <span class="fr" id="reconnect"><a>Reconnect</a></span>
     </footer>
   </div>
-  <img id="settings_button" src="assets/settings_white.png" alt="Settings" />
+  <img id="btnSettings" src="assets/settings_white.png" alt="Settings" />
   <!-- Username context window -->
-  <div id="username_context" class="username_context" style="display: none"></div>
+  <div id="userContext" class="userContext" style="display: none"></div>
 </body>
 </html>
 

@@ -182,16 +182,16 @@ input {
   top: -1pt;
 }
 
-.module .header .clear-chat .clear-chat-icon {
-  padding-top: 0.5em;
-  width: 1.1em;
-  height: 1.6em;
-}
-
 .module .header .clear-chat .clear-chat-link {
   text-decoration: none;
   background: transparent;
   color: white;
+}
+
+.module .header .clear-chat .clear-chat-icon {
+  padding-top: 0.5em;
+  width: 1.1em;
+  height: 1.6em;
 }
 
 /* End header CSS 0}}} */
@@ -498,7 +498,7 @@ body.transparent #chat textarea  {
   cursor: pointer;
 }
 
-#settings_button {
+#btnSettings {
   position: fixed;
   opacity: 0.5;
   transition: opacity 0.5s;
@@ -509,7 +509,7 @@ body.transparent #chat textarea  {
   height: 24px;
 }
 
-#settings_button:hover {
+#btnSettings:hover {
   opacity: 1.0;
 }
 
@@ -525,7 +525,7 @@ body.transparent #chat textarea  {
 
 /* Username context window {{{0 */
 
-#username_context {
+#userContext {
   display: none;
   position: absolute;
   width: 32em;
@@ -535,20 +535,20 @@ body.transparent #chat textarea  {
   color: black;
 }
 
-#username_context .item {
+#userContext .item {
   display: block;
   font-family: monospace;
 }
 
-#username_context .item .em {
+#userContext .item .em {
   font-weight: bold;
 }
 
-#username_context .cw-timeout:first-child {
+#userContext .cw-timeout:first-child {
   margin-right: 2px;
 }
 
-#username_context a.cw-timeout-dur {
+#userContext a.cw-timeout-dur {
   margin-left: 2px;
   margin-right: 2px;
   text-decoration: underline;

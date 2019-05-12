@@ -6,7 +6,7 @@
  * Add layout selection box to #settings (reloads page on change)
  * Add target to #settings help link
  * Add clip information
- * Hide get_config_object() within client_main()
+ * Hide getConfigObject() within client_main()
  */
 
 /* IDEA
@@ -32,10 +32,7 @@ var CACHED_VALUE = "Cached";
 var AUTOGEN_VALUE = "Auto-Generated";
 
 /* Functions to sanitize configuration */
-function verify_boolean(val) {
-  return typeof val == "boolean" ? val : "";
-}
-function verify_array(val) {
+function toArray(val) {
   return Util.IsArray(val) ? val : [];
 }
 
@@ -99,7 +96,7 @@ var Content = function () {
 /* Parse a query string into the config object given and return removals */
 
 
-function parse_query_string(config) {
+function parseQueryString(config) {
   var qs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 
   var qs_data = void 0;
@@ -179,7 +176,7 @@ function parse_query_string(config) {
       } else if (k.match(/^module[12]?$/)) {
         if (k === "module") k = "module1";
         key = k === "module" ? "module1" : k;
-        val = parse_module_config(v);
+        val = parseModuleConfig(v);
       } else if (k === "trans" || k === "transparent") {
         key = "Transparent";
         val = 1;
@@ -259,7 +256,7 @@ function parse_query_string(config) {
 }
 
 /* Obtain configuration key */
-function get_config_key() {
+function getConfigKey() {
   var config_key = "tfc-config";
   var qs = Util.ParseQueryString();
   if (qs.hasOwnProperty("config_key")) {
@@ -269,7 +266,7 @@ function get_config_key() {
 }
 
 /* Obtain configuration */
-function get_config_object() {
+function getConfigObject() {
   /* 1) Obtain configuration values
    *  a) from localStorage
    *  b) from query string (overrides (a))
@@ -277,7 +274,7 @@ function get_config_object() {
    * 2) Store module configuration in each modules' settings window
    * 3) Remove sensitive values from the query string, if present
    */
-  var config_key = get_config_key();
+  var config_key = getConfigKey();
 
   /* Query String object, parsed */
   var qs = Util.ParseQueryString();
@@ -314,7 +311,7 @@ function get_config_object() {
   if (typeof config.Pass != "string") config.Pass = "";
 
   /* Parse the query string */
-  query_remove = parse_query_string(config, qs);
+  query_remove = parseQueryString(config, qs);
 
   /* Parse div#settings config */
   var txtChannel = $("input#txtChannel")[0];
@@ -368,19 +365,19 @@ function get_config_object() {
   $(".module").each(function () {
     var id = $(this).attr("id");
     if (!config[id]) {
-      config[id] = get_module_settings($(this));
+      config[id] = getModuleSettings($(this));
     }
-    config[id].Pleb = verify_boolean(config[id].Pleb);
-    config[id].Sub = verify_boolean(config[id].Sub);
-    config[id].VIP = verify_boolean(config[id].VIP);
-    config[id].Mod = verify_boolean(config[id].Mod);
-    config[id].Event = verify_boolean(config[id].Event);
-    config[id].Bits = verify_boolean(config[id].Bits);
-    config[id].IncludeKeyword = verify_array(config[id].IncludeKeyword);
-    config[id].IncludeUser = verify_array(config[id].IncludeUser);
-    config[id].ExcludeUser = verify_array(config[id].ExcludeUser);
-    config[id].ExcludeStartsWith = verify_array(config[id].ExcludeStartsWith);
-    config[id].FromChannel = verify_array(config[id].FromChannel);
+    config[id].Pleb = Boolean(config[id].Pleb);
+    config[id].Sub = Boolean(config[id].Sub);
+    config[id].VIP = Boolean(config[id].VIP);
+    config[id].Mod = Boolean(config[id].Mod);
+    config[id].Event = Boolean(config[id].Event);
+    config[id].Bits = Boolean(config[id].Bits);
+    config[id].IncludeKeyword = toArray(config[id].IncludeKeyword);
+    config[id].IncludeUser = toArray(config[id].IncludeUser);
+    config[id].ExcludeUser = toArray(config[id].ExcludeUser);
+    config[id].ExcludeStartsWith = toArray(config[id].ExcludeStartsWith);
+    config[id].FromChannel = toArray(config[id].FromChannel);
   });
 
   /* See if there's anything we need to remove */
@@ -437,7 +434,7 @@ function get_config_object() {
 /* Module configuration {{{1 */
 
 /* Set the module's settings to the values given */
-function set_module_settings(module, config) {
+function setModuleSettings(module, config) {
   if (config.Name) {
     $(module).find("label.name").html(config.Name);
     $(module).find("input.name").val(config.Name);
@@ -478,7 +475,7 @@ function set_module_settings(module, config) {
   } else {
     uncheck("input.bits");
   }
-  function add_input(cls, label, values) {
+  function addInput(cls, label, values) {
     if (values && values.length > 0) {
       var _iteratorNormalCompletion5 = true;
       var _didIteratorError5 = false;
@@ -494,7 +491,7 @@ function set_module_settings(module, config) {
             var $l = $("<label></label>").val(label);
             var $cb = $("<input type=\"checkbox\" value=" + val.escape() + " checked />");
             $cb.addClass(cls);
-            $cb.click(update_module_config);
+            $cb.click(updateModuleConfig);
             $l.append($cb);
             $l.html($l.html() + label + val.escape());
             $li.append($l);
@@ -517,15 +514,15 @@ function set_module_settings(module, config) {
       }
     }
   }
-  add_input("include_user", "From user: ", config.IncludeUser);
-  add_input("include_keyword", "Contains: ", config.IncludeKeyword);
-  add_input("exclude_user", "From user: ", config.ExcludeUser);
-  add_input("exclude_startswith", "Starts with: ", config.ExcludeStartsWith);
-  add_input("from_channel", "Channel:", config.FromChannel);
+  addInput("include_user", "From user: ", config.IncludeUser);
+  addInput("include_keyword", "Contains: ", config.IncludeKeyword);
+  addInput("exclude_user", "From user: ", config.ExcludeUser);
+  addInput("exclude_startswith", "Starts with: ", config.ExcludeStartsWith);
+  addInput("from_channel", "Channel:", config.FromChannel);
 }
 
 /* Obtain the settings from the module's settings html */
-function get_module_settings(module) {
+function getModuleSettings(module) {
   module = $(module);
   var s = {
     Name: module.find("input.name").val(),
@@ -562,7 +559,7 @@ function get_module_settings(module) {
 }
 
 /* Parse the module configuration from a query string component */
-function parse_module_config(value) {
+function parseModuleConfig(value) {
   var Decode = function Decode(vals) {
     return vals.map(function (v) {
       return decodeURIComponent(v);
@@ -589,7 +586,7 @@ function parse_module_config(value) {
 }
 
 /* Format the module configuration into a query string component */
-function format_module_config(cfg) {
+function formatModuleConfig(cfg) {
   var Encode = function Encode(vals) {
     return vals.map(function (v) {
       return encodeURIComponent(v);
@@ -601,10 +598,10 @@ function format_module_config(cfg) {
 }
 
 /* Update the local storage config with the current module settings */
-function update_module_config() {
-  var config = get_config_object();
+function updateModuleConfig() {
+  var config = getConfigObject();
   $(".module").each(function () {
-    config[$(this).attr("id")] = get_module_settings($(this));
+    config[$(this).attr("id")] = getModuleSettings($(this));
   });
   Util.SetWebStorage(config);
 }
@@ -612,7 +609,7 @@ function update_module_config() {
 /* End module configuration 1}}} */
 
 /* Set the joined channels to the list given */
-function set_channels(client, channels) {
+function setChannels(client, channels) {
   var fmt_ch = function fmt_ch(ch) {
     return Twitch.FormatChannel(Twitch.ParseChannel(ch));
   };
@@ -682,8 +679,8 @@ function set_channels(client, channels) {
 /* End configuration section 0}}} */
 
 /* Return whether or not the event should be filtered */
-function should_filter(module, event) {
-  var rules = get_module_settings(module);
+function shouldFilter(module, event) {
+  var rules = getModuleSettings(module);
   if (event instanceof TwitchChatEvent) {
     /* sub < vip < mod for classification */
     var role = "pleb";
@@ -756,7 +753,7 @@ function should_filter(module, event) {
 }
 
 /* Handle a chat command */
-function handle_command(value, client) {
+function handleCommand(value, client) {
   var tokens = value.split(" ");
   var command = tokens.shift();
 
@@ -774,7 +771,7 @@ function handle_command(value, client) {
 
   /* Handle config command */
   if (command == "//config") {
-    var config = get_config_object();
+    var config = getConfigObject();
     if (tokens.length > 0) {
       if (tokens[0] == "clientid") {
         ChatCommands.addHelpLine("ClientID", config.ClientID);
@@ -791,61 +788,61 @@ function handle_command(value, client) {
           }
         }
         var qs = [];
-        var qs_push = function qs_push(k, v) {
+        var qsAdd = function qsAdd(k, v) {
           return qs.push(k + "=" + encodeURIComponent(v));
         };
         if (config.Debug > 0) {
-          qs_push("debug", config.Debug);
+          qsAdd("debug", config.Debug);
         }
         if (config.__clientid_override) {
           if (config.ClientID && config.ClientID.length == 30) {
-            qs_push("clientid", config.ClientID);
+            qsAdd("clientid", config.ClientID);
           }
         }
         if (config.Channels.length > 0) {
-          qs_push("channels", config.Channels.join(","));
+          qsAdd("channels", config.Channels.join(","));
         }
         if (tokens.indexOf("auth") > -1) {
           if (config.Name && config.Name.length > 0) {
-            qs_push("user", config.Name);
+            qsAdd("user", config.Name);
           }
           if (config.Pass && config.Pass.length > 0) {
-            qs_push("pass", config.Pass);
+            qsAdd("pass", config.Pass);
           }
         }
         if (config.NoAssets) {
-          qs_push("noassets", config.NoAssets);
+          qsAdd("noassets", config.NoAssets);
         }
         if (config.NoFFZ) {
-          qs_push("noffz", config.NoFFZ);
+          qsAdd("noffz", config.NoFFZ);
         }
         if (config.NoBTTV) {
-          qs_push("nobttv", config.NoBTTV);
+          qsAdd("nobttv", config.NoBTTV);
         }
         if (config.HistorySize) {
-          qs_push("hmax", config.HistorySize);
+          qsAdd("hmax", config.HistorySize);
         }
-        qs_push("module1", format_module_config(config.module1));
-        qs_push("module2", format_module_config(config.module2));
-        qs_push("layout", FormatLayout(config.Layout));
+        qsAdd("module1", formatModuleConfig(config.module1));
+        qsAdd("module2", formatModuleConfig(config.module2));
+        qsAdd("layout", FormatLayout(config.Layout));
         if (config.Transparent) {
-          qs_push("trans", "1");
+          qsAdd("trans", "1");
         }
         if (config.AutoReconnect) {
-          qs_push("reconnect", "1");
+          qsAdd("reconnect", "1");
         }
         {
           var font_size = Util.CSS.GetProperty("--body-font-size");
           var font_size_default = Util.CSS.GetProperty("--body-font-size-default");
           if (font_size != font_size_default) {
-            qs_push("size", font_size.replace(/[^0-9]/g, ""));
+            qsAdd("size", font_size.replace(/[^0-9]/g, ""));
           }
         }
         if (config.Plugins) {
-          qs_push("plugins", "1");
+          qsAdd("plugins", "1");
         }
         if (config.MaxMessages != TwitchClient.DEFAULT_MAX_MESSAGES) {
-          qs_push("max", "" + config.MaxMessages);
+          qsAdd("max", "" + config.MaxMessages);
         }
         if (tokens[tokens.length - 1] === "text") {
           url += "?" + qs.join("&");
@@ -965,7 +962,7 @@ function handle_command(value, client) {
 }
 
 /* Populate and show the username context window */
-function show_context_window(client, cw, line) {
+function showContextWindow(client, cw, line) {
   var $cw = $(cw);
   var $l = $(line);
   $(cw).html(""); /* Clear everything from the last time */
@@ -1129,7 +1126,7 @@ function show_context_window(client, cw, line) {
 }
 
 /* Set or unset transparency */
-function update_transparency(transparent) {
+function updateTransparency(transparent) {
   var props = [];
   try {
     var ss = Util.CSS.GetSheet("main.css");
@@ -1264,20 +1261,20 @@ function client_main(layout) {
 
   /*
   let config_obj = new ConfigStore(
-    get_config_key(),
+    getConfigKey(),
     ["NoAssets", "NoFFZ", "NoBTTV", "Transparent", "Layout",
      "AutoReconnect", "Debug"]);
   for (let m of $(".module")) {
     let cfg = config_obj.getValue($(m).attr("id"));
     if (cfg) {
-      set_module_settings(m, cfg);
+      setModuleSettings(m, cfg);
     }
   }
   */
 
   /* Obtain configuration, construct client */
   (function _configure_construct_client() {
-    var config = get_config_object();
+    var config = getConfigObject();
     client = new TwitchClient(config);
     Util.DebugLevel = config.Debug;
 
@@ -1296,7 +1293,7 @@ function client_main(layout) {
 
     /* Simulate clicking cbTransparent if config.Transparent is set */
     if (config.Transparent) {
-      update_transparency(true);
+      updateTransparency(true);
     }
 
     /* Set the text size if given */
@@ -1319,7 +1316,7 @@ function client_main(layout) {
 
     /* After all that, sync the final settings up with the html */
     $(".module").each(function () {
-      set_module_settings(this, config[$(this).attr("id")]);
+      setModuleSettings(this, config[$(this).attr("id")]);
     });
 
     /* Set values we'll want to use later */
@@ -1379,7 +1376,7 @@ function client_main(layout) {
     var isDown = e.keyCode === Util.Key.DOWN;
     if (e.keyCode == Util.Key.RETURN) {
       if (e.target.value.trim().length > 0) {
-        if (!handle_command(e.target.value, client)) {
+        if (!handleCommand(e.target.value, client)) {
           client.SendMessageToAll(e.target.value);
         }
         client.AddHistory(e.target.value);
@@ -1411,17 +1408,17 @@ function client_main(layout) {
   /* Pressing enter while on the settings box */
   $("#settings").keyup(function (e) {
     if (e.keyCode == Util.Key.RETURN) {
-      update_module_config();
-      $("#settings_button").click();
+      updateModuleConfig();
+      $("#btnSettings").click();
     }
   });
 
   /* Clicking the settings button */
-  $("#settings_button").click(function () {
+  $("#btnSettings").click(function () {
     if ($("#settings").is(":visible")) {
       $("#settings").fadeOut();
     } else {
-      var config = get_config_object();
+      var config = getConfigObject();
       $("#txtChannel").val(config.Channels.join(","));
       $("#txtNick").val(config.Name ? config.Name : AUTOGEN_VALUE);
       if (config.Pass && config.Pass.length > 0) {
@@ -1435,15 +1432,14 @@ function client_main(layout) {
 
   /* Clicking on a "Clear" link */
   $(".clear-chat-link").click(function () {
-    var id = $(this).parent().parent().parent().attr("id");
-    $("#" + id + " .content").find(".line-wrapper").remove();
+    $("#" + $(this).attr("data-for") + " .content").find(".line-wrapper").remove();
   });
 
   /* Pressing enter on the "Channels" text box */
   $("#txtChannel").keyup(function (e) {
     if (e.keyCode == Util.Key.RETURN) {
-      set_channels(client, $(this).val().split(","));
-      var cfg = get_config_object();
+      setChannels(client, $(this).val().split(","));
+      var cfg = getConfigObject();
       cfg.Channels = client.GetJoinedChannels();
       Util.SetWebStorage(cfg);
     }
@@ -1451,15 +1447,15 @@ function client_main(layout) {
 
   /* Leaving the "Channels" text box */
   $("#txtChannel").blur(function () /*e*/{
-    set_channels(client, $(this).val().split(","));
-    var cfg = get_config_object();
+    setChannels(client, $(this).val().split(","));
+    var cfg = getConfigObject();
     cfg.Channels = client.GetJoinedChannels();
     Util.SetWebStorage(cfg);
   });
 
   /* Changing the "Scrollbars" checkbox */
   $("#cbScroll").change(function () {
-    var cfg = get_config_object();
+    var cfg = getConfigObject();
     cfg.Scroll = $(this).is(":checked");
     Util.SetWebStorage(cfg);
     if (cfg.Scroll) {
@@ -1471,7 +1467,7 @@ function client_main(layout) {
 
   /* Changing the "stream is transparent" checkbox */
   $("#cbTransparent").change(function () {
-    return update_transparency($(this).is(":checked"));
+    return updateTransparency($(this).is(":checked"));
   });
 
   /* Changing the value for "background image" */
@@ -1510,7 +1506,7 @@ function client_main(layout) {
     var $tb = $(this).parent().children("input.name");
     if ($settings.is(":visible")) {
       /* Update module configurations on close */
-      update_module_config();
+      updateModuleConfig();
       $tb.hide();
       $lbl.html($tb.val()).show();
     } else {
@@ -1526,7 +1522,7 @@ function client_main(layout) {
       var $settings = $(this).parent().children(".settings");
       var $lbl = $(this).parent().children("label.name");
       var $tb = $(this).parent().children("input.name");
-      update_module_config();
+      updateModuleConfig();
       $tb.hide();
       $lbl.html($tb.val()).show();
       $settings.fadeToggle();
@@ -1545,7 +1541,7 @@ function client_main(layout) {
         var $li = $("<li><label>" + cb + val + " " + v + "</label></li>");
         $cli.before($li);
         $(this).val("");
-        update_module_config();
+        updateModuleConfig();
       }
     }
   });
@@ -1553,13 +1549,13 @@ function client_main(layout) {
   /* Clicking anywhere else on the document: reconnect, username context window */
   $(document).click(function (e) {
     var $t = $(e.target);
-    var $cw = $("#username_context");
+    var $cw = $("#userContext");
     var $m1s = $("#module1 .settings");
     var $m2s = $("#module2 .settings");
     /* Clicking off of module1 settings: hide it */
     if ($m1s.length > 0 && $m1s.is(":visible")) {
       if (!Util.PointIsOn(e.clientX, e.clientY, $m1s[0]) && !Util.PointIsOn(e.clientX, e.clientY, $("#module1 .header")[0])) {
-        update_module_config();
+        updateModuleConfig();
         var $tb = $m1s.siblings("input.name").hide();
         $m1s.siblings("label.name").html($tb.val()).show();
         $m1s.fadeOut();
@@ -1568,7 +1564,7 @@ function client_main(layout) {
     /* Clicking off of module2 settings: hide it */
     if ($m2s.length > 0 && $m2s.is(":visible")) {
       if (!Util.PointIsOn(e.clientX, e.clientY, $m2s[0]) && !Util.PointIsOn(e.clientX, e.clientY, $("#module2 .header")[0])) {
-        update_module_config();
+        updateModuleConfig();
         var _$tb = $m2s.siblings("input.name").hide();
         $m2s.siblings("label.name").html(_$tb.val()).show();
         $m2s.fadeOut();
@@ -1604,7 +1600,7 @@ function client_main(layout) {
       if ($cw.is(":visible") && $cw.attr("data-user-id") == $l.attr("data-user-id")) {
         $cw.fadeOut();
       } else {
-        show_context_window(client, $cw, $l);
+        showContextWindow(client, $cw, $l);
       }
     } else if ($cw.is(":visible")) {
       /* Clicked somewhere else: close context window */
@@ -1635,7 +1631,7 @@ function client_main(layout) {
       }
       Content.addInfo("Connected " + notes.join(" "));
     }
-    if (get_config_object().Channels.length == 0) {
+    if (getConfigObject().Channels.length == 0) {
       Content.addInfo("No channels configured; type //join &lt;channel&gt; to join one!");
     }
   });
@@ -1650,7 +1646,7 @@ function client_main(layout) {
     } else {
       msg = msg + " (code " + code + ")";
     }
-    if (get_config_object().AutoReconnect) {
+    if (getConfigObject().AutoReconnect) {
       Content.addError(msg);
       client.Connect();
     } else {
@@ -1712,10 +1708,10 @@ function client_main(layout) {
   /* Message received from Twitch */
   client.bind("twitch-message", function _on_twitch_message(e) {
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
-      Content.addHTML("<span class=\"pre\">" + e.repr() + "</span>");
+      Content.addPre(e.repr());
     }
     /* Avoid flooding the DOM with stale chat messages */
-    var max = get_config_object().MaxMessages || 100;
+    var max = getConfigObject().MaxMessages || 100;
     var _iteratorNormalCompletion15 = true;
     var _didIteratorError15 = false;
     var _iteratorError15 = undefined;
@@ -1783,7 +1779,7 @@ function client_main(layout) {
       }
     }
     $(".module").each(function () {
-      if (!should_filter($(this), event)) {
+      if (!shouldFilter($(this), event)) {
         var $w = $("<div class=\"line line-wrapper\"></div>");
         $w.html(client.get("HTMLGen").gen(event));
         var $c = $(this).find(".content");
