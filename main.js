@@ -66,6 +66,7 @@ function FormatLayout(layout) { /* exported FormatLayout */
   return `${k}:${v}`;
 }
 
+/* Given a filename/path and a tree, obtain the path to an asset */
 function GetAssetURL(file, tree) {
   const URI = `${window.location}`;
   const IS_GIT = URI.indexOf('github.io') > -1;
@@ -112,6 +113,7 @@ function GetAssetURL(file, tree) {
   return `${root}/${file}`;
 }
 
+/* Add an asset to be loaded; returns a Promise */
 function AddAsset(src, tree=null, loadcb=null, errcb=null) {
   ASSETS.push({});
   let asset = ASSETS[ASSETS.length - 1];
@@ -176,17 +178,17 @@ function Main(global) { /* exported Main */
   function index_main() {
     Util.LogOnly("Assets loaded; initializing page...");
 
-    /* Parse layout */
-    let layout_raw = Util.ParseQueryString().layout;
-    if (layout_raw === undefined) layout_raw = "double:chat";
-    let layout = ParseLayout(layout_raw);
-
     /* Remove the top-level "Loading" message */
     $("#wrapper #wrapper-loading").remove();
+
+    /* Obtain a layout to use */
+    let layout_raw = Util.ParseQueryString().layout || "double:chat";
+    let layout = ParseLayout(layout_raw);
+
     /* Create the chat input elements */
     let $ChatBox = $(`<textarea id="txtChat"></textarea>`);
-    $ChatBox.attr("placeholder", "Send a message");
-    $ChatBox.attr("hist-index", "-1");
+    $ChatBox.attr("placeholder", "Send a message")
+            .attr("hist-index", "-1");
     let $Chat = $(`<div id="chat"></div>`).append($ChatBox);
 
     let $Column1 = $("#column1");
@@ -200,25 +202,23 @@ function Main(global) { /* exported Main */
             .attr("height", "1.1em");
     $Modules.find('.header .settings input[type="checkbox"]')
             .attr('checked', 'checked');
-    $Modules.find('.header label.name').val('Chat');
-    $Modules.find('.header input.name').attr("value", 'Chat');
+    $Modules.find('.header label.name')
+            .val('Chat');
+    $Modules.find('.header input.name')
+            .attr("value", 'Chat');
 
     if (layout.Cols == "single") {
-      $Column1.removeClass("left");
-      $Column1.addClass("full");
-      $Module1.removeClass("left");
-      $Module1.addClass('full');
+      $Column1.removeClass("left").addClass("full");
+      $Module1.removeClass("left").addClass('full');
       $Column1.show();
       $Column2.remove();
     } else {
       $Columns.show();
     }
 
-    let $ChatModule = null;
     if (layout.Chat) {
+      let $ChatModule = null;
       $ChatModule = layout.Cols == "single" ? $Module1 : $Module2;
-    }
-    if ($ChatModule !== null) {
       $ChatModule.removeClass("no-chat");
       $ChatModule.addClass("has-chat");
       $ChatModule.append($Chat);
@@ -226,7 +226,6 @@ function Main(global) { /* exported Main */
 
     /* Shrink the content for the Tesla */
     if (layout.Tesla) {
-      //$(".module").css("height", "calc(100% - 2em)");
       $(".module .content").css("height", "calc(100% - 2em)");
     }
 
@@ -241,31 +240,49 @@ function Main(global) { /* exported Main */
 
     /* Once rerendering is complete, start up the client */
     $(document).ready(function() {
+      let $c = $("#txtChat");
+      if ($c && $c.length > 0 && !$c.attr("focused")) {
+        $c.attr("focused", "1");
+        $c[0].focus();
+      }
+      Util.LogOnly("Document rendered; setting up TFC...");
       try {
-        Util.LogOnly("Document rendered; setting up TFC...");
         client_main(layout);
-        /* After that, focus on the chat box (if present) */
-        let $c = $("#txtChat");
-        if ($c && $c.length > 0 && !$c.attr("focused")) {
-          $c.attr("focused", "1");
-          $c[0].focus();
-        }
       } catch(e) {
-        alert("client_main error: " + e.toString());
-        alert("Stacktrace: " + e.stack ? e.stack.toString() : "no stack");
+        if (e.name === "ReferenceError") {
+          if ((e.message || "").match(/\bclient_main\b.*(?:not |un)defined\b/)) {
+            alert("FATAL: filtered-chat.js failed to load; client_main is undefined");
+            throw e;
+          }
+        }
+        console.error(e);
+        let msg = "client_main error: " + e.toString();
+        if (e.stack) msg += ";\nstack: " + e.stack.toString();
+        alert(msg);
         throw e;
       }
     });
   }
 
-  /* Add TWAPI assets */
-  loadTWAPI().then((v1) => {
-    console.log("TWAPI loaded:", v1);
-    /* Add top-level assets */
-    loadTFC().then((v2) => {
-      console.log("TFC loaded:", v2);
-      index_main();
+  /* Add TWAPI assets, then TFC assets, and then call index_main */
+  loadTWAPI()
+    .then(() => loadTFC())
+    .then(() => index_main())
+    .catch(function(e) {
+      let msg = "TWAPI/TFC Failure: ";
+      let t = e.target || e.srcElement || e.originalTarget;
+      if (t.attributes && t.attributes.src && t.attributes.src.value) {
+        msg += "while loading " + t.attributes.src.value;
+      } else if (t.outerHTML) {
+        msg += "while loading " + t.outerHTML;
+      } else {
+        msg += "while loading " + t;
+      }
+      console.error(msg, e);
+      if (e.stack) {
+        msg += ": stack: " + e.stack;
+      }
+      alert(msg);
     });
-  });
 }
 
