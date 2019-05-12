@@ -2,24 +2,20 @@
 
 "use strict";
 
-/* NOTE: This script may execute before the page finishes loading. Don't rely
- * on jQuery or any of the other script dependencies being available.
- */
-
-const USE_DIST = !!window.location.search.match(/\busedist\b/);
+const IS_TESLA = !!navigator.userAgent.match(/\bTesla\b/);
+const USE_DIST = !!window.location.search.match(/\busedist\b/) || IS_TESLA;
 const MOD_TFC = 'twitch-filtered-chat';
 const MOD_TWAPI = 'twitch-api';
 var ASSETS = [];
 
 function GetAssetURL(file, tree) {
   const URI = `${window.location}`;
-  const IS_TESLA = !!navigator.userAgent.match(/\bTesla\b/);
   const IS_GIT = URI.indexOf('github.io') > -1;
   const BASE_URI = URI.substr(0, URI.indexOf(MOD_TFC)).replace(/\/$/, '');
   const SELF_URI = URI.replace(/\/index.html(\?.*)?$/, '');
   let root = '';
   if (tree === MOD_TFC) {
-    if (IS_TESLA || USE_DIST) {
+    if (USE_DIST) {
       root = `${SELF_URI}/dist`;
     } else if (IS_GIT) {
       root = SELF_URI;
@@ -27,7 +23,7 @@ function GetAssetURL(file, tree) {
       root = SELF_URI;
     }
   } else if (tree === MOD_TWAPI) {
-    if (IS_TESLA || USE_DIST) {
+    if (USE_DIST) {
       root = `${BASE_URI}/${MOD_TWAPI}/dist`;
     } else if (IS_GIT) {
       root = `${BASE_URI}/${MOD_TWAPI}`;
@@ -41,6 +37,18 @@ function GetAssetURL(file, tree) {
       return `http:${file}`;
     } else if (window.location.protocol === "file:") {
       return `http:${file}`;
+    } else {
+      return `http:${file}`;
+    }
+  } else if (!file.match(/^[\w-]+:/)) {
+    if (window.location.protocol === "https:") {
+      return `https://${file}`;
+    } else if (window.location.protocol === "http:") {
+      return `http://${file}`;
+    } else if (window.location.protocol === "file:") {
+      return `http://${file}`;
+    } else {
+      return `http://${file}`;
     }
   }
   return `${root}/${file}`;
@@ -63,9 +71,9 @@ function AddAsset(src, tree=null, loadcb=null, errcb=null) {
     if (loadcb) { loadcb(asset); }
   }
   asset.script.onerror = function(e) {
-    if (errcb) { errcb(asset, e); }
     console.error("Failed loading", asset, e);
     asset.error = true;
+    if (errcb) { errcb(asset, e); }
   }
   document.head.appendChild(asset.script);
 }
@@ -151,7 +159,7 @@ function onReady(func) {
   }
 }
 
-function asset_error(asset, e) {
+function onAssetError(asset, e) {
   let m = e.toString();
   m = m + "\n";
   m = JSON.stringify(asset);
@@ -163,13 +171,11 @@ function asset_error(asset, e) {
 }
 
 /* Add top-level assets */
-AddAsset("config.js", MOD_TFC, null, asset_error);
-AddAsset("htmlgen.js", MOD_TFC, null, asset_error);
-AddAsset("commands.js", MOD_TFC, null, asset_error);
-AddAsset("filtered-chat.js", MOD_TFC, null, asset_error);
-if (!USE_DIST) {
-  AddAsset("plugins/plugins.js", MOD_TFC, null, asset_error);
-}
+AddAsset("config.js", MOD_TFC, null, onAssetError);
+AddAsset("htmlgen.js", MOD_TFC, null, onAssetError);
+AddAsset("commands.js", MOD_TFC, null, onAssetError);
+AddAsset("filtered-chat.js", MOD_TFC, null, onAssetError);
+if (!USE_DIST) { AddAsset("plugins/plugins.js", MOD_TFC, null, onAssetError); }
 
 /* Called by body.onload */
 function Main(global) { /* exported Main */
@@ -183,10 +189,10 @@ function Main(global) { /* exported Main */
   global.debug_msg = debug_msg;
 
   /* Add TWAPI assets */
-  AddAsset("utility.js", MOD_TWAPI, null, asset_error);
-  AddAsset("twitch-utility.js", MOD_TWAPI, null, asset_error);
-  AddAsset("colors.js", MOD_TWAPI, null, asset_error);
-  AddAsset("client.js", MOD_TWAPI, null, asset_error);
+  AddAsset("utility.js", MOD_TWAPI, null, onAssetError);
+  AddAsset("twitch-utility.js", MOD_TWAPI, null, onAssetError);
+  AddAsset("colors.js", MOD_TWAPI, null, onAssetError);
+  AddAsset("client.js", MOD_TWAPI, null, onAssetError);
 
   /* Populate templates and load the client */
   function index_main() {
@@ -237,7 +243,7 @@ function Main(global) { /* exported Main */
     if ($ChatModule !== null) {
       $ChatModule.removeClass("no-chat");
       $ChatModule.addClass("has-chat");
-      $ChatModule.find(".content").append($Chat);
+      $ChatModule.append($Chat);
     }
 
     /* Shrink the content for the Tesla */

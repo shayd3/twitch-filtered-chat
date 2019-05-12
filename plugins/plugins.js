@@ -46,9 +46,9 @@ class PluginStorageClass {
   get plugins() { return JSON.parse(JSON.stringify(this._plugins)); }
   set_commands_obj(obj) {
     this._chat_commands = obj;
-    for (let [cmd, obj] of Object.entries(this._stored_chat_commands)) {
+    for (let [cmd, cobj] of Object.entries(this._stored_chat_commands)) {
       let cstr = cmd.replace(/^\/\//, "");
-      this._chat_commands.add(cstr, obj.func, obj.desc);
+      this._chat_commands.add(cstr, cobj.func, cobj.desc);
     }
   }
 
@@ -140,7 +140,7 @@ class PluginStorageClass {
             .catch(function(e) { reject(e); });
         }
         catch (e) {
-          add_error(e);
+          Content.addError(e);
         }
       }
     }).bind(this));

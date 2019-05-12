@@ -4,12 +4,13 @@ class TFCChatCommandStore {
   constructor() {
     this._commands = {};
     this._aliases = {};
+    this._help_text = [];
     this.add("help", this.command_help.bind(this),
              "Obtain help for a specific command or all commands");
-    this.add_alias("?", "help");
-    this.add_alias("", "help");
-    this.add_usage("help", null, "Obtain help for all commands");
-    this.add_usage("help", "command", "Obtain the usage information for <command>");
+    this.addAlias("?", "help");
+    this.addAlias("", "help");
+    this.addUsage("help", null, "Obtain help for all commands");
+    this.addUsage("help", "command", "Obtain the usage information for <command>");
   }
 
   add(command, func, desc, ...args) {
@@ -25,11 +26,11 @@ class TFCChatCommandStore {
     }
   }
 
-  add_alias(command, referred_command) {
+  addAlias(command, referred_command) {
     this._aliases[command] = referred_command;
   }
 
-  add_usage(command, argstr, usagestr, opts=null) {
+  addUsage(command, argstr, usagestr, opts=null) {
     if (this.has_command(command, true)) {
       let c = this.get_command(command);
       if (!c.usage) c.usage = [];
@@ -37,6 +38,19 @@ class TFCChatCommandStore {
     } else {
       Util.Error(`Invalid command: ${command}`);
     }
+  }
+
+  addHelp(text, opts=null) {
+    let o = opts || {};
+    let t = text;
+    if (!o.literal) t = this.formatArgs(t);
+    if (o.indent) t = "&nbsp;&nbsp;" + t;
+    if (o.command) {
+      let cmd = t.substr(0, t.indexOf(':'));
+      let msg = t.substr(t.indexOf(':')+1);
+      t = this.helpLine(cmd, msg);
+    }
+    this._help_text.push(t);
   }
 
   is_command_str(msg) {
@@ -62,14 +76,14 @@ class TFCChatCommandStore {
           this._do_execute(cmd, tokens, client);
         }
         catch (e) {
-          add_error(`${cmd}: ${e.name}: ${e.message}`);
+          Content.addError(`${cmd}: ${e.name}: ${e.message}`);
           Util.Error(e);
         }
       } else {
-        add_error(`${cmd}: unknown command`);
+        Content.addError(`${cmd}: unknown command`);
       }
     } else {
-      add_error(`${JSON.stringify(msg)}: not a command string`);
+      Content.addError(`${JSON.stringify(msg)}: not a command string`);
     }
   }
 
@@ -77,7 +91,7 @@ class TFCChatCommandStore {
     let c = this.get_command(cmd);
     let obj = Object.create(this);
     obj.format_usage = this.format_usage.bind(this, c);
-    obj.print_usage = this.print_usage.bind(this, c);
+    obj.printUsage = this.printUsage.bind(this, c);
     obj.command = cmd;
     obj.cmd_func = c.func;
     obj.cmd_desc = c.desc;
@@ -102,7 +116,7 @@ class TFCChatCommandStore {
   }
 
   format_help(cmd) {
-    return this.helpline("//" + cmd.name.escape(), cmd.desc.escape());
+    return this.helpLine("//" + cmd.name.escape(), cmd.desc.escape());
   }
 
   format_usage(cmd) {
@@ -112,19 +126,19 @@ class TFCChatCommandStore {
         let fmtArg = (a) => this.arg(a);
         if (entry.opts.literal) fmtArg = (a) => a;
         let argstr = "";
-        let usagestr = this.format_args(entry.usage);
+        let usagestr = this.formatArgs(entry.usage);
         if (Util.IsArray(entry.args)) {
           argstr = entry.args.map((a) => fmtArg(a)).join(" ");
-          usages.push(this.helpline(`//${cmd.name} ${argstr}`, usagestr));
+          usages.push(this.helpLine(`//${cmd.name} ${argstr}`, usagestr));
         } else if (entry.args) {
           argstr = fmtArg(entry.args);
-          usages.push(this.helpline(`//${cmd.name} ${argstr}`, usagestr));
+          usages.push(this.helpLine(`//${cmd.name} ${argstr}`, usagestr));
         } else {
-          usages.push(this.helpline(`//${cmd.name}`, usagestr));
+          usages.push(this.helpLine(`//${cmd.name}`, usagestr));
         }
       }
     } else {
-      usages.push(this.helpline(`//${cmd.name}`, this.format_args(cmd.desc)));
+      usages.push(this.helpLine(`//${cmd.name}`, this.formatArgs(cmd.desc)));
     }
     return usages;
   }
@@ -132,36 +146,21 @@ class TFCChatCommandStore {
   /* Built-in //help command */
   command_help(cmd, tokens/*, client*/) {
     if (tokens.length == 0) {
-      this.print_help("Commands:");
+      this.printHelp("Commands:");
       for (let obj of Object.values(this._commands)) {
-        this.print_help(this.format_help(obj));
+        this.printHelp(this.format_help(obj));
       }
-      try {
-        let lines = [];
-        for (let [n, p] of Object.entries(Plugins.plugins)) {
-          if (p._loaded && p.commands) {
-            for (let plugin_cmd of p.commands) {
-              lines.push(this.helpline(plugin_cmd, "Command added by plugin " + n));
-            }
-          }
-        }
-        if (lines.length > 0) {
-          this.print_help("Plugin commands:");
-          for (let l of lines) {
-            this.print_help(l);
-          }
-        }
-      }
-      catch (e) {
-        if (e.name !== "ReferenceError") throw e;
+      for (let line of this._help_text) {
+        this.printHelp(line);
       }
     } else if (this.has_command(tokens[0])) {
+      this.printHelp("Commands:");
       let obj = this.get_command(tokens[0]);
       for (let line of this.format_usage(obj)) {
-        this.print_help(line);
+        this.printHelp(line);
       }
     } else {
-      add_error(`Invalid command ${tokens[0].escape()}`);
+      Content.addError(`Invalid command ${tokens[0].escape()}`);
     }
   }
 
@@ -170,56 +169,68 @@ class TFCChatCommandStore {
   arg(s) {
     return `<span class="arg">${s.escape()}</span>`;
   }
-  
+
   helpcmd(s) {
     return `<span class="help helpcmd">${s}</span>`;
   }
-  
+
   helpmsg(s) {
     return `<span class="help helpmsg">${s}</span>`;
   }
 
-  helpline(k, v) {
-    return `<div class="helpline">${this.helpcmd(k)}${this.helpmsg(v)}</div>`;
+  helpLine(k, v) {
+    return `<div class="help_line">${this.helpcmd(k)}${this.helpmsg(v)}</div>`;
   }
 
-  format_args(s) {
+  formatArgs(s) {
     return s.replace(/<([^>]+)>/g, (m, g) => '&lt;' + this.arg(g) + '&gt;');
   }
 
   /* Display functions */
 
-  print_helpline(k, v) {
-    add_pre(this.helpline(k, v));
+  printHelpLine(k, v) {
+    Content.addPre(this.helpLine(k, v));
   }
 
-  print_help(s) {
-    add_pre(`<div class="help">${s}</div>`);
+  printHelp(s) {
+    Content.addHTML($(`<div class="help pre">${s}</div>`));
   }
 
-  print_usage(cmdobj) {
-    this.print_help("Usage:");
+  printUsage(cmdobj) {
+    this.printHelp("Usage:");
     for (let line of this.format_usage(cmdobj)) {
-      this.print_help(line);
+      this.printHelp(line);
     }
   }
-
 }
 
 function command_log(cmd, tokens/*, client*/) {
   let logs = Util.GetWebStorage("debug-msg-log") || [];
-  this.print_help(`Debug message log length: ${logs.length}`);
+  this.printHelp(`Debug message log length: ${logs.length}`);
   if (tokens.length > 0) {
     if (tokens[0] == "show") {
       if (tokens.length > 1) {
         let idx = Number.parseInt(tokens[1]);
-        this.print_help(`${idx}: ${JSON.stringify(logs[idx]).escape()}`);
+        this.printHelp(`${idx}: ${JSON.stringify(logs[idx]).escape()}`);
       } else {
         for (let [i, l] of Object.entries(logs)) {
-          this.print_help(`${i}: ${JSON.stringify(l).escape()}`);
+          this.printHelp(`${i}: ${JSON.stringify(l).escape()}`);
         }
       }
-    } else if (tokens[1] == "summary") {
+    } else if (tokens[0] == "export") {
+      let w = window.open(
+        "assets/log-export.html",
+        "TFCLogExportWindow",
+        "menubar=yes,location=yes,resizable=yes,scrollbars=yes,status=yes"
+      );
+      if (w) {
+        w.onload = function() {
+          for (let [i, l] of Object.entries(logs)) {
+            this.addEntry(i, l);
+          }
+        }
+      }
+    } else if (tokens[0] == "summary") {
       let lines = [];
       let line = [];
       for (let l of Object.values(logs)) {
@@ -238,26 +249,27 @@ function command_log(cmd, tokens/*, client*/) {
       if (line.length > 0) lines.push(line);
       let lidx = 0;
       for (let l of Object.values(lines)) {
-        this.print_help(`${lidx}-${lidx+l.length}: ${JSON.stringify(l)}`);
+        this.printHelp(`${lidx}-${lidx+l.length}: ${JSON.stringify(l)}`);
         lidx += l.length;
       }
-    } else if (tokens[1] == "shift") {
+    } else if (tokens[0] == "shift") {
       logs.shift();
-      this.print_help(`New logs length: ${logs.length}`);
+      this.printHelp(`New logs length: ${logs.length}`);
       Util.SetWebStorage(logs, "debug-msg-log");
-    } else if (tokens[1] == "pop") {
+    } else if (tokens[0] == "pop") {
       logs.pop();
-      this.print_help(`New logs length: ${logs.length}`);
+      this.printHelp(`New logs length: ${logs.length}`);
       Util.SetWebStorage(logs, "debug-msg-log");
     } else {
-      this.print_help(`Unknown argument ${tokens[0]}`);
+      this.printHelp(`Unknown argument ${tokens[0]}`);
     }
   } else {
-    this.print_help(`Use //log summary to view a summary`);
-    this.print_help(`Use //log show to view them all`);
-    this.print_help(this.format_args(`Use //log show <N> to show item <N>`));
-    this.print_help(`Use //log shift to remove one entry from the start`);
-    this.print_help(`Use //log pop to remove one entry from the end`);
+    this.printHelp(`Use //log summary to view a summary`);
+    this.printHelp(`Use //log show to view them all`);
+    this.printHelp(this.formatArgs(`Use //log show <N> to show item <N>`));
+    this.printHelp(`Use //log shift to remove one entry from the start`);
+    this.printHelp(`Use //log pop to remove one entry from the end`);
+    this.printHelp(`Use //log export to open a new window with the logged items`);
   }
 }
 
@@ -269,7 +281,7 @@ function command_clear(cmd, tokens/*, client*/) {
   } else if (tokens[0] == "module2") {
     $("#module2").find(".line-wrapper").remove();
   } else {
-    this.print_usage();
+    this.printUsage();
   }
 }
 
@@ -277,7 +289,7 @@ function command_join(cmd, tokens, client) {
   if (tokens.length > 0) {
     client.JoinChannel(tokens[0]);
   } else {
-    this.print_usage();
+    this.printUsage();
   }
 }
 
@@ -285,7 +297,7 @@ function command_part(cmd, tokens, client) {
   if (tokens.length > 0) {
     client.LeaveChannel(tokens[0]);
   } else {
-    this.print_usage();
+    this.printUsage();
   }
 }
 
@@ -306,7 +318,7 @@ function command_badges(cmd, tokens, client) {
       all_badges.push(`<img src="${url}" ${attr} alt="${bname}" />`);
     }
   }
-  add_notice(all_badges.join(''));
+  Content.addNotice(all_badges.join(''));
 }
 
 function command_plugins(/*cmd, tokens, client*/) {
@@ -314,48 +326,116 @@ function command_plugins(/*cmd, tokens, client*/) {
     for (let [n, p] of Object.entries(Plugins.plugins)) {
       let msg = `${n}: ${p.file} @ ${p.order}`;
       if (p._error) {
-        add_error(`${msg}: Failed: ${JSON.stringify(p._error_obj)}`);
+        Content.addError(`${msg}: Failed: ${JSON.stringify(p._error_obj)}`);
       } else if (p._loaded) {
         msg = `${msg}: Loaded`;
         if (p.commands) {
           msg = `${msg}: Commands: ${p.commands.join(" ")}`;
         }
-        add_pre(msg);
+        Content.addPre(msg);
       }
     }
   }
   catch (e) {
     if (e.name === "ReferenceError") {
-      add_error("Plugin information unavailable");
+      Content.addError("Plugin information unavailable");
     } else {
       throw e;
     }
   }
 }
 
+function command_client(cmd, tokens, client) {
+  if (tokens.length === 0 || tokens[0] == "status") {
+    this.printHelp("Client information:");
+    let cstatus = client.ConnectionStatus();
+    this.printHelpLine("Socket:", cstatus.open ? "Open" : "Closed");
+    this.printHelpLine("Status:", cstatus.connected ? "Connected" : "Not connected");
+    this.printHelpLine("Identified:", cstatus.identified ? "Yes" : "No");
+    this.printHelpLine("Authenticated:", cstatus.authed ? "Yes" : "No");
+    this.printHelpLine("Name:", client.GetName());
+    this.printHelpLine("FFZ:", client.FFZEnabled() ? "Enabled" : "Disabled");
+    this.printHelpLine("BTTV:", client.BTTVEnabled() ? "Enabled" : "Disabled");
+    let channels = client.GetJoinedChannels();
+    let us = client.SelfUserState() || {};
+    if (channels && channels.length > 0) {
+      this.printHelp(`&gt; Channels connected to: ${channels.length}`);
+      for (let c of channels) {
+        let ci = client.GetChannelInfo(c);
+        let nusers = (ci && ci.users ? ci.users.length : 0);
+        let rooms = ci.rooms || {};
+        let status = (ci.online ? "" : "not ") + "online";
+        this.printHelpLine(c, "Status: " + status + `; id=${ci.id}`);
+        this.printHelpLine("&nbsp;", `Active users: ${nusers}`);
+        this.printHelpLine("&nbsp;", `Rooms: ${Object.keys(rooms)}`);
+        let ui = us[c];
+        this.printHelp("User information for " + c + ":");
+        if (ui.color) { this.printHelpLine("Color", ui.color); }
+        if (ui.badges) { this.printHelpLine("Badges", JSON.stringify(ui.badges)); }
+        this.printHelpLine("Name", `${ui["display-name"]}`);
+      }
+    }
+    this.printHelpLine("User ID", `${us.userid}`);
+  } else {
+    this.printUsage();
+  }
+}
+
 var ChatCommands = new TFCChatCommandStore();
 
-ChatCommands.add("log", command_log, "Display logged messages");
-ChatCommands.add_alias("logs", "log");
-ChatCommands.add_usage("log", null, "Obtain all logged messages");
-ChatCommands.add_usage("log", "number", "Display the message numbered <number>");
-ChatCommands.add_usage("log", "summary", "Display a summary of the logged messages", {literal: true});
-ChatCommands.add_usage("log", "shift", "Remove the first logged message", {literal: true});
-ChatCommands.add_usage("log", "pop", "Remove the last logged message", {literal: true});
+ChatCommands.add("log", command_log,
+                 "Display logged messages");
+ChatCommands.addAlias("logs", "log");
+ChatCommands.addUsage("log", null,
+                       "Obtain all logged messages");
+ChatCommands.addUsage("log", "number",
+                      "Display the message numbered <number>");
+ChatCommands.addUsage("log", "summary",
+                      "Display a summary of the logged messages",
+                      {literal: true});
+ChatCommands.addUsage("log", "shift",
+                      "Remove the first logged message",
+                      {literal: true});
+ChatCommands.addUsage("log", "pop",
+                      "Remove the last logged message",
+                      {literal: true});
+ChatCommands.addUsage("log", "export",
+                      "Open a new window with all of the logged items",
+                      {literal: true});
 
-ChatCommands.add("clear", command_clear, "Clears all text from all visible modules");
-ChatCommands.add_usage("clear", null, "Clears all text from all visible modules");
-ChatCommands.add_usage("clear", "module1", "Clears all text from module1", {literal: true});
-ChatCommands.add_usage("clear", "module2", "Clears all text from module2", {literal: true});
+ChatCommands.add("clear", command_clear,
+                 "Clears all text from all visible modules");
+ChatCommands.addUsage("clear", null,
+                      "Clears all text from all visible modules");
+ChatCommands.addUsage("clear", "module1",
+                      "Clears all text from module1",
+                      {literal: true});
+ChatCommands.addUsage("clear", "module2",
+                      "Clears all text from module2",
+                      {literal: true});
 
-ChatCommands.add("join", command_join, "Join a channel");
-ChatCommands.add_usage("join", "channel", "Connect to <channel>; leading # is optional");
+ChatCommands.add("join", command_join,
+                 "Join a channel");
+ChatCommands.addUsage("join", "channel",
+                      "Connect to <channel>; leading # is optional");
 
-ChatCommands.add("part", command_part, "Leave a channel");
-ChatCommands.add_alias("leave", "part");
-ChatCommands.add_usage("part", "channel", "Disconnect from <channel>; leading # is optional");
+ChatCommands.add("part", command_part,
+                 "Leave a channel");
+ChatCommands.addAlias("leave", "part");
+ChatCommands.addUsage("part", "channel",
+                      "Disconnect from <channel>; leading # is optional");
 
-ChatCommands.add("badges", command_badges, "Display all known badges");
+ChatCommands.add("badges", command_badges,
+                 "Display all known badges");
 
-ChatCommands.add("plugins", command_plugins, "Display plugin information, if plugins are enabled");
+ChatCommands.add("plugins", command_plugins,
+                 "Display plugin information, if plugins are enabled");
+
+ChatCommands.add("client", command_client,
+                 "Display numerous things about the client; use //help client for info");
+ChatCommands.addUsage("client", null,
+                      "Show general information about the client");
+ChatCommands.addUsage("client", "status",
+                      "Show current connection information",
+                      {literal: true});
 

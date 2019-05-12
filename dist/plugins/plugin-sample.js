@@ -9,20 +9,20 @@ var SamplePlugin = function () {
     _classCallCheck(this, SamplePlugin);
 
     this._debug = client.GetDebug();
-    Plugins.AddChatCommand("//sample-plugin", this, this._say_hi.bind(this));
+    Plugins.AddChatCommand("//sample-plugin", this, this._say_hi.bind(this), "Say hello");
     Plugins.AddChatCommand("//sample-plugin-2", this, function (cmd, tokens /*, client*/) {
-      add_pre("SamplePlugin was here!");
+      Content.addPre("SamplePlugin was here!");
       if (tokens.length > 0) {
-        add_pre("You entered " + tokens.length + " tokens: " + tokens.join(" ").escape());
+        Content.addPre("You entered " + tokens.length + " tokens: " + tokens.join(" ").escape());
       }
-    });
+    }, "Example showing arguments");
     resolve(this);
   }
 
   _createClass(SamplePlugin, [{
     key: "_say_hi",
     value: function _say_hi() {
-      add_pre("Hi! from " + JSON.stringify(this));
+      Content.addPre("Hi! from " + this.name + ": " + JSON.stringify(this));
     }
   }, {
     key: "toString",

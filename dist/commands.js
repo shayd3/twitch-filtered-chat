@@ -16,11 +16,12 @@ var TFCChatCommandStore = function () {
 
     this._commands = {};
     this._aliases = {};
+    this._help_text = [];
     this.add("help", this.command_help.bind(this), "Obtain help for a specific command or all commands");
-    this.add_alias("?", "help");
-    this.add_alias("", "help");
-    this.add_usage("help", null, "Obtain help for all commands");
-    this.add_usage("help", "command", "Obtain the usage information for <command>");
+    this.addAlias("?", "help");
+    this.addAlias("", "help");
+    this.addUsage("help", null, "Obtain help for all commands");
+    this.addUsage("help", "command", "Obtain the usage information for <command>");
   }
 
   _createClass(TFCChatCommandStore, [{
@@ -43,13 +44,13 @@ var TFCChatCommandStore = function () {
       }
     }
   }, {
-    key: "add_alias",
-    value: function add_alias(command, referred_command) {
+    key: "addAlias",
+    value: function addAlias(command, referred_command) {
       this._aliases[command] = referred_command;
     }
   }, {
-    key: "add_usage",
-    value: function add_usage(command, argstr, usagestr) {
+    key: "addUsage",
+    value: function addUsage(command, argstr, usagestr) {
       var opts = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
 
       if (this.has_command(command, true)) {
@@ -59,6 +60,22 @@ var TFCChatCommandStore = function () {
       } else {
         Util.Error("Invalid command: " + command);
       }
+    }
+  }, {
+    key: "addHelp",
+    value: function addHelp(text) {
+      var opts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+      var o = opts || {};
+      var t = text;
+      if (!o.literal) t = this.formatArgs(t);
+      if (o.indent) t = "&nbsp;&nbsp;" + t;
+      if (o.command) {
+        var cmd = t.substr(0, t.indexOf(':'));
+        var msg = t.substr(t.indexOf(':') + 1);
+        t = this.helpLine(cmd, msg);
+      }
+      this._help_text.push(t);
     }
   }, {
     key: "is_command_str",
@@ -88,14 +105,14 @@ var TFCChatCommandStore = function () {
           try {
             this._do_execute(cmd, tokens, client);
           } catch (e) {
-            add_error(cmd + ": " + e.name + ": " + e.message);
+            Content.addError(cmd + ": " + e.name + ": " + e.message);
             Util.Error(e);
           }
         } else {
-          add_error(cmd + ": unknown command");
+          Content.addError(cmd + ": unknown command");
         }
       } else {
-        add_error(JSON.stringify(msg) + ": not a command string");
+        Content.addError(JSON.stringify(msg) + ": not a command string");
       }
     }
   }, {
@@ -104,7 +121,7 @@ var TFCChatCommandStore = function () {
       var c = this.get_command(cmd);
       var obj = Object.create(this);
       obj.format_usage = this.format_usage.bind(this, c);
-      obj.print_usage = this.print_usage.bind(this, c);
+      obj.printUsage = this.printUsage.bind(this, c);
       obj.command = cmd;
       obj.cmd_func = c.func;
       obj.cmd_desc = c.desc;
@@ -134,7 +151,7 @@ var TFCChatCommandStore = function () {
   }, {
     key: "format_help",
     value: function format_help(cmd) {
-      return this.helpline("//" + cmd.name.escape(), cmd.desc.escape());
+      return this.helpLine("//" + cmd.name.escape(), cmd.desc.escape());
     }
   }, {
     key: "format_usage",
@@ -151,17 +168,17 @@ var TFCChatCommandStore = function () {
             return a;
           };
           var argstr = "";
-          var usagestr = _this.format_args(entry.usage);
+          var usagestr = _this.formatArgs(entry.usage);
           if (Util.IsArray(entry.args)) {
             argstr = entry.args.map(function (a) {
               return fmtArg(a);
             }).join(" ");
-            usages.push(_this.helpline("//" + cmd.name + " " + argstr, usagestr));
+            usages.push(_this.helpLine("//" + cmd.name + " " + argstr, usagestr));
           } else if (entry.args) {
             argstr = fmtArg(entry.args);
-            usages.push(_this.helpline("//" + cmd.name + " " + argstr, usagestr));
+            usages.push(_this.helpLine("//" + cmd.name + " " + argstr, usagestr));
           } else {
-            usages.push(_this.helpline("//" + cmd.name, usagestr));
+            usages.push(_this.helpLine("//" + cmd.name, usagestr));
           }
         };
 
@@ -190,7 +207,7 @@ var TFCChatCommandStore = function () {
           }
         }
       } else {
-        usages.push(this.helpline("//" + cmd.name, this.format_args(cmd.desc)));
+        usages.push(this.helpLine("//" + cmd.name, this.formatArgs(cmd.desc)));
       }
       return usages;
     }
@@ -201,7 +218,7 @@ var TFCChatCommandStore = function () {
     key: "command_help",
     value: function command_help(cmd, tokens /*, client*/) {
       if (tokens.length == 0) {
-        this.print_help("Commands:");
+        this.printHelp("Commands:");
         var _iteratorNormalCompletion2 = true;
         var _didIteratorError2 = false;
         var _iteratorError2 = undefined;
@@ -210,7 +227,7 @@ var TFCChatCommandStore = function () {
           for (var _iterator2 = Object.values(this._commands)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
             var obj = _step2.value;
 
-            this.print_help(this.format_help(obj));
+            this.printHelp(this.format_help(obj));
           }
         } catch (err) {
           _didIteratorError2 = true;
@@ -227,121 +244,59 @@ var TFCChatCommandStore = function () {
           }
         }
 
-        try {
-          var lines = [];
-          var _iteratorNormalCompletion3 = true;
-          var _didIteratorError3 = false;
-          var _iteratorError3 = undefined;
-
-          try {
-            for (var _iterator3 = Object.entries(Plugins.plugins)[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-              var _ref = _step3.value;
-
-              var _ref2 = _slicedToArray(_ref, 2);
-
-              var n = _ref2[0];
-              var p = _ref2[1];
-
-              if (p._loaded && p.commands) {
-                var _iteratorNormalCompletion5 = true;
-                var _didIteratorError5 = false;
-                var _iteratorError5 = undefined;
-
-                try {
-                  for (var _iterator5 = p.commands[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-                    var plugin_cmd = _step5.value;
-
-                    lines.push(this.helpline(plugin_cmd, "Command added by plugin " + n));
-                  }
-                } catch (err) {
-                  _didIteratorError5 = true;
-                  _iteratorError5 = err;
-                } finally {
-                  try {
-                    if (!_iteratorNormalCompletion5 && _iterator5.return) {
-                      _iterator5.return();
-                    }
-                  } finally {
-                    if (_didIteratorError5) {
-                      throw _iteratorError5;
-                    }
-                  }
-                }
-              }
-            }
-          } catch (err) {
-            _didIteratorError3 = true;
-            _iteratorError3 = err;
-          } finally {
-            try {
-              if (!_iteratorNormalCompletion3 && _iterator3.return) {
-                _iterator3.return();
-              }
-            } finally {
-              if (_didIteratorError3) {
-                throw _iteratorError3;
-              }
-            }
-          }
-
-          if (lines.length > 0) {
-            this.print_help("Plugin commands:");
-            var _iteratorNormalCompletion4 = true;
-            var _didIteratorError4 = false;
-            var _iteratorError4 = undefined;
-
-            try {
-              for (var _iterator4 = lines[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-                var l = _step4.value;
-
-                this.print_help(l);
-              }
-            } catch (err) {
-              _didIteratorError4 = true;
-              _iteratorError4 = err;
-            } finally {
-              try {
-                if (!_iteratorNormalCompletion4 && _iterator4.return) {
-                  _iterator4.return();
-                }
-              } finally {
-                if (_didIteratorError4) {
-                  throw _iteratorError4;
-                }
-              }
-            }
-          }
-        } catch (e) {
-          if (e.name !== "ReferenceError") throw e;
-        }
-      } else if (this.has_command(tokens[0])) {
-        var _obj = this.get_command(tokens[0]);
-        var _iteratorNormalCompletion6 = true;
-        var _didIteratorError6 = false;
-        var _iteratorError6 = undefined;
+        var _iteratorNormalCompletion3 = true;
+        var _didIteratorError3 = false;
+        var _iteratorError3 = undefined;
 
         try {
-          for (var _iterator6 = this.format_usage(_obj)[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-            var line = _step6.value;
+          for (var _iterator3 = this._help_text[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+            var line = _step3.value;
 
-            this.print_help(line);
+            this.printHelp(line);
           }
         } catch (err) {
-          _didIteratorError6 = true;
-          _iteratorError6 = err;
+          _didIteratorError3 = true;
+          _iteratorError3 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion6 && _iterator6.return) {
-              _iterator6.return();
+            if (!_iteratorNormalCompletion3 && _iterator3.return) {
+              _iterator3.return();
             }
           } finally {
-            if (_didIteratorError6) {
-              throw _iteratorError6;
+            if (_didIteratorError3) {
+              throw _iteratorError3;
+            }
+          }
+        }
+      } else if (this.has_command(tokens[0])) {
+        this.printHelp("Commands:");
+        var _obj = this.get_command(tokens[0]);
+        var _iteratorNormalCompletion4 = true;
+        var _didIteratorError4 = false;
+        var _iteratorError4 = undefined;
+
+        try {
+          for (var _iterator4 = this.format_usage(_obj)[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+            var _line = _step4.value;
+
+            this.printHelp(_line);
+          }
+        } catch (err) {
+          _didIteratorError4 = true;
+          _iteratorError4 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion4 && _iterator4.return) {
+              _iterator4.return();
+            }
+          } finally {
+            if (_didIteratorError4) {
+              throw _iteratorError4;
             }
           }
         }
       } else {
-        add_error("Invalid command " + tokens[0].escape());
+        Content.addError("Invalid command " + tokens[0].escape());
       }
     }
 
@@ -363,13 +318,13 @@ var TFCChatCommandStore = function () {
       return "<span class=\"help helpmsg\">" + s + "</span>";
     }
   }, {
-    key: "helpline",
-    value: function helpline(k, v) {
-      return "<div class=\"helpline\">" + this.helpcmd(k) + this.helpmsg(v) + "</div>";
+    key: "helpLine",
+    value: function helpLine(k, v) {
+      return "<div class=\"help_line\">" + this.helpcmd(k) + this.helpmsg(v) + "</div>";
     }
   }, {
-    key: "format_args",
-    value: function format_args(s) {
+    key: "formatArgs",
+    value: function formatArgs(s) {
       var _this2 = this;
 
       return s.replace(/<([^>]+)>/g, function (m, g) {
@@ -380,40 +335,40 @@ var TFCChatCommandStore = function () {
     /* Display functions */
 
   }, {
-    key: "print_helpline",
-    value: function print_helpline(k, v) {
-      add_pre(this.helpline(k, v));
+    key: "printHelpLine",
+    value: function printHelpLine(k, v) {
+      Content.addPre(this.helpLine(k, v));
     }
   }, {
-    key: "print_help",
-    value: function print_help(s) {
-      add_pre("<div class=\"help\">" + s + "</div>");
+    key: "printHelp",
+    value: function printHelp(s) {
+      Content.addHTML($("<div class=\"help pre\">" + s + "</div>"));
     }
   }, {
-    key: "print_usage",
-    value: function print_usage(cmdobj) {
-      this.print_help("Usage:");
-      var _iteratorNormalCompletion7 = true;
-      var _didIteratorError7 = false;
-      var _iteratorError7 = undefined;
+    key: "printUsage",
+    value: function printUsage(cmdobj) {
+      this.printHelp("Usage:");
+      var _iteratorNormalCompletion5 = true;
+      var _didIteratorError5 = false;
+      var _iteratorError5 = undefined;
 
       try {
-        for (var _iterator7 = this.format_usage(cmdobj)[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-          var line = _step7.value;
+        for (var _iterator5 = this.format_usage(cmdobj)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+          var line = _step5.value;
 
-          this.print_help(line);
+          this.printHelp(line);
         }
       } catch (err) {
-        _didIteratorError7 = true;
-        _iteratorError7 = err;
+        _didIteratorError5 = true;
+        _iteratorError5 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion7 && _iterator7.return) {
-            _iterator7.return();
+          if (!_iteratorNormalCompletion5 && _iterator5.return) {
+            _iterator5.return();
           }
         } finally {
-          if (_didIteratorError7) {
-            throw _iteratorError7;
+          if (_didIteratorError5) {
+            throw _iteratorError5;
           }
         }
       }
@@ -425,65 +380,128 @@ var TFCChatCommandStore = function () {
 
 function command_log(cmd, tokens /*, client*/) {
   var logs = Util.GetWebStorage("debug-msg-log") || [];
-  this.print_help("Debug message log length: " + logs.length);
+  this.printHelp("Debug message log length: " + logs.length);
   if (tokens.length > 0) {
     if (tokens[0] == "show") {
       if (tokens.length > 1) {
         var idx = Number.parseInt(tokens[1]);
-        this.print_help(idx + ": " + JSON.stringify(logs[idx]).escape());
+        this.printHelp(idx + ": " + JSON.stringify(logs[idx]).escape());
       } else {
-        var _iteratorNormalCompletion8 = true;
-        var _didIteratorError8 = false;
-        var _iteratorError8 = undefined;
+        var _iteratorNormalCompletion6 = true;
+        var _didIteratorError6 = false;
+        var _iteratorError6 = undefined;
 
         try {
-          for (var _iterator8 = Object.entries(logs)[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-            var _ref3 = _step8.value;
+          for (var _iterator6 = Object.entries(logs)[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+            var _ref = _step6.value;
 
-            var _ref4 = _slicedToArray(_ref3, 2);
+            var _ref2 = _slicedToArray(_ref, 2);
 
-            var i = _ref4[0];
-            var l = _ref4[1];
+            var i = _ref2[0];
+            var l = _ref2[1];
 
-            this.print_help(i + ": " + JSON.stringify(l).escape());
+            this.printHelp(i + ": " + JSON.stringify(l).escape());
           }
         } catch (err) {
-          _didIteratorError8 = true;
-          _iteratorError8 = err;
+          _didIteratorError6 = true;
+          _iteratorError6 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion8 && _iterator8.return) {
-              _iterator8.return();
+            if (!_iteratorNormalCompletion6 && _iterator6.return) {
+              _iterator6.return();
             }
           } finally {
-            if (_didIteratorError8) {
-              throw _iteratorError8;
+            if (_didIteratorError6) {
+              throw _iteratorError6;
             }
           }
         }
       }
-    } else if (tokens[1] == "summary") {
+    } else if (tokens[0] == "export") {
+      var w = window.open("assets/log-export.html", "TFCLogExportWindow", "menubar=yes,location=yes,resizable=yes,scrollbars=yes,status=yes");
+      if (w) {
+        w.onload = function () {
+          var _iteratorNormalCompletion7 = true;
+          var _didIteratorError7 = false;
+          var _iteratorError7 = undefined;
+
+          try {
+            for (var _iterator7 = Object.entries(logs)[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+              var _ref3 = _step7.value;
+
+              var _ref4 = _slicedToArray(_ref3, 2);
+
+              var _i = _ref4[0];
+              var _l = _ref4[1];
+
+              this.addEntry(_i, _l);
+            }
+          } catch (err) {
+            _didIteratorError7 = true;
+            _iteratorError7 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion7 && _iterator7.return) {
+                _iterator7.return();
+              }
+            } finally {
+              if (_didIteratorError7) {
+                throw _iteratorError7;
+              }
+            }
+          }
+        };
+      }
+    } else if (tokens[0] == "summary") {
       var lines = [];
       var line = [];
-      var _iteratorNormalCompletion9 = true;
-      var _didIteratorError9 = false;
-      var _iteratorError9 = undefined;
+      var _iteratorNormalCompletion8 = true;
+      var _didIteratorError8 = false;
+      var _iteratorError8 = undefined;
 
       try {
-        for (var _iterator9 = Object.values(logs)[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-          var _l = _step9.value;
+        for (var _iterator8 = Object.values(logs)[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+          var _l2 = _step8.value;
 
           var desc = '';
-          if (_l._cmd) {
-            desc = _l._cmd;
+          if (_l2._cmd) {
+            desc = _l2._cmd;
           } else {
-            desc = JSON.stringify(_l).substr(0, 10);
+            desc = JSON.stringify(_l2).substr(0, 10);
           }
           line.push(desc);
           if (line.length >= 10) {
             lines.push(line);
             line = [];
           }
+        }
+      } catch (err) {
+        _didIteratorError8 = true;
+        _iteratorError8 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion8 && _iterator8.return) {
+            _iterator8.return();
+          }
+        } finally {
+          if (_didIteratorError8) {
+            throw _iteratorError8;
+          }
+        }
+      }
+
+      if (line.length > 0) lines.push(line);
+      var lidx = 0;
+      var _iteratorNormalCompletion9 = true;
+      var _didIteratorError9 = false;
+      var _iteratorError9 = undefined;
+
+      try {
+        for (var _iterator9 = Object.values(lines)[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+          var _l3 = _step9.value;
+
+          this.printHelp(lidx + "-" + (lidx + _l3.length) + ": " + JSON.stringify(_l3));
+          lidx += _l3.length;
         }
       } catch (err) {
         _didIteratorError9 = true;
@@ -499,51 +517,24 @@ function command_log(cmd, tokens /*, client*/) {
           }
         }
       }
-
-      if (line.length > 0) lines.push(line);
-      var lidx = 0;
-      var _iteratorNormalCompletion10 = true;
-      var _didIteratorError10 = false;
-      var _iteratorError10 = undefined;
-
-      try {
-        for (var _iterator10 = Object.values(lines)[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-          var _l2 = _step10.value;
-
-          this.print_help(lidx + "-" + (lidx + _l2.length) + ": " + JSON.stringify(_l2));
-          lidx += _l2.length;
-        }
-      } catch (err) {
-        _didIteratorError10 = true;
-        _iteratorError10 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion10 && _iterator10.return) {
-            _iterator10.return();
-          }
-        } finally {
-          if (_didIteratorError10) {
-            throw _iteratorError10;
-          }
-        }
-      }
-    } else if (tokens[1] == "shift") {
+    } else if (tokens[0] == "shift") {
       logs.shift();
-      this.print_help("New logs length: " + logs.length);
+      this.printHelp("New logs length: " + logs.length);
       Util.SetWebStorage(logs, "debug-msg-log");
-    } else if (tokens[1] == "pop") {
+    } else if (tokens[0] == "pop") {
       logs.pop();
-      this.print_help("New logs length: " + logs.length);
+      this.printHelp("New logs length: " + logs.length);
       Util.SetWebStorage(logs, "debug-msg-log");
     } else {
-      this.print_help("Unknown argument " + tokens[0]);
+      this.printHelp("Unknown argument " + tokens[0]);
     }
   } else {
-    this.print_help("Use //log summary to view a summary");
-    this.print_help("Use //log show to view them all");
-    this.print_help(this.format_args("Use //log show <N> to show item <N>"));
-    this.print_help("Use //log shift to remove one entry from the start");
-    this.print_help("Use //log pop to remove one entry from the end");
+    this.printHelp("Use //log summary to view a summary");
+    this.printHelp("Use //log show to view them all");
+    this.printHelp(this.formatArgs("Use //log show <N> to show item <N>"));
+    this.printHelp("Use //log shift to remove one entry from the start");
+    this.printHelp("Use //log pop to remove one entry from the end");
+    this.printHelp("Use //log export to open a new window with the logged items");
   }
 }
 
@@ -555,7 +546,7 @@ function command_clear(cmd, tokens /*, client*/) {
   } else if (tokens[0] == "module2") {
     $("#module2").find(".line-wrapper").remove();
   } else {
-    this.print_usage();
+    this.printUsage();
   }
 }
 
@@ -563,7 +554,7 @@ function command_join(cmd, tokens, client) {
   if (tokens.length > 0) {
     client.JoinChannel(tokens[0]);
   } else {
-    this.print_usage();
+    this.printUsage();
   }
 }
 
@@ -571,31 +562,31 @@ function command_part(cmd, tokens, client) {
   if (tokens.length > 0) {
     client.LeaveChannel(tokens[0]);
   } else {
-    this.print_usage();
+    this.printUsage();
   }
 }
 
 function command_badges(cmd, tokens, client) {
   var all_badges = [];
-  var _iteratorNormalCompletion11 = true;
-  var _didIteratorError11 = false;
-  var _iteratorError11 = undefined;
+  var _iteratorNormalCompletion10 = true;
+  var _didIteratorError10 = false;
+  var _iteratorError10 = undefined;
 
   try {
-    for (var _iterator11 = Object.entries(client.GetGlobalBadges())[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-      var _ref5 = _step11.value;
+    for (var _iterator10 = Object.entries(client.GetGlobalBadges())[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+      var _ref5 = _step10.value;
 
       var _ref6 = _slicedToArray(_ref5, 2);
 
       var bname = _ref6[0];
       var badge = _ref6[1];
-      var _iteratorNormalCompletion12 = true;
-      var _didIteratorError12 = false;
-      var _iteratorError12 = undefined;
+      var _iteratorNormalCompletion11 = true;
+      var _didIteratorError11 = false;
+      var _iteratorError11 = undefined;
 
       try {
-        for (var _iterator12 = Object.values(badge.versions)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-          var bdef = _step12.value;
+        for (var _iterator11 = Object.values(badge.versions)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+          var bdef = _step11.value;
 
           var url = bdef.image_url_2x;
           var size = 36;
@@ -610,47 +601,47 @@ function command_badges(cmd, tokens, client) {
           all_badges.push("<img src=\"" + url + "\" " + attr + " alt=\"" + bname + "\" />");
         }
       } catch (err) {
-        _didIteratorError12 = true;
-        _iteratorError12 = err;
+        _didIteratorError11 = true;
+        _iteratorError11 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion12 && _iterator12.return) {
-            _iterator12.return();
+          if (!_iteratorNormalCompletion11 && _iterator11.return) {
+            _iterator11.return();
           }
         } finally {
-          if (_didIteratorError12) {
-            throw _iteratorError12;
+          if (_didIteratorError11) {
+            throw _iteratorError11;
           }
         }
       }
     }
   } catch (err) {
-    _didIteratorError11 = true;
-    _iteratorError11 = err;
+    _didIteratorError10 = true;
+    _iteratorError10 = err;
   } finally {
     try {
-      if (!_iteratorNormalCompletion11 && _iterator11.return) {
-        _iterator11.return();
+      if (!_iteratorNormalCompletion10 && _iterator10.return) {
+        _iterator10.return();
       }
     } finally {
-      if (_didIteratorError11) {
-        throw _iteratorError11;
+      if (_didIteratorError10) {
+        throw _iteratorError10;
       }
     }
   }
 
-  add_notice(all_badges.join(''));
+  Content.addNotice(all_badges.join(''));
 }
 
 function command_plugins() /*cmd, tokens, client*/{
   try {
-    var _iteratorNormalCompletion13 = true;
-    var _didIteratorError13 = false;
-    var _iteratorError13 = undefined;
+    var _iteratorNormalCompletion12 = true;
+    var _didIteratorError12 = false;
+    var _iteratorError12 = undefined;
 
     try {
-      for (var _iterator13 = Object.entries(Plugins.plugins)[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-        var _ref7 = _step13.value;
+      for (var _iterator12 = Object.entries(Plugins.plugins)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+        var _ref7 = _step12.value;
 
         var _ref8 = _slicedToArray(_ref7, 2);
 
@@ -659,60 +650,126 @@ function command_plugins() /*cmd, tokens, client*/{
 
         var msg = n + ": " + p.file + " @ " + p.order;
         if (p._error) {
-          add_error(msg + ": Failed: " + JSON.stringify(p._error_obj));
+          Content.addError(msg + ": Failed: " + JSON.stringify(p._error_obj));
         } else if (p._loaded) {
           msg = msg + ": Loaded";
           if (p.commands) {
             msg = msg + ": Commands: " + p.commands.join(" ");
           }
-          add_pre(msg);
+          Content.addPre(msg);
         }
       }
     } catch (err) {
-      _didIteratorError13 = true;
-      _iteratorError13 = err;
+      _didIteratorError12 = true;
+      _iteratorError12 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion13 && _iterator13.return) {
-          _iterator13.return();
+        if (!_iteratorNormalCompletion12 && _iterator12.return) {
+          _iterator12.return();
         }
       } finally {
-        if (_didIteratorError13) {
-          throw _iteratorError13;
+        if (_didIteratorError12) {
+          throw _iteratorError12;
         }
       }
     }
   } catch (e) {
     if (e.name === "ReferenceError") {
-      add_error("Plugin information unavailable");
+      Content.addError("Plugin information unavailable");
     } else {
       throw e;
     }
   }
 }
 
+function command_client(cmd, tokens, client) {
+  if (tokens.length === 0 || tokens[0] == "status") {
+    this.printHelp("Client information:");
+    var cstatus = client.ConnectionStatus();
+    this.printHelpLine("Socket:", cstatus.open ? "Open" : "Closed");
+    this.printHelpLine("Status:", cstatus.connected ? "Connected" : "Not connected");
+    this.printHelpLine("Identified:", cstatus.identified ? "Yes" : "No");
+    this.printHelpLine("Authenticated:", cstatus.authed ? "Yes" : "No");
+    this.printHelpLine("Name:", client.GetName());
+    this.printHelpLine("FFZ:", client.FFZEnabled() ? "Enabled" : "Disabled");
+    this.printHelpLine("BTTV:", client.BTTVEnabled() ? "Enabled" : "Disabled");
+    var channels = client.GetJoinedChannels();
+    var us = client.SelfUserState() || {};
+    if (channels && channels.length > 0) {
+      this.printHelp("&gt; Channels connected to: " + channels.length);
+      var _iteratorNormalCompletion13 = true;
+      var _didIteratorError13 = false;
+      var _iteratorError13 = undefined;
+
+      try {
+        for (var _iterator13 = channels[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+          var c = _step13.value;
+
+          var ci = client.GetChannelInfo(c);
+          var nusers = ci && ci.users ? ci.users.length : 0;
+          var rooms = ci.rooms || {};
+          var status = (ci.online ? "" : "not ") + "online";
+          this.printHelpLine(c, "Status: " + status + ("; id=" + ci.id));
+          this.printHelpLine("&nbsp;", "Active users: " + nusers);
+          this.printHelpLine("&nbsp;", "Rooms: " + Object.keys(rooms));
+          var ui = us[c];
+          this.printHelp("User information for " + c + ":");
+          if (ui.color) {
+            this.printHelpLine("Color", ui.color);
+          }
+          if (ui.badges) {
+            this.printHelpLine("Badges", JSON.stringify(ui.badges));
+          }
+          this.printHelpLine("Name", "" + ui["display-name"]);
+        }
+      } catch (err) {
+        _didIteratorError13 = true;
+        _iteratorError13 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion13 && _iterator13.return) {
+            _iterator13.return();
+          }
+        } finally {
+          if (_didIteratorError13) {
+            throw _iteratorError13;
+          }
+        }
+      }
+    }
+    this.printHelpLine("User ID", "" + us.userid);
+  } else {
+    this.printUsage();
+  }
+}
+
 var ChatCommands = new TFCChatCommandStore();
 
 ChatCommands.add("log", command_log, "Display logged messages");
-ChatCommands.add_alias("logs", "log");
-ChatCommands.add_usage("log", null, "Obtain all logged messages");
-ChatCommands.add_usage("log", "number", "Display the message numbered <number>");
-ChatCommands.add_usage("log", "summary", "Display a summary of the logged messages", { literal: true });
-ChatCommands.add_usage("log", "shift", "Remove the first logged message", { literal: true });
-ChatCommands.add_usage("log", "pop", "Remove the last logged message", { literal: true });
+ChatCommands.addAlias("logs", "log");
+ChatCommands.addUsage("log", null, "Obtain all logged messages");
+ChatCommands.addUsage("log", "number", "Display the message numbered <number>");
+ChatCommands.addUsage("log", "summary", "Display a summary of the logged messages", { literal: true });
+ChatCommands.addUsage("log", "shift", "Remove the first logged message", { literal: true });
+ChatCommands.addUsage("log", "pop", "Remove the last logged message", { literal: true });
+ChatCommands.addUsage("log", "export", "Open a new window with all of the logged items", { literal: true });
 
 ChatCommands.add("clear", command_clear, "Clears all text from all visible modules");
-ChatCommands.add_usage("clear", null, "Clears all text from all visible modules");
-ChatCommands.add_usage("clear", "module1", "Clears all text from module1", { literal: true });
-ChatCommands.add_usage("clear", "module2", "Clears all text from module2", { literal: true });
+ChatCommands.addUsage("clear", null, "Clears all text from all visible modules");
+ChatCommands.addUsage("clear", "module1", "Clears all text from module1", { literal: true });
+ChatCommands.addUsage("clear", "module2", "Clears all text from module2", { literal: true });
 
 ChatCommands.add("join", command_join, "Join a channel");
-ChatCommands.add_usage("join", "channel", "Connect to <channel>; leading # is optional");
+ChatCommands.addUsage("join", "channel", "Connect to <channel>; leading # is optional");
 
 ChatCommands.add("part", command_part, "Leave a channel");
-ChatCommands.add_alias("leave", "part");
-ChatCommands.add_usage("part", "channel", "Disconnect from <channel>; leading # is optional");
+ChatCommands.addAlias("leave", "part");
+ChatCommands.addUsage("part", "channel", "Disconnect from <channel>; leading # is optional");
 
 ChatCommands.add("badges", command_badges, "Display all known badges");
 
 ChatCommands.add("plugins", command_plugins, "Display plugin information, if plugins are enabled");
+
+ChatCommands.add("client", command_client, "Display numerous things about the client; use //help client for info");
+ChatCommands.addUsage("client", null, "Show general information about the client");
+ChatCommands.addUsage("client", "status", "Show current connection information", { literal: true });

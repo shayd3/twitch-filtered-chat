@@ -101,7 +101,7 @@ class HTMLGenerator {
 
   _genCheer(cheer, bits) {
     /* Use the highest tier that doesn't exceed the cheered bits */
-    let t = cheer.tiers.filter((t) => bits >= t.min_bits).max((t) => t.min_bits);
+    let t = cheer.tiers.filter((n) => bits >= n.min_bits).max((n) => n.min_bits);
     /* Use the smallest scale available */
     let url = t.images.dark.animated[cheer.scales.min((s) => +s)];
     let $w = $(`<span class="cheer cheermote"></span>`);
@@ -622,6 +622,5 @@ class HTMLGenerator {
     }
     return $e[0].outerHTML;
   }
-
 }
 

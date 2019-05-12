@@ -4,6 +4,7 @@
 
 /* TODO:
  * Add layout selection box to #settings (reloads page on change)
+ * Add target to #settings help link
  * Add clip information
  * Hide get_config_object() within client_main()
  */
@@ -25,6 +26,37 @@ const AUTOGEN_VALUE = "Auto-Generated";
 /* Functions to sanitize configuration */
 function verify_boolean(val) { return (typeof(val) == "boolean" ? val : ""); }
 function verify_array(val) { return Util.IsArray(val) ? val : []; }
+
+/* Document writing functions {{{0 */
+
+class Content { /* exported Content */
+  static addHTML(content) {
+    let line = `<div class="line line-wrapper"></div>`;
+    let $Content = $(".module").find($(".content"));
+    $Content.append($(line).append(content));
+    $Content.scrollTop(Math.pow(2, 31) - 1);
+  }
+  static addPre(content) {
+    Content.addHTML($(`<div class="pre"></div>`).html(content));
+  }
+  static addInfo(content, pre=false) {
+    let e = $(`<div class="info"></div>`).html(content);
+    if (pre) e.addClass("pre");
+    Content.addHTML(e);
+  }
+  static addNotice(content, pre=false) {
+    let e = $(`<div class="notice"></div>`).html(content);
+    if (pre) e.addClass("pre");
+    Content.addHTML(e);
+  }
+  static addError(content, pre=false) {
+    let e = $(`<div class="error"></div>`).html(content);
+    if (pre) e.addClass("pre");
+    Content.addHTML(e);
+  }
+}
+
+/* End document writing functions 0}}} */
 
 /* Begin configuration section {{{0 */
 
@@ -405,12 +437,12 @@ function set_channels(client, channels) {
   /* Join all the channels added */
   for (let ch of to_join) {
     client.JoinChannel(ch);
-    add_notice(`Joining ${ch}`);
+    Content.addNotice(`Joining ${ch}`);
   }
   /* Leave all the channels removed */
   for (let ch of to_part) {
     client.LeaveChannel(ch);
-    add_notice(`Leaving ${ch}`);
+    Content.addNotice(`Leaving ${ch}`);
   }
 }
 
@@ -461,40 +493,6 @@ function should_filter(module, event) {
   return false;
 }
 
-/* Add <div class="line line-wrapper">content</div> to all modules */
-function add_html(content) {
-  let line = `<div class="line line-wrapper"></div>`;
-  let $Content = $(".module").find($(".content"));
-  $Content.append($(line).append(content));
-  $Content.scrollTop(Math.pow(2, 31) - 1);
-}
-
-/* Shortcut for adding a <div class="pre"> element */
-function add_pre(content) {
-  add_html($(`<div class="pre"></div>`).html(content));
-}
-
-/* Shortcut for adding a <div class="info"> element */
-function add_info(content, pre=false) {
-  let e = $(`<div class="info"></div>`).html(content);
-  if (pre) e.addClass("pre");
-  add_html(e);
-}
-
-/* Shortcut for adding a <div class="notice"> element */
-function add_notice(content, pre=false) {
-  let e = $(`<div class="notice"></div>`).html(content);
-  if (pre) e.addClass("pre");
-  add_html(e);
-}
-
-/* Shortcut for adding a <div class="error"> element */
-function add_error(content, pre=false) {
-  let e = $(`<div class="error"></div>`).html(content);
-  if (pre) e.addClass("pre");
-  add_html(e);
-}
-
 /* Handle a chat command */
 function handle_command(value, client) {
   let tokens = value.split(" ");
@@ -504,14 +502,6 @@ function handle_command(value, client) {
   while (tokens.length > 0 && tokens[tokens.length-1].length == 0) {
     tokens.pop();
   }
-
-  /* Shortcuts for usages/help messages */
-  let helpcmd = (k) => `<span class="help helpcmd">${k}</span>`;
-  let helpmsg = (k) => `<span class="help helpmsg">${k}</span>`;
-  let helpline = (k, v) => `<div class="helpline">${helpcmd(k)}${helpmsg(v)}</div>`;
-  let help = (s) => `<div class="help">${s}</div>`;
-  let add_helpline = (k, v) => add_pre(helpline(k, v));
-  let add_help = (s) => add_pre(help(s));
 
   if (ChatCommands.is_command_str(value)) {
     if (ChatCommands.has_command(command)) {
@@ -525,12 +515,12 @@ function handle_command(value, client) {
     let config = get_config_object();
     if (tokens.length > 0) {
       if (tokens[0] == "clientid") {
-        add_helpline("ClientID", config.ClientID);
+        ChatCommands.addHelpLine("ClientID", config.ClientID);
       } else if (tokens[0] == "pass") {
-        add_helpline("Pass", config.Pass);
+        ChatCommands.addHelpLine("Pass", config.Pass);
       } else if (tokens[0] == "purge") {
         Util.SetWebStorage({});
-        add_notice(`Purged storage "${Util.GetWebStorageKey()}"`);
+        Content.addNotice(`Purged storage "${Util.GetWebStorageKey()}"`);
       } else if (tokens[0] == "url") {
         let url = location.protocol + '//' + location.hostname + location.pathname;
         if (tokens.length > 1) {
@@ -582,11 +572,11 @@ function handle_command(value, client) {
         } else {
           url += "?base64=" + encodeURIComponent(btoa(qs.join("&")));
         }
-        add_help(client.get('HTMLGen').url(url));
+        ChatCommands.addHelp(client.get('HTMLGen').url(url));
       } else if (config.hasOwnProperty(tokens[0])) {
-        add_helpline(tokens[0], JSON.stringify(config[tokens[0]]));
+        ChatCommands.addHelpLine(tokens[0], JSON.stringify(config[tokens[0]]));
       } else {
-        add_error(`Unknown config key &quot;${tokens[0]}&quot;`, true);
+        Content.addError(`Unknown config key &quot;${tokens[0]}&quot;`, true);
       }
     } else {
       let wincfgs = [];
@@ -595,17 +585,17 @@ function handle_command(value, client) {
           /* It's a window configuration */
           wincfgs.push([k, v]);
         } else if (k == "ClientID" || k == "Pass") {
-          add_helpline(k, `Omitted for security; use //config ${k.toLowerCase()} to show`);
+          ChatCommands.addHelpLine(k, `Omitted for security; use //config ${k.toLowerCase()} to show`);
         } else {
-          add_helpline(k, v);
+          ChatCommands.addHelpLine(k, v);
         }
       }
-      add_help(`Window Configurations:`);
+      ChatCommands.addHelp(`Window Configurations:`);
       for (let [k, v] of wincfgs) {
-        add_help(`Module <span class="arg">${k}</span>: &quot;${v.Name}&quot;:`);
+        ChatCommands.addHelp(`Module <span class="arg">${k}</span>: &quot;${v.Name}&quot;:`);
         for (let [cfgk, cfgv] of Object.entries(v)) {
           if (cfgk === "Name") continue;
-          add_helpline(cfgk, `&quot;${cfgv}&quot;`);
+          ChatCommands.addHelpLine(cfgk, `&quot;${cfgv}&quot;`);
         }
       }
     }
@@ -649,7 +639,7 @@ function show_context_window(client, cw, line) {
 
   /* Define functions for building elements */
   let $Line = (s) => $(`<div class="item">${s}</div>`);
-  let Link = (id, text) => client.get('HTMLGen').url(null, text, "cw-link", id);
+  let Link = (i, text) => client.get('HTMLGen').url(null, text, "cw-link", i);
   let Em = (t) => `<span class="em">${t}</span>`;
   let $EmItem = (s) => $(Em(s)).css('margin-left', '0.5em');
 
@@ -672,9 +662,9 @@ function show_context_window(client, cw, line) {
       $ta.click(function() {
         let ch = $(this).attr('data-channel');
         let u = $(this).attr('data-user');
-        let dur = $(this).attr('data-duration');
-        client.Timeout(ch, u, dur);
-        Util.Log('Timed out user', u, 'from', ch, 'for', dur);
+        let d = $(this).attr('data-duration');
+        client.Timeout(ch, u, d);
+        Util.Log('Timed out user', u, 'from', ch, 'for', d);
         $(cw).fadeOut();
       });
       $tl.append($ta);
@@ -784,29 +774,29 @@ function client_main(layout) { /* exported client_main */
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
     let msg = JSON.stringify(args.length == 1 ? args[0] : args);
     if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
-      add_error("ERROR: " + msg.escape());
+      Content.addError("ERROR: " + msg.escape());
     }
   }, "ERROR");
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
     let msg = JSON.stringify(args.length == 1 ? args[0] : args);
     if (args.length == 1 && args[0] instanceof TwitchEvent) {
       if (Util.DebugLevel >= Util.LEVEL_TRACE) {
-        add_notice("WARNING: " + args[0].repr());
+        Content.addNotice("WARNING: " + args[0].repr());
       }
     } else if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
-      add_notice("WARNING: " + msg.escape());
+      Content.addNotice("WARNING: " + msg.escape());
     }
   }, "WARN");
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
     let msg = JSON.stringify(args.length == 1 ? args[0] : args);
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
-      add_html("DEBUG: " + msg.escape());
+      Content.addHTML("DEBUG: " + msg.escape());
     }
   }, "DEBUG");
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
     let msg = JSON.stringify(args.length == 1 ? args[0] : args);
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
-      add_html("TRACE: " + msg.escape());
+      Content.addHTML("TRACE: " + msg.escape());
     }
   }, "TRACE");
 
@@ -912,6 +902,15 @@ function client_main(layout) { /* exported client_main */
   if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
     window.client = client;
   }
+
+  /* Add documentation for the moderator chat commands */
+  ChatCommands.addHelp("Moderator commands:", {literal: true});
+  ChatCommands.addHelp("!tfc reload: Force reload of this page", {literal: true,  command: true});
+  ChatCommands.addHelp("!tfc force-reload: Force reload of this page, discarding cache", {literal: true,  command: true});
+  ChatCommands.addHelp("!tfc nuke: Clear the chat", {literal: true,  command: true});
+  ChatCommands.addHelp("!tfc nuke <user>: Remove all messages sent by <user>", { command: true});
+
+  /* Bind all of the page assets {{{0 */
 
   /* Sending a chat message */
   $("#txtChat").keydown(function(e) {
@@ -1155,10 +1154,12 @@ function client_main(layout) { /* exported client_main */
     /* Clicking on a "Reconnect" link */
     if ($t.attr("data-reconnect") == '1') {
       /* Clicked on a reconnect link */
-      add_notice(`Reconnecting...`);
+      Content.addNotice(`Reconnecting...`);
       client.Connect();
     }
   });
+
+  /* End of the DOM event binding 0}}} */
 
   /* Bind to numerous TwitchEvent events {{{0 */
 
@@ -1173,10 +1174,10 @@ function client_main(layout) { /* exported client_main */
       } else {
         notes.push("(unauthenticated)");
       }
-      add_info(`Connected ${notes.join(" ")}`);
+      Content.addInfo(`Connected ${notes.join(" ")}`);
     }
     if (get_config_object().Channels.length == 0) {
-      add_info("No channels configured; type //join &lt;channel&gt; to join one!");
+      Content.addInfo("No channels configured; type //join &lt;channel&gt; to join one!");
     }
   });
 
@@ -1191,10 +1192,10 @@ function client_main(layout) { /* exported client_main */
       msg = `${msg} (code ${code})`;
     }
     if (get_config_object().AutoReconnect) {
-      add_error(msg);
+      Content.addError(msg);
       client.Connect();
     } else {
-      add_error(`${msg}<span class="reconnect" data-reconnect="1">Reconnect</span>`);
+      Content.addError(`${msg}<span class="reconnect" data-reconnect="1">Reconnect</span>`);
     }
   });
 
@@ -1207,7 +1208,7 @@ function client_main(layout) { /* exported client_main */
   client.bind('twitch-join', function _on_twitch_join(e) {
     if (!Util.Browser.IsOBS && !layout.Slim) {
       if (e.user == client.GetName().toLowerCase()) {
-        add_info(`Joined ${e.channel.channel}`);
+        Content.addInfo(`Joined ${e.channel.channel}`);
       }
     }
   });
@@ -1216,7 +1217,7 @@ function client_main(layout) { /* exported client_main */
   client.bind('twitch-part', function _on_twitch_part(e) {
     if (!Util.Browser.IsOBS && !layout.Slim) {
       if (e.user == client.GetName().toLowerCase()) {
-        add_info(`Left ${e.channel.channel}`);
+        Content.addInfo(`Left ${e.channel.channel}`);
       }
     }
   });
@@ -1230,14 +1231,14 @@ function client_main(layout) { /* exported client_main */
       case "host_target_went_offline":
         break;
       case "cmds_available":
-        add_info("Use //help to see Twitch Filtered Chat commands");
+        Content.addInfo("Use //help to see Twitch Filtered Chat commands");
         break;
       default:
         Util.Warn(e);
     }
     let channel = Twitch.FormatChannel(e.channel);
     let message = e.message.escape();
-    add_notice(`${channel}: ${message}`);
+    Content.addNotice(`${channel}: ${message}`);
   });
 
   /* Error from Twitch or Twitch Client API */
@@ -1246,13 +1247,13 @@ function client_main(layout) { /* exported client_main */
     let user = e.user;
     let command = e.values.command;
     let message = e.message.escape();
-    add_error(`Error for ${user}: ${command}: ${message}`);
+    Content.addError(`Error for ${user}: ${command}: ${message}`);
   });
 
   /* Message received from Twitch */
   client.bind('twitch-message', function _on_twitch_message(e) {
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
-      add_html(`<span class="pre">${e.repr()}</span>`);
+      Content.addHTML(`<span class="pre">${e.repr()}</span>`);
     }
     /* Avoid flooding the DOM with stale chat messages */
     let max = get_config_object().MaxMessages || 100;
@@ -1268,7 +1269,7 @@ function client_main(layout) { /* exported client_main */
     let cinfo = client.GetChannelInfo(e.channel.channel);
     if (!cinfo.online) {
       if (ConfigCommon.Layout && !ConfigCommon.Layout.Slim) {
-        add_notice(`${e.channel.channel} is not currently streaming`);
+        Content.addNotice(`${e.channel.channel} is not currently streaming`);
       }
     }
   });
@@ -1337,25 +1338,25 @@ function client_main(layout) { /* exported client_main */
   /* User subscribed */
   client.bind('twitch-sub', function _on_twitch_sub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    add_html(client.get('HTMLGen').sub(e));
+    Content.addHTML(client.get('HTMLGen').sub(e));
   });
 
   /* User resubscribed */
   client.bind('twitch-resub', function _on_twitch_resub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    add_html(client.get('HTMLGen').resub(e));
+    Content.addHTML(client.get('HTMLGen').resub(e));
   });
 
   /* User gifted a subscription */
   client.bind('twitch-giftsub', function _on_twitch_giftsub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    add_html(client.get('HTMLGen').giftsub(e));
+    Content.addHTML(client.get('HTMLGen').giftsub(e));
   });
 
   /* Anonymous user gifted a subscription */
   client.bind('twitch-anongiftsub', function _on_twitch_anongiftsub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    add_html(client.get('HTMLGen').anongiftsub(e));
+    Content.addHTML(client.get('HTMLGen').anongiftsub(e));
   });
 
   /* Bind the rest of the events and warn about unbound events */

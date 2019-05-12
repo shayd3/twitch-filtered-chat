@@ -1,2 +1,5 @@
-assets
-v2/assets
+assets/jquery*
+v2/assets/jquery*
+dist/*
+plugins/dist/*
+twitch-api/*

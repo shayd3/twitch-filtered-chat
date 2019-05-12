@@ -109,10 +109,10 @@ var HTMLGenerator = function () {
     key: "_genCheer",
     value: function _genCheer(cheer, bits) {
       /* Use the highest tier that doesn't exceed the cheered bits */
-      var t = cheer.tiers.filter(function (t) {
-        return bits >= t.min_bits;
-      }).max(function (t) {
-        return t.min_bits;
+      var t = cheer.tiers.filter(function (n) {
+        return bits >= n.min_bits;
+      }).max(function (n) {
+        return n.min_bits;
       });
       /* Use the smallest scale available */
       var url = t.images.dark.animated[cheer.scales.min(function (s) {

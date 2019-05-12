@@ -3,7 +3,7 @@
 function SamplePlugin2(resolve, reject, client) {
   this._debug = client.GetDebug();
   Plugins.AddChatCommand("//hi", this, function () {
-    add_pre("Hello there!");
+    Content.addPre("Hello there!");
   });
   this.name = "SamplePlugin2";
   resolve(this);

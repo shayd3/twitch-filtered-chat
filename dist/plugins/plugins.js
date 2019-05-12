@@ -68,10 +68,10 @@ var PluginStorageClass = function () {
           var _ref2 = _slicedToArray(_ref, 2);
 
           var cmd = _ref2[0];
-          var _obj = _ref2[1];
+          var cobj = _ref2[1];
 
           var cstr = cmd.replace(/^\/\//, "");
-          this._chat_commands.add(cstr, _obj.func, _obj.desc);
+          this._chat_commands.add(cstr, cobj.func, cobj.desc);
         }
       } catch (err) {
         _didIteratorError = true;
@@ -194,7 +194,7 @@ var PluginStorageClass = function () {
                 reject(e);
               });
             } catch (e) {
-              add_error(e);
+              Content.addError(e);
             }
           }
         } catch (err) {
