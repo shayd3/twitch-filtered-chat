@@ -468,11 +468,11 @@ function command_log(cmd, tokens /*, client*/) {
     } else if (tokens[0] == "shift") {
       logs.shift();
       Content.addHelp("New logs length: " + logs.length);
-      Util.SetWebStorage(logs, "debug-msg-log");
+      Util.SetWebStorage("debug-msg-log", logs);
     } else if (tokens[0] == "pop") {
       logs.pop();
       Content.addHelp("New logs length: " + logs.length);
-      Util.SetWebStorage(logs, "debug-msg-log");
+      Util.SetWebStorage("debug-msg-log", logs);
     } else if (tokens[0] == "size") {
       var b = JSON.stringify(logs).length;
       Content.addHelp("Logged bytes: " + b + " (" + b / 1024.0 + " KB)");
