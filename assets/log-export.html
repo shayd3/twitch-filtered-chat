@@ -1,22 +1,30 @@
 <!DOCTYPE xhtml>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <title>CSS Rainbow Test</title>
+  <title>Debug Logger Export</title>
   <meta charset="utf-8" />
   <link href="../assets/main.css" rel="stylesheet" type="text/css" />
   <script type="text/javascript" src="../assets/jquery-3.4.0.js"></script>
   <script type="text/javascript">
-function addEntry(idx, obj) {
+function addEntry(obj) {
   let e = $("<pre></pre>");
   e.text(JSON.stringify(obj));
-  $(".content").append(e);
+  $(".content").append($("<div class=\"line\"></div>").html(e));
+  $(".content")[0].innerHTML += "\n";
+}
+function addEntries(obj) {
+  for (let item of obj) {
+    addEntry(item);
+  }
 }
   </script>
 </head>
 <body>
 
-<div class="content">
+<div class="module full">
+<div class="content" style="overflow-y: scroll">
 
+</div>
 </div>
 
 </body>

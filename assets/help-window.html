@@ -1,0 +1,55 @@
+<!DOCTYPE xhtml>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>Filtered Chat Settings</title>
+  <meta charset="utf-8" />
+  <link href="../assets/main.css" rel="stylesheet" type="text/css" />
+  <script type="text/javascript" src="../assets/jquery-3.4.0.js"></script>
+  <script type="text/javascript">
+function addEntry(text) { $(".content").append($("<pre></pre>").text(text)); }
+function setConfig(config) {
+  console.log("Obtained configuration:", config);
+}
+  </script>
+</head>
+<body>
+<div class="content">
+<!--
+IDEAS:
+
+Selection box for saved configurations
+  Load Config
+  Save Config <input type="text" /> (for name)
+
+Global settings:
+  Channels
+  Username
+  OAuth
+  BG CSS
+  Scrollbars
+  Transparent
+  Enable Clips
+  Disable Mod Overrides
+  Debug Level
+
+Layout:
+  Radio buttons for "single", "double"
+  Radio buttons for "chat", "no chat", "slim"
+  Auto-updates module configuration section
+
+One or two columns based on layout choice:
+  Name
+  Flags
+    Pleb, Sub, VIP, Mod, Event, Bits, /me
+  Include User
+  Include Keyword
+  Exclude User
+  Exclude Starts With
+  Limit to Channel
+
+Live-updated URL at the bottom
+  Checkbox for base64?
+-->
+</div>
+</body>
+</html> 
