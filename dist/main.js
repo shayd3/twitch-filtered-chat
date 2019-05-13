@@ -6,7 +6,7 @@ var IS_TESLA = !!navigator.userAgent.match(/\bTesla\b/);
 var USE_DIST = !!window.location.search.match(/\busedist\b/) || IS_TESLA;
 var MOD_TFC = 'twitch-filtered-chat';
 var MOD_TWAPI = 'twitch-api';
-var ASSETS = [];
+var ASSETS = {};
 
 /* Parse layout= query string value */
 function ParseLayout(str) {
@@ -121,11 +121,15 @@ function AddAsset(src) {
   var loadcb = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
   var errcb = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
 
-  ASSETS.push({});
-  var asset = ASSETS[ASSETS.length - 1];
+  var path = GetAssetURL(src, tree);
+  if (ASSETS[path]) {
+    throw new Error('Asset ' + path + ' already added: ' + JSON.stringify(ASSETS[path]));
+  }
+  ASSETS[path] = {};
+  var asset = ASSETS[path];
   return new Promise(function (resolve, reject) {
     asset.file = src;
-    asset.src = GetAssetURL(src, tree);
+    asset.src = path;
     asset.tree = tree;
     asset.loaded = false;
     asset.error = false;
