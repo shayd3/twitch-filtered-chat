@@ -9,7 +9,6 @@ assets/3rdparty/
 # Ignore Node.js files
 node_modules/
 package-lock.json
-.eslintrc*
 
 # Ignore reference material
 notes.txt

@@ -246,8 +246,8 @@ class HTMLGenerator {
   }
 
   _genName(event) {
-    let user = event.flags["display-name"] || event.user;
-    let color = event.flags.color || this.getColorFor(event.user);
+    let user = event.user;
+    let color = event.flags.color || this.getColorFor(user);
     if (!color) { color = '#ffffff'; }
     return this.genName(user, color);
   }
@@ -415,7 +415,7 @@ class HTMLGenerator {
         while (msgprefix.length < word0.length) {
           msgprefix += ' ';
         }
-        /* Modify both message and event.message, as they're both used below */
+        /* Modify message and event.message, as they're both used below */
         event.values.message = msgprefix + event.message.substr(wordlen);
         message = msgprefix + message.substr(wordlen);
         event.flags.bits = 1000;
@@ -525,39 +525,54 @@ class HTMLGenerator {
     return $e[0].outerHTML;
   }
 
-  sub(event) { /* FIXME: Use TwitchSubEvent */
+  sub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
-    $m.text(`subscribed using ${event.value('sub_plan')}!`);
+    let plan = TwitchSubEvent.PlanName(event.plan_id);
+    $m.text(`just subscribed with a ${plan} subscription!`);
     $w.append($m);
+    if ($w[0].outerHTML.indexOf('undefined') > -1) {
+      Util.Error("msg contains undefined");
+      Util.ErrorOnly(event, $w, $w[0].outerHTML);
+    }
     return $w[0].outerHTML;
   }
 
-  resub(event) { /* FIXME: Use TwitchSubEvent */
+  resub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
-    let months = event.value('sub_months');
-    let streak = event.value('sub_streak_months');
-    if (streak) {
-      $m.text(`resubscribed for ${months} months, a streak of ${streak} months!`);
+    let months = event.months || event.total_months;
+    let streak = event.streak_months;
+    let plan = TwitchSubEvent.PlanName(event.plan_id);
+    if (event.share_streak) {
+      $m.text(`resubscribed for ${months} months with a ${plan} subscription, a streak of ${streak} months!`);
     } else {
-      $m.text(`resubscribed for ${months} months!`);
+      $m.text(`resubscribed for ${months} months with a ${plan} subscription!`);
     }
     $w.append($m);
+    if ($w[0].outerHTML.indexOf('undefined') > -1) {
+      Util.Error("msg contains undefined");
+      Util.ErrorOnly(event, $w, $w[0].outerHTML);
+    }
     return $w[0].outerHTML;
   }
 
-  giftsub(event) { /* FIXME: Use TwitchSubEvent */
+  giftsub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
     if (event.flags['system-msg']) {
       $m.text(event.flags['system-msg']);
     } else {
-      let user = event.flags['msg-param-recipient-user-name'];
-      let gifter = event.flags['login'];
-      $m.text(`${gifter} gifted a subscription to ${user}!`);
+      let user = event.recipient;
+      let gifter = event.user;
+      let plan = TwitchSubEvent.PlanName(event.plan_id);
+      $m.text(`${gifter} gifted a ${plan} subscription to ${user}!`);
     }
     $w.append($m);
+    if ($w[0].outerHTML.indexOf('undefined') > -1) {
+      Util.Error("msg contains undefined");
+      Util.ErrorOnly(event, $w, $w[0].outerHTML);
+    }
     return $w[0].outerHTML;
   }
 

@@ -114,14 +114,14 @@ class TFCChatCommandStore {
   }
 
   formatHelp(cmd) {
-    return this.helpLine("//" + cmd.name.escape(), cmd.desc.escape());
+    return this.helpLine("//" + cmd.name, cmd.desc, true);
   }
 
   formatUsage(cmd) {
     let usages = [];
     if (cmd.usage) {
       for (let entry of cmd.usage) {
-        let fmtArg = (a) => this.arg(a);
+        let fmtArg = (a) => `&lt;${this.arg(a)}&gt;`;
         if (entry.opts.literal) fmtArg = (a) => a;
         let argstr = "";
         let usagestr = this.formatArgs(entry.usage);
@@ -144,75 +144,58 @@ class TFCChatCommandStore {
   /* Built-in //help command */
   command_help(cmd, tokens/*, client*/) {
     if (tokens.length == 0) {
-      this.printHelp("Commands:");
+      Content.addHelp("Commands:");
       for (let c of Object.values(this._command_list)) {
-        this.printHelp(this.formatHelp(this._commands[c]));
+        Content.addHelp(this.formatHelp(this._commands[c]));
       }
+      Content.addHelp(this.formatArgs("Enter //help <command> for help on <command>"));
       for (let line of this._help_text) {
-        this.printHelp(line);
+        Content.addHelp(line);
       }
     } else if (this.hasCommand(tokens[0])) {
-      this.printHelp("Commands:");
+      Content.addHelp("Commands:");
       let obj = this.getCommand(tokens[0]);
       for (let line of this.formatUsage(obj)) {
-        this.printHelp(line);
+        Content.addHelp(line);
       }
     } else {
       Content.addError(`Invalid command ${tokens[0].escape()}`);
     }
   }
 
-  /* Specific formatters */
-
   arg(s) {
     return `<span class="arg">${s.escape()}</span>`;
   }
 
-  fmtCmd(s) {
-    return `<span class="help helpcmd">${s}</span>`;
-  }
-
-  fmtMsg(s) {
-    return `<span class="help helpmsg">${s}</span>`;
-  }
-
-  helpLine(k, v) {
-    return `<div class="help_line">${this.fmtCmd(k)}${this.fmtMsg(v)}</div>`;
+  helpLine(k, v, esc=false) {
+    let d1 = `<div>${esc ? k.escape() : k}</div>`;
+    let d2 = `<div>${esc ? v.escape() : v}</div>`;
+    return `<div class="helpline">${d1}${d2}</div>`;
   }
 
   formatArgs(s) {
     return s.replace(/<([^>]+)>/g, (m, g) => '&lt;' + this.arg(g) + '&gt;');
   }
 
-  /* Display functions */
-
-  printHelpLine(k, v) {
-    Content.addPre(this.helpLine(k, v));
-  }
-
-  printHelp(s) {
-    Content.addHTML($(`<div class="help pre">${s}</div>`));
-  }
-
   printUsage(cmdobj) {
-    this.printHelp("Usage:");
+    Content.addHelp("Usage:");
     for (let line of this.formatUsage(cmdobj)) {
-      this.printHelp(line);
+      Content.addHelp(line);
     }
   }
 }
 
 function command_log(cmd, tokens/*, client*/) {
   let logs = Util.GetWebStorage("debug-msg-log") || [];
-  this.printHelp(`Debug message log length: ${logs.length}`);
+  Content.addHelp(`Debug message log length: ${logs.length}`);
   if (tokens.length > 0) {
     if (tokens[0] == "show") {
       if (tokens.length > 1) {
         let idx = Number.parseInt(tokens[1]);
-        this.printHelp(`${idx}: ${JSON.stringify(logs[idx]).escape()}`);
+        Content.addHelp(`${idx}: ${JSON.stringify(logs[idx]).escape()}`);
       } else {
         for (let [i, l] of Object.entries(logs)) {
-          this.printHelp(`${i}: ${JSON.stringify(l).escape()}`);
+          Content.addHelp(`${i}: ${JSON.stringify(l).escape()}`);
         }
       }
     } else if (tokens[0] == "export") {
@@ -223,9 +206,7 @@ function command_log(cmd, tokens/*, client*/) {
       );
       if (w) {
         w.onload = function() {
-          for (let [i, l] of Object.entries(logs)) {
-            this.addEntry(i, l);
-          }
+          this.addEntries(logs);
         }
       }
     } else if (tokens[0] == "summary") {
@@ -247,27 +228,35 @@ function command_log(cmd, tokens/*, client*/) {
       if (line.length > 0) lines.push(line);
       let lidx = 0;
       for (let l of Object.values(lines)) {
-        this.printHelp(`${lidx}-${lidx+l.length}: ${JSON.stringify(l)}`);
+        Content.addHelp(`${lidx}-${lidx+l.length}: ${JSON.stringify(l)}`);
         lidx += l.length;
       }
     } else if (tokens[0] == "shift") {
       logs.shift();
-      this.printHelp(`New logs length: ${logs.length}`);
+      Content.addHelp(`New logs length: ${logs.length}`);
       Util.SetWebStorage(logs, "debug-msg-log");
     } else if (tokens[0] == "pop") {
       logs.pop();
-      this.printHelp(`New logs length: ${logs.length}`);
+      Content.addHelp(`New logs length: ${logs.length}`);
       Util.SetWebStorage(logs, "debug-msg-log");
+    } else if (tokens[0] == "size") {
+      let b = JSON.stringify(logs).length;
+      Content.addHelp(`Logged bytes: ${b} (${b/1024.0} KB)`);
+    } else if (tokens[0].match(/^[1-9][0-9]*$/)) {
+      let idx = Number(tokens[0]);
+      Content.addHelp(JSON.stringify(logs[idx]).escape());
     } else {
-      this.printHelp(`Unknown argument ${tokens[0]}`);
+      Content.addHelp(`Unknown argument ${tokens[0]}`);
     }
   } else {
-    this.printHelp(`Use //log summary to view a summary`);
-    this.printHelp(`Use //log show to view them all`);
-    this.printHelp(this.formatArgs(`Use //log show <N> to show item <N>`));
-    this.printHelp(`Use //log shift to remove one entry from the start`);
-    this.printHelp(`Use //log pop to remove one entry from the end`);
-    this.printHelp(`Use //log export to open a new window with the logged items`);
+    Content.addHelp(`Use //log summary to view a summary`);
+    Content.addHelp(`Use //log show to view them all`);
+    Content.addHelp(this.formatArgs(`Use //log show <N> to show item <N>`));
+    Content.addHelp(this.formatArgs(`Use //log <N> to show item <N>`));
+    Content.addHelp(`Use //log shift to remove one entry from the start`);
+    Content.addHelp(`Use //log pop to remove one entry from the end`);
+    Content.addHelp(`Use //log export to open a new window with the logged items`);
+    Content.addHelp(`Use //log size to display the number of bytes logged`);
   }
 }
 
@@ -357,35 +346,35 @@ function command_plugins(/*cmd, tokens, client*/) {
 
 function command_client(cmd, tokens, client) {
   if (tokens.length === 0 || tokens[0] == "status") {
-    this.printHelp("Client information:");
+    Content.addHelp("Client information:");
     let cstatus = client.ConnectionStatus();
-    this.printHelpLine("Socket:", cstatus.open ? "Open" : "Closed");
-    this.printHelpLine("Status:", cstatus.connected ? "Connected" : "Not connected");
-    this.printHelpLine("Identified:", cstatus.identified ? "Yes" : "No");
-    this.printHelpLine("Authenticated:", cstatus.authed ? "Yes" : "No");
-    this.printHelpLine("Name:", client.GetName());
-    this.printHelpLine("FFZ:", client.FFZEnabled() ? "Enabled" : "Disabled");
-    this.printHelpLine("BTTV:", client.BTTVEnabled() ? "Enabled" : "Disabled");
+    Content.addHelpLine("Socket:", cstatus.open ? "Open" : "Closed");
+    Content.addHelpLine("Status:", cstatus.connected ? "Connected" : "Not connected");
+    Content.addHelpLine("Identified:", cstatus.identified ? "Yes" : "No");
+    Content.addHelpLine("Authenticated:", cstatus.authed ? "Yes" : "No");
+    Content.addHelpLine("Name:", client.GetName());
+    Content.addHelpLine("FFZ:", client.FFZEnabled() ? "Enabled" : "Disabled");
+    Content.addHelpLine("BTTV:", client.BTTVEnabled() ? "Enabled" : "Disabled");
     let channels = client.GetJoinedChannels();
     let us = client.SelfUserState() || {};
     if (channels && channels.length > 0) {
-      this.printHelp(`&gt; Channels connected to: ${channels.length}`);
+      Content.addHelp(`&gt; Channels connected to: ${channels.length}`);
       for (let c of channels) {
         let ci = client.GetChannelInfo(c);
         let nusers = (ci && ci.users ? ci.users.length : 0);
         let rooms = ci.rooms || {};
         let status = (ci.online ? "" : "not ") + "online";
-        this.printHelpLine(c, "Status: " + status + `; id=${ci.id}`);
-        this.printHelpLine("&nbsp;", `Active users: ${nusers}`);
-        this.printHelpLine("&nbsp;", `Rooms: ${Object.keys(rooms)}`);
+        Content.addHelpLine(c, "Status: " + status + `; id=${ci.id}`);
+        Content.addHelpLine("&nbsp;", `Active users: ${nusers}`);
+        Content.addHelpLine("&nbsp;", `Rooms: ${Object.keys(rooms)}`);
         let ui = us[c];
-        this.printHelp("User information for " + c + ":");
-        if (ui.color) { this.printHelpLine("Color", ui.color); }
-        if (ui.badges) { this.printHelpLine("Badges", JSON.stringify(ui.badges)); }
-        this.printHelpLine("Name", `${ui["display-name"]}`);
+        Content.addHelp("User information for " + c + ":");
+        if (ui.color) { Content.addHelpLine("Color", ui.color); }
+        if (ui.badges) { Content.addHelpLine("Badges", JSON.stringify(ui.badges)); }
+        Content.addHelpLine("Name", `${ui["display-name"]}`);
       }
     }
-    this.printHelpLine("User ID", `${us.userid}`);
+    Content.addHelpLine("User ID", `${us.userid}`);
   } else {
     this.printUsage();
   }
@@ -415,6 +404,9 @@ ChatCommands.addUsage("log", "pop",
                       {literal: true});
 ChatCommands.addUsage("log", "export",
                       "Open a new window with all of the logged items",
+                      {literal: true});
+ChatCommands.addUsage("log", "size",
+                      "Display the number of bytes used by the log",
                       {literal: true});
 
 ChatCommands.add("clear", command_clear,

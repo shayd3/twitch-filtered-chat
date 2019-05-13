@@ -52,10 +52,10 @@ class Content { /* exported Content */
     Content.addHTML(e);
   }
   static addHelp(s) {
-    ChatCommands.printHelp(s);
+    Content.addPre($(`<div class="help pre">${s}</div>`));
   }
   static addHelpLine(c, s) {
-    ChatCommands.printHelpLine(c, s);
+    Content.addPre(ChatCommands.helpLine(c, s));
   }
 }
 
@@ -182,7 +182,7 @@ function getConfigKey() {
 }
 
 /* Obtain configuration */
-function getConfigObject() {
+function getConfigObject(inclSensitive=true) {
   /* 1) Obtain configuration values
    *  a) from localStorage
    *  b) from query string (overrides (a))
@@ -302,6 +302,11 @@ function getConfigObject() {
      19, 86, 67,115, 22, 38,198,  3, 55,118, 67, 35,150,230, 71,
     134, 83,  3,119,166, 86, 39, 38,167,135,134,147,214, 38, 55
   ].map((i) => Util.ASCII[((i&15)*16+(i&240)/16)]).join("");
+
+  if (!inclSensitive) {
+    delete config["ClientID"];
+    delete config["Pass"];
+  }
 
   return config;
 }
@@ -517,7 +522,7 @@ function handleCommand(value, client) {
   }
 
   if (ChatCommands.isCommandStr(value)) {
-    if (ChatCommands.has_command(command)) {
+    if (ChatCommands.hasCommand(command)) {
       ChatCommands.execute(value, client);
       return true;
     }
@@ -662,15 +667,14 @@ function showContextWindow(client, cw, line) {
   /* Define functions for building elements */
   let $Line = (s) => $(`<div class="item">${s}</div>`);
   let Link = (i, text) => client.get("HTMLGen").url(null, text, "cw-link", i);
-  let Em = (t) => `<span class="em">${t}</span>`;
-  let $EmItem = (s) => $(Em(s)).css("margin-left", "0.5em");
+  let $Em = (s) => $(`<span class="em">${s}</span>`).css("margin-left", "0.5em");
 
-  /* Add user"s display name */
+  /* Add user's display name */
   let $username = $l.find(".username");
   let classes = $username.attr("class");
   let css = $username.attr("style");
   let e_name = `<span class="${classes}" style="${css}">${name}</span>`;
-  $cw.append($Line(`${e_name} in ${Em(channel)}`));
+  $cw.append($Line(`${e_name} in <span class="em">${channel}</span>`));
 
   /* Add link to timeout user */
   if (client.IsMod(channel)) {
@@ -715,10 +719,10 @@ function showContextWindow(client, cw, line) {
   /* Add roles (and ability to remove roles, for the caster) */
   if (mod || vip || sub || caster) {
     let $roles = $Line(`User Role:`);
-    if (mod) { $roles.append($EmItem("Mod")); $roles.append(","); }
-    if (vip) { $roles.append($EmItem("VIP")); $roles.append(","); }
-    if (sub) { $roles.append($EmItem("Sub")); $roles.append(","); }
-    if (caster) { $roles.append($EmItem("Host")); $roles.append(","); }
+    if (mod) { $roles.append($Em("Mod")); $roles.append(","); }
+    if (vip) { $roles.append($Em("VIP")); $roles.append(","); }
+    if (sub) { $roles.append($Em("Sub")); $roles.append(","); }
+    if (caster) { $roles.append($Em("Host")); $roles.append(","); }
     /* Remove the last comma */
     $roles[0].removeChild($roles[0].lastChild);
     $cw.append($roles);
@@ -927,7 +931,7 @@ function client_main(layout) { /* exported client_main */
   ChatCommands.addHelp("!tfc reload: Force reload of this page", {literal: true,  command: true});
   ChatCommands.addHelp("!tfc force-reload: Force reload of this page, discarding cache", {literal: true,  command: true});
   ChatCommands.addHelp("!tfc nuke: Clear the chat", {literal: true,  command: true});
-  ChatCommands.addHelp("!tfc nuke <user>: Remove all messages sent by <user>", { command: true});
+  ChatCommands.addHelp("!tfc nuke <user>: Remove all messages sent by <user>", {command: true});
 
   /* Bind all of the page assets {{{0 */
 
@@ -988,6 +992,20 @@ function client_main(layout) { /* exported client_main */
       }
       $("#selDebug").val(`${config.Debug}`);
       $("#settings").fadeIn();
+    }
+  });
+
+  /* Clicking on the ? in the settings box header */
+  $("#settings-help").click(function() {
+    let w = window.open(
+      "assets/help-window.html",
+      "TFCHelpWindow",
+      "menubar=yes,location=yes,resizable=yes,scrollbars=yes,status=yes");
+    if (w) {
+      w.onload = function() {
+        this.addEntry("Help text and settings builder are coming soon!");
+        this.setConfig(getConfigObject(false));
+      }
     }
   });
 
@@ -1390,10 +1408,17 @@ function client_main(layout) { /* exported client_main */
   client.bind("twitch-topic", function() {});
   client.bind("twitch-privmsg", function() {});
   client.bind("twitch-whisper", function() {});
-  client.bind("twitch-hosttarget", function() {});
   client.bind("twitch-mode", function() {});
-  client.bind("twitch-other", function() {});
-  client.bindDefault(function _on_default(e) { Util.Warn("Unbound event:", e); });
+  client.bind("twitch-hosttarget", function(e) {
+    Util.StorageAppend("debug-msg-log", e);
+  });
+  client.bind("twitch-other", function(e) {
+    Util.StorageAppend("debug-msg-log", e);
+  });
+  client.bindDefault(function _on_default(e) {
+    Util.Warn("Unbound event:", e);
+    Util.StorageAppend("debug-msg-log", e);
+  });
 
   /* End of all the binding 0}}} */
 
