@@ -66,6 +66,14 @@ body {
   background: var(--body-color, var(--body-color-default));
 }
 
+.fl {
+  float: left;
+}
+
+.fr {
+  float: right;
+}
+
 .debug {
   position: absolute;
   color: black;
@@ -209,21 +217,19 @@ input {
 }
 
 .helpline {
-  margin-left: 1em;
+  display: grid;
+  grid-template-columns: 15% auto;
+  margin-left: 1.5em;
 }
 
-.helpcmd {
-  width: 15%;
-}
-
-.helpmsg {
-  float: right;
-  width: 85%;
+.helpline div {
+  font-size: 0.9em;
+  font-family: monospace;
 }
 
 /* End help formatting 0}}} */
 
-/* Settings {{{0 */
+/* Module settings {{{0 */
 
 .module .settings {
   position: absolute;
@@ -271,7 +277,7 @@ input {
   font-size: 0.9em;
 }
 
-/* End settings 0}}} */
+/* End module settings 0}}} */
 
 /* Line CSS {{{0 */
 
@@ -283,6 +289,11 @@ input {
 
 .username {
   font-weight: bold;
+}
+
+.module .content .line .username:hover {
+  cursor: pointer;
+  text-decoration: underline;
 }
 
 .module .content .line {
@@ -459,6 +470,17 @@ body.transparent #chat textarea  {
   border-bottom: solid 1px #aaaaaa;
 }
 
+#settings header .builder {
+  line-height: 30px;
+  padding-top: 0.2em;
+  padding-right: calc(24px + 0.5em);
+  cursor: pointer;
+}
+
+#settings header .builder:hover {
+  text-decoration: underline;
+}
+
 #settings ul {
   margin: 0.5em 0;
 }
@@ -480,7 +502,6 @@ body.transparent #chat textarea  {
 }
 
 #settings a.help {
-  font-size: smaller;
   vertical-align: text-top;
   text-decoration: underline;
   font-size: 0.6em;
@@ -498,6 +519,10 @@ body.transparent #chat textarea  {
   cursor: pointer;
 }
 
+#settings footer a:hover {
+  text-decoration: underline;
+}
+
 #btnSettings {
   position: fixed;
   opacity: 0.5;
@@ -511,14 +536,6 @@ body.transparent #chat textarea  {
 
 #btnSettings:hover {
   opacity: 1.0;
-}
-
-#settings footer span.fl {
-  float: left;
-}
-
-#settings footer span.fr {
-  float: right;
 }
 
 /* End top-level settings 0}}} */

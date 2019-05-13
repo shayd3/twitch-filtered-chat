@@ -145,7 +145,11 @@ function onLoad() {
   </div>
   <!-- Global settings -->
   <div id="settings">
-    <header>Settings<a class="help" id="settings-help">?</a></header>
+    <!-- TODO: Separate "help" and "settings builder", make latter more obvious -->
+    <header style="display: inline-block; width: 100%">
+      <span class="fl">Settings<a class="help" id="settings-help">?</a></span>
+      <span class="fr"><a class="builder" id="settings-builder">Builder</a></span>
+    </header>
     <ul>
       <li>
         <label>Channels:</label>
