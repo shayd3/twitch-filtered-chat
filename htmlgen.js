@@ -5,19 +5,20 @@
 /* TODO:
  * Implement raid and calling code
  * Implement TwitchSubEvent htmlgen
- * Ensure /me formatting is fixed
  * Add clip formatting code (this._config.ShowClips)
  * Implement "light" and "dark" colorschemes
+ * Add emote information on hover
+ * Add badge information on hover
  */
 
-/** Chat message structure
- *
- * div.line.line-wrapper
+/* div.line.line-wrapper
  *  div.chat-line (has attrs)
  *   span.badges
  *    img.badge
  *   span.username
  *   span.message
+ *    img.emote (.twitch-emote, .ffz-emote, .bttv-emote)
+ *
  *
  * div.chat-line attrs:
  *  data-id
@@ -53,9 +54,13 @@ class HTMLGenerator {
     if (!this._config.ShowClips) this._config.ShowClips = false;
   }
 
-  set client(c) { this._client = c; }
-  setValue(k, v) { this._config[k] = v; }
-  getValue(k) { return this._config[k]; }
+  setValue(k, v) {
+    this._config[k] = v;
+  }
+
+  getValue(k) {
+    return this._config[k];
+  }
 
   set bgcolors(colors) {
     this._bg_colors = [];
@@ -136,11 +141,12 @@ class HTMLGenerator {
   _twitchEmote(emote) {
     if (emote.id !== null) {
       let $e = $(`<img class="emote twitch-emote" />`);
-      $e.attr('tw-emote-id', emote.id);
-      $e.attr('src', this._client.GetEmote(emote.id));
+      $e.attr("tw-emote-src", "twitch");
+      $e.attr("tw-emote-id", emote.id);
+      $e.attr("src", this._client.GetEmote(emote.id));
       if (emote.name) {
-        $e.attr('alt', emote.name);
-        $e.attr('title', emote.name);
+        $e.attr("alt", emote.name);
+        $e.attr("title", emote.name);
       }
       let html = $e[0].outerHTML;
       emote.final_length = html.length;

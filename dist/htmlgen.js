@@ -5,19 +5,20 @@
 /* TODO:
  * Implement raid and calling code
  * Implement TwitchSubEvent htmlgen
- * Ensure /me formatting is fixed
  * Add clip formatting code (this._config.ShowClips)
  * Implement "light" and "dark" colorschemes
+ * Add emote information on hover
+ * Add badge information on hover
  */
 
-/** Chat message structure
- *
- * div.line.line-wrapper
+/* div.line.line-wrapper
  *  div.chat-line (has attrs)
  *   span.badges
  *    img.badge
  *   span.username
  *   span.message
+ *    img.emote (.twitch-emote, .ffz-emote, .bttv-emote)
+ *
  *
  * div.chat-line attrs:
  *  data-id
@@ -160,8 +161,8 @@ var HTMLGenerator = function () {
           }
 
           replace_info.push([node.parentNode, newNodes]);
+          Util.Log(node.parentNode, newNodes);
         }
-        /* Replace the nodes' contents with the new children */
       } catch (err) {
         _didIteratorError = true;
         _iteratorError = err;
@@ -177,6 +178,8 @@ var HTMLGenerator = function () {
         }
       }
 
+      Util.Log(replace_info);
+      /* Replace the nodes' contents with the new children */
       var _iteratorNormalCompletion2 = true;
       var _didIteratorError2 = false;
       var _iteratorError2 = undefined;
@@ -238,11 +241,12 @@ var HTMLGenerator = function () {
     value: function _twitchEmote(emote) {
       if (emote.id !== null) {
         var $e = $("<img class=\"emote twitch-emote\" />");
-        $e.attr('tw-emote-id', emote.id);
-        $e.attr('src', this._client.GetEmote(emote.id));
+        $e.attr("tw-emote-src", "twitch");
+        $e.attr("tw-emote-id", emote.id);
+        $e.attr("src", this._client.GetEmote(emote.id));
         if (emote.name) {
-          $e.attr('alt', emote.name);
-          $e.attr('title', emote.name);
+          $e.attr("alt", emote.name);
+          $e.attr("title", emote.name);
         }
         var html = $e[0].outerHTML;
         emote.final_length = html.length;
@@ -973,11 +977,6 @@ var HTMLGenerator = function () {
         $e.attr("checked", "checked");
       }
       return $e[0].outerHTML;
-    }
-  }, {
-    key: "client",
-    set: function set(c) {
-      this._client = c;
     }
   }, {
     key: "bgcolors",

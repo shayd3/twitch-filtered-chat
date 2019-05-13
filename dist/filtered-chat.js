@@ -3,10 +3,11 @@
 "use strict";
 
 /* TODO:
- * Persist "Show Clips" beyond reload
  * Add layout selection box to #settings (reloads page on change)
- * Add target to #settings help link
+ * Add to #settings help link
+ * Add to #settings config link
  * Add clip information
+ * Add emote information (on hover)
  * Hide getConfigObject() within client_main()
  */
 
