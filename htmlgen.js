@@ -19,7 +19,6 @@
  *   span.message
  *    img.emote (.twitch-emote, .ffz-emote, .bttv-emote)
  *
- *
  * div.chat-line attrs:
  *  data-id
  *  data-user
@@ -189,7 +188,7 @@ class HTMLGenerator {
       $b.attr('tw-badge', JSON.stringify(badge_info));
       if (event.channel) {
         $b.attr('tw-badge-scope', 'channel');
-        $b.attr('tw-badge-channel', event.channel.channel.lstrip('#'));
+        $b.attr('tw-badge-channel', event.channel.channel.replace(/^#/, ""));
       }
     } else {
       return null;
@@ -252,8 +251,9 @@ class HTMLGenerator {
   }
 
   _genName(event) {
-    let user = event.user;
-    let color = event.flags.color || this.getColorFor(user);
+    /* Display upper-case name, assign color to lower-case name */
+    let user = event.name || event.user;
+    let color = event.flags.color || this.getColorFor(event.user);
     if (!color) { color = '#ffffff'; }
     return this.genName(user, color);
   }
@@ -450,6 +450,7 @@ class HTMLGenerator {
 
     $msg.html(message);
 
+    Util.Log($msg, event);
     return {e: $msg, effects: $effects};
   }
 
@@ -457,7 +458,7 @@ class HTMLGenerator {
     $e.attr("data-id", event.flags.id);
     $e.attr("data-user", event.user);
     $e.attr("data-user-id", event.flags["user-id"]);
-    $e.attr("data-channel", event.channel.channel.lstrip('#'));
+    $e.attr("data-channel", event.channel.channel.replace(/^#/, ""));
     if (event.channel.room) {
       $e.attr("data-room", event.channel.room);
     }
@@ -583,7 +584,6 @@ class HTMLGenerator {
   }
 
   anongiftsub(event) { /* FIXME: Use TwitchSubEvent */
-    /* TODO */
     let user = event.flags['msg-param-recipient-user-name'];
     let gifter = event.flags.login;
     let months = event.flags['msg-param-sub-months'];

@@ -19,7 +19,6 @@
  *   span.message
  *    img.emote (.twitch-emote, .ffz-emote, .bttv-emote)
  *
- *
  * div.chat-line attrs:
  *  data-id
  *  data-user
@@ -161,8 +160,8 @@ var HTMLGenerator = function () {
           }
 
           replace_info.push([node.parentNode, newNodes]);
-          Util.Log(node.parentNode, newNodes);
         }
+        /* Replace the nodes' contents with the new children */
       } catch (err) {
         _didIteratorError = true;
         _iteratorError = err;
@@ -178,8 +177,6 @@ var HTMLGenerator = function () {
         }
       }
 
-      Util.Log(replace_info);
-      /* Replace the nodes' contents with the new children */
       var _iteratorNormalCompletion2 = true;
       var _didIteratorError2 = false;
       var _iteratorError2 = undefined;
@@ -297,7 +294,7 @@ var HTMLGenerator = function () {
         $b.attr('tw-badge', JSON.stringify(_badge_info));
         if (event.channel) {
           $b.attr('tw-badge-scope', 'channel');
-          $b.attr('tw-badge-channel', event.channel.channel.lstrip('#'));
+          $b.attr('tw-badge-channel', event.channel.channel.replace(/^#/, ""));
         }
       } else {
         return null;
@@ -409,8 +406,9 @@ var HTMLGenerator = function () {
   }, {
     key: "_genName",
     value: function _genName(event) {
-      var user = event.user;
-      var color = event.flags.color || this.getColorFor(user);
+      /* Display upper-case name, assign color to lower-case name */
+      var user = event.name || event.user;
+      var color = event.flags.color || this.getColorFor(event.user);
       if (!color) {
         color = '#ffffff';
       }
@@ -700,6 +698,7 @@ var HTMLGenerator = function () {
 
       $msg.html(message);
 
+      Util.Log($msg, event);
       return { e: $msg, effects: $effects };
     }
   }, {
@@ -708,7 +707,7 @@ var HTMLGenerator = function () {
       $e.attr("data-id", event.flags.id);
       $e.attr("data-user", event.user);
       $e.attr("data-user-id", event.flags["user-id"]);
-      $e.attr("data-channel", event.channel.channel.lstrip('#'));
+      $e.attr("data-channel", event.channel.channel.replace(/^#/, ""));
       if (event.channel.room) {
         $e.attr("data-room", event.channel.room);
       }
@@ -862,7 +861,6 @@ var HTMLGenerator = function () {
     key: "anongiftsub",
     value: function anongiftsub(event) {
       /* FIXME: Use TwitchSubEvent */
-      /* TODO */
       var user = event.flags['msg-param-recipient-user-name'];
       var gifter = event.flags.login;
       var months = event.flags['msg-param-sub-months'];
