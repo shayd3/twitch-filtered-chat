@@ -1944,6 +1944,18 @@ function client_main(layout) {
     Content.addHTML(client.get("HTMLGen").anongiftsub(e));
   });
 
+  /* Channel was raided */
+  client.bind("twitch-raid", function _on_twitch_raid(e) {
+    Util.StorageAppend("debug-msg-log", e);
+    /* TODO */
+  });
+
+  /* Received some other kind of usernotice */
+  client.bind("twitch-otherusernotice", function _on_twitch_otherusernotice(e) {
+    Util.StorageAppend("debug-msg-log", e);
+    /* TODO */
+  });
+
   /* Bind the rest of the events and warn about unbound events */
   client.bind("twitch-userstate", function () {});
   client.bind("twitch-roomstate", function () {});

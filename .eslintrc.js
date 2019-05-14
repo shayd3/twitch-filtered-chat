@@ -35,9 +35,8 @@ module.exports = {
         "no-trailing-spaces": "warn",
         "eqeqeq": "warn",
         'no-unused-vars': ['warn', {
-          /*vars: 'all',*/
-          args: 'none',
-          ignoreRestSiblings: true
+            args: 'none',
+            ignoreRestSiblings: true
         }]
     },
     "overrides": [
