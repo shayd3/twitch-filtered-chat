@@ -24,6 +24,7 @@
 
 const CACHED_VALUE = "Cached";
 const AUTOGEN_VALUE = "Auto-Generated";
+const CFGKEY_DEFAULT = "tfc-config";
 
 /* Document writing functions {{{0 */
 
@@ -64,7 +65,7 @@ class Content { /* exported Content */
 
 /* Begin configuration section {{{0 */
 
-/* Parse a query string into the config object given and return removals */
+/* Merge the query string into the config object given and return removals */
 function parseQueryString(config, qs=null) {
   let qs_data;
   if (qs === null) {
@@ -151,6 +152,12 @@ function parseQueryString(config, qs=null) {
           CSSCheerStyles[e]._disabled = true;
         }
       }
+    } else if (k == "enable") {
+      for (let e of `${v}`.split(",")) {
+        if (CSSCheerStyles[e]) {
+          CSSCheerStyles[e]._disabled = false;
+        }
+      }
     } else if (k == "max") {
       key = "MaxMessages";
       val = typeof(v) === "number" ? v : TwitchClient.DEFAULT_MAX_MESSAGES;
@@ -174,10 +181,11 @@ function parseQueryString(config, qs=null) {
 
 /* Obtain configuration key */
 function getConfigKey() {
-  let config_key = "tfc-config";
+  let config_key = CFGKEY_DEFAULT;
   let qs = Util.ParseQueryString();
-  if (qs.hasOwnProperty("config_key")) {
-    config_key = config_key + "-" + qs.config_key.replace(/[^a-z]/g, "");
+  let val = qs.config_key || qs.key || qs["config-key"];
+  if (val) {
+    config_key = config_key + "-" + val.replace(/[^a-z]/g, "");
   }
   return config_key;
 }
@@ -191,23 +199,26 @@ function getConfigObject(inclSensitive=true) {
    * 2) Store module configuration in each modules' settings window
    * 3) Remove sensitive values from the query string, if present
    */
-  let config_key = getConfigKey();
+  let config_key = null;
+  let config = null;
 
   /* Query String object, parsed */
   let qs = Util.ParseQueryString();
-  Util.SetWebStorageKey(config_key);
-  if (config_key !== "tfc-config") {
-    Util.Log(`Using custom config key "${Util.GetWebStorageKey()}"`);
+  if (qs.nols) {
+    Util.DisableLocalStorage();
+    config = {};
+  } else {
+    config_key = getConfigKey();
+    Util.SetWebStorageKey(config_key);
+    if (config_key !== CFGKEY_DEFAULT) {
+      Util.Log(`Using custom config key "${Util.GetWebStorageKey()}"`);
+    }
+    config = Util.GetWebStorage() || {};
+    config.key = config_key;
   }
+
   /* Items to remove from the query string */
   let query_remove = [];
-
-  /* Parse localStorage config */
-  let config = Util.GetWebStorage();
-  if (!config) config = {};
-
-  /* Persist the config key */
-  config.key = Util.GetWebStorageKey();
 
   /* Certain unwanted items may be preserved in localStorage */
   if (config.hasOwnProperty("NoAssets")) delete config["NoAssets"];

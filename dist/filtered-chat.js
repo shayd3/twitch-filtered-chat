@@ -32,6 +32,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 var CACHED_VALUE = "Cached";
 var AUTOGEN_VALUE = "Auto-Generated";
+var CFGKEY_DEFAULT = "tfc-config";
 
 /* Document writing functions {{{0 */
 
@@ -100,7 +101,7 @@ var Content = function () {
 
 /* Begin configuration section {{{0 */
 
-/* Parse a query string into the config object given and return removals */
+/* Merge the query string into the config object given and return removals */
 
 
 function parseQueryString(config) {
@@ -226,6 +227,33 @@ function parseQueryString(config) {
             }
           }
         }
+      } else if (k == "enable") {
+        var _iteratorNormalCompletion3 = true;
+        var _didIteratorError3 = false;
+        var _iteratorError3 = undefined;
+
+        try {
+          for (var _iterator3 = ("" + v).split(",")[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+            var _e = _step3.value;
+
+            if (CSSCheerStyles[_e]) {
+              CSSCheerStyles[_e]._disabled = false;
+            }
+          }
+        } catch (err) {
+          _didIteratorError3 = true;
+          _iteratorError3 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion3 && _iterator3.return) {
+              _iterator3.return();
+            }
+          } finally {
+            if (_didIteratorError3) {
+              throw _iteratorError3;
+            }
+          }
+        }
       } else if (k == "max") {
         key = "MaxMessages";
         val = typeof v === "number" ? v : TwitchClient.DEFAULT_MAX_MESSAGES;
@@ -264,10 +292,11 @@ function parseQueryString(config) {
 
 /* Obtain configuration key */
 function getConfigKey() {
-  var config_key = "tfc-config";
+  var config_key = CFGKEY_DEFAULT;
   var qs = Util.ParseQueryString();
-  if (qs.hasOwnProperty("config_key")) {
-    config_key = config_key + "-" + qs.config_key.replace(/[^a-z]/g, "");
+  var val = qs.config_key || qs.key || qs["config-key"];
+  if (val) {
+    config_key = config_key + "-" + val.replace(/[^a-z]/g, "");
   }
   return config_key;
 }
@@ -283,23 +312,26 @@ function getConfigObject() {
    * 2) Store module configuration in each modules' settings window
    * 3) Remove sensitive values from the query string, if present
    */
-  var config_key = getConfigKey();
+  var config_key = null;
+  var config = null;
 
   /* Query String object, parsed */
   var qs = Util.ParseQueryString();
-  Util.SetWebStorageKey(config_key);
-  if (config_key !== "tfc-config") {
-    Util.Log("Using custom config key \"" + Util.GetWebStorageKey() + "\"");
+  if (qs.nols) {
+    Util.DisableLocalStorage();
+    config = {};
+  } else {
+    config_key = getConfigKey();
+    Util.SetWebStorageKey(config_key);
+    if (config_key !== CFGKEY_DEFAULT) {
+      Util.Log("Using custom config key \"" + Util.GetWebStorageKey() + "\"");
+    }
+    config = Util.GetWebStorage() || {};
+    config.key = config_key;
   }
+
   /* Items to remove from the query string */
   var query_remove = [];
-
-  /* Parse localStorage config */
-  var config = Util.GetWebStorage();
-  if (!config) config = {};
-
-  /* Persist the config key */
-  config.key = Util.GetWebStorageKey();
 
   /* Certain unwanted items may be preserved in localStorage */
   if (config.hasOwnProperty("NoAssets")) delete config["NoAssets"];
@@ -327,13 +359,13 @@ function getConfigObject() {
   var txtNick = $("input#txtNick")[0];
   var txtPass = $("input#txtPass")[0];
   if (txtChannel.value) {
-    var _iteratorNormalCompletion3 = true;
-    var _didIteratorError3 = false;
-    var _iteratorError3 = undefined;
+    var _iteratorNormalCompletion4 = true;
+    var _didIteratorError4 = false;
+    var _iteratorError4 = undefined;
 
     try {
-      for (var _iterator3 = txtChannel.value.split(",")[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-        var ch = _step3.value;
+      for (var _iterator4 = txtChannel.value.split(",")[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+        var ch = _step4.value;
 
         var channel = Twitch.FormatChannel(ch.toLowerCase());
         if (config.Channels.indexOf(channel) == -1) {
@@ -341,16 +373,16 @@ function getConfigObject() {
         }
       }
     } catch (err) {
-      _didIteratorError3 = true;
-      _iteratorError3 = err;
+      _didIteratorError4 = true;
+      _iteratorError4 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion3 && _iterator3.return) {
-          _iterator3.return();
+        if (!_iteratorNormalCompletion4 && _iterator4.return) {
+          _iterator4.return();
         }
       } finally {
-        if (_didIteratorError3) {
-          throw _iteratorError3;
+        if (_didIteratorError4) {
+          throw _iteratorError4;
         }
       }
     }
@@ -405,27 +437,27 @@ function getConfigObject() {
       is_base64 = true;
       old_query = Util.ParseQueryString(atob(old_query.base64));
     }
-    var _iteratorNormalCompletion4 = true;
-    var _didIteratorError4 = false;
-    var _iteratorError4 = undefined;
+    var _iteratorNormalCompletion5 = true;
+    var _didIteratorError5 = false;
+    var _iteratorError5 = undefined;
 
     try {
-      for (var _iterator4 = query_remove[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-        var e = _step4.value;
+      for (var _iterator5 = query_remove[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+        var e = _step5.value;
 
         delete old_query[e];
       }
     } catch (err) {
-      _didIteratorError4 = true;
-      _iteratorError4 = err;
+      _didIteratorError5 = true;
+      _iteratorError5 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion4 && _iterator4.return) {
-          _iterator4.return();
+        if (!_iteratorNormalCompletion5 && _iterator5.return) {
+          _iterator5.return();
         }
       } finally {
-        if (_didIteratorError4) {
-          throw _iteratorError4;
+        if (_didIteratorError5) {
+          throw _iteratorError5;
         }
       }
     }
@@ -501,13 +533,13 @@ function setModuleSettings(module, config) {
   }
   function addInput(cls, label, values) {
     if (values && values.length > 0) {
-      var _iteratorNormalCompletion5 = true;
-      var _didIteratorError5 = false;
-      var _iteratorError5 = undefined;
+      var _iteratorNormalCompletion6 = true;
+      var _didIteratorError6 = false;
+      var _iteratorError6 = undefined;
 
       try {
-        for (var _iterator5 = values[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-          var val = _step5.value;
+        for (var _iterator6 = values[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+          var val = _step6.value;
 
           var $li = $("<li></li>");
           var isel = "input." + cls + "[value=\"" + val + "\"]";
@@ -523,16 +555,16 @@ function setModuleSettings(module, config) {
           }
         }
       } catch (err) {
-        _didIteratorError5 = true;
-        _iteratorError5 = err;
+        _didIteratorError6 = true;
+        _iteratorError6 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion5 && _iterator5.return) {
-            _iterator5.return();
+          if (!_iteratorNormalCompletion6 && _iterator6.return) {
+            _iterator6.return();
           }
         } finally {
-          if (_didIteratorError5) {
-            throw _iteratorError5;
+          if (_didIteratorError6) {
+            throw _iteratorError6;
           }
         }
       }
@@ -648,44 +680,18 @@ function setChannels(client, channels) {
     return new_chs.indexOf(c) == -1;
   });
   /* Join all the channels added */
-  var _iteratorNormalCompletion6 = true;
-  var _didIteratorError6 = false;
-  var _iteratorError6 = undefined;
-
-  try {
-    for (var _iterator6 = to_join[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-      var ch = _step6.value;
-
-      client.JoinChannel(ch);
-      Content.addNotice("Joining " + ch);
-    }
-    /* Leave all the channels removed */
-  } catch (err) {
-    _didIteratorError6 = true;
-    _iteratorError6 = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion6 && _iterator6.return) {
-        _iterator6.return();
-      }
-    } finally {
-      if (_didIteratorError6) {
-        throw _iteratorError6;
-      }
-    }
-  }
-
   var _iteratorNormalCompletion7 = true;
   var _didIteratorError7 = false;
   var _iteratorError7 = undefined;
 
   try {
-    for (var _iterator7 = to_part[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-      var _ch = _step7.value;
+    for (var _iterator7 = to_join[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+      var ch = _step7.value;
 
-      client.LeaveChannel(_ch);
-      Content.addNotice("Leaving " + _ch);
+      client.JoinChannel(ch);
+      Content.addNotice("Joining " + ch);
     }
+    /* Leave all the channels removed */
   } catch (err) {
     _didIteratorError7 = true;
     _iteratorError7 = err;
@@ -697,6 +703,32 @@ function setChannels(client, channels) {
     } finally {
       if (_didIteratorError7) {
         throw _iteratorError7;
+      }
+    }
+  }
+
+  var _iteratorNormalCompletion8 = true;
+  var _didIteratorError8 = false;
+  var _iteratorError8 = undefined;
+
+  try {
+    for (var _iterator8 = to_part[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+      var _ch = _step8.value;
+
+      client.LeaveChannel(_ch);
+      Content.addNotice("Leaving " + _ch);
+    }
+  } catch (err) {
+    _didIteratorError8 = true;
+    _iteratorError8 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion8 && _iterator8.return) {
+        _iterator8.return();
+      }
+    } finally {
+      if (_didIteratorError8) {
+        throw _iteratorError8;
       }
     }
   }
@@ -739,13 +771,13 @@ function shouldFilter(module, event) {
     })) return true;
     /* Filtering to permitted channels (default: permit all) */
     if (rules.FromChannel.length > 0) {
-      var _iteratorNormalCompletion8 = true;
-      var _didIteratorError8 = false;
-      var _iteratorError8 = undefined;
+      var _iteratorNormalCompletion9 = true;
+      var _didIteratorError9 = false;
+      var _iteratorError9 = undefined;
 
       try {
-        for (var _iterator8 = rules.FromChannel[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-          var s = _step8.value;
+        for (var _iterator9 = rules.FromChannel[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+          var s = _step9.value;
 
           var c = s.indexOf("#") == -1 ? "#" + s : s;
           if (event.channel && event.channel.channel) {
@@ -755,16 +787,16 @@ function shouldFilter(module, event) {
           }
         }
       } catch (err) {
-        _didIteratorError8 = true;
-        _iteratorError8 = err;
+        _didIteratorError9 = true;
+        _iteratorError9 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion8 && _iterator8.return) {
-            _iterator8.return();
+          if (!_iteratorNormalCompletion9 && _iterator9.return) {
+            _iterator9.return();
           }
         } finally {
-          if (_didIteratorError8) {
-            throw _iteratorError8;
+          if (_didIteratorError9) {
+            throw _iteratorError9;
           }
         }
       }
@@ -896,13 +928,13 @@ function handleCommand(value, client) {
       }
     } else {
       var wincfgs = [];
-      var _iteratorNormalCompletion9 = true;
-      var _didIteratorError9 = false;
-      var _iteratorError9 = undefined;
+      var _iteratorNormalCompletion10 = true;
+      var _didIteratorError10 = false;
+      var _iteratorError10 = undefined;
 
       try {
-        for (var _iterator9 = Object.entries(config)[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-          var _ref3 = _step9.value;
+        for (var _iterator10 = Object.entries(config)[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+          var _ref3 = _step10.value;
 
           var _ref4 = _slicedToArray(_ref3, 2);
 
@@ -921,67 +953,6 @@ function handleCommand(value, client) {
           }
         }
       } catch (err) {
-        _didIteratorError9 = true;
-        _iteratorError9 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion9 && _iterator9.return) {
-            _iterator9.return();
-          }
-        } finally {
-          if (_didIteratorError9) {
-            throw _iteratorError9;
-          }
-        }
-      }
-
-      Content.addHelp("Window Configurations:");
-      var _iteratorNormalCompletion10 = true;
-      var _didIteratorError10 = false;
-      var _iteratorError10 = undefined;
-
-      try {
-        for (var _iterator10 = wincfgs[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-          var _ref5 = _step10.value;
-
-          var _ref6 = _slicedToArray(_ref5, 2);
-
-          var _k = _ref6[0];
-          var _v = _ref6[1];
-
-          Content.addHelp("Module <span class=\"arg\">" + _k + "</span>: &quot;" + _v.Name + "&quot;:");
-          var _iteratorNormalCompletion11 = true;
-          var _didIteratorError11 = false;
-          var _iteratorError11 = undefined;
-
-          try {
-            for (var _iterator11 = Object.entries(_v)[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-              var _ref7 = _step11.value;
-
-              var _ref8 = _slicedToArray(_ref7, 2);
-
-              var cfgk = _ref8[0];
-              var cfgv = _ref8[1];
-
-              if (cfgk === "Name") continue;
-              Content.addHelpLine(cfgk, "&quot;" + cfgv + "&quot;");
-            }
-          } catch (err) {
-            _didIteratorError11 = true;
-            _iteratorError11 = err;
-          } finally {
-            try {
-              if (!_iteratorNormalCompletion11 && _iterator11.return) {
-                _iterator11.return();
-              }
-            } finally {
-              if (_didIteratorError11) {
-                throw _iteratorError11;
-              }
-            }
-          }
-        }
-      } catch (err) {
         _didIteratorError10 = true;
         _iteratorError10 = err;
       } finally {
@@ -992,6 +963,67 @@ function handleCommand(value, client) {
         } finally {
           if (_didIteratorError10) {
             throw _iteratorError10;
+          }
+        }
+      }
+
+      Content.addHelp("Window Configurations:");
+      var _iteratorNormalCompletion11 = true;
+      var _didIteratorError11 = false;
+      var _iteratorError11 = undefined;
+
+      try {
+        for (var _iterator11 = wincfgs[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+          var _ref5 = _step11.value;
+
+          var _ref6 = _slicedToArray(_ref5, 2);
+
+          var _k = _ref6[0];
+          var _v = _ref6[1];
+
+          Content.addHelp("Module <span class=\"arg\">" + _k + "</span>: &quot;" + _v.Name + "&quot;:");
+          var _iteratorNormalCompletion12 = true;
+          var _didIteratorError12 = false;
+          var _iteratorError12 = undefined;
+
+          try {
+            for (var _iterator12 = Object.entries(_v)[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+              var _ref7 = _step12.value;
+
+              var _ref8 = _slicedToArray(_ref7, 2);
+
+              var cfgk = _ref8[0];
+              var cfgv = _ref8[1];
+
+              if (cfgk === "Name") continue;
+              Content.addHelpLine(cfgk, "&quot;" + cfgv + "&quot;");
+            }
+          } catch (err) {
+            _didIteratorError12 = true;
+            _iteratorError12 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion12 && _iterator12.return) {
+                _iterator12.return();
+              }
+            } finally {
+              if (_didIteratorError12) {
+                throw _iteratorError12;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        _didIteratorError11 = true;
+        _iteratorError11 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion11 && _iterator11.return) {
+            _iterator11.return();
+          }
+        } finally {
+          if (_didIteratorError11) {
+            throw _iteratorError11;
           }
         }
       }
@@ -1055,13 +1087,13 @@ function showContextWindow(client, cw, line) {
   /* Add link to timeout user */
   if (client.IsMod(channel)) {
     var $tl = $("<div class=\"cw-timeout\">Timeout:</div>");
-    var _iteratorNormalCompletion12 = true;
-    var _didIteratorError12 = false;
-    var _iteratorError12 = undefined;
+    var _iteratorNormalCompletion13 = true;
+    var _didIteratorError13 = false;
+    var _iteratorError13 = undefined;
 
     try {
-      for (var _iterator12 = "1s 10s 60s 10m 30m 1h 12h 24h".split(" ")[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-        var dur = _step12.value;
+      for (var _iterator13 = "1s 10s 60s 10m 30m 1h 12h 24h".split(" ")[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+        var dur = _step13.value;
 
         var $ta = $(Link("cw-timeout-" + user + "-" + dur, dur));
         $ta.addClass("cw-timeout-dur");
@@ -1079,16 +1111,16 @@ function showContextWindow(client, cw, line) {
         $tl.append($ta);
       }
     } catch (err) {
-      _didIteratorError12 = true;
-      _iteratorError12 = err;
+      _didIteratorError13 = true;
+      _iteratorError13 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion12 && _iterator12.return) {
-          _iterator12.return();
+        if (!_iteratorNormalCompletion13 && _iterator13.return) {
+          _iterator13.return();
         }
       } finally {
-        if (_didIteratorError12) {
-          throw _iteratorError12;
+        if (_didIteratorError13) {
+          throw _iteratorError13;
         }
       }
     }
@@ -1170,29 +1202,29 @@ function updateTransparency(transparent) {
     var ss = Util.CSS.GetSheet("main.css");
     var rule = Util.CSS.GetRule(ss, ":root");
     /* Find the prop="--<name>-color" rules */
-    var _iteratorNormalCompletion13 = true;
-    var _didIteratorError13 = false;
-    var _iteratorError13 = undefined;
+    var _iteratorNormalCompletion14 = true;
+    var _didIteratorError14 = false;
+    var _iteratorError14 = undefined;
 
     try {
-      for (var _iterator13 = Util.CSS.GetPropertyNames(rule)[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-        var prop = _step13.value;
+      for (var _iterator14 = Util.CSS.GetPropertyNames(rule)[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+        var prop = _step14.value;
 
         if (prop.match(/^--[a-z-]+-color$/)) {
           props.push(prop);
         }
       }
     } catch (err) {
-      _didIteratorError13 = true;
-      _iteratorError13 = err;
+      _didIteratorError14 = true;
+      _iteratorError14 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion13 && _iterator13.return) {
-          _iterator13.return();
+        if (!_iteratorNormalCompletion14 && _iterator14.return) {
+          _iterator14.return();
         }
       } finally {
-        if (_didIteratorError13) {
-          throw _iteratorError13;
+        if (_didIteratorError14) {
+          throw _iteratorError14;
         }
       }
     }
@@ -1201,13 +1233,13 @@ function updateTransparency(transparent) {
     Util.Error("Failed getting main.css :root", e);
     props = ["--body-color", "--header-color", "--menudiv-color", "--module-color", "--odd-line-color", "--sub-color", "--chat-color", "--textarea-color"];
   }
-  var _iteratorNormalCompletion14 = true;
-  var _didIteratorError14 = false;
-  var _iteratorError14 = undefined;
+  var _iteratorNormalCompletion15 = true;
+  var _didIteratorError15 = false;
+  var _iteratorError15 = undefined;
 
   try {
-    for (var _iterator14 = props[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-      var _prop = _step14.value;
+    for (var _iterator15 = props[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+      var _prop = _step15.value;
 
       if (transparent) {
         /* Set them all to transparent */
@@ -1222,16 +1254,16 @@ function updateTransparency(transparent) {
       }
     }
   } catch (err) {
-    _didIteratorError14 = true;
-    _iteratorError14 = err;
+    _didIteratorError15 = true;
+    _iteratorError15 = err;
   } finally {
     try {
-      if (!_iteratorNormalCompletion14 && _iterator14.return) {
-        _iterator14.return();
+      if (!_iteratorNormalCompletion15 && _iterator15.return) {
+        _iterator15.return();
       }
     } finally {
-      if (_didIteratorError14) {
-        throw _iteratorError14;
+      if (_didIteratorError15) {
+        throw _iteratorError15;
       }
     }
   }
@@ -1373,13 +1405,13 @@ function client_main(layout) {
     delete config["Pass"];
     delete config["ClientID"];
     config.Plugins = Boolean(config.Plugins);
-    var _iteratorNormalCompletion15 = true;
-    var _didIteratorError15 = false;
-    var _iteratorError15 = undefined;
+    var _iteratorNormalCompletion16 = true;
+    var _didIteratorError16 = false;
+    var _iteratorError16 = undefined;
 
     try {
-      for (var _iterator15 = Object.entries(config)[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-        var _ref9 = _step15.value;
+      for (var _iterator16 = Object.entries(config)[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+        var _ref9 = _step16.value;
 
         var _ref10 = _slicedToArray(_ref9, 2);
 
@@ -1389,16 +1421,16 @@ function client_main(layout) {
         client.get("HTMLGen").setValue(k, v);
       }
     } catch (err) {
-      _didIteratorError15 = true;
-      _iteratorError15 = err;
+      _didIteratorError16 = true;
+      _iteratorError16 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion15 && _iterator15.return) {
-          _iterator15.return();
+        if (!_iteratorNormalCompletion16 && _iterator16.return) {
+          _iterator16.return();
         }
       } finally {
-        if (_didIteratorError15) {
-          throw _iteratorError15;
+        if (_didIteratorError16) {
+          throw _iteratorError16;
         }
       }
     }
@@ -1786,29 +1818,29 @@ function client_main(layout) {
     }
     /* Avoid flooding the DOM with stale chat messages */
     var max = getConfigObject().MaxMessages || 100;
-    var _iteratorNormalCompletion16 = true;
-    var _didIteratorError16 = false;
-    var _iteratorError16 = undefined;
+    var _iteratorNormalCompletion17 = true;
+    var _didIteratorError17 = false;
+    var _iteratorError17 = undefined;
 
     try {
-      for (var _iterator16 = $(".content")[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
-        var c = _step16.value;
+      for (var _iterator17 = $(".content")[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
+        var c = _step17.value;
 
         while ($(c).find(".line-wrapper").length > max) {
           $(c).find(".line-wrapper").first().remove();
         }
       }
     } catch (err) {
-      _didIteratorError16 = true;
-      _iteratorError16 = err;
+      _didIteratorError17 = true;
+      _iteratorError17 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion16 && _iterator16.return) {
-          _iterator16.return();
+        if (!_iteratorNormalCompletion17 && _iterator17.return) {
+          _iterator17.return();
         }
       } finally {
-        if (_didIteratorError16) {
-          throw _iteratorError16;
+        if (_didIteratorError17) {
+          throw _iteratorError17;
         }
       }
     }
