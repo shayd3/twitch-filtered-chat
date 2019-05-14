@@ -86,8 +86,7 @@ var CSSCheerStyles = { /* exported CSSCheerStyles */
   },
   rainbow: {
     cost: 1,
-    class: "effect-rainbow",
-    wclass: "line-rainbow"
+    class: "effect-rainbow"
   },
   disco: {
     cost: 1,

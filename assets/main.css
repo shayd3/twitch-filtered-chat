@@ -1,9 +1,4 @@
-/* TODO:
- *  Add "light"/"dark" colorschemes
- */
-
-/* NOTE:
- * Using "trans=1" changes all variables named "--<label>-color" to either
+/* Using "trans=1" changes all variables named "--<label>-color" to either
  * "transparent" or var(--<label>-color-default).
  *
  * To have color variables ignored by "trans=1", name them something other than
@@ -13,7 +8,7 @@
  */
 
 :root {
-  /* Default colors (used by ?trans=1) */
+  /* Default colors (used by ?trans=1 because "-color-default") */
   --body-color-default: #0E0E0E;
   --header-color-default: #191919;
   --menudiv-color-default: #f0f0f0;
@@ -26,7 +21,7 @@
   /* Default colors (not used by ?trans=1) */
   --chat-border-default: #7d5bbe;
 
-  /* The following colors are affected by ?trans=1 */
+  /* The following colors are affected by ?trans=1 (because "-color") */
   --body-color: var(--body-color-default);
   --header-color: var(--header-color-default);
   --menudiv-color: var(--menudiv-color-default);
@@ -45,6 +40,8 @@
   --body-font: var(--body-font-default);
   --body-font-size: var(--body-font-size-default);
 }
+
+/* Top-level rules {{{0 */
 
 *, *:before, *:after {
   box-sizing: border-box;
@@ -86,6 +83,12 @@ input {
   padding: 2px;
   font-size: 0.8em;
 }
+
+.username {
+  font-weight: bold;
+}
+
+/* End top-level rules 0}}} */
 
 .column {
   float: left;
@@ -287,10 +290,6 @@ input {
   background: var(--odd-line-color, var(--odd-line-color-default));
 }
 
-.username {
-  font-weight: bold;
-}
-
 .module .content .line .username:hover {
   cursor: pointer;
   text-decoration: underline;
@@ -327,11 +326,23 @@ input {
   border: 2px solid #c03030;
 }
 
-.module .content .line .message:not(.effect-rainbow) {
+.module .content .line .message {
   text-shadow: -1px -1px 1px black,
                -1px  1px 1px black,
                 2px  2px 1px black;
 }
+
+/* Specific effect overrides {{{1 */
+
+.module .content .line .message.effect-rainbow {
+  text-shadow: none;
+}
+
+.module .content .line .message.effect-disco {
+  text-shadow: none;
+}
+
+/* End of specific effect overrides 1}}} */
 
 .module .content .line .sub-message {
   font-weight: bold;
@@ -398,17 +409,6 @@ input {
 }
 
 /* End of line CSS 0}}} */
-
-/* Transparent background overrides {{{0 */
-
-.module .content .line .message:not(.effect-rainbow) {
-  text-shadow: -1px -1px 0px black,
-                -2px 2px 1px black,
-                1px -1px 0px black,
-                1px 1px 1px black;
-}
-
-/* End transparent background overrides 0}}} */
 
 /* Chat textbox {{{0 */
 
@@ -667,11 +667,24 @@ body.transparent #chat textarea  {
   -webkit-text-fill-color: transparent;
 }
 
-.line-rainbow {
-  /*background-image: linear-gradient(to right, #444, #111);*/
+.effect-disco {
+  background: linear-gradient(45deg, red, orange, yellow, green, cyan, blue, violet, red);
+  text-shadow: none;
+  background-size: 400% 100%;
+  animation-name: anim-disco;
+  animation-duration: 12s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.effect-disco {
+@keyframes anim-disco {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 400% 50%; }
+}
+
+/*.effect-disco {
   animation-name: disco;
   animation-duration: 3s;
   animation-timing-function: ease-in;
@@ -687,6 +700,62 @@ body.transparent #chat textarea  {
   83% { color: #F0F; }
   100% { color: #F00; }
 }
+*/
 
 /* End CSS cheer effects 0}}} */
+
+/** TFC page structure:
+ * body
+ *  span#debug.debug
+ *  div#wrapper
+ *   div#wrapper-loading.loading
+ *   div#column1.column.left (or .full)
+ *    div#module1.module.left.no-chat (or .full.chat, .full.no-chat)
+ *     <template:module-definition>
+ *   div#column2.column.right
+ *    div#module2.module.right.no-chat (or .chat)
+ *     <template:module-definition>
+ *
+ ** <template:module-definition>:
+ * div.header
+ *  div.menu
+ *   div{3}
+ *  span.clear-chat
+ *   a.clear-link[data-for="module1"]
+ *    img.clear-icon
+ *  div.settings
+ *   p
+ *   ul.include
+ *    li label input.pleb
+ *    li label input.sub
+ *    li label input.vip
+ *    li label input.mod
+ *    li label input.event
+ *    li label input.bits
+ *    li label input.me
+ *   p
+ *   ul.limit
+ *    li.textbox.from_channel
+ *     input
+ *     label
+ *   p
+ *   ul.exclude
+ *    li.textbox.exclude_user
+ *     label
+ *     input
+ *    li.textbox.exclude_startswith
+ *     label
+ *     input
+ *  label.name
+ *  input.name
+ * div.content
+ *  div.loading
+ *  div.line.line-wrapper
+ *   div.chat-line
+ *    span.badges
+ *     img.badge
+ *    span.username
+ *    span.message
+ *     img.emote (one of .twitch-emote, .ffz-emote, or .bttv-emote)
+ */
 

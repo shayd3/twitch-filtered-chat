@@ -11,28 +11,6 @@
  * Add badge information on hover
  */
 
-/* div.line.line-wrapper
- *  div.chat-line (has attrs)
- *   span.badges
- *    img.badge
- *   span.username
- *   span.message
- *    img.emote (.twitch-emote, .ffz-emote, .bttv-emote)
- *
- * div.chat-line attrs:
- *  data-id
- *  data-user
- *  data-user-id
- *  data-channel
- *  data-channel-id
- *  data-subscriber
- *  data-vip
- *  data-mod
- *  data-caster
- *  data-sent-ts
- *  data-recv-ts
- */
-
 /* exported HTMLGenerator */
 class HTMLGenerator {
   constructor(client, config=null) {

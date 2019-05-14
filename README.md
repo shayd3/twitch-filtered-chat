@@ -177,4 +177,6 @@ Note that `^M` refers to a literal `^M` character: `^V^M` on Linux. This can be 
 
 YoshiRulz - Improving rainbow effect
 
-Inverted - Improving username contrast
+Inverted - Improving username contrast, helping with disco effect
+
+SighnWave - Creating the disco effect
