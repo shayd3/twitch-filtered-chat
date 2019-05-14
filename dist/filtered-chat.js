@@ -1306,7 +1306,7 @@ function client_main(layout) {
     var msg = (_Util$Logger2 = Util.Logger).stringify.apply(_Util$Logger2, args);
     if (args.length == 1 && args[0] instanceof TwitchEvent) {
       if (Util.DebugLevel >= Util.LEVEL_TRACE) {
-        Content.addNotice("WARNING: " + args[0].repr());
+        Content.addNotice("WARNING: " + JSON.stringify(args[0]));
       }
     } else if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
       Content.addNotice("WARNING: " + msg.escape());
@@ -1822,7 +1822,11 @@ function client_main(layout) {
   /* Message received from Twitch */
   client.bind("twitch-message", function _on_twitch_message(e) {
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
-      Content.addPre(e.repr());
+      if (e instanceof TwitchEvent) {
+        Content.addPre(e.repr());
+      } else {
+        Content.addPre(JSON.stringify(e));
+      }
     }
     /* Avoid flooding the DOM with stale chat messages */
     var max = getConfigObject().MaxMessages || 100;
