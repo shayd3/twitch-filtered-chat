@@ -671,5 +671,22 @@ body.transparent #chat textarea  {
   /*background-image: linear-gradient(to right, #444, #111);*/
 }
 
+.effect-disco {
+  animation-name: disco;
+  animation-duration: 3s;
+  animation-timing-function: ease-in;
+  animation-iteration-count: infinite;
+}
+
+@keyframes disco {
+  0% { color: #F00; }
+  17% { color: #FF0; }
+  33% { color: #0F0; }
+  50% { color: #0FF; }
+  66% { color: #00F; }
+  83% { color: #F0F; }
+  100% { color: #F00; }
+}
+
 /* End CSS cheer effects 0}}} */
 
