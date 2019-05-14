@@ -45,9 +45,12 @@ var Content = function () {
     key: "addHTML",
     /* exported Content */
     value: function addHTML(content) {
-      var line = "<div class=\"line line-wrapper\"></div>";
-      var $Content = $(".module").find($(".content"));
-      $Content.append($(line).append(content));
+      var container = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+      var $Line = $("<div class=\"line line-wrapper\"></div>");
+      var $Content = container ? $(container) : $(".module").find(".content");
+      $Line.append(content);
+      $Content.append($Line);
       $Content.scrollTop(Math.pow(2, 31) - 1);
     }
   }, {
@@ -107,6 +110,7 @@ var Content = function () {
 function parseQueryString(config) {
   var qs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 
+  /* FIXME: parsing is unordered; make it ordered */
   var qs_data = void 0;
   if (qs === null) {
     qs = window.location.search;
@@ -140,7 +144,6 @@ function parseQueryString(config) {
 
       var key = k; /* config key */
       var val = v; /* config val */
-      /* Parse specific items */
       if (k === "clientid") {
         key = "ClientID";
         config.__clientid_override = true;
@@ -188,7 +191,7 @@ function parseQueryString(config) {
       } else if (k === "trans" || k === "transparent") {
         key = "Transparent";
         val = 1;
-      } else if (k === "layout" && ParseLayout) {
+      } else if (k === "layout") {
         key = "Layout";
         val = ParseLayout(v);
       } else if (k == "reconnect") {
@@ -256,7 +259,11 @@ function parseQueryString(config) {
         }
       } else if (k == "max") {
         key = "MaxMessages";
-        val = typeof v === "number" ? v : TwitchClient.DEFAULT_MAX_MESSAGES;
+        if (typeof v === "number") {
+          val = v;
+        } else {
+          val = TwitchClient.DEFAULT_MAX_MESSAGES;
+        }
       } else if (k == "font") {
         key = "Font";
         val = "" + v;
@@ -269,6 +276,7 @@ function parseQueryString(config) {
       }
       config[key] = val;
     }
+    /* Ensure there's a layout property present */
   } catch (err) {
     _didIteratorError = true;
     _iteratorError = err;
@@ -1534,11 +1542,6 @@ function client_main(layout) {
     }
   });
 
-  /* Clicking on a "Clear" link */
-  $(".clear-chat-link").click(function () {
-    $("#" + $(this).attr("data-for") + " .content").find(".line-wrapper").remove();
-  });
-
   /* Pressing enter on the "Channels" text box */
   $("#txtChannel").keyup(function (e) {
     if (e.keyCode == Util.Key.RETURN) {
@@ -1633,6 +1636,11 @@ function client_main(layout) {
       $lbl.html($tb.val()).show();
       $settings.fadeToggle();
     }
+  });
+
+  /* Clicking on a "Clear" link */
+  $(".module .header .clear-link").click(function () {
+    $("#" + $(this).attr("data-for") + " .content").find(".line-wrapper").remove();
   });
 
   /* Pressing enter on one of the module menu text boxes */
@@ -1869,10 +1877,6 @@ function client_main(layout) {
             location.reload(true);
           } else if (tokens[1] === "clear") {
             $(".content").children().remove();
-          } else if (tokens[1] === "removeuser" || tokens[1] === "clearuser" || tokens[1] === "remove-user" || tokens[1] === "clear-user") {
-            if (tokens[2] && tokens[2].length > 1) {
-              $("[data-user=\"" + tokens[2].toLowerCase() + "\"]").parent().remove();
-            }
           } else if (tokens[1] == "nuke") {
             if (tokens[2] && tokens[2].length > 1) {
               $("[data-user=\"" + tokens[2].toLowerCase() + "\"]").parent().remove();
@@ -1886,11 +1890,9 @@ function client_main(layout) {
     }
     $(".module").each(function () {
       if (!shouldFilter($(this), event)) {
-        var $w = $("<div class=\"line line-wrapper\"></div>");
-        $w.html(client.get("HTMLGen").gen(event));
         var $c = $(this).find(".content");
-        $c.append($w);
-        $c.scrollTop(Math.pow(2, 31) - 1);
+        var $w = $("<div class=\"line line-wrapper\"></div>");
+        Content.addHTML($w.html(client.get("HTMLGen").gen(event)), $c);
       }
     });
   });
@@ -1953,9 +1955,7 @@ function client_main(layout) {
   client.bind("twitch-hosttarget", function (e) {
     Util.StorageAppend("debug-msg-log", e);
   });
-  client.bind("twitch-other", function (e) {
-    Util.StorageAppend("debug-msg-log", e);
-  });
+  client.bind("twitch-other", function () {});
   client.bindDefault(function _on_default(e) {
     Util.Warn("Unbound event:", e);
     Util.StorageAppend("debug-msg-log", e);

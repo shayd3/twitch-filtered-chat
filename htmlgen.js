@@ -450,7 +450,6 @@ class HTMLGenerator {
 
     $msg.html(message);
 
-    Util.Log($msg, event);
     return {e: $msg, effects: $effects};
   }
 

@@ -190,13 +190,13 @@ input {
   top: -1pt;
 }
 
-.module .header .clear-chat .clear-chat-link {
+.module .header .clear-chat .clear-link {
   text-decoration: none;
   background: transparent;
   color: white;
 }
 
-.module .header .clear-chat .clear-chat-icon {
+.module .header .clear-chat .clear-icon {
   padding-top: 0.5em;
   width: 1.1em;
   height: 1.6em;

@@ -29,10 +29,11 @@ const CFGKEY_DEFAULT = "tfc-config";
 /* Document writing functions {{{0 */
 
 class Content { /* exported Content */
-  static addHTML(content) {
-    let line = `<div class="line line-wrapper"></div>`;
-    let $Content = $(".module").find($(".content"));
-    $Content.append($(line).append(content));
+  static addHTML(content, container=null) {
+    let $Line = $(`<div class="line line-wrapper"></div>`);
+    let $Content = container ? $(container) : $(".module").find(".content");
+    $Line.append(content);
+    $Content.append($Line);
     $Content.scrollTop(Math.pow(2, 31) - 1);
   }
   static addPre(content) {
@@ -67,6 +68,7 @@ class Content { /* exported Content */
 
 /* Merge the query string into the config object given and return removals */
 function parseQueryString(config, qs=null) {
+  /* FIXME: parsing is unordered; make it ordered */
   let qs_data;
   if (qs === null) {
     qs = window.location.search;
@@ -88,7 +90,6 @@ function parseQueryString(config, qs=null) {
   for (let [k, v] of Object.entries(qs_data)) {
     let key = k; /* config key */
     let val = v; /* config val */
-    /* Parse specific items */
     if (k === "clientid") {
       key = "ClientID";
       config.__clientid_override = true;
@@ -134,7 +135,7 @@ function parseQueryString(config, qs=null) {
     } else if (k === "trans" || k === "transparent") {
       key = "Transparent";
       val = 1;
-    } else if (k === "layout" && ParseLayout) {
+    } else if (k === "layout") {
       key = "Layout";
       val = ParseLayout(v);
     } else if (k == "reconnect") {
@@ -160,7 +161,11 @@ function parseQueryString(config, qs=null) {
       }
     } else if (k == "max") {
       key = "MaxMessages";
-      val = typeof(v) === "number" ? v : TwitchClient.DEFAULT_MAX_MESSAGES;
+      if (typeof(v) === "number") {
+        val = v;
+      } else {
+        val = TwitchClient.DEFAULT_MAX_MESSAGES;
+      }
     } else if (k == "font") {
       key = "Font";
       val = `${v}`;
@@ -173,6 +178,7 @@ function parseQueryString(config, qs=null) {
     }
     config[key] = val;
   }
+  /* Ensure there's a layout property present */
   if (!config.hasOwnProperty("Layout")) {
     config.Layout = ParseLayout("double:chat");
   }
@@ -1021,11 +1027,6 @@ function client_main(layout) { /* exported client_main */
     }
   });
 
-  /* Clicking on a "Clear" link */
-  $(".clear-chat-link").click(function() {
-    $(`#${$(this).attr("data-for")} .content`).find(".line-wrapper").remove();
-  });
-
   /* Pressing enter on the "Channels" text box */
   $("#txtChannel").keyup(function(e) {
     if (e.keyCode == Util.Key.RETURN) {
@@ -1120,6 +1121,11 @@ function client_main(layout) { /* exported client_main */
       $lbl.html($tb.val()).show();
       $settings.fadeToggle();
     }
+  });
+
+  /* Clicking on a "Clear" link */
+  $(".module .header .clear-link").click(function() {
+    $(`#${$(this).attr("data-for")} .content`).find(".line-wrapper").remove();
   });
 
   /* Pressing enter on one of the module menu text boxes */
@@ -1337,13 +1343,6 @@ function client_main(layout) { /* exported client_main */
             location.reload(true);
           } else if (tokens[1] === "clear") {
             $(".content").children().remove();
-          } else if (tokens[1] === "removeuser"
-                     || tokens[1] === "clearuser"
-                     || tokens[1] === "remove-user"
-                     || tokens[1] === "clear-user") {
-            if (tokens[2] && tokens[2].length > 1) {
-              $(`[data-user="${tokens[2].toLowerCase()}"]`).parent().remove();
-            }
           } else if (tokens[1] == "nuke") {
             if (tokens[2] && tokens[2].length > 1) {
               $(`[data-user="${tokens[2].toLowerCase()}"]`).parent().remove();
@@ -1357,11 +1356,9 @@ function client_main(layout) { /* exported client_main */
     }
     $(".module").each(function() {
       if (!shouldFilter($(this), event)) {
-        let $w = $(`<div class="line line-wrapper"></div>`);
-        $w.html(client.get("HTMLGen").gen(event));
         let $c = $(this).find(".content");
-        $c.append($w);
-        $c.scrollTop(Math.pow(2, 31) - 1);
+        let $w = $(`<div class="line line-wrapper"></div>`);
+        Content.addHTML($w.html(client.get("HTMLGen").gen(event)), $c);
       }
     });
   });
@@ -1424,9 +1421,7 @@ function client_main(layout) { /* exported client_main */
   client.bind("twitch-hosttarget", function(e) {
     Util.StorageAppend("debug-msg-log", e);
   });
-  client.bind("twitch-other", function(e) {
-    Util.StorageAppend("debug-msg-log", e);
-  });
+  client.bind("twitch-other", function() {});
   client.bindDefault(function _on_default(e) {
     Util.Warn("Unbound event:", e);
     Util.StorageAppend("debug-msg-log", e);

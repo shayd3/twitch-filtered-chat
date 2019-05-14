@@ -1,3 +1,7 @@
+# Twitch Filtered Chat
+
+It's Twitch Chat, but Filtered!
+
 ## Usage
 
 URL: `https://kaedenn.github.io/twitch-filtered-chat/index.html?<OPTIONS>`
