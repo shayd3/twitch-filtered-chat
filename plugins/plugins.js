@@ -67,7 +67,7 @@ class PluginStorageClass {
   _cmp(n1, n2) {
     let p1 = this._plugins[n1];
     let p2 = this._plugins[n2];
-    if (p1.order == p2.order) {
+    if (p1.order === p2.order) {
       return p1.ctor > p2.ctor;
     } else {
       return p1.order > p2.order;

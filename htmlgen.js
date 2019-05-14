@@ -236,7 +236,7 @@ class HTMLGenerator {
     return this.genName(user, color);
   }
 
-  _msgEmotesTransform(event, message, map/*, $msg, $effects*/) {
+  _msgEmotesTransform(event, message, map, $msg, $effects) {
     if (event.flags.emotes) {
       let emotes = event.flags.emotes.map(function(e) {
         return {'id': e.id, 'name': e.name,
@@ -299,7 +299,7 @@ class HTMLGenerator {
     return message;
   }
 
-  _msgFFZEmotesTransform(event, message, map/*, $msg, $effects*/) {
+  _msgFFZEmotesTransform(event, message, map, $msg, $effects) {
     let ffz_emotes = this._client.GetFFZEmotes(event.channel.channel);
     if (ffz_emotes && ffz_emotes.emotes) {
       let ffz_emote_arr = [];
@@ -332,7 +332,7 @@ class HTMLGenerator {
     return message;
   }
 
-  _msgBTTVEmotesTransform(event, message, map/*, $msg, $effects*/) {
+  _msgBTTVEmotesTransform(event, message, map, $msg, $effects) {
     let bttv_emotes = this._client.GetBTTVEmotes(event.channel.channel);
     if (bttv_emotes && bttv_emotes.emotes) {
       let bttv_emote_arr = [];
@@ -362,9 +362,9 @@ class HTMLGenerator {
     return message;
   }
 
-  _msgAtUserTransform(event, message, map, $msg/*, $effects */) {
+  _msgAtUserTransform(event, message, map, $msg, $effects) {
     message = message.replace(/(^|\b\s*)(@\w+)(\s*\b|$)/g, (function(m, p1, p2, p3) {
-      if (p2.substr(1).toLowerCase() == this._client.GetName().toLowerCase()) {
+      if (p2.substr(1).toLowerCase() === this._client.GetName().toLowerCase()) {
         $msg.addClass("highlight");
         return `${p1}<em class="at-user at-self">${p2}</em>${p3}`;
       } else {
@@ -374,7 +374,7 @@ class HTMLGenerator {
     return message;
   }
 
-  _msgURLTransform(event, message/*, map, $msg, $effects*/) {
+  _msgURLTransform(event, message, map, $msg, $effects) {
     return this.formatURLs(message);
   }
 
@@ -389,11 +389,11 @@ class HTMLGenerator {
     /* Handle early mod-only antics */
     if (!$("#cbForce").is(":checked") && event.ismod) {
       let word0 = event.message.split(" ")[0];
-      if (word0 == "force") {
+      if (word0 === "force") {
         event.flags.force = true;
-      } else if (word0 == "forcejs") {
+      } else if (word0 === "forcejs") {
         event.flags.force = true;
-      } else if (word0 == "forcebits" || word0 == "forcecheer") {
+      } else if (word0 === "forcebits" || word0 === "forcecheer") {
         let wordlen = word0.length;
         let msgprefix = "cheer1000";
         while (msgprefix.length < word0.length) {

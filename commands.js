@@ -1,6 +1,6 @@
 /* Twitch Filtered Chat Commands */
 
-class TFCChatCommandStore {
+class ChatCommandManager {
   constructor() {
     this._command_list = [];
     this._commands = {};
@@ -79,6 +79,8 @@ class TFCChatCommandStore {
           let obj = Object.create(this);
           obj.formatUsage = this.formatUsage.bind(this, c);
           obj.printUsage = this.printUsage.bind(this, c);
+          obj.formatHelp = this.formatHelp.bind(this, c);
+          obj.printHelp = this.printHelp.bind(this, c);
           obj.command = cmd;
           obj.cmd_func = c.func;
           obj.cmd_desc = c.desc;
@@ -142,8 +144,8 @@ class TFCChatCommandStore {
   }
 
   /* Built-in //help command */
-  command_help(cmd, tokens/*, client*/) {
-    if (tokens.length == 0) {
+  command_help(cmd, tokens, client) {
+    if (tokens.length === 0) {
       Content.addHelp("Commands:");
       for (let c of Object.values(this._command_list)) {
         Content.addHelp(this.formatHelp(this._commands[c]));
@@ -183,13 +185,20 @@ class TFCChatCommandStore {
       Content.addHelp(line);
     }
   }
+
+  printHelp(cmdobj) {
+    Content.addHelp(this.formatHelp(cmdobj));
+  }
 }
 
-function command_log(cmd, tokens/*, client*/) {
+function command_log(cmd, tokens, client) {
   let logs = Util.GetWebStorage("debug-msg-log") || [];
   Content.addHelp(`Debug message log length: ${logs.length}`);
   if (tokens.length > 0) {
-    if (tokens[0] == "show") {
+    if (tokens[0] === "help") {
+      this.printHelp();
+      this.printUsage();
+    } else if (tokens[0] === "show") {
       if (tokens.length > 1) {
         let idx = Number.parseInt(tokens[1]);
         Content.addHelp(`${idx}: ${JSON.stringify(logs[idx]).escape()}`);
@@ -198,7 +207,7 @@ function command_log(cmd, tokens/*, client*/) {
           Content.addHelp(`${i}: ${JSON.stringify(l).escape()}`);
         }
       }
-    } else if (tokens[0] == "export") {
+    } else if (tokens[0] === "export") {
       let w = window.open(
         "assets/log-export.html",
         "TFCLogExportWindow",
@@ -209,7 +218,7 @@ function command_log(cmd, tokens/*, client*/) {
           this.addEntries(logs);
         }
       }
-    } else if (tokens[0] == "summary") {
+    } else if (tokens[0] === "summary") {
       let lines = [];
       let line = [];
       for (let l of Object.values(logs)) {
@@ -231,15 +240,15 @@ function command_log(cmd, tokens/*, client*/) {
         Content.addHelp(`${lidx}-${lidx+l.length}: ${JSON.stringify(l)}`);
         lidx += l.length;
       }
-    } else if (tokens[0] == "shift") {
+    } else if (tokens[0] === "shift") {
       logs.shift();
       Content.addHelp(`New logs length: ${logs.length}`);
       Util.SetWebStorage("debug-msg-log", logs);
-    } else if (tokens[0] == "pop") {
+    } else if (tokens[0] === "pop") {
       logs.pop();
       Content.addHelp(`New logs length: ${logs.length}`);
       Util.SetWebStorage("debug-msg-log", logs);
-    } else if (tokens[0] == "size") {
+    } else if (tokens[0] === "size") {
       let b = JSON.stringify(logs).length;
       Content.addHelp(`Logged bytes: ${b} (${b/1024.0} KB)`);
     } else if (tokens[0].match(/^[1-9][0-9]*$/)) {
@@ -260,12 +269,12 @@ function command_log(cmd, tokens/*, client*/) {
   }
 }
 
-function command_clear(cmd, tokens/*, client*/) {
-  if (tokens.length == 0) {
+function command_clear(cmd, tokens, client) {
+  if (tokens.length === 0) {
     $(".content").find(".line-wrapper").remove();
-  } else if (tokens[0] == "module1") {
+  } else if (tokens[0] === "module1") {
     $("#module1").find(".line-wrapper").remove();
-  } else if (tokens[0] == "module2") {
+  } else if (tokens[0] === "module2") {
     $("#module2").find(".line-wrapper").remove();
   } else {
     this.printUsage();
@@ -320,7 +329,7 @@ function command_badges(cmd, tokens, client) {
   }
 }
 
-function command_plugins(/*cmd, tokens, client*/) {
+function command_plugins(cmd, tokens, client) {
   try {
     for (let [n, p] of Object.entries(Plugins.plugins)) {
       let msg = `${n}: ${p.file} @ ${p.order}`;
@@ -345,7 +354,7 @@ function command_plugins(/*cmd, tokens, client*/) {
 }
 
 function command_client(cmd, tokens, client) {
-  if (tokens.length === 0 || tokens[0] == "status") {
+  if (tokens.length === 0 || tokens[0] === "status") {
     Content.addHelp("Client information:");
     let cstatus = client.ConnectionStatus();
     Content.addHelpLine("Socket:", cstatus.open ? "Open" : "Closed");
@@ -384,69 +393,73 @@ function command_raw(cmd, tokens, client) {
   client.SendRaw(tokens.join(" "));
 }
 
-var ChatCommands = new TFCChatCommandStore();
+var ChatCommands = null;
 
-ChatCommands.add("log", command_log,
-                 "Display logged messages");
-ChatCommands.addAlias("logs", "log");
-ChatCommands.addUsage("log", null,
-                       "Obtain all logged messages");
-ChatCommands.addUsage("log", "number",
-                      "Display the message numbered <number>");
-ChatCommands.addUsage("log", "summary",
-                      "Display a summary of the logged messages",
-                      {literal: true});
-ChatCommands.addUsage("log", "shift",
-                      "Remove the first logged message",
-                      {literal: true});
-ChatCommands.addUsage("log", "pop",
-                      "Remove the last logged message",
-                      {literal: true});
-ChatCommands.addUsage("log", "export",
-                      "Open a new window with all of the logged items",
-                      {literal: true});
-ChatCommands.addUsage("log", "size",
-                      "Display the number of bytes used by the log",
-                      {literal: true});
+function InitChatCommands() { /* exported InitChatCommands */
+  ChatCommands = new ChatCommandManager();
 
-ChatCommands.add("clear", command_clear,
-                 "Clears all text from all visible modules");
-ChatCommands.addUsage("clear", null,
-                      "Clears all text from all visible modules");
-ChatCommands.addUsage("clear", "module1",
-                      "Clears all text from module1",
-                      {literal: true});
-ChatCommands.addUsage("clear", "module2",
-                      "Clears all text from module2",
-                      {literal: true});
+  ChatCommands.add("log", command_log,
+                   "Display logged messages");
+  ChatCommands.addAlias("logs", "log");
+  ChatCommands.addUsage("log", null,
+                         "Obtain all logged messages");
+  ChatCommands.addUsage("log", "number",
+                        "Display the message numbered <number>");
+  ChatCommands.addUsage("log", "summary",
+                        "Display a summary of the logged messages",
+                        {literal: true});
+  ChatCommands.addUsage("log", "shift",
+                        "Remove the first logged message",
+                        {literal: true});
+  ChatCommands.addUsage("log", "pop",
+                        "Remove the last logged message",
+                        {literal: true});
+  ChatCommands.addUsage("log", "export",
+                        "Open a new window with all of the logged items",
+                        {literal: true});
+  ChatCommands.addUsage("log", "size",
+                        "Display the number of bytes used by the log",
+                        {literal: true});
 
-ChatCommands.add("join", command_join,
-                 "Join a channel");
-ChatCommands.addUsage("join", "channel",
-                      "Connect to <channel>; leading # is optional");
+  ChatCommands.add("clear", command_clear,
+                   "Clears all text from all visible modules");
+  ChatCommands.addUsage("clear", null,
+                        "Clears all text from all visible modules");
+  ChatCommands.addUsage("clear", "module1",
+                        "Clears all text from module1",
+                        {literal: true});
+  ChatCommands.addUsage("clear", "module2",
+                        "Clears all text from module2",
+                        {literal: true});
 
-ChatCommands.add("part", command_part,
-                 "Leave a channel");
-ChatCommands.addAlias("leave", "part");
-ChatCommands.addUsage("part", "channel",
-                      "Disconnect from <channel>; leading # is optional");
+  ChatCommands.add("join", command_join,
+                   "Join a channel");
+  ChatCommands.addUsage("join", "channel",
+                        "Connect to <channel>; leading # is optional");
 
-ChatCommands.add("badges", command_badges,
-                 "Display all known badges");
+  ChatCommands.add("part", command_part,
+                   "Leave a channel");
+  ChatCommands.addAlias("leave", "part");
+  ChatCommands.addUsage("part", "channel",
+                        "Disconnect from <channel>; leading # is optional");
 
-ChatCommands.add("plugins", command_plugins,
-                 "Display plugin information, if plugins are enabled");
+  ChatCommands.add("badges", command_badges,
+                   "Display all known badges");
 
-ChatCommands.add("client", command_client,
-                 "Display numerous things about the client; use //help client for info");
-ChatCommands.addUsage("client", null,
-                      "Show general information about the client");
-ChatCommands.addUsage("client", "status",
-                      "Show current connection information",
-                      {literal: true});
+  ChatCommands.add("plugins", command_plugins,
+                   "Display plugin information, if plugins are enabled");
 
-ChatCommands.add("raw", command_raw,
-                 "Send a raw message to Twitch (for advanced users only!)");
-ChatCommands.addUsage("raw", "message",
-                      "Send <message> to Twitch servers (for advanced users only!)");
+  ChatCommands.add("client", command_client,
+                   "Display numerous things about the client; use //help client for info");
+  ChatCommands.addUsage("client", null,
+                        "Show general information about the client");
+  ChatCommands.addUsage("client", "status",
+                        "Show current connection information",
+                        {literal: true});
+
+  ChatCommands.add("raw", command_raw,
+                   "Send a raw message to Twitch (for advanced users only!)");
+  ChatCommands.addUsage("raw", "message",
+                        "Send <message> to Twitch servers (for advanced users only!)");
+}
 

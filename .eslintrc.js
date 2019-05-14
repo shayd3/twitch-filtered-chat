@@ -18,7 +18,8 @@ module.exports = {
         "HTMLGenerator": "readonly",
         "Plugins": "readonly",
         "Content": "readonly",
-        "ChatCommands": "readonly",
+        "ChatCommands": "readwrite",
+        "InitChatCommands": "readonly",
         "ParseLayout": "readonly",
         "FormatLayout": "readonly",
         "AllColors": "readonly",
@@ -30,9 +31,14 @@ module.exports = {
         "ecmaVersion": 2018
     },
     "rules": {
-        "no-unused-vars": "warn",
         "no-shadow": "warn",
-        "no-trailing-spaces": "warn"
+        "no-trailing-spaces": "warn",
+        "eqeqeq": "warn",
+        'no-unused-vars': ['warn', {
+          /*vars: 'all',*/
+          args: 'none',
+          ignoreRestSiblings: true
+        }]
     },
     "overrides": [
         {

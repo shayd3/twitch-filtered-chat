@@ -394,7 +394,7 @@ var HTMLGenerator = function () {
     }
   }, {
     key: "_msgEmotesTransform",
-    value: function _msgEmotesTransform(event, message, map /*, $msg, $effects*/) {
+    value: function _msgEmotesTransform(event, message, map, $msg, $effects) {
       if (event.flags.emotes) {
         var emotes = event.flags.emotes.map(function (e) {
           return { 'id': e.id, 'name': e.name,
@@ -470,7 +470,7 @@ var HTMLGenerator = function () {
     }
   }, {
     key: "_msgFFZEmotesTransform",
-    value: function _msgFFZEmotesTransform(event, message, map /*, $msg, $effects*/) {
+    value: function _msgFFZEmotesTransform(event, message, map, $msg, $effects) {
       var ffz_emotes = this._client.GetFFZEmotes(event.channel.channel);
       if (ffz_emotes && ffz_emotes.emotes) {
         var ffz_emote_arr = [];
@@ -538,7 +538,7 @@ var HTMLGenerator = function () {
     }
   }, {
     key: "_msgBTTVEmotesTransform",
-    value: function _msgBTTVEmotesTransform(event, message, map /*, $msg, $effects*/) {
+    value: function _msgBTTVEmotesTransform(event, message, map, $msg, $effects) {
       var bttv_emotes = this._client.GetBTTVEmotes(event.channel.channel);
       if (bttv_emotes && bttv_emotes.emotes) {
         var bttv_emote_arr = [];
@@ -603,9 +603,9 @@ var HTMLGenerator = function () {
     }
   }, {
     key: "_msgAtUserTransform",
-    value: function _msgAtUserTransform(event, message, map, $msg /*, $effects */) {
+    value: function _msgAtUserTransform(event, message, map, $msg, $effects) {
       message = message.replace(/(^|\b\s*)(@\w+)(\s*\b|$)/g, function (m, p1, p2, p3) {
-        if (p2.substr(1).toLowerCase() == this._client.GetName().toLowerCase()) {
+        if (p2.substr(1).toLowerCase() === this._client.GetName().toLowerCase()) {
           $msg.addClass("highlight");
           return p1 + "<em class=\"at-user at-self\">" + p2 + "</em>" + p3;
         } else {
@@ -616,7 +616,7 @@ var HTMLGenerator = function () {
     }
   }, {
     key: "_msgURLTransform",
-    value: function _msgURLTransform(event, message /*, map, $msg, $effects*/) {
+    value: function _msgURLTransform(event, message, map, $msg, $effects) {
       return this.formatURLs(message);
     }
   }, {
@@ -637,11 +637,11 @@ var HTMLGenerator = function () {
       /* Handle early mod-only antics */
       if (!$("#cbForce").is(":checked") && event.ismod) {
         var word0 = event.message.split(" ")[0];
-        if (word0 == "force") {
+        if (word0 === "force") {
           event.flags.force = true;
-        } else if (word0 == "forcejs") {
+        } else if (word0 === "forcejs") {
           event.flags.force = true;
-        } else if (word0 == "forcebits" || word0 == "forcecheer") {
+        } else if (word0 === "forcebits" || word0 === "forcecheer") {
           var wordlen = word0.length;
           var msgprefix = "cheer1000";
           while (msgprefix.length < word0.length) {

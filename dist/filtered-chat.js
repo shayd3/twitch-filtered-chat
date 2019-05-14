@@ -19,7 +19,7 @@
  * Filtering ws "recv>" messages:
  *   Util.Logger.add_filter(((m) => !`${m}`.startsWith("recv> ")), "DEBUG");
  * Filtering ws PRIVMSG messages:
- *   Util.Logger.add_filter(((m) => `${m}`.indexOf(" PRIVMSG ") == -1, "DEBUG");
+ *   Util.Logger.add_filter(((m) => `${m}`.indexOf(" PRIVMSG ") === -1, "DEBUG");
  */
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
@@ -123,7 +123,7 @@ function parseQueryString(config) {
 
   if (qs_data.debug === undefined) qs_data.debug = false;
   if (qs_data.channels !== undefined) {
-    if (typeof qs_data.channels != "string") {
+    if (typeof qs_data.channels !== "string") {
       qs_data.channels = "";
     }
   }
@@ -194,16 +194,16 @@ function parseQueryString(config) {
       } else if (k === "layout") {
         key = "Layout";
         val = ParseLayout(v);
-      } else if (k == "reconnect") {
+      } else if (k === "reconnect") {
         key = "AutoReconnect";
         val = true;
-      } else if (k == "size") {
+      } else if (k === "size") {
         key = "Size";
         val = v + "pt";
-      } else if (k == "plugins") {
+      } else if (k === "plugins") {
         key = "Plugins";
         val = v ? true : false;
-      } else if (k == "disable") {
+      } else if (k === "disable") {
         var _iteratorNormalCompletion2 = true;
         var _didIteratorError2 = false;
         var _iteratorError2 = undefined;
@@ -230,7 +230,7 @@ function parseQueryString(config) {
             }
           }
         }
-      } else if (k == "enable") {
+      } else if (k === "enable") {
         var _iteratorNormalCompletion3 = true;
         var _didIteratorError3 = false;
         var _iteratorError3 = undefined;
@@ -257,20 +257,20 @@ function parseQueryString(config) {
             }
           }
         }
-      } else if (k == "max") {
+      } else if (k === "max") {
         key = "MaxMessages";
         if (typeof v === "number") {
           val = v;
         } else {
           val = TwitchClient.DEFAULT_MAX_MESSAGES;
         }
-      } else if (k == "font") {
+      } else if (k === "font") {
         key = "Font";
         val = "" + v;
-      } else if (k == "scroll") {
+      } else if (k === "scroll") {
         key = "Scroll";
         val = v ? true : false;
-      } else if (k == "clips") {
+      } else if (k === "clips") {
         key = "ShowClips";
         val = v ? true : false;
       }
@@ -355,9 +355,9 @@ function getConfigObject() {
   if (!config.hasOwnProperty("Channels") || !Util.IsArray(config.Channels)) {
     config.Channels = [];
   }
-  if (typeof config.Name != "string") config.Name = "";
-  if (typeof config.ClientID != "string") config.ClientID = "";
-  if (typeof config.Pass != "string") config.Pass = "";
+  if (typeof config.Name !== "string") config.Name = "";
+  if (typeof config.ClientID !== "string") config.ClientID = "";
+  if (typeof config.Pass !== "string") config.Pass = "";
 
   /* Parse the query string */
   query_remove = parseQueryString(config, qs);
@@ -376,7 +376,7 @@ function getConfigObject() {
         var ch = _step4.value;
 
         var channel = Twitch.FormatChannel(ch.toLowerCase());
-        if (config.Channels.indexOf(channel) == -1) {
+        if (config.Channels.indexOf(channel) === -1) {
           config.Channels.push(channel);
         }
       }
@@ -395,10 +395,10 @@ function getConfigObject() {
       }
     }
   }
-  if (txtNick.value && txtNick.value != AUTOGEN_VALUE) {
+  if (txtNick.value && txtNick.value !== AUTOGEN_VALUE) {
     config.Name = txtNick.value;
   }
-  if (txtPass.value && txtPass.value != CACHED_VALUE) {
+  if (txtPass.value && txtPass.value !== CACHED_VALUE) {
     config.Pass = txtPass.value;
   }
 
@@ -551,7 +551,7 @@ function setModuleSettings(module, config) {
 
           var $li = $("<li></li>");
           var isel = "input." + cls + "[value=\"" + val + "\"]";
-          if ($(module).find(isel).length == 0) {
+          if ($(module).find(isel).length === 0) {
             var $l = $("<label></label>").val(label);
             var $cb = $("<input type=\"checkbox\" value=" + val.escape() + " checked />");
             $cb.addClass(cls);
@@ -682,10 +682,10 @@ function setChannels(client, channels) {
   var new_chs = channels.map(fmt_ch);
   var old_chs = client.GetJoinedChannels().map(fmt_ch);
   var to_join = new_chs.filter(function (c) {
-    return old_chs.indexOf(c) == -1;
+    return old_chs.indexOf(c) === -1;
   });
   var to_part = old_chs.filter(function (c) {
-    return new_chs.indexOf(c) == -1;
+    return new_chs.indexOf(c) === -1;
   });
   /* Join all the channels added */
   var _iteratorNormalCompletion7 = true;
@@ -757,22 +757,22 @@ function shouldFilter(module, event) {
     if (event.ismod) role = "mod";
     /* Includes take priority over excludes */
     if (rules.IncludeUser.any(function (u) {
-      return u.toLowerCase() == user;
+      return u.toLowerCase() === user;
     })) return false;
     if (rules.IncludeKeyword.any(function (k) {
       return message.indexOf(k) > -1;
     })) return false;
     /* Role filtering */
-    if (!rules.Pleb && role == "pleb") return true;
-    if (!rules.Sub && role == "sub") return true;
-    if (!rules.VIP && role == "vip") return true;
-    if (!rules.Mod && role == "mod") return true;
+    if (!rules.Pleb && role === "pleb") return true;
+    if (!rules.Sub && role === "sub") return true;
+    if (!rules.VIP && role === "vip") return true;
+    if (!rules.Mod && role === "mod") return true;
     /* Content filtering ("Bits" also filters out cheer effects) */
     if (!rules.Bits && event.flags.bits) return true;
     if (!rules.Me && event.flags.action) return true;
     /* Exclude filtering */
     if (rules.ExcludeUser.any(function (u) {
-      return u.toLowerCase() == user;
+      return u.toLowerCase() === user;
     })) return true;
     if (rules.ExcludeStartsWith.any(function (m) {
       return message.startsWith(m);
@@ -787,9 +787,9 @@ function shouldFilter(module, event) {
         for (var _iterator9 = rules.FromChannel[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
           var s = _step9.value;
 
-          var c = s.indexOf("#") == -1 ? "#" + s : s;
+          var c = s.indexOf("#") === -1 ? "#" + s : s;
           if (event.channel && event.channel.channel) {
-            if (event.channel.channel.toLowerCase() != c.toLowerCase()) {
+            if (event.channel.channel.toLowerCase() !== c.toLowerCase()) {
               return true;
             }
           }
@@ -828,7 +828,7 @@ function handleCommand(value, client) {
   var command = tokens.shift();
 
   /* Clear empty tokens at the end (\r\n related) */
-  while (tokens.length > 0 && tokens[tokens.length - 1].length == 0) {
+  while (tokens.length > 0 && tokens[tokens.length - 1].length === 0) {
     tokens.pop();
   }
 
@@ -840,17 +840,17 @@ function handleCommand(value, client) {
   }
 
   /* Handle config command */
-  if (command == "//config") {
+  if (command === "//config") {
     var config = getConfigObject();
     if (tokens.length > 0) {
-      if (tokens[0] == "clientid") {
+      if (tokens[0] === "clientid") {
         Content.addHelpLine("ClientID", config.ClientID);
-      } else if (tokens[0] == "pass") {
+      } else if (tokens[0] === "pass") {
         Content.addHelpLine("Pass", config.Pass);
-      } else if (tokens[0] == "purge") {
+      } else if (tokens[0] === "purge") {
         Util.SetWebStorage({});
         Content.addNotice("Purged storage \"" + Util.GetWebStorageKey() + "\"");
-      } else if (tokens[0] == "url") {
+      } else if (tokens[0] === "url") {
         var url = location.protocol + "//" + location.hostname + location.pathname;
         if (tokens.length > 1) {
           if (tokens[1].startsWith("git")) {
@@ -865,7 +865,7 @@ function handleCommand(value, client) {
           qsAdd("debug", config.Debug);
         }
         if (config.__clientid_override) {
-          if (config.ClientID && config.ClientID.length == 30) {
+          if (config.ClientID && config.ClientID.length === 30) {
             qsAdd("clientid", config.ClientID);
           }
         }
@@ -903,14 +903,14 @@ function handleCommand(value, client) {
         }
         {
           var font_size = Util.CSS.GetProperty("--body-font-size");
-          if (font_size != Util.CSS.GetProperty("--body-font-size-default")) {
+          if (font_size !== Util.CSS.GetProperty("--body-font-size-default")) {
             qsAdd("size", font_size.replace(/[^0-9]/g, ""));
           }
         }
         if (config.Plugins) {
           qsAdd("plugins", "1");
         }
-        if (config.MaxMessages != TwitchClient.DEFAULT_MAX_MESSAGES) {
+        if (config.MaxMessages !== TwitchClient.DEFAULT_MAX_MESSAGES) {
           qsAdd("max", "" + config.MaxMessages);
         }
         if (config.Font) {
@@ -951,10 +951,10 @@ function handleCommand(value, client) {
 
           if (k === "Layout") {
             Content.addHelpLine(k, FormatLayout(v));
-          } else if ((typeof v === "undefined" ? "undefined" : _typeof(v)) == "object" && v.Name && v.Name.length > 1) {
+          } else if ((typeof v === "undefined" ? "undefined" : _typeof(v)) === "object" && v.Name && v.Name.length > 1) {
             /* It's a window configuration */
             wincfgs.push([k, v]);
-          } else if (k == "ClientID" || k == "Pass") {
+          } else if (k === "ClientID" || k === "Pass") {
             Content.addHelpLine(k, "Omitted for security; use //config " + k.toLowerCase() + " to show");
           } else {
             Content.addHelpLine(k, v);
@@ -1304,7 +1304,7 @@ function client_main(layout) {
     }
 
     var msg = (_Util$Logger2 = Util.Logger).stringify.apply(_Util$Logger2, args);
-    if (args.length == 1 && args[0] instanceof TwitchEvent) {
+    if (args.length === 1 && args[0] instanceof TwitchEvent) {
       if (Util.DebugLevel >= Util.LEVEL_TRACE) {
         Content.addNotice("WARNING: " + JSON.stringify(args[0]));
       }
@@ -1392,7 +1392,7 @@ function client_main(layout) {
     ConfigCommon.MaxMessages = config.MaxMessages || 100;
 
     /* If no channels are configured, show the settings panel */
-    if (config.Channels.length == 0) {
+    if (config.Channels.length === 0) {
       $("#settings").fadeIn();
     }
 
@@ -1475,7 +1475,7 @@ function client_main(layout) {
   $("#txtChat").keydown(function (e) {
     var isUp = e.keyCode === Util.Key.UP;
     var isDown = e.keyCode === Util.Key.DOWN;
-    if (e.keyCode == Util.Key.RETURN) {
+    if (e.keyCode === Util.Key.RETURN) {
       if (e.target.value.trim().length > 0) {
         if (!handleCommand(e.target.value, client)) {
           client.SendMessageToAll(e.target.value);
@@ -1508,7 +1508,7 @@ function client_main(layout) {
 
   /* Pressing enter while on the settings box */
   $("#settings").keyup(function (e) {
-    if (e.keyCode == Util.Key.RETURN) {
+    if (e.keyCode === Util.Key.RETURN) {
       updateModuleConfig();
       $("#btnSettings").click();
     }
@@ -1544,7 +1544,7 @@ function client_main(layout) {
 
   /* Pressing enter on the "Channels" text box */
   $("#txtChannel").keyup(function (e) {
-    if (e.keyCode == Util.Key.RETURN) {
+    if (e.keyCode === Util.Key.RETURN) {
       setChannels(client, $(this).val().split(","));
       var cfg = getConfigObject();
       cfg.Channels = client.GetJoinedChannels();
@@ -1553,7 +1553,7 @@ function client_main(layout) {
   });
 
   /* Leaving the "Channels" text box */
-  $("#txtChannel").blur(function () /*e*/{
+  $("#txtChannel").blur(function (e) {
     setChannels(client, $(this).val().split(","));
     var cfg = getConfigObject();
     cfg.Channels = client.GetJoinedChannels();
@@ -1581,7 +1581,7 @@ function client_main(layout) {
 
   /* Changing the value for "background image" */
   $("#txtBGStyle").keyup(function (e) {
-    if (e.keyCode == Util.Key.RETURN) {
+    if (e.keyCode === Util.Key.RETURN) {
       $(".module").css("background-image", $(this).val());
     }
   });
@@ -1627,7 +1627,7 @@ function client_main(layout) {
 
   /* Pressing enter on the module's name text box */
   $(".module .header input.name").on("keyup", function (e) {
-    if (e.keyCode == Util.Key.RETURN) {
+    if (e.keyCode === Util.Key.RETURN) {
       var $settings = $(this).parent().children(".settings");
       var $lbl = $(this).parent().children("label.name");
       var $tb = $(this).parent().children("input.name");
@@ -1647,7 +1647,7 @@ function client_main(layout) {
   $(".module .settings input[type=\"text\"]").on("keyup", function (e) {
     var v = $(this).val();
     if (v.length > 0) {
-      if (e.keyCode == Util.Key.RETURN) {
+      if (e.keyCode === Util.Key.RETURN) {
         var $cli = $(this).closest("li");
         var cls = $cli.attr("class").replace("textbox", "").trim();
         var cb = client.get("HTMLGen").checkbox(v, null, cls, true);
@@ -1708,10 +1708,10 @@ function client_main(layout) {
           client.SendMessage(ch, "/vip " + user);
         }
       }
-    } else if ($t.attr("data-username") == "1") {
+    } else if ($t.attr("data-username") === "1") {
       /* Clicked on a username; show context window */
       var $l = $t.parent();
-      if ($cw.is(":visible") && $cw.attr("data-user-id") == $l.attr("data-user-id")) {
+      if ($cw.is(":visible") && $cw.attr("data-user-id") === $l.attr("data-user-id")) {
         $cw.fadeOut();
       } else {
         showContextWindow(client, $cw, $l);
@@ -1721,7 +1721,7 @@ function client_main(layout) {
       $cw.fadeOut();
     }
     /* Clicking on a "Reconnect" link */
-    if ($t.attr("data-reconnect") == "1") {
+    if ($t.attr("data-reconnect") === "1") {
       /* Clicked on a reconnect link */
       Content.addNotice("Reconnecting...");
       client.Connect();
@@ -1733,7 +1733,7 @@ function client_main(layout) {
   /* Bind to numerous TwitchEvent events {{{0 */
 
   /* WebSocket opened */
-  client.bind("twitch-open", function _on_twitch_open() /*e*/{
+  client.bind("twitch-open", function _on_twitch_open(e) {
     $(".loading").remove();
     $("#debug").hide();
     if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
@@ -1745,7 +1745,7 @@ function client_main(layout) {
       }
       Content.addInfo("Connected " + notes.join(" "));
     }
-    if (getConfigObject().Channels.length == 0) {
+    if (getConfigObject().Channels.length === 0) {
       Content.addInfo("No channels configured; type //join &lt;channel&gt; to join one!");
     }
   });
@@ -1769,14 +1769,14 @@ function client_main(layout) {
   });
 
   /* Received reconnect command from Twitch */
-  client.bind("twitch-reconnect", function _on_twitch_reconnect() /*e*/{
+  client.bind("twitch-reconnect", function _on_twitch_reconnect(e) {
     client.Connect();
   });
 
   /* User joined (any user) */
   client.bind("twitch-join", function _on_twitch_join(e) {
     if (!Util.Browser.IsOBS && !layout.Slim) {
-      if (e.user == client.GetName().toLowerCase()) {
+      if (e.user === client.GetName().toLowerCase()) {
         Content.addInfo("Joined " + e.channel.channel);
       }
     }
@@ -1785,7 +1785,7 @@ function client_main(layout) {
   /* User left (any user) */
   client.bind("twitch-part", function _on_twitch_part(e) {
     if (!Util.Browser.IsOBS && !layout.Slim) {
-      if (e.user == client.GetName().toLowerCase()) {
+      if (e.user === client.GetName().toLowerCase()) {
         Content.addInfo("Left " + e.channel.channel);
       }
     }
@@ -1881,7 +1881,7 @@ function client_main(layout) {
             location.reload(true);
           } else if (tokens[1] === "clear") {
             $(".content").children().remove();
-          } else if (tokens[1] == "nuke") {
+          } else if (tokens[1] === "nuke") {
             if (tokens[2] && tokens[2].length > 1) {
               $("[data-user=\"" + tokens[2].toLowerCase() + "\"]").parent().remove();
             } else {

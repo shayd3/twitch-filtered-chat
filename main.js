@@ -14,20 +14,20 @@ function ParseLayout(str) { /* exported ParseLayout */
   if (str.indexOf(':') > -1) {
     let v1 = str.substr(0, str.indexOf(':'));
     let v2 = str.substr(str.indexOf(':')+1);
-    if (v1 == "single") {
+    if (v1 === "single") {
       layout.Cols = "single";
-    } else if (v1 == "double") {
+    } else if (v1 === "double") {
       layout.Cols = "double";
     } else {
       console.warn("Unknown layout", v1, "defaulting to double");
       layout.Cols = "double";
     }
-    if (v2 == "nochat") {
+    if (v2 === "nochat") {
       layout.Chat = false;
-    } else if (v2 == "slim") {
+    } else if (v2 === "slim") {
       layout.Slim = true;
       layout.Chat = false;
-    } else if (v2 != "chat") {
+    } else if (v2 !== "chat") {
       console.warn('Unknown layout option', v2);
     }
   } else if (str === "single") {
@@ -211,7 +211,7 @@ function Main(global) { /* exported Main */
     $Modules.find('.header input.name')
             .attr("value", 'Chat');
 
-    if (layout.Cols == "single") {
+    if (layout.Cols === "single") {
       $Column1.removeClass("left").addClass("full");
       $Module1.removeClass("left").addClass('full');
       $Column1.show();
@@ -220,9 +220,10 @@ function Main(global) { /* exported Main */
       $Columns.show();
     }
 
+    /* Add the chat box */
     if (layout.Chat) {
       let $ChatModule = null;
-      $ChatModule = layout.Cols == "single" ? $Module1 : $Module2;
+      $ChatModule = layout.Cols === "single" ? $Module1 : $Module2;
       $ChatModule.removeClass("no-chat");
       $ChatModule.addClass("has-chat");
       $ChatModule.append($Chat);
@@ -239,6 +240,9 @@ function Main(global) { /* exported Main */
       $(".content").addClass("slim");
       $("#settings_button").hide();
     }
+
+    /* Initialize the chat commands object */
+    InitChatCommands();
 
     Util.LogOnly("Waiting for document to finish rendering...");
 
