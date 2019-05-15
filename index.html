@@ -5,20 +5,27 @@
   <meta charset="utf-8" />
   <link href="assets/settings_white.png" rel="shortcut icon" type="image/png" />
   <link href="assets/main.css" rel="stylesheet" type="text/css" />
-  <style type="text/css"> #txtPassDummy { display: none; } </style>
   <script type="text/javascript" src="assets/jquery-3.4.0.js"></script>
   <script type="text/javascript" id="main-inject">
-/* Select between main.js and dist/main.js based on ?usedist */
-function onLoad() {
-  var uri = "main.js";
-  if (window.location.search.match(/\busedist\b/)) {
-    uri = "dist/main.js";
-  }
+function debug(msg) {
+  /* Prepend `msg` to the debug span */
+  $("#debug").html(msg + "<br />" + $("#debug").html());
+}
+function doLoadMain() {
+  /* Use either main.js or dist/main.js based on ?usedist */
+  var uri = window.location.search.match(/\busedist\b/) ? "dist/main.js" : "main.js";
   var s = document.createElement('script');
   s.setAttribute('type', 'text/javascript');
   s.setAttribute('src', uri);
   s.onload = function() { (new Function("Main(window)"))(); }
   document.head.appendChild(s);
+}
+function onLoad() {
+  /* Show the debug span if debug=2 or debug=trace */
+  if (window.location.search.match(/\bdebug=(?:2|trace)\b/)) {
+    document.getElementById("debug").removeAttribute("style");
+  }
+  doLoadMain();
 }
   </script>
 </head>
@@ -151,47 +158,16 @@ function onLoad() {
       <span class="fr"><a class="builder" id="settings-builder">Builder</a></span>
     </header>
     <ul>
-      <li>
-        <label>Channels:</label>
-        <input type="text" id="txtChannel" />
-      </li>
-      <li>
-        <label>Nick:</label>
-        <input type="text" id="txtNick" />
-      </li>
-      <li>
-        <label>OAuth:</label>
-        <input type="password" id="txtPass" />
-        <input type="text" id="txtPassDummy" value="Cached" disabled />
-      </li>
-      <li>
-        <label>BG CSS:</label>
-        <input type="text" id="txtBGStyle" />
-      </li>
-      <li>
-        <label>Scrollbars:</label>
-        <input type="checkbox" id="cbScroll" class="middle" />
-      </li>
-      <li>
-        <label>Transparent:</label>
-        <input type="checkbox" id="cbTransparent" class="middle" />
-      </li>
-      <li>
-        <label>Show Clips:</label>
-        <input type="checkbox" id="cbClips" class="middle" />
-      </li>
-      <li>
-        <label>No Force:</label>
-        <input type="checkbox" id="cbForce" class="middle" />
-      </li>
-      <li>
-        <label>Debugging:</label>
-        <select id="selDebug">
-          <option value="0" selected>Disabled</option>
-          <option value="1">Debug</option>
-          <option value="2">Trace</option>
-        </select>
-      </li>
+      <!-- Elements formatted to remove unwanted Text elements -->
+      <li><label>Channels:</label><input type="text" id="txtChannel" /></li>
+      <li><label>Nick:</label><input type="text" id="txtNick" /></li>
+      <li><label>OAuth:</label><input type="password" id="txtPass" /><input type="text" id="txtPassDummy" value="Cached" disabled /></li>
+      <li><label>BG CSS:</label><input type="text" id="txtBGStyle" /></li>
+      <li><label>Scrollbars:</label><input type="checkbox" id="cbScroll" class="middle" /></li>
+      <li><label>Transparent:</label><input type="checkbox" id="cbTransparent" class="middle" /></li>
+      <li><label>Show Clips:</label><input type="checkbox" id="cbClips" class="middle" /></li>
+      <li><label>No Force:</label><input type="checkbox" id="cbForce" class="middle" /></li>
+      <li><label>Debugging:</label><select id="selDebug"><option value="0" selected>Disabled</option><option value="1">Debug</option><option value="2">Trace</option></select></li>
     </ul>
     <footer>
       <span class="fl"><a onclick="$('#btnSettings').click();">Close</a></span>

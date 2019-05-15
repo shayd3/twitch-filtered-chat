@@ -169,15 +169,6 @@ function loadTFC() {
 
 /* Called by body.onload */
 function Main(global) { /* exported Main */
-  /* Populate the debug div with text */
-  function debug_msg(msg) {
-    let d = document.getElementById("debug");
-    if (d) {
-      d.innerHTML = `${msg}<br />${d.innerHTML}`;
-    }
-  }
-  global.debug_msg = debug_msg;
-
   /* Populate templates and load the client */
   function index_main() {
     Util.LogOnly("Assets loaded; initializing page...");

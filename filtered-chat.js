@@ -3,6 +3,7 @@
 "use strict";
 
 /* TODO:
+ * Fix cssmarquee: .line::-webkit-scrollbar { display: none; } or something
  * Add layout selection box to #settings (reloads page on change)
  * Add to #settings help link
  * Add to #settings config link
@@ -68,7 +69,6 @@ class Content { /* exported Content */
 
 /* Merge the query string into the config object given and return removals */
 function parseQueryString(config, qs=null) {
-  /* FIXME: parsing is unordered; make it ordered */
   let qs_data;
   if (qs === null) {
     qs = window.location.search;
@@ -104,16 +104,10 @@ function parseQueryString(config, qs=null) {
       val = v.split(",").map((c) => Twitch.FormatChannel(c));
     } else if (k === "debug") {
       key = "Debug";
-      val = Number(v);
-      if (Number.isNaN(val)) {
-        if (v === "debug") {
-          val = Util.LEVEL_DEBUG;
-        } else if (v === "trace") {
-          val = Util.LEVEL_TRACE;
-        } else {
-          val = v ? 1 : 0;
-        }
-      }
+      if (v === "debug") val = Util.LEVEL_DEBUG;
+      else if (v === "trace") val = Util.LEVEL_TRACE;
+      else if (typeof(v) === "number") val = v;
+      else val = Number(Boolean(v));
       if (val < Util.LEVEL_MIN) val = Util.LEVEL_MIN;
       if (val > Util.LEVEL_MAX) val = Util.LEVEL_MAX;
     } else if (k === "noassets") {
@@ -129,7 +123,6 @@ function parseQueryString(config, qs=null) {
       key = "HistorySize";
       val = typeof(v) === "number" ? v : TwitchClient.DEFAULT_HISTORY_SIZE;
     } else if (k.match(/^module[12]?$/)) {
-      if (k === "module") k = "module1";
       key = k === "module" ? "module1" : k;
       val = parseModuleConfig(v);
     } else if (k === "trans" || k === "transparent") {
@@ -331,7 +324,7 @@ function getConfigObject(inclSensitive=true) {
 
 /* Module configuration {{{1 */
 
-/* Set the module's settings to the values given */
+/* Apply configuration to the module's settings HTML */
 function setModuleSettings(module, config) {
   if (config.Name) {
     $(module).find("label.name").html(config.Name);
@@ -371,7 +364,7 @@ function setModuleSettings(module, config) {
   addInput("from_channel", "Channel:", config.FromChannel);
 }
 
-/* Obtain the settings from the module's settings html */
+/* Obtain the settings from the module's settings HTML */
 function getModuleSettings(module) {
   module = $(module);
   let s = {
@@ -409,7 +402,7 @@ function getModuleSettings(module) {
   return s;
 }
 
-/* Parse the module configuration from a query string component */
+/* Parse a module configuration object from a query string component */
 function parseModuleConfig(value) {
   let Decode = (vals) => vals.map((v) => decodeURIComponent(v));
   let parts = Decode(value.split(/,/g));
@@ -432,7 +425,7 @@ function parseModuleConfig(value) {
   return config;
 }
 
-/* Format the module configuration into a query string component */
+/* Format the module configuration object into a query string component */
 function formatModuleConfig(cfg) {
   let Encode = (vals) => vals.map((v) => encodeURIComponent(v));
   let bits = [cfg.Pleb, cfg.Sub, cfg.VIP, cfg.Mod, cfg.Event, cfg.Bits, cfg.Me];
@@ -448,7 +441,7 @@ function formatModuleConfig(cfg) {
   return Encode(values).join(",");
 }
 
-/* Update the local storage config with the current module settings */
+/* Store the modules' settings in the localStorage */
 function updateModuleConfig() {
   let config = getConfigObject();
   $(".module").each(function() {
