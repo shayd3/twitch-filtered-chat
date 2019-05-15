@@ -35,10 +35,10 @@
   --chat-border: var(--chat-border-default);
 
   /* Font and text information */
-  --body-font-default: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   --body-font-size-default: 12pt;
-  --body-font: var(--body-font-default);
   --body-font-size: var(--body-font-size-default);
+  --body-font-default: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --body-font: var(--body-font-default);
 }
 
 /* Top-level rules {{{0 */
@@ -501,6 +501,10 @@ body.transparent #chat textarea  {
   vertical-align: text-bottom;
 }
 
+#settings #txtPassDummy {
+  display: none;
+}
+
 #settings a.help {
   vertical-align: text-top;
   text-decoration: underline;
@@ -536,6 +540,13 @@ body.transparent #chat textarea  {
 
 #btnSettings:hover {
   opacity: 1.0;
+}
+
+@media screen and (min-width:350px) {
+  #settings {
+    width: 350px;
+    border-bottom-left-radius: 6px;
+  }
 }
 
 /* End top-level settings 0}}} */
@@ -574,13 +585,6 @@ body.transparent #chat textarea  {
 }
 
 /* End username context window 0}}} */
-
-@media screen and (min-width:400px) {
-  #settings {
-    width: 400px;
-    border-bottom-left-radius: 6px;
-  }
-}
 
 /* CSS custom marquee {{{0 */
 
