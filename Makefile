@@ -5,7 +5,7 @@ DISTS = $(patsubst %,$(DIST)/%,$(SRCS))
 
 .PHONY: all lint twitch-api echo-srcs echo-dists
 
-all: twitch-api lint dist
+all: twitch-api dist lint
 
 twitch-api:
 	cd twitch-api && git pull
