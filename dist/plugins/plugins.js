@@ -31,10 +31,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  *  client:  reference to the TwitchClient object (optional)
  *  args:    value of the plugin definition "args" key
  *
- * window.MyPlugin = MyPlugin;
- *  This is needed to find the plugin's constructor.
- *  TODO: Figure out a better way. There *has* to be a better way.
- *
  * For security reasons, if the plugin stores a reference to the
  * client, then the constructed plugin should not store references to
  * itself in any globally-accessible object.
@@ -98,11 +94,14 @@ var PluginStorageClass = function () {
         s.src = self._path(plugin);
         s.onload = function () {
           /* Construct the plugin */
+          if (!Util.Defined(ctor)) {
+            throw new Error('Constructor "' + ctor + '" not found');
+          }
           try {
-            if (window[ctor] === undefined) {
-              throw new Error("Constructor for " + ctor + " not found");
-            }
-            var obj = new window[ctor](resolve, reject, client, plugin.args);
+            /* Another level of security against code injection */
+            var cname = ctor.replace(/[^A-Za-z0-9_]/g, "");
+            var cfunc = new Function('return ' + cname)();
+            var obj = new cfunc(resolve, reject, client, plugin.args);
             self._plugins[ctor]._loaded = true;
             if (client.GetDebug()) {
               self._plugins[ctor].obj = obj;
@@ -121,7 +120,7 @@ var PluginStorageClass = function () {
         };
         s.onerror = function (e) {
           if (!self._plugins[ctor].silent) {
-            var err = new Error("Loading " + ctor + " failed: " + JSON.stringify(e));
+            var err = new Error('Loading ' + ctor + ' failed: ' + JSON.stringify(e));
             self._plugins[ctor]._error = true;
             self._plugins[ctor]._error_obj = err;
             Util.ErrorOnly(err);

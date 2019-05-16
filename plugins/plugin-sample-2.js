@@ -1,5 +1,5 @@
 
-function SamplePlugin2(resolve, reject, client) {
+function SamplePlugin2(resolve, reject, client) { /* exported SamplePlugin2 */
   this.name = "SamplePlugin2";
   this._debug = client.GetDebug();
   ChatCommands.add("hi", function() {
@@ -11,6 +11,4 @@ function SamplePlugin2(resolve, reject, client) {
 SamplePlugin2.prototype.toString = function() {
   return "[object SamplePlugin2]";
 };
-
-window.SamplePlugin2 = SamplePlugin2;
 

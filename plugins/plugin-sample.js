@@ -1,5 +1,5 @@
 
-class SamplePlugin {
+class SamplePlugin { /* exported SamplePlugin */
   constructor(resolve, reject, client) {
     this._debug = client.GetDebug();
     let prefix = "From plugin " + this.name + ": ";
@@ -20,6 +20,4 @@ class SamplePlugin {
     return "[object SamplePlugin]";
   }
 }
-
-window.SamplePlugin = SamplePlugin;
 
