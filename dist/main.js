@@ -289,6 +289,7 @@ function Main(global) {
     /* If slim layout, remove the entire header */
     if (layout.Slim) {
       $(".header").hide();
+      $(".module").addClass("slim");
       $(".content").addClass("slim");
       $("#settings_button").hide();
     }
