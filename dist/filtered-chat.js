@@ -1270,6 +1270,14 @@ function updateTransparency(transparent) {
   }
 }
 
+/* Set or clear window notificatin badge */
+function setNotify() {
+  var notify = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+  /* exported setNotify */
+  var asset = notify ? AssetPaths.FAVICON_ALERT : AssetPaths.FAVICON;
+  $("link[rel=\"shortcut icon\"]").attr("href", asset);
+}
+
 /* Called once when the document loads */
 function client_main(layout) {
   /* exported client_main */
@@ -1438,15 +1446,17 @@ function client_main(layout) {
   }
 
   /* Construct the plugins */
-  if (ConfigCommon.Plugins) {
-    try {
-      Plugins.LoadAll(client);
-    } catch (e) {
-      if (e.name !== "ReferenceError") {
-        throw e;
-      } else {
-        Util.Warn("Plugins object not present");
-      }
+  try {
+    if (ConfigCommon.Plugins) {
+      Plugins.loadAll(client);
+    } else {
+      Plugins.disable();
+    }
+  } catch (e) {
+    if (e.name !== "ReferenceError") {
+      throw e;
+    } else {
+      Util.Warn("Plugins object not present");
     }
   }
 
@@ -1976,3 +1986,5 @@ function client_main(layout) {
   /* Finally, connect */
   client.Connect();
 }
+
+/* vim: set ts=2 sts=2 sw=2 et: */

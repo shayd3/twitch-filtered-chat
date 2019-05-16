@@ -25,6 +25,8 @@ module.exports = {
         "AllColors": "readonly",
         "CSSCheerStyles": "readonly",
         "GetCheerStyle": "readonly",
+        "AssetPaths": "readonly",
+        "setNotify": "readonly",
         "client_main": "readonly"
     },
     "parserOptions": {
