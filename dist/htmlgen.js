@@ -393,34 +393,6 @@ var HTMLGenerator = function () {
       return this.genName(user, color);
     }
   }, {
-    key: "_msgEmotesTransform",
-    value: function _msgEmotesTransform(event, message, map, $msg, $effects) {
-      if (event.flags.emotes) {
-        var emotes = event.flags.emotes.map(function (e) {
-          return { 'id': e.id, 'name': e.name,
-            'start': map[e.start], 'end': map[e.end],
-            'ostart': e.start, 'oend': e.end };
-        });
-        emotes.sort(function (a, b) {
-          return a.start - b.start;
-        });
-        while (emotes.length > 0) {
-          var emote = emotes.pop();
-          var msg_start = message.substr(0, emote.start);
-          var msg_end = message.substr(emote.end + 1);
-          var emote_str = this._twitchEmote(emote);
-          message = "" + msg_start + emote_str + msg_end;
-          /* Adjust the map */
-          for (var idx = emote.ostart; idx < map.length; ++idx) {
-            if (map[idx] >= emote.end) {
-              map[idx] += emote.final_length - (emote.end - emote.start) - 1;
-            }
-          }
-        }
-      }
-      return message;
-    }
-  }, {
     key: "_msgCheersTransform",
     value: function _msgCheersTransform(event, message, map, $msg, $effects) {
       if (event.flags.bits && event.flags.bits > 0) {
@@ -462,6 +434,34 @@ var HTMLGenerator = function () {
               bits_left -= s.cost;
             }
             end_words.shift();
+          }
+        }
+      }
+      return message;
+    }
+  }, {
+    key: "_msgEmotesTransform",
+    value: function _msgEmotesTransform(event, message, map, $msg, $effects) {
+      if (event.flags.emotes) {
+        var emotes = event.flags.emotes.map(function (e) {
+          return { 'id': e.id, 'name': e.name,
+            'start': map[e.start], 'end': map[e.end],
+            'ostart': e.start, 'oend': e.end };
+        });
+        emotes.sort(function (a, b) {
+          return a.start - b.start;
+        });
+        while (emotes.length > 0) {
+          var emote = emotes.pop();
+          var msg_start = message.substr(0, emote.start);
+          var msg_end = message.substr(emote.end + 1);
+          var emote_str = this._twitchEmote(emote);
+          message = "" + msg_start + emote_str + msg_end;
+          /* Adjust the map */
+          for (var idx = emote.ostart; idx < map.length; ++idx) {
+            if (map[idx] >= emote.end) {
+              map[idx] += emote.final_length - (emote.end - emote.start) - 1;
+            }
           }
         }
       }
@@ -517,7 +517,8 @@ var HTMLGenerator = function () {
               mend = _ref9[1];
 
           var url = emote.id.urls[Object.keys(emote.id.urls).min()];
-          var $i = $("<img class=\"emote ffz-emote\" ffz-emote-id=\"" + emote.id.id + "\" />");
+          var $i = $("<img class=\"emote ffz-emote\" />");
+          $i.attr("ffz-emote-id", emote.id.id);
           $i.attr('src', url);
           $i.attr('width', emote.id.width);
           $i.attr('height', emote.id.height);
@@ -538,63 +539,121 @@ var HTMLGenerator = function () {
   }, {
     key: "_msgBTTVEmotesTransform",
     value: function _msgBTTVEmotesTransform(event, message, map, $msg, $effects) {
-      var bttv_emotes = this._client.GetBTTVEmotes(event.channel.channel);
-      if (bttv_emotes && bttv_emotes.emotes) {
-        var bttv_emote_arr = [];
-        var _iteratorNormalCompletion8 = true;
-        var _didIteratorError8 = false;
-        var _iteratorError8 = undefined;
+      var all_emotes = this._client.GetGlobalBTTVEmotes();
+      var ch_emotes = this._client.GetBTTVEmotes(event.channel);
+      var emotes = {};
+      var _iteratorNormalCompletion8 = true;
+      var _didIteratorError8 = false;
+      var _iteratorError8 = undefined;
 
+      try {
+        for (var _iterator8 = Object.entries(all_emotes)[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+          var _ref10 = _step8.value;
+
+          var _ref11 = _slicedToArray(_ref10, 2);
+
+          var k = _ref11[0];
+          var v = _ref11[1];
+
+          emotes[k] = v;
+        }
+        /* Channel emotes override global emotes */
+      } catch (err) {
+        _didIteratorError8 = true;
+        _iteratorError8 = err;
+      } finally {
         try {
-          for (var _iterator8 = Object.entries(bttv_emotes.emotes)[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-            var _ref10 = _step8.value;
-
-            var _ref11 = _slicedToArray(_ref10, 2);
-
-            var k = _ref11[0];
-            var v = _ref11[1];
-
-            bttv_emote_arr.push([v, k]);
+          if (!_iteratorNormalCompletion8 && _iterator8.return) {
+            _iterator8.return();
           }
-        } catch (err) {
-          _didIteratorError8 = true;
-          _iteratorError8 = err;
         } finally {
-          try {
-            if (!_iteratorNormalCompletion8 && _iterator8.return) {
-              _iterator8.return();
-            }
-          } finally {
-            if (_didIteratorError8) {
-              throw _iteratorError8;
-            }
+          if (_didIteratorError8) {
+            throw _iteratorError8;
           }
         }
+      }
 
-        var results = Twitch.ScanEmotes(event.message, bttv_emote_arr);
-        results.sort(function (a, b) {
-          return a.start - b.start;
-        });
-        while (results.length > 0) {
-          var emote = results.pop();
-          var _ref12 = [emote.start, emote.end + 1],
-              start = _ref12[0],
-              end = _ref12[1];
-          var _ref13 = [map[start], map[end]],
-              mstart = _ref13[0],
-              mend = _ref13[1];
+      var _iteratorNormalCompletion9 = true;
+      var _didIteratorError9 = false;
+      var _iteratorError9 = undefined;
 
-          var $i = $("<img class=\"emote bttv-emote\" bttv-emote-id=\"" + emote.id.id + "\" />");
-          $i.attr("src", emote.id.url);
-          var msg_start = message.substr(0, mstart);
-          var msg_end = message.substr(mend);
-          var emote_str = $i[0].outerHTML;
-          message = "" + msg_start + emote_str + msg_end;
-          /* Adjust the map */
-          for (var idx = emote.start; idx < map.length; ++idx) {
-            if (map[idx] - map[emote.start] >= end - start) {
-              map[idx] += emote_str.length - (end - start);
-            }
+      try {
+        for (var _iterator9 = Object.entries(ch_emotes)[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+          var _ref12 = _step9.value;
+
+          var _ref13 = _slicedToArray(_ref12, 2);
+
+          var _k = _ref13[0];
+          var _v = _ref13[1];
+
+          emotes[_k] = _v;
+        }
+      } catch (err) {
+        _didIteratorError9 = true;
+        _iteratorError9 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion9 && _iterator9.return) {
+            _iterator9.return();
+          }
+        } finally {
+          if (_didIteratorError9) {
+            throw _iteratorError9;
+          }
+        }
+      }
+
+      var emote_arr = [];
+      var _iteratorNormalCompletion10 = true;
+      var _didIteratorError10 = false;
+      var _iteratorError10 = undefined;
+
+      try {
+        for (var _iterator10 = Object.keys(emotes)[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+          var _k2 = _step10.value;
+
+          emote_arr.push([_k2, RegExp.escape(_k2)]);
+        }
+      } catch (err) {
+        _didIteratorError10 = true;
+        _iteratorError10 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion10 && _iterator10.return) {
+            _iterator10.return();
+          }
+        } finally {
+          if (_didIteratorError10) {
+            throw _iteratorError10;
+          }
+        }
+      }
+
+      var results = Twitch.ScanEmotes(event.message, emote_arr);
+      results.sort(function (a, b) {
+        return a.start - b.start;
+      });
+      while (results.length > 0) {
+        var emote = results.pop();
+        var edef = emotes[emote.id];
+        var _ref14 = [emote.start, emote.end + 1],
+            start = _ref14[0],
+            end = _ref14[1];
+        var _ref15 = [map[start], map[end]],
+            mstart = _ref15[0],
+            mend = _ref15[1];
+
+        var $i = $("<img class=\"emote bttv-emote\" />");
+        $i.attr("bttv-emote-id", emote.id);
+        $i.attr("src", edef.url);
+        var msg_start = message.substr(0, mstart);
+        var msg_end = message.substr(mend);
+        var emote_str = $i[0].outerHTML;
+        message = "" + msg_start + emote_str + msg_end;
+        /* Adjust the map */
+        for (var idx = emote.start; idx < map.length; ++idx) {
+          if (map[idx] - map[emote.start] >= end - start) {
+            map[idx] += emote_str.length - (end - start);
           }
         }
       }
@@ -746,13 +805,13 @@ var HTMLGenerator = function () {
       var html_pre = [];
       var html_post = [];
       if (msg_def.effects.length > 0) {
-        var _iteratorNormalCompletion9 = true;
-        var _didIteratorError9 = false;
-        var _iteratorError9 = undefined;
+        var _iteratorNormalCompletion11 = true;
+        var _didIteratorError11 = false;
+        var _iteratorError11 = undefined;
 
         try {
-          for (var _iterator9 = msg_def.effects[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-            var effect = _step9.value;
+          for (var _iterator11 = msg_def.effects[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+            var effect = _step11.value;
 
             if (effect.class) msg_def.e.addClass(effect.class);
             if (effect.style) msg_def.e.attr("style", effect.style);
@@ -762,16 +821,16 @@ var HTMLGenerator = function () {
             if (effect.html_post) html_post.unshift(effect.html_post);
           }
         } catch (err) {
-          _didIteratorError9 = true;
-          _iteratorError9 = err;
+          _didIteratorError11 = true;
+          _iteratorError11 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion9 && _iterator9.return) {
-              _iterator9.return();
+            if (!_iteratorNormalCompletion11 && _iterator11.return) {
+              _iterator11.return();
             }
           } finally {
-            if (_didIteratorError9) {
-              throw _iteratorError9;
+            if (_didIteratorError11) {
+              throw _iteratorError11;
             }
           }
         }
@@ -782,6 +841,8 @@ var HTMLGenerator = function () {
   }, {
     key: "sub",
     value: function sub(event) {
+      /* TODO: Wrap in emotes */
+      /* Suggested emotes: */
       var $w = this._genSubWrapper(event);
       var $m = $("<span class=\"message sub-message\"></span>");
       var plan = TwitchSubEvent.PlanName(event.plan_id);
@@ -796,6 +857,8 @@ var HTMLGenerator = function () {
   }, {
     key: "resub",
     value: function resub(event) {
+      /* TODO: Wrap in emotes */
+      /* Suggested emotes: */
       var $w = this._genSubWrapper(event);
       var $m = $("<span class=\"message sub-message\"></span>");
       var months = event.months || event.total_months;
@@ -816,6 +879,8 @@ var HTMLGenerator = function () {
   }, {
     key: "giftsub",
     value: function giftsub(event) {
+      /* TODO: Wrap in emotes */
+      /* Suggested emotes: HolidayPresent, GivePLZ, TakeNRG */
       var $w = this._genSubWrapper(event);
       var $m = $("<span class=\"message sub-message\"></span>");
       if (event.flags['system-msg']) {
@@ -836,17 +901,43 @@ var HTMLGenerator = function () {
   }, {
     key: "anongiftsub",
     value: function anongiftsub(event) {
-      /* FIXME: Use TwitchSubEvent */
-      var user = event.flags['msg-param-recipient-user-name'];
-      var gifter = event.flags.login;
-      var months = event.flags['msg-param-sub-months'];
-      return event.command + ": " + gifter + " gifted to " + user + " " + months;
+      /* TODO: Wrap in emotes */
+      /* Suggested emotes: HolidayPresent, GivePLZ, TakeNRG */
+      var $w = this._genSubWrapper(event);
+      var $m = $("<span class=\"message sub-message\"></span>");
+      if (event.flags["system-msg"]) {
+        $m.text(event.flags["system-msg"]);
+      } else {
+        var user = event.recipient_name || event.recipient;
+        var gifter = "An anonymous user";
+        var plan = TwitchSubEvent.PlanName(event.plan_id);
+        $m.text(gifter + " gifted a " + plan + " subscription to " + user + "!");
+      }
+      $w.append($m);
+      if ($w[0].outerHTML.indexOf('undefined') > -1) {
+        Util.Error("msg contains undefined");
+        Util.ErrorOnly(event, $w, $w[0].outerHTML);
+      }
+      return $w[0].outerHTML;
     }
   }, {
     key: "raid",
     value: function raid(event) {
-      /* TODO */
-      return event.repr();
+      /* TODO: Wrap in emotes */
+      /* Suggested emotes: TombRaid */
+      var $w = $("<div class=\"chat-line raid\"></div>");
+      if (event.flags["system-msg"]) {
+        $w.text(event.flags["system-msg"]);
+      } else {
+        var raider = event.flags["msg-param-displayName"] || event.flags["msg-param-login"];
+        var count = event.flags["msg-param-viewerCount"];
+        $w.text(raider + " is raiding with a total of " + count + " viewers!");
+      }
+      if ($w[0].outerHTML.indexOf('undefined') > -1) {
+        Util.Error("msg contains undefined");
+        Util.ErrorOnly(event, $w, $w[0].outerHTML);
+      }
+      return $w[0].outerHTML;
     }
 
     /* General-use functions below */
@@ -876,27 +967,27 @@ var HTMLGenerator = function () {
         if (typeof classes === "string") {
           $l.addClass(classes);
         } else {
-          var _iteratorNormalCompletion10 = true;
-          var _didIteratorError10 = false;
-          var _iteratorError10 = undefined;
+          var _iteratorNormalCompletion12 = true;
+          var _didIteratorError12 = false;
+          var _iteratorError12 = undefined;
 
           try {
-            for (var _iterator10 = classes[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-              var c = _step10.value;
+            for (var _iterator12 = classes[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+              var c = _step12.value;
 
               $l.addClass(c);
             }
           } catch (err) {
-            _didIteratorError10 = true;
-            _iteratorError10 = err;
+            _didIteratorError12 = true;
+            _iteratorError12 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion10 && _iterator10.return) {
-                _iterator10.return();
+              if (!_iteratorNormalCompletion12 && _iterator12.return) {
+                _iterator12.return();
               }
             } finally {
-              if (_didIteratorError10) {
-                throw _iteratorError10;
+              if (_didIteratorError12) {
+                throw _iteratorError12;
               }
             }
           }
@@ -922,27 +1013,27 @@ var HTMLGenerator = function () {
       if (typeof classes === "string") {
         $e.addClass(classes);
       } else {
-        var _iteratorNormalCompletion11 = true;
-        var _didIteratorError11 = false;
-        var _iteratorError11 = undefined;
+        var _iteratorNormalCompletion13 = true;
+        var _didIteratorError13 = false;
+        var _iteratorError13 = undefined;
 
         try {
-          for (var _iterator11 = classes[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-            var c = _step11.value;
+          for (var _iterator13 = classes[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+            var c = _step13.value;
 
             $e.addClass(c);
           }
         } catch (err) {
-          _didIteratorError11 = true;
-          _iteratorError11 = err;
+          _didIteratorError13 = true;
+          _iteratorError13 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion11 && _iterator11.return) {
-              _iterator11.return();
+            if (!_iteratorNormalCompletion13 && _iterator13.return) {
+              _iterator13.return();
             }
           } finally {
-            if (_didIteratorError11) {
-              throw _iteratorError11;
+            if (_didIteratorError13) {
+              throw _iteratorError13;
             }
           }
         }
@@ -956,27 +1047,27 @@ var HTMLGenerator = function () {
     key: "bgcolors",
     set: function set(colors) {
       this._bg_colors = [];
-      var _iteratorNormalCompletion12 = true;
-      var _didIteratorError12 = false;
-      var _iteratorError12 = undefined;
+      var _iteratorNormalCompletion14 = true;
+      var _didIteratorError14 = false;
+      var _iteratorError14 = undefined;
 
       try {
-        for (var _iterator12 = colors[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-          var c = _step12.value;
+        for (var _iterator14 = colors[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+          var c = _step14.value;
 
           this._bg_colors.push(c);
         }
       } catch (err) {
-        _didIteratorError12 = true;
-        _iteratorError12 = err;
+        _didIteratorError14 = true;
+        _iteratorError14 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion12 && _iterator12.return) {
-            _iterator12.return();
+          if (!_iteratorNormalCompletion14 && _iterator14.return) {
+            _iterator14.return();
           }
         } finally {
-          if (_didIteratorError12) {
-            throw _iteratorError12;
+          if (_didIteratorError14) {
+            throw _iteratorError14;
           }
         }
       }

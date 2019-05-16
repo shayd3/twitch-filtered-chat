@@ -237,31 +237,6 @@ class HTMLGenerator {
     return this.genName(user, color);
   }
 
-  _msgEmotesTransform(event, message, map, $msg, $effects) {
-    if (event.flags.emotes) {
-      let emotes = event.flags.emotes.map(function(e) {
-        return {'id': e.id, 'name': e.name,
-                'start': map[e.start], 'end': map[e.end],
-                'ostart': e.start, 'oend': e.end};
-      });
-      emotes.sort((a, b) => a.start - b.start);
-      while (emotes.length > 0) {
-        let emote = emotes.pop();
-        let msg_start = message.substr(0, emote.start);
-        let msg_end = message.substr(emote.end+1);
-        let emote_str = this._twitchEmote(emote);
-        message = `${msg_start}${emote_str}${msg_end}`;
-        /* Adjust the map */
-        for (let idx = emote.ostart; idx < map.length; ++idx) {
-          if (map[idx] >= emote.end) {
-            map[idx] += emote.final_length - (emote.end - emote.start) - 1;
-          }
-        }
-      }
-    }
-    return message;
-  }
-
   _msgCheersTransform(event, message, map, $msg, $effects) {
     if (event.flags.bits && event.flags.bits > 0) {
       let bits_left = event.flags.bits;
@@ -301,6 +276,31 @@ class HTMLGenerator {
     return message;
   }
 
+  _msgEmotesTransform(event, message, map, $msg, $effects) {
+    if (event.flags.emotes) {
+      let emotes = event.flags.emotes.map(function(e) {
+        return {'id': e.id, 'name': e.name,
+                'start': map[e.start], 'end': map[e.end],
+                'ostart': e.start, 'oend': e.end};
+      });
+      emotes.sort((a, b) => a.start - b.start);
+      while (emotes.length > 0) {
+        let emote = emotes.pop();
+        let msg_start = message.substr(0, emote.start);
+        let msg_end = message.substr(emote.end+1);
+        let emote_str = this._twitchEmote(emote);
+        message = `${msg_start}${emote_str}${msg_end}`;
+        /* Adjust the map */
+        for (let idx = emote.ostart; idx < map.length; ++idx) {
+          if (map[idx] >= emote.end) {
+            map[idx] += emote.final_length - (emote.end - emote.start) - 1;
+          }
+        }
+      }
+    }
+    return message;
+  }
+
   _msgFFZEmotesTransform(event, message, map, $msg, $effects) {
     let ffz_emotes = this._client.GetFFZEmotes(event.channel.channel);
     if (ffz_emotes && ffz_emotes.emotes) {
@@ -315,7 +315,8 @@ class HTMLGenerator {
         let [start, end] = [emote.start, emote.end+1];
         let [mstart, mend] = [map[start], map[end]];
         let url = emote.id.urls[Object.keys(emote.id.urls).min()];
-        let $i = $(`<img class="emote ffz-emote" ffz-emote-id="${emote.id.id}" />`);
+        let $i = $(`<img class="emote ffz-emote" />`);
+        $i.attr("ffz-emote-id", emote.id.id);
         $i.attr('src', url);
         $i.attr('width', emote.id.width);
         $i.attr('height', emote.id.height);
@@ -335,29 +336,38 @@ class HTMLGenerator {
   }
 
   _msgBTTVEmotesTransform(event, message, map, $msg, $effects) {
-    let bttv_emotes = this._client.GetBTTVEmotes(event.channel.channel);
-    if (bttv_emotes && bttv_emotes.emotes) {
-      let bttv_emote_arr = [];
-      for (let [k,v] of Object.entries(bttv_emotes.emotes)) {
-        bttv_emote_arr.push([v, k]);
-      }
-      let results = Twitch.ScanEmotes(event.message, bttv_emote_arr);
-      results.sort((a, b) => (a.start - b.start));
-      while (results.length > 0) {
-        let emote = results.pop();
-        let [start, end] = [emote.start, emote.end+1];
-        let [mstart, mend] = [map[start], map[end]];
-        let $i = $(`<img class="emote bttv-emote" bttv-emote-id="${emote.id.id}" />`);
-        $i.attr("src", emote.id.url);
-        let msg_start = message.substr(0, mstart);
-        let msg_end = message.substr(mend);
-        let emote_str = $i[0].outerHTML;
-        message = `${msg_start}${emote_str}${msg_end}`;
-        /* Adjust the map */
-        for (let idx = emote.start; idx < map.length; ++idx) {
-          if (map[idx] - map[emote.start] >= (end - start)) {
-            map[idx] += emote_str.length - (end - start);
-          }
+    let all_emotes = this._client.GetGlobalBTTVEmotes();
+    let ch_emotes = this._client.GetBTTVEmotes(event.channel);
+    let emotes = {};
+    for (let [k, v] of Object.entries(all_emotes)) {
+      emotes[k] = v;
+    }
+    /* Channel emotes override global emotes */
+    for (let [k, v] of Object.entries(ch_emotes)) {
+      emotes[k] = v;
+    }
+    let emote_arr = [];
+    for (let k of Object.keys(emotes)) {
+      emote_arr.push([k, RegExp.escape(k)]);
+    }
+    let results = Twitch.ScanEmotes(event.message, emote_arr);
+    results.sort((a, b) => (a.start - b.start));
+    while (results.length > 0) {
+      let emote = results.pop();
+      let edef = emotes[emote.id];
+      let [start, end] = [emote.start, emote.end+1];
+      let [mstart, mend] = [map[start], map[end]];
+      let $i = $(`<img class="emote bttv-emote" />`);
+      $i.attr("bttv-emote-id", emote.id);
+      $i.attr("src", edef.url);
+      let msg_start = message.substr(0, mstart);
+      let msg_end = message.substr(mend);
+      let emote_str = $i[0].outerHTML;
+      message = `${msg_start}${emote_str}${msg_end}`;
+      /* Adjust the map */
+      for (let idx = emote.start; idx < map.length; ++idx) {
+        if (map[idx] - map[emote.start] >= (end - start)) {
+          map[idx] += emote_str.length - (end - start);
         }
       }
     }
@@ -511,7 +521,8 @@ class HTMLGenerator {
     return $e[0].outerHTML;
   }
 
-  sub(event) {
+  sub(event) { /* TODO: Wrap in emotes */
+    /* Suggested emotes: */
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
     let plan = TwitchSubEvent.PlanName(event.plan_id);
@@ -524,7 +535,8 @@ class HTMLGenerator {
     return $w[0].outerHTML;
   }
 
-  resub(event) {
+  resub(event) { /* TODO: Wrap in emotes */
+    /* Suggested emotes: */
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
     let months = event.months || event.total_months;
@@ -543,7 +555,8 @@ class HTMLGenerator {
     return $w[0].outerHTML;
   }
 
-  giftsub(event) {
+  giftsub(event) { /* TODO: Wrap in emotes */
+    /* Suggested emotes: HolidayPresent, GivePLZ, TakeNRG */
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
     if (event.flags['system-msg']) {
@@ -562,15 +575,42 @@ class HTMLGenerator {
     return $w[0].outerHTML;
   }
 
-  anongiftsub(event) { /* FIXME: Use TwitchSubEvent */
-    let user = event.flags['msg-param-recipient-user-name'];
-    let gifter = event.flags.login;
-    let months = event.flags['msg-param-sub-months'];
-    return `${event.command}: ${gifter} gifted to ${user} ${months}`;
+  anongiftsub(event) { /* TODO: Wrap in emotes */
+    /* Suggested emotes: HolidayPresent, GivePLZ, TakeNRG */
+    let $w = this._genSubWrapper(event);
+    let $m = $(`<span class="message sub-message"></span>`);
+    if (event.flags["system-msg"]) {
+      $m.text(event.flags["system-msg"]);
+    } else {
+      let user = event.recipient_name || event.recipient;
+      let gifter = "An anonymous user";
+      let plan = TwitchSubEvent.PlanName(event.plan_id);
+      $m.text(`${gifter} gifted a ${plan} subscription to ${user}!`);
+    }
+    $w.append($m);
+    if ($w[0].outerHTML.indexOf('undefined') > -1) {
+      Util.Error("msg contains undefined");
+      Util.ErrorOnly(event, $w, $w[0].outerHTML);
+    }
+    return $w[0].outerHTML;
   }
 
-  raid(event) { /* TODO */
-    return event.repr();
+  raid(event) { /* TODO: Wrap in emotes */
+    /* Suggested emotes: TombRaid */
+    let $w = $(`<div class="chat-line raid"></div>`);
+    if (event.flags["system-msg"]) {
+      $w.text(event.flags["system-msg"]);
+    } else {
+      let raider = event.flags["msg-param-displayName"] ||
+                   event.flags["msg-param-login"];
+      let count = event.flags["msg-param-viewerCount"];
+      $w.text(`${raider} is raiding with a total of ${count} viewers!`);
+    }
+    if ($w[0].outerHTML.indexOf('undefined') > -1) {
+      Util.Error("msg contains undefined");
+      Util.ErrorOnly(event, $w, $w[0].outerHTML);
+    }
+    return $w[0].outerHTML;
   }
 
   /* General-use functions below */
