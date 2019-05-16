@@ -1,7 +1,7 @@
 /* Twitch Filtered Chat - Message Injection Testing Module */
 
 /* To use:
-AddAsset("tests/inject.js", null, asset_error)
+AddAsset("tests/inject.js", MOD_TFC, null, null);
  */
 
 function BuildMessage(flag_obj, cmd=null, msg=null) {
@@ -65,6 +65,53 @@ TEST_MESSAGES.EFFECT2 = BuildMessage({"bits": "100"}, "PRIVMSG",
   "cheer100 marquee bold italic underline upsidedown strikethrough big rainbow This text is using almost every effect and looks quite weird");
 TEST_MESSAGES.EFFECT3 = BuildMessage({"bits": "100"}, "PRIVMSG",
   "cheer100 bold italic underline upsidedown strikethrough big rainbow This text is using almost every effect except marquee");
+
+TEST_MESSAGES.RAID = BuildMessage({
+  "badge-info": "",
+  "badges": "turbo/1",
+  "color": "#9ACD32",
+  "display-name": "Kaedenn_",
+  "emotes": "",
+  "login": "kaedenn_",
+  "msg-id": "raid",
+  "msg-param-displayName": "Kaedenn_",
+  "msg-param-login": "kaedenn_",
+  "msg-param-viewerCount": "9999",
+  "system-msg": "quite a few raiders from Kaedenn_ have joined"
+}, "USERNOTICE");
+TEST_MESSAGES.RAID2 = BuildMessage({
+  "badge-info": "",
+  "badges": "turbo/1",
+  "color": "#9ACD32",
+  "display-name": "Kaedenn_",
+  "emotes": "",
+  "login": "kaedenn_",
+  "msg-id": "raid",
+  "msg-param-displayName": "Kaedenn_",
+  "msg-param-login": "kaedenn_",
+  "msg-param-viewerCount": "9999"
+}, "USERNOTICE");
+
+/* TODO: TEST */
+TEST_MESSAGES.NEW_CHATTER = BuildMessage({
+  "badge-info": "",
+  "badges": "",
+  "color": "",
+  "display-name": "SevenTest1",
+  "emotes": "30259:0-6",
+  "id": "37feed0f-b9c7-4c3a-b475-21c6c6d21c3d",
+  "login": "seventest1",
+  "mod": "0",
+  "msg-id": "ritual",
+  "msg-param-ritual-name": "new_chatter",
+  "room-id": "6316121",
+  "subscriber": "0",
+  "system-msg": "Seventoes\\sis\\snew\\shere!",
+  "tmi-sent-ts": "1508363903826",
+  "turbo": "0",
+  "user-id": "131260580",
+  "user-type": ""
+}, "USERNOTICE");
 
 function inject_message(msg) {
   let e = new Event('message');
