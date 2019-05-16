@@ -79,3 +79,4 @@ var MsgWithColor = ((c) => inject_message(BuildMessage({"color": c}, "PRIVMSG", 
 client.get("HTMLGen")._default_colors.forEach(MsgWithColor);
 */
 
+/* vim: set ts=2 sts=2 sw=2 et: */

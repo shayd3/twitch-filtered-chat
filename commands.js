@@ -463,3 +463,4 @@ function InitChatCommands() { /* exported InitChatCommands */
                         "Send <message> to Twitch servers (for advanced users only!)");
 }
 
+/* vim: set ts=2 sts=2 sw=2 et: */
