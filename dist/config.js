@@ -2,17 +2,18 @@
 
 "use strict";
 
-/* Defining a new CSS style:
+/** Defining a new CSS style:
  *  <style_name>: {
- *    cost: <number: bits>,
- *    class: <CSS class name(s) for text "span" element>,
- *    style: <CSS style(s) for text "span" element>,
- *    wclass: <CSS class name(s) for containing "div" element>,
- *    wstyle: <CSS style(s) for containing "div" element>,
- *    html_pre: <HTML to place before the line "span" element>,
- *    html_post: <HTML to place after the line "span" element>,
+ *    cost: Number: number of bits the effect requires/consumes,
+ *    class: String: CSS class name(s) for text "span" element,
+ *    style: String: CSS style(s) for text "span" element,
+ *    wclass: String: CSS class name(s) for containing "div" element,
+ *    wstyle: String: CSS style(s) for containing "div" element,
+ *    html_pre: String: HTML to place before the line "span" element,
+ *    html_post: String: HTML to place after the line "span" element,
  *  }
- * Line format:
+ *
+ ** Line format:
  *  <div class="line line-wrapper">
  *    <div class="chat-line ${wclass}" style="${wstyle}">
  *      <span class="badges" data-badges="1">
@@ -23,7 +24,7 @@
  *      </span>
  *      ${html_pre}
  *      <span class="message ${class}" style="${style}">
- *        text
+ *        message, sometimes with cheers, URLs, etc
  *      </span>
  *      ${html_post}
  *    </div>
@@ -369,3 +370,11 @@ var ColorNames = { /* exported ColorNames */
   "green": "#15b01a",
   "purple": "#7e1e9c"
 };
+
+/* Paths to specific assets */
+var AssetPaths = { /* exported AssetPaths */
+  FAVICON: "assets/settings_white.png",
+  FAVICON_ALERT: "assets/settings_white_alert.png"
+};
+
+/* vim: set ts=2 sts=2 sw=2 et: */
