@@ -49,7 +49,8 @@ class HTMLGenerator {
   getColorFor(username) {
     let name = `${username}`;
     if (typeof(username) !== "string") {
-      Util.Error(`Expected string, got ${typeof(username)}: ${JSON.stringify(username)}`);
+      Util.Error(`Expected string, got ${typeof(username)}: ` +
+                 JSON.stringify(username));
     }
     if (!this._user_colors.hasOwnProperty(name)) {
       /* Taken from Twitch vendor javascript */
@@ -313,7 +314,7 @@ class HTMLGenerator {
         let [start, end] = [emote.start, emote.end+1];
         let [mstart, mend] = [map[start], map[end]];
         let url = emote.id.urls[Object.keys(emote.id.urls).min()];
-        let $i = $(`<img class="emote ffz-emote" ffz-emote-id=${emote.id.id} />`);
+        let $i = $(`<img class="emote ffz-emote" ffz-emote-id="${emote.id.id}" />`);
         $i.attr('src', url);
         $i.attr('width', emote.id.width);
         $i.attr('height', emote.id.height);

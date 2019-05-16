@@ -518,7 +518,7 @@ var HTMLGenerator = function () {
               mend = _ref9[1];
 
           var url = emote.id.urls[Object.keys(emote.id.urls).min()];
-          var $i = $("<img class=\"emote ffz-emote\" ffz-emote-id=" + emote.id.id + " />");
+          var $i = $("<img class=\"emote ffz-emote\" ffz-emote-id=\"" + emote.id.id + "\" />");
           $i.attr('src', url);
           $i.attr('width', emote.id.width);
           $i.attr('height', emote.id.height);

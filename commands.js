@@ -7,11 +7,11 @@ class ChatCommandManager {
     this._aliases = {};
     this._help_text = [];
     this.add("help", this.command_help.bind(this),
-             "Obtain help for a specific command or all commands");
+             "Show help for a specific command or all commands");
     this.addAlias("?", "help");
     this.addAlias("", "help");
-    this.addUsage("help", null, "Obtain help for all commands");
-    this.addUsage("help", "command", "Obtain the usage information for <command>");
+    this.addUsage("help", null, "Show help for all commands");
+    this.addUsage("help", "command", "Show usage information for <command>");
   }
 
   add(command, func, desc, ...args) {
