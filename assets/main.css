@@ -90,6 +90,8 @@ input {
 
 /* End top-level rules 0}}} */
 
+/* Column and module CSS {{{0 */
+
 .column {
   float: left;
   width: 50%;
@@ -144,6 +146,8 @@ input {
 .module .content.slim {
   padding: 0 0 0 0;
 }
+
+/* End of column and module CSS 0}}} */
 
 /* Header CSS {{{0 */
 
@@ -558,6 +562,7 @@ body.transparent #chat textarea  {
   position: absolute;
   width: 32em;
   border: 10px black solid;
+  border-radius: 10px;
   border-style: outset;
   background-image: linear-gradient(to right, darkgray, lightgray);
   color: black;
@@ -570,6 +575,10 @@ body.transparent #chat textarea  {
 
 #userContext .item .em {
   font-weight: bold;
+}
+
+#userContent .em.pad {
+  margin-left: 0.5em;
 }
 
 #userContext .cw-timeout:first-child {
@@ -648,12 +657,12 @@ body.transparent #chat textarea  {
 }
 
 .effect-subscript {
-  font-size: smaller;
+  font-size: calc(var(--body-font-size)*0.8);
   vertical-align: sub;
 }
 
 .effect-superscript {
-  font-size: smaller;
+  font-size: calc(var(--body-font-size)*0.8);
   vertical-align: super;
 }
 
@@ -687,24 +696,6 @@ body.transparent #chat textarea  {
   0% { background-position: 0% 50%; }
   100% { background-position: 400% 50%; }
 }
-
-/*.effect-disco {
-  animation-name: disco;
-  animation-duration: 3s;
-  animation-timing-function: ease-in;
-  animation-iteration-count: infinite;
-}
-
-@keyframes disco {
-  0% { color: #F00; }
-  17% { color: #FF0; }
-  33% { color: #0F0; }
-  50% { color: #0FF; }
-  66% { color: #00F; }
-  83% { color: #F0F; }
-  100% { color: #F00; }
-}
-*/
 
 /* End CSS cheer effects 0}}} */
 

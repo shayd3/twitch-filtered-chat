@@ -18,9 +18,9 @@
 
 /* NOTES:
  * Filtering ws "recv>" messages:
- *   Util.Logger.add_filter(((m) => !`${m}`.startsWith("recv> ")), "DEBUG");
+ *   Util.Logger.add_filter(((m) => !`${m}`.startsWith("recv> ")), "DEBUG")
  * Filtering ws PRIVMSG messages:
- *   Util.Logger.add_filter(((m) => `${m}`.indexOf(" PRIVMSG ") === -1, "DEBUG");
+ *   Util.Logger.add_filter(((m) => `${m}`.indexOf(" PRIVMSG ") === -1, "DEBUG")
  */
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
@@ -543,8 +543,9 @@ function setModuleSettings(module, config) {
           var isel = "input." + cls + "[value=\"" + val + "\"]";
           if ($(module).find(isel).length === 0) {
             var $l = $("<label></label>").val(label);
-            var $cb = $("<input type=\"checkbox\" value=" + val.escape() + " checked />");
+            var $cb = $("<input type=\"checkbox\" checked />");
             $cb.addClass(cls);
+            $cb.attr("value", val);
             $cb.click(updateModuleConfig);
             $l.append($cb);
             $l.html($l.html() + label + val.escape());
@@ -841,11 +842,13 @@ function handleCommand(value, client) {
         Util.SetWebStorage({});
         Content.addNotice("Purged storage \"" + Util.GetWebStorageKey() + "\"");
       } else if (tokens[0] === "url") {
-        var url = location.protocol + "//" + location.hostname + location.pathname;
+        var url = "";
         if (tokens.length > 1) {
           if (tokens[1].startsWith("git")) {
             url = "https://kaedenn.github.io/twitch-filtered-chat/index.html";
           }
+        } else {
+          url = window.location.protocol + "//" + window.location.hostname + window.location.pathname;
         }
         var qs = [];
         var qsAdd = function qsAdd(k, v) {
@@ -945,7 +948,7 @@ function handleCommand(value, client) {
             /* It's a window configuration */
             wincfgs.push([k, v]);
           } else if (k === "ClientID" || k === "Pass") {
-            Content.addHelpLine(k, "Omitted for security; use //config " + k.toLowerCase() + " to show");
+            Content.addHelpLine(k, "Omitted for security; use //config " + (k.toLowerCase() + " to show"));
           } else {
             Content.addHelpLine(k, v);
           }
@@ -979,7 +982,7 @@ function handleCommand(value, client) {
           var _k = _ref6[0];
           var _v = _ref6[1];
 
-          Content.addHelp("Module <span class=\"arg\">" + _k + "</span>: &quot;" + _v.Name + "&quot;:");
+          Content.addHelp("Module <span class=\"arg\">" + _k + "</span>: " + ("&quot;" + _v.Name + "&quot;:"));
           var _iteratorNormalCompletion12 = true;
           var _didIteratorError12 = false;
           var _iteratorError12 = undefined;
@@ -1072,7 +1075,7 @@ function showContextWindow(client, cw, line) {
     return client.get("HTMLGen").url(null, text, "cw-link", i);
   };
   var $Em = function $Em(s) {
-    return $("<span class=\"em\">" + s + "</span>").css("margin-left", "0.5em");
+    return $("<span class=\"em pad\">" + s + "</span>");
   };
 
   /* Add user's display name */
@@ -1454,8 +1457,8 @@ function client_main(layout) {
 
   /* Add documentation for the moderator chat commands */
   ChatCommands.addHelp("Moderator commands:", { literal: true });
-  ChatCommands.addHelp("!tfc reload: Force reload of this page", { literal: true, command: true });
-  ChatCommands.addHelp("!tfc force-reload: Force reload of this page, discarding cache", { literal: true, command: true });
+  ChatCommands.addHelp("!tfc reload: Reload the page", { literal: true, command: true });
+  ChatCommands.addHelp("!tfc force-reload: Reload the page, discarding cache", { literal: true, command: true });
   ChatCommands.addHelp("!tfc nuke: Clear the chat", { literal: true, command: true });
   ChatCommands.addHelp("!tfc nuke <user>: Remove all messages sent by <user>", { command: true });
 
@@ -1650,7 +1653,7 @@ function client_main(layout) {
     }
   });
 
-  /* Clicking anywhere else on the document: reconnect, username context window */
+  /* Clicking elsewhere on the document: reconnect, username context window */
   $(document).click(function (e) {
     var $t = $(e.target);
     var $cw = $("#userContext");
@@ -1736,7 +1739,7 @@ function client_main(layout) {
       Content.addInfo("Connected " + notes.join(" "));
     }
     if (getConfigObject().Channels.length === 0) {
-      Content.addInfo("No channels configured; type //join &lt;channel&gt; to join one!");
+      Content.addInfo("No channels configured; type //join &lt;channel&gt; " + "to join one!");
     }
   });
 
@@ -1754,7 +1757,7 @@ function client_main(layout) {
       Content.addError(msg);
       client.Connect();
     } else {
-      Content.addError(msg + "<span class=\"reconnect\" data-reconnect=\"1\">Reconnect</span>");
+      Content.addError(msg + "<span class=\"reconnect\" data-reconnect=\"1\">" + "Reconnect</span>");
     }
   });
 
@@ -1897,7 +1900,8 @@ function client_main(layout) {
       /* Moderator timed out a user */
       var r = e.flags["room-id"];
       var u = e.flags["target-user-id"];
-      $(".chat-line[data-channel-id=\"" + r + "\"][data-user-id=\"" + u + "\"]").parent().remove();
+      var l = $(".chat-line[data-channel-id=\"" + r + "\"][data-user-id=\"" + u + "\"]");
+      l.parent().remove();
     } else {
       /* Moderator cleared the chat */
       $("div.content").find(".line-wrapper").remove();

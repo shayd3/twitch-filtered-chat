@@ -18,9 +18,9 @@
 
 /* NOTES:
  * Filtering ws "recv>" messages:
- *   Util.Logger.add_filter(((m) => !`${m}`.startsWith("recv> ")), "DEBUG");
+ *   Util.Logger.add_filter(((m) => !`${m}`.startsWith("recv> ")), "DEBUG")
  * Filtering ws PRIVMSG messages:
- *   Util.Logger.add_filter(((m) => `${m}`.indexOf(" PRIVMSG ") === -1, "DEBUG");
+ *   Util.Logger.add_filter(((m) => `${m}`.indexOf(" PRIVMSG ") === -1, "DEBUG")
  */
 
 const CACHED_VALUE = "Cached";
@@ -346,8 +346,9 @@ function setModuleSettings(module, config) {
         let isel = `input.${cls}[value="${val}"]`;
         if ($(module).find(isel).length === 0) {
           let $l = $(`<label></label>`).val(label);
-          let $cb = $(`<input type="checkbox" value=${val.escape()} checked />`);
+          let $cb = $(`<input type="checkbox" checked />`);
           $cb.addClass(cls);
+          $cb.attr("value", val);
           $cb.click(updateModuleConfig);
           $l.append($cb);
           $l.html($l.html() + label + val.escape());
@@ -485,8 +486,8 @@ function shouldFilter(module, event) {
     if (event.isvip) role = "vip";
     if (event.ismod) role = "mod";
     /* Includes take priority over excludes */
-    if (rules.IncludeUser.any((u) => (u.toLowerCase() === user))) return false;
-    if (rules.IncludeKeyword.any((k) => (message.indexOf(k) > -1))) return false;
+    if (rules.IncludeUser.any((u) => u.toLowerCase() === user)) return false;
+    if (rules.IncludeKeyword.any((k) => message.indexOf(k) > -1)) return false;
     /* Role filtering */
     if (!rules.Pleb && role === "pleb") return true;
     if (!rules.Sub && role === "sub") return true;
@@ -496,8 +497,8 @@ function shouldFilter(module, event) {
     if (!rules.Bits && event.flags.bits) return true;
     if (!rules.Me && event.flags.action) return true;
     /* Exclude filtering */
-    if (rules.ExcludeUser.any((u) => (u.toLowerCase() === user))) return true;
-    if (rules.ExcludeStartsWith.any((m) => (message.startsWith(m)))) return true;
+    if (rules.ExcludeUser.any((u) => u.toLowerCase() === user)) return true;
+    if (rules.ExcludeStartsWith.any((m) => message.startsWith(m))) return true;
     /* Filtering to permitted channels (default: permit all) */
     if (rules.FromChannel.length > 0) {
       for (let s of rules.FromChannel) {
@@ -551,11 +552,15 @@ function handleCommand(value, client) {
         Util.SetWebStorage({});
         Content.addNotice(`Purged storage "${Util.GetWebStorageKey()}"`);
       } else if (tokens[0] === "url") {
-        let url = location.protocol + "//" + location.hostname + location.pathname;
+        let url = "";
         if (tokens.length > 1) {
           if (tokens[1].startsWith("git")) {
             url = "https://kaedenn.github.io/twitch-filtered-chat/index.html";
           }
+        } else {
+          url = window.location.protocol + "//" +
+                window.location.hostname +
+                window.location.pathname;
         }
         let qs = [];
         let qsAdd = (k, v) => (qs.push(`${k}=${encodeURIComponent(v)}`));
@@ -623,14 +628,16 @@ function handleCommand(value, client) {
           /* It's a window configuration */
           wincfgs.push([k, v]);
         } else if (k === "ClientID" || k === "Pass") {
-          Content.addHelpLine(k, `Omitted for security; use //config ${k.toLowerCase()} to show`);
+          Content.addHelpLine(k, `Omitted for security; use //config ` +
+                                 `${k.toLowerCase()} to show`);
         } else {
           Content.addHelpLine(k, v);
         }
       }
       Content.addHelp(`Window Configurations:`);
       for (let [k, v] of wincfgs) {
-        Content.addHelp(`Module <span class="arg">${k}</span>: &quot;${v.Name}&quot;:`);
+        Content.addHelp(`Module <span class="arg">${k}</span>: ` +
+                        `&quot;${v.Name}&quot;:`);
         for (let [cfgk, cfgv] of Object.entries(v)) {
           if (cfgk === "Name") continue;
           Content.addHelpLine(cfgk, `&quot;${cfgv}&quot;`);
@@ -678,7 +685,7 @@ function showContextWindow(client, cw, line) {
   /* Define functions for building elements */
   let $Line = (s) => $(`<div class="item">${s}</div>`);
   let Link = (i, text) => client.get("HTMLGen").url(null, text, "cw-link", i);
-  let $Em = (s) => $(`<span class="em">${s}</span>`).css("margin-left", "0.5em");
+  let $Em = (s) => $(`<span class="em pad">${s}</span>`);
 
   /* Add user's display name */
   let $username = $l.find(".username");
@@ -851,7 +858,8 @@ function client_main(layout) { /* exported client_main */
       document.title += " Read-Only";
       if (config.Layout.Chat) {
         /* Change the chat placeholder and border to reflect read-only */
-        $("#txtChat").attr("placeholder", "Authentication needed to send messages");
+        $("#txtChat").attr("placeholder",
+                           "Authentication needed to send messages");
         Util.CSS.SetProperty("--chat-border", "#cd143c");
       }
     }
@@ -939,10 +947,14 @@ function client_main(layout) { /* exported client_main */
 
   /* Add documentation for the moderator chat commands */
   ChatCommands.addHelp("Moderator commands:", {literal: true});
-  ChatCommands.addHelp("!tfc reload: Force reload of this page", {literal: true,  command: true});
-  ChatCommands.addHelp("!tfc force-reload: Force reload of this page, discarding cache", {literal: true,  command: true});
-  ChatCommands.addHelp("!tfc nuke: Clear the chat", {literal: true,  command: true});
-  ChatCommands.addHelp("!tfc nuke <user>: Remove all messages sent by <user>", {command: true});
+  ChatCommands.addHelp("!tfc reload: Reload the page",
+                       {literal: true,  command: true});
+  ChatCommands.addHelp("!tfc force-reload: Reload the page, discarding cache",
+                       {literal: true,  command: true});
+  ChatCommands.addHelp("!tfc nuke: Clear the chat",
+                       {literal: true,  command: true});
+  ChatCommands.addHelp("!tfc nuke <user>: Remove all messages sent by <user>",
+                       {command: true});
 
   /* Bind all of the page assets {{{0 */
 
@@ -1138,7 +1150,7 @@ function client_main(layout) { /* exported client_main */
     }
   });
 
-  /* Clicking anywhere else on the document: reconnect, username context window */
+  /* Clicking elsewhere on the document: reconnect, username context window */
   $(document).click(function(e) {
     let $t = $(e.target);
     let $cw = $("#userContext");
@@ -1191,7 +1203,8 @@ function client_main(layout) { /* exported client_main */
     } else if ($t.attr("data-username") === "1") {
       /* Clicked on a username; show context window */
       let $l = $t.parent();
-      if ($cw.is(":visible") && $cw.attr("data-user-id") === $l.attr("data-user-id")) {
+      if ($cw.is(":visible") &&
+          $cw.attr("data-user-id") === $l.attr("data-user-id")) {
         $cw.fadeOut();
       } else {
         showContextWindow(client, $cw, $l);
@@ -1226,7 +1239,8 @@ function client_main(layout) { /* exported client_main */
       Content.addInfo(`Connected ${notes.join(" ")}`);
     }
     if (getConfigObject().Channels.length === 0) {
-      Content.addInfo("No channels configured; type //join &lt;channel&gt; to join one!");
+      Content.addInfo("No channels configured; type //join &lt;channel&gt; " +
+                      "to join one!");
     }
   });
 
@@ -1244,7 +1258,8 @@ function client_main(layout) { /* exported client_main */
       Content.addError(msg);
       client.Connect();
     } else {
-      Content.addError(`${msg}<span class="reconnect" data-reconnect="1">Reconnect</span>`);
+      Content.addError(`${msg}<span class="reconnect" data-reconnect="1">` +
+                       `Reconnect</span>`);
     }
   });
 
@@ -1366,7 +1381,8 @@ function client_main(layout) { /* exported client_main */
       /* Moderator timed out a user */
       let r = e.flags["room-id"];
       let u = e.flags["target-user-id"];
-      $(`.chat-line[data-channel-id="${r}"][data-user-id="${u}"]`).parent().remove();
+      let l = $(`.chat-line[data-channel-id="${r}"][data-user-id="${u}"]`);
+      l.parent().remove();
     } else {
       /* Moderator cleared the chat */
       $("div.content").find(".line-wrapper").remove();
