@@ -2,11 +2,73 @@
 
 "use strict";
 
-var IS_TESLA = !!navigator.userAgent.match(/\bTesla\b/);
-var USE_DIST = !!window.location.search.match(/\busedist\b/) || IS_TESLA;
+/* Module names (also used as directory names) */
+
 var MOD_TFC = 'twitch-filtered-chat';
 var MOD_TWAPI = 'twitch-api';
+
+/* Obtain information based on window.location and navigator.userAgent */
+var URI = '' + window.location;
+var IS_LOCAL = window.location.protocol === "file:";
+var IS_HTTP = window.location.protocol === "http:";
+var IS_HTTPS = window.location.protocol === "https:";
+var IS_TESLA = Boolean(navigator.userAgent.match(/\bTesla\b/));
+var IS_GITIO = window.location.hostname.indexOf('github.io') > -1;
+var USE_DIST = Boolean(window.location.search.match(/\busedist\b/)) || IS_TESLA;
+var BASE_URI = URI.substr(0, URI.indexOf(MOD_TFC)).replace(/\/$/, '');
+var SELF_URI = URI.replace(/\/index.html(\?.*)?$/, '');
+
+/* Asset storage object */
 var ASSETS = {};
+
+/* Log things to the console, usable even if the console is disabled */
+function _console(func) {
+  if (console && console[func]) {
+    var _console2;
+
+    for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+      args[_key - 1] = arguments[_key];
+    }
+
+    return (_console2 = console)[func].apply(_console2, args);
+  }
+}
+
+function _console_error() {
+  for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+    args[_key2] = arguments[_key2];
+  }
+
+  return _console.apply(undefined, ["error"].concat(args));
+}
+function _console_warn() {
+  for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+    args[_key3] = arguments[_key3];
+  }
+
+  return _console.apply(undefined, ["warn"].concat(args));
+}
+function _console_log() {
+  for (var _len4 = arguments.length, args = Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+    args[_key4] = arguments[_key4];
+  }
+
+  return _console.apply(undefined, ["log"].concat(args));
+}
+function _console_info() {
+  for (var _len5 = arguments.length, args = Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
+    args[_key5] = arguments[_key5];
+  }
+
+  return _console.apply(undefined, ["info"].concat(args));
+}
+function _console_debug() {
+  for (var _len6 = arguments.length, args = Array(_len6), _key6 = 0; _key6 < _len6; _key6++) {
+    args[_key6] = arguments[_key6];
+  }
+
+  return _console.apply(undefined, ["debug"].concat(args));
+}
 
 /* Parse layout= query string value */
 function ParseLayout(str) {
@@ -20,7 +82,7 @@ function ParseLayout(str) {
     } else if (v1 === "double") {
       layout.Cols = "double";
     } else {
-      console.warn("Unknown layout", v1, "defaulting to double");
+      _console_warn("Unknown layout", v1, "defaulting to double");
       layout.Cols = "double";
     }
     if (v2 === "nochat") {
@@ -29,7 +91,7 @@ function ParseLayout(str) {
       layout.Slim = true;
       layout.Chat = false;
     } else if (v2 !== "chat") {
-      console.warn('Unknown layout option', v2);
+      _console_warn('Unknown layout option', v2);
     }
   } else if (str === "single") {
     layout.Cols = "single";
@@ -41,7 +103,7 @@ function ParseLayout(str) {
     layout.Slim = true;
     layout.Tesla = true;
   } else {
-    console.error("Failed to parse layout", str);
+    _console_error("Failed to parse layout", str);
   }
   return layout;
 }
@@ -68,17 +130,14 @@ function FormatLayout(layout) {
   return k + ':' + v;
 }
 
-/* Given a filename/path and a tree, obtain the path to an asset */
+/* Obtain the final path to an asset */
 function GetAssetURL(file, tree) {
-  var URI = '' + window.location;
-  var IS_GIT = URI.indexOf('github.io') > -1;
-  var BASE_URI = URI.substr(0, URI.indexOf(MOD_TFC)).replace(/\/$/, '');
-  var SELF_URI = URI.replace(/\/index.html(\?.*)?$/, '');
+  var path = file;
   var root = '';
   if (tree === MOD_TFC) {
     if (USE_DIST) {
       root = SELF_URI + '/dist';
-    } else if (IS_GIT) {
+    } else if (IS_GITIO) {
       root = SELF_URI;
     } else {
       root = SELF_URI;
@@ -86,33 +145,37 @@ function GetAssetURL(file, tree) {
   } else if (tree === MOD_TWAPI) {
     if (USE_DIST) {
       root = BASE_URI + '/' + MOD_TWAPI + '/dist';
-    } else if (IS_GIT) {
+    } else if (IS_GITIO) {
       root = BASE_URI + '/' + MOD_TWAPI;
     } else {
       root = BASE_URI + '/' + MOD_TWAPI;
     }
   } else if (file.startsWith('//')) {
-    if (window.location.protocol === "https:") {
-      return 'https:' + file;
-    } else if (window.location.protocol === "http:") {
-      return 'http:' + file;
-    } else if (window.location.protocol === "file:") {
-      return 'http:' + file;
+    if (IS_HTTPS) {
+      path = 'https:' + file;
+    } else if (IS_HTTP) {
+      path = 'http:' + file;
+    } else if (IS_LOCAL) {
+      path = 'http:' + file;
     } else {
-      return 'http:' + file;
+      _console_info('Unknown protocol', window.location.protocol);
+      path = 'http:' + file;
     }
   } else if (!file.match(/^[\w-]+:/)) {
-    if (window.location.protocol === "https:") {
-      return 'https://' + file;
-    } else if (window.location.protocol === "http:") {
-      return 'http://' + file;
-    } else if (window.location.protocol === "file:") {
-      return 'http://' + file;
+    if (IS_HTTPS) {
+      path = 'https://' + file;
+    } else if (IS_HTTP) {
+      path = 'http://' + file;
+    } else if (IS_LOCAL) {
+      path = 'http://' + file;
     } else {
-      return 'http://' + file;
+      _console_info('Unknown protocol', window.location.protocol);
+      path = 'http://' + file;
     }
   }
-  return root + '/' + file;
+  var result = root ? root + '/' + path : path;
+  _console_debug("GetAssetURL(", file, tree, ") ->", result);
+  return result;
 }
 
 /* Add an asset to be loaded; returns a Promise */
@@ -128,6 +191,7 @@ function AddAsset(src) {
   ASSETS[path] = {};
   var asset = ASSETS[path];
   return new Promise(function (resolve, reject) {
+    _console_info("About to load asset", path);
     asset.file = src;
     asset.src = path;
     asset.tree = tree;
@@ -137,7 +201,7 @@ function AddAsset(src) {
     asset.script.setAttribute("type", "text/javascript");
     asset.script.setAttribute("src", asset.src);
     asset.script.onload = function () {
-      console.log(asset.src + ' loaded');
+      _console_log(asset.src + ' loaded');
       asset.loaded = true;
       if (loadcb) {
         loadcb(asset);
@@ -145,7 +209,7 @@ function AddAsset(src) {
       resolve(asset);
     };
     asset.script.onerror = function (e) {
-      console.error("Failed loading", asset, e);
+      _console_error("Failed loading", asset, e);
       asset.error = true;
       if (errcb) {
         errcb(asset, e);
@@ -163,7 +227,10 @@ function loadTWAPI() {
 
 /* Load TFC */
 function loadTFC() {
-  return Promise.all([AddAsset("config.js", MOD_TFC, null, null), AddAsset("htmlgen.js", MOD_TFC, null, null), AddAsset("commands.js", MOD_TFC, null, null), AddAsset("filtered-chat.js", MOD_TFC, null, null), !USE_DIST ? AddAsset("plugins/plugins.js", MOD_TFC, null, null) : null]);
+  /* Load config.js before everything else */
+  return AddAsset("config.js", MOD_TFC, null, null).then(function () {
+    return Promise.all([AddAsset("htmlgen.js", MOD_TFC, null, null), AddAsset("commands.js", MOD_TFC, null, null), AddAsset("filtered-chat.js", MOD_TFC, null, null), !USE_DIST ? AddAsset("plugins/plugins.js", MOD_TFC, null, null) : null]);
+  });
 }
 
 /* Called by body.onload */
@@ -247,7 +314,7 @@ function Main(global) {
             throw e;
           }
         }
-        console.error(e);
+        _console_error(e);
         var msg = "client_main error: " + e.toString();
         if (e.stack) msg += ";\nstack: " + e.stack.toString();
         alert(msg);
@@ -257,11 +324,7 @@ function Main(global) {
   }
 
   /* Add TWAPI assets, then TFC assets, and then call index_main */
-  loadTWAPI().then(function () {
-    return loadTFC();
-  }).then(function () {
-    return index_main();
-  }).catch(function (e) {
+  loadTWAPI().then(loadTFC).then(index_main).catch(function (e) {
     var msg = "TWAPI/TFC Failure: ";
     var t = e.target || e.srcElement || e.originalTarget;
     if (t.attributes && t.attributes.src && t.attributes.src.value) {
@@ -271,10 +334,12 @@ function Main(global) {
     } else {
       msg += "while loading " + t;
     }
-    console.error(msg, e);
+    _console_error(msg, e);
     if (e.stack) {
       msg += ": stack: " + e.stack;
     }
     alert(msg);
   });
 }
+
+/* vim: set ts=2 sts=2 sw=2 et: */
