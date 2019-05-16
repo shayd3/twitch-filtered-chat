@@ -6,10 +6,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 var SamplePlugin = function () {
   /* exported SamplePlugin */
-  function SamplePlugin(resolve, reject, client) {
+  function SamplePlugin(resolve, reject, client, args) {
     _classCallCheck(this, SamplePlugin);
 
     this._debug = client.GetDebug();
+    this._args = args;
     var prefix = "From plugin " + this.name + ": ";
     ChatCommands.add("sample-plugin", this._say_hi.bind(this), prefix + "Say hello");
     resolve(this);
@@ -20,7 +21,10 @@ var SamplePlugin = function () {
     value: function _say_hi(cmd, tokens, client) {
       Content.addPre("Hi from " + this.name + " " + client.GetName() + "!");
       if (tokens && tokens.length > 0) {
-        Content.addPre("Arguments: " + JSON.stringify(tokens).escape());
+        Content.addPre("Command arguments: " + JSON.stringify(tokens).escape());
+      }
+      if (this._args && this._args.length > 0) {
+        Content.addPre("Plugin args: " + JSON.stringify(this._args).escape());
       }
     }
   }, {
@@ -37,3 +41,5 @@ var SamplePlugin = function () {
 
   return SamplePlugin;
 }();
+
+/* vim: set ts=2 sts=2 sw=2 et: */

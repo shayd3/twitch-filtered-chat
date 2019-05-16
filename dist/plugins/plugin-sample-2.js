@@ -13,3 +13,5 @@ function SamplePlugin2(resolve, reject, client) {
 SamplePlugin2.prototype.toString = function () {
   return "[object SamplePlugin2]";
 };
+
+/* vim: set ts=2 sts=2 sw=2 et: */
