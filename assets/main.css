@@ -39,6 +39,13 @@
   --body-font-size: var(--body-font-size-default);
   --body-font-default: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   --body-font: var(--body-font-default);
+
+  /* Other values */
+  --header-height: 2.2em;
+  --chat-height: 6em;
+  --z-index-line: 10;
+  --z-index-chat: 12;
+  --z-index-settings: 20;
 }
 
 /* Top-level rules {{{0 */
@@ -93,14 +100,21 @@ input {
 /* Column and module CSS {{{0 */
 
 .column {
+  height: 100%;
+}
+
+.column.left {
   float: left;
   width: 50%;
-  height: 100%;
+}
+
+.column.right {
+  float: right;
+  width: 50%;
 }
 
 .column.full {
   width: 100%;
-  height: 100%;
 }
 
 .column .module {
@@ -111,11 +125,21 @@ input {
 }
 
 .module.no-chat .content {
-  height: 100%;
+  height: calc(100% - var(--header-height));
+  margin-top: var(--header-height);
 }
 
 .module.has-chat .content {
-  height: calc(100% - 6em);
+  height: calc(100% - var(--chat-height) - var(--header-height));
+  margin-top: var(--header-height);
+}
+
+.module.no-chat.slim .content {
+  height: 100%;
+}
+
+.module.has-chat.slim .content {
+  height: calc(100% - var(--chat-height));
 }
 
 .loading {
@@ -137,14 +161,9 @@ input {
 }
 
 .module .content {
-  padding: 2.2em 0 0 0;
   height: 100%;
   overflow: auto;
   overflow-y: hidden;
-}
-
-.module .content.slim {
-  padding: 0 0 0 0;
 }
 
 /* End of column and module CSS 0}}} */
@@ -152,7 +171,7 @@ input {
 /* Header CSS {{{0 */
 
 .module .header {
-  height: 2.2em;
+  height: var(--header-height);
   line-height: 2em;
   border-bottom: 2px ridge #666666;
   position: absolute;
@@ -170,10 +189,16 @@ input {
 }
 
 .module .header .menu div {
-  margin-top: 15%;
+  margin-top: calc(var(--header-height) / 10);
   height: 3px;
   border-radius: 2px;
-  background: var(--menudiv-color, var(--menudiv-color-default));
+  box-shadow: 0px 0px 2px #0e0e0e;
+  transition: background-color 0.5s;
+  background-color: #c0c0c0;
+}
+
+.module .header .menu:hover div {
+  background-color: #ffffff;
 }
 
 .module .header label {
@@ -240,7 +265,7 @@ input {
 
 .module .settings {
   position: absolute;
-  top: 2.2em;
+  top: var(--header-height);
   background: #333333;
   max-width: 100%;
   line-height: 1.5em;
@@ -248,6 +273,7 @@ input {
   border-bottom: 2px ridge #666666;
   overflow: auto;
   display: none;
+  z-index: var(--z-index-settings);
 }
 
 .module .settings fieldset {
@@ -294,9 +320,11 @@ input {
 
 /* Line CSS {{{0 */
 
-.module .content .line-wrapper { }
+.module .content .line.line-wrapper {
+  z-index: var(--z-line);
+}
 
-.module .content .line-wrapper:nth-child(2n) {
+.module .content .line.line-wrapper:nth-child(2n) {
   background: var(--odd-line-color, var(--odd-line-color-default));
 }
 
@@ -396,20 +424,20 @@ input {
   text-decoration: underline;
 }
 
-.module .content .line.line-wrapper img {
+.module .content .line img {
   vertical-align: middle;
 }
 
-.module .content .line.line-wrapper span.badges img {
+.module .content .line span.badges img {
   margin-right: 3px;
 }
 
-.module .content img.badge {
+.module .content .line img.badge {
   width: 18px;
   max-width: 18px;
 }
 
-.module .content .sub {
+.module .content .line .sub {
   background: var(--sub-color, var(--sub-color-default));
   color: #999999;
 }
@@ -433,8 +461,9 @@ input {
   bottom: 0;
   border-top: 1px solid #666666;
   padding: 10px;
-  height: 6em;
+  height: var(--chat-height);
   background: var(--chat-color, var(--chat-color-default));
+  z-index: var(--z-index-chat);
 }
 
 #chat textarea {
@@ -453,14 +482,6 @@ input {
   border-color: var(--chat-border, var(--chat-border-default));
 }
 
-/* Transparent background overrides {{{1 */
-
-body.transparent #chat textarea  {
-  color: #0f0f0f;
-}
-
-/* End transparent background overrides 1}}} */
-
 /* End chat textbox 0}}} */
 
 /* Top-level settings {{{0 */
@@ -476,6 +497,7 @@ body.transparent #chat textarea  {
   padding: 10px;
   border-left: 1px solid #888888;
   border-bottom: 1px solid #888888;
+  z-index: var(--z-index-settings);
 }
 
 #settings header {
@@ -551,6 +573,7 @@ body.transparent #chat textarea  {
   right: 10px;
   width: 24px;
   height: 24px;
+  z-index: var(--z-index-settings);
 }
 
 #btnSettings:hover {
