@@ -659,20 +659,132 @@ function command_badges(cmd, tokens, client) {
   }
 }
 
-function command_plugins(cmd, tokens, client) {
+function command_emotes(cmd, tokens, client) {
+  var client_emotes = client.GetEmotes();
+  var emotes = [];
+  var ch_emotes = [];
+  var _iteratorNormalCompletion13 = true;
+  var _didIteratorError13 = false;
+  var _iteratorError13 = undefined;
+
   try {
-    var _iteratorNormalCompletion13 = true;
-    var _didIteratorError13 = false;
-    var _iteratorError13 = undefined;
+    for (var _iterator13 = Object.entries(client_emotes)[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+      var _ref7 = _step13.value;
+
+      var _ref8 = _slicedToArray(_ref7, 2);
+
+      var k = _ref8[0];
+      var v = _ref8[1];
+
+      var e = "<img src=\"" + v + "\" title=\"" + k.escape() + "\" alt=\"" + k.escape() + "\" />";
+      if (k.match(/^[a-z]/)) {
+        ch_emotes.push(e);
+      } else {
+        emotes.push(e);
+      }
+    }
+  } catch (err) {
+    _didIteratorError13 = true;
+    _iteratorError13 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion13 && _iterator13.return) {
+        _iterator13.return();
+      }
+    } finally {
+      if (_didIteratorError13) {
+        throw _iteratorError13;
+      }
+    }
+  }
+
+  var to_display = [];
+  if (tokens.indexOf("global") > -1) {
+    to_display.push("Global: " + emotes.join(""));
+  }
+  if (tokens.indexOf("channel") > -1) {
+    to_display.push("Channel: " + ch_emotes.join(""));
+  }
+  if (tokens.indexOf("bttv") > -1) {
+    var bttv_emotes = client.GetGlobalBTTVEmotes();
+    var bttv_imgs = [];
+    var _iteratorNormalCompletion14 = true;
+    var _didIteratorError14 = false;
+    var _iteratorError14 = undefined;
 
     try {
-      for (var _iterator13 = Object.entries(Plugins.plugins)[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-        var _ref7 = _step13.value;
+      for (var _iterator14 = Object.entries(bttv_emotes)[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+        var _ref9 = _step14.value;
 
-        var _ref8 = _slicedToArray(_ref7, 2);
+        var _ref10 = _slicedToArray(_ref9, 2);
 
-        var n = _ref8[0];
-        var p = _ref8[1];
+        var _k = _ref10[0];
+        var _v = _ref10[1];
+
+        bttv_imgs.push("<img src=\"" + _v.url + "\" title=\"" + _k.escape() + "\" alt=\"" + _k.escape() + "\" />");
+      }
+    } catch (err) {
+      _didIteratorError14 = true;
+      _iteratorError14 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion14 && _iterator14.return) {
+          _iterator14.return();
+        }
+      } finally {
+        if (_didIteratorError14) {
+          throw _iteratorError14;
+        }
+      }
+    }
+
+    to_display.push("BTTV: " + bttv_imgs.join(""));
+  }
+  if (to_display.length === 0) {
+    this.printHelp();
+    this.printUsage();
+  } else {
+    var _iteratorNormalCompletion15 = true;
+    var _didIteratorError15 = false;
+    var _iteratorError15 = undefined;
+
+    try {
+      for (var _iterator15 = to_display[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+        var msg = _step15.value;
+
+        Content.addNotice(msg);
+      }
+    } catch (err) {
+      _didIteratorError15 = true;
+      _iteratorError15 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion15 && _iterator15.return) {
+          _iterator15.return();
+        }
+      } finally {
+        if (_didIteratorError15) {
+          throw _iteratorError15;
+        }
+      }
+    }
+  }
+}
+
+function command_plugins(cmd, tokens, client) {
+  try {
+    var _iteratorNormalCompletion16 = true;
+    var _didIteratorError16 = false;
+    var _iteratorError16 = undefined;
+
+    try {
+      for (var _iterator16 = Object.entries(Plugins.plugins)[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+        var _ref11 = _step16.value;
+
+        var _ref12 = _slicedToArray(_ref11, 2);
+
+        var n = _ref12[0];
+        var p = _ref12[1];
 
         var msg = n + ": " + p.file + " @ " + p.order;
         if (p._error) {
@@ -686,16 +798,16 @@ function command_plugins(cmd, tokens, client) {
         }
       }
     } catch (err) {
-      _didIteratorError13 = true;
-      _iteratorError13 = err;
+      _didIteratorError16 = true;
+      _iteratorError16 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion13 && _iterator13.return) {
-          _iterator13.return();
+        if (!_iteratorNormalCompletion16 && _iterator16.return) {
+          _iterator16.return();
         }
       } finally {
-        if (_didIteratorError13) {
-          throw _iteratorError13;
+        if (_didIteratorError16) {
+          throw _iteratorError16;
         }
       }
     }
@@ -723,13 +835,13 @@ function command_client(cmd, tokens, client) {
     var us = client.SelfUserState() || {};
     if (channels && channels.length > 0) {
       Content.addHelp("&gt; Channels connected to: " + channels.length);
-      var _iteratorNormalCompletion14 = true;
-      var _didIteratorError14 = false;
-      var _iteratorError14 = undefined;
+      var _iteratorNormalCompletion17 = true;
+      var _didIteratorError17 = false;
+      var _iteratorError17 = undefined;
 
       try {
-        for (var _iterator14 = channels[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-          var c = _step14.value;
+        for (var _iterator17 = channels[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
+          var c = _step17.value;
 
           var ci = client.GetChannelInfo(c);
           var nusers = ci && ci.users ? ci.users.length : 0;
@@ -749,16 +861,16 @@ function command_client(cmd, tokens, client) {
           Content.addHelpLine("Name", "" + ui["display-name"]);
         }
       } catch (err) {
-        _didIteratorError14 = true;
-        _iteratorError14 = err;
+        _didIteratorError17 = true;
+        _iteratorError17 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion14 && _iterator14.return) {
-            _iterator14.return();
+          if (!_iteratorNormalCompletion17 && _iterator17.return) {
+            _iterator17.return();
           }
         } finally {
-          if (_didIteratorError14) {
-            throw _iteratorError14;
+          if (_didIteratorError17) {
+            throw _iteratorError17;
           }
         }
       }
@@ -802,6 +914,9 @@ function InitChatCommands() {
   ChatCommands.addUsage("part", "channel", "Disconnect from <channel>; leading # is optional");
 
   ChatCommands.add("badges", command_badges, "Display all known badges");
+
+  ChatCommands.add("emotes", command_emotes, "Display the requested emotes");
+  ChatCommands.addUsage("emotes", "kinds", "Display emotes; <kinds> can be one or more of: " + "global, channel, bttv");
 
   ChatCommands.add("plugins", command_plugins, "Display plugin information, if plugins are enabled");
 

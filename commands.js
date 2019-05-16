@@ -329,6 +329,43 @@ function command_badges(cmd, tokens, client) {
   }
 }
 
+function command_emotes(cmd, tokens, client) {
+  let client_emotes = client.GetEmotes();
+  let emotes = [];
+  let ch_emotes = [];
+  for (let [k, v] of Object.entries(client_emotes)) {
+    let e = `<img src="${v}" title="${k.escape()}" alt="${k.escape()}" />`;
+    if (k.match(/^[a-z]/)) {
+      ch_emotes.push(e);
+    } else {
+      emotes.push(e);
+    }
+  }
+  let to_display = [];
+  if (tokens.indexOf("global") > -1) {
+    to_display.push(`Global: ${emotes.join("")}`);
+  }
+  if (tokens.indexOf("channel") > -1) {
+    to_display.push(`Channel: ${ch_emotes.join("")}`);
+  }
+  if (tokens.indexOf("bttv") > -1) {
+    let bttv_emotes = client.GetGlobalBTTVEmotes();
+    let bttv_imgs = [];
+    for (let [k, v] of Object.entries(bttv_emotes)) {
+      bttv_imgs.push(`<img src="${v.url}" title="${k.escape()}" alt="${k.escape()}" />`);
+    }
+    to_display.push(`BTTV: ${bttv_imgs.join("")}`);
+  }
+  if (to_display.length === 0) {
+    this.printHelp();
+    this.printUsage();
+  } else {
+    for (let msg of to_display) {
+      Content.addNotice(msg);
+    }
+  }
+}
+
 function command_plugins(cmd, tokens, client) {
   try {
     for (let [n, p] of Object.entries(Plugins.plugins)) {
@@ -445,6 +482,11 @@ function InitChatCommands() { /* exported InitChatCommands */
 
   ChatCommands.add("badges", command_badges,
                    "Display all known badges");
+
+  ChatCommands.add("emotes", command_emotes, "Display the requested emotes");
+  ChatCommands.addUsage("emotes", "kinds",
+                        "Display emotes; <kinds> can be one or more of: " +
+                        "global, channel, bttv");
 
   ChatCommands.add("plugins", command_plugins,
                    "Display plugin information, if plugins are enabled");
