@@ -272,24 +272,25 @@ class HTMLGenerator {
         let cheer = match.cheer;
         let bits = match.bits;
         let [start, end] = [map[match.start], map[match.end]];
-        let chtml = this._genCheer(cheer, bits);
+        let cheer_html = this._genCheer(cheer, bits);
         let msg_start = message.substr(0, start);
         let msg_end = message.substr(end);
-        message = msg_start + chtml + msg_end;
+        message = msg_start + cheer_html + msg_end;
         /* Adjust the map */
         for (let idx = match.start; idx < map.length; ++idx) {
           if (map[idx] - map[match.start] >= (end - start)) {
-            map[idx] += chtml.length - (end - start);
+            map[idx] += cheer_html.length - (end - start);
           }
         }
         let end_words = msg_end.trimStart().split(" ");
         /* Scan for cheer effects */
         while (end_words.length > 0) {
-          let word = end_words[0].toLowerCase();
-          let s = GetCheerStyle(word);
+          let s = GetCheerStyle(end_words[0].toLowerCase());
+          /* Stop scanning at the first non-effect word */
           if (!s) { break; }
-          if (!s._disabled) {
-            if (bits_left < s.cost) { break; }
+          /* Don't stop scanning for disabled effects, or if the effect uses
+           * more bits than are left. */
+          if (!s._disabled && bits_left >= s.cost) {
             $effects.push(s);
             bits_left -= s.cost;
           }
@@ -623,3 +624,4 @@ class HTMLGenerator {
   }
 }
 
+/* vim: set ts=2 sts=2 sw=2 et: */
