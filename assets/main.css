@@ -359,6 +359,11 @@ input {
   font-style: italic;
 }
 
+.module .content .line .raid {
+  font-weight: bold;
+  font-style: italic;
+}
+
 .module .content .line .message.highlight { }
 
 .module .content .line .message .cheer {
