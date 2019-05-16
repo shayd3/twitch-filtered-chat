@@ -1899,7 +1899,8 @@ function client_main(layout) {
       if (!shouldFilter($(this), event)) {
         var $c = $(this).find(".content");
         var $w = $("<div class=\"line line-wrapper\"></div>");
-        Content.addHTML($w.html(client.get("HTMLGen").gen(event)), $c);
+        $w.html(client.get("HTMLGen").gen(event));
+        Content.addHTML($w, $c);
       }
     });
   });
@@ -1927,55 +1928,62 @@ function client_main(layout) {
   /* User subscribed */
   client.bind("twitch-sub", function _on_twitch_sub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    Content.addHTML(client.get("HTMLGen").sub(e));
+    var line = client.get("HTMLGen").sub(e);
+    Content.addHTML(line);
   });
 
   /* User resubscribed */
   client.bind("twitch-resub", function _on_twitch_resub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    Content.addHTML(client.get("HTMLGen").resub(e));
+    var line = client.get("HTMLGen").resub(e);
+    Content.addHTML(line);
   });
 
   /* User gifted a subscription */
   client.bind("twitch-giftsub", function _on_twitch_giftsub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    Content.addHTML(client.get("HTMLGen").giftsub(e));
+    var line = client.get("HTMLGen").giftsub(e);
+    Content.addHTML(line);
   });
 
   /* Anonymous user gifted a subscription */
   client.bind("twitch-anongiftsub", function _on_twitch_anongiftsub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    Content.addHTML(client.get("HTMLGen").anongiftsub(e));
+    var line = client.get("HTMLGen").anongiftsub(e);
+    Content.addHTML(line);
   });
 
   /* Channel was raided */
   client.bind("twitch-raid", function _on_twitch_raid(e) {
     Util.StorageAppend("debug-msg-log", e);
-    /* TODO */
+    var line = client.get("HTMLGen").raid(e);
+    Content.addHTML(line);
   });
 
   /* Received some other kind of usernotice */
   client.bind("twitch-otherusernotice", function _on_twitch_otherusernotice(e) {
     Util.StorageAppend("debug-msg-log", e);
-    /* TODO */
+    /* TODO: submysterygift, rewardgift, giftpaidupgrade, anongiftpaidupgrade,
+     * unraid, ritual, bitsbadgetier */
   });
 
   /* Bind the rest of the events and warn about unbound events */
-  client.bind("twitch-userstate", function () {});
-  client.bind("twitch-roomstate", function () {});
-  client.bind("twitch-globaluserstate", function () {});
-  client.bind("twitch-usernotice", function () {});
-  client.bind("twitch-ack", function () {});
-  client.bind("twitch-ping", function () {});
-  client.bind("twitch-names", function () {});
-  client.bind("twitch-topic", function () {});
-  client.bind("twitch-privmsg", function () {});
-  client.bind("twitch-whisper", function () {});
-  client.bind("twitch-mode", function () {});
-  client.bind("twitch-hosttarget", function (e) {
+  client.bind("twitch-userstate", function _on_twitch_userstate(e) {});
+  client.bind("twitch-roomstate", function _on_twitch_roomstate(e) {});
+  client.bind("twitch-globaluserstate", function _on_twitch_globaluserstate(e) {});
+  client.bind("twitch-usernotice", function _on_twitch_usernotice(e) {});
+  client.bind("twitch-ack", function _on_twitch_ack(e) {});
+  client.bind("twitch-ping", function _on_twitch_ping(e) {});
+  client.bind("twitch-names", function _on_twitch_names(e) {});
+  client.bind("twitch-topic", function _on_twitch_topic(e) {});
+  client.bind("twitch-privmsg", function _on_twitch_privmsg(e) {});
+  client.bind("twitch-whisper", function _on_twitch_whisper(e) {});
+  client.bind("twitch-mode", function _on_twitch_mode(e) {});
+  client.bind("twitch-hosttarget", function _on_twitch_hosttarget(e) {
     Util.StorageAppend("debug-msg-log", e);
   });
-  client.bind("twitch-other", function () {});
+  client.bind("twitch-other", function _on_twitch_other(e) {});
+
   client.bindDefault(function _on_default(e) {
     Util.Warn("Unbound event:", e);
     Util.StorageAppend("debug-msg-log", e);
