@@ -122,17 +122,6 @@ function GetAssetURL(file, tree) {
       _console_info(`Unknown protocol`, window.location.protocol);
       path = `http:${file}`;
     }
-  } else if (!file.match(/^[\w-]+:/)) {
-    if (IS_HTTPS) {
-      path = `https://${file}`;
-    } else if (IS_HTTP) {
-      path = `http://${file}`;
-    } else if (IS_LOCAL) {
-      path = `http://${file}`;
-    } else {
-      _console_info(`Unknown protocol`, window.location.protocol);
-      path = `http://${file}`;
-    }
   }
   let result = root ? `${root}/${path}` : path;
   _console_debug("GetAssetURL(", file, tree, ") ->", result);
