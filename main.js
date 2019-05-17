@@ -179,7 +179,7 @@ function loadTFC() {
       AddAsset("htmlgen.js", MOD_TFC, null, null),
       AddAsset("commands.js", MOD_TFC, null, null),
       AddAsset("filtered-chat.js", MOD_TFC, null, null),
-      !USE_DIST ? AddAsset("plugins/plugins.js", MOD_TFC, null, null) : null
+      AddAsset("plugins/plugins.js", MOD_TFC, null, null)
     ])
   );
 }

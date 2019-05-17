@@ -210,7 +210,7 @@ function getConfigObject(inclSensitive=true) {
     config_key = getConfigKey();
     Util.SetWebStorageKey(config_key);
     if (config_key !== CFGKEY_DEFAULT) {
-      Util.Log(`Using custom config key "${Util.GetWebStorageKey()}"`);
+      Util.LogOnly(`Using custom config key "${Util.GetWebStorageKey()}"`);
     }
     config = Util.GetWebStorage() || {};
     config.key = config_key;

@@ -3,7 +3,7 @@ SRCS = $(wildcard *.js) $(wildcard plugins/*.js)
 DIST = dist
 DISTS = $(patsubst %,$(DIST)/%,$(SRCS))
 
-.PHONY: all lint twitch-api echo-srcs echo-dists
+.PHONY: all lint twitch-api babel dist echo-srcs echo-dists
 
 all: twitch-api lint dist
 
@@ -11,7 +11,9 @@ twitch-api:
 	cd twitch-api && git pull
 
 lint:
-	npx eslint --env browser --env es6 $(SRCS)
+	npx eslint $(SRCS)
+
+babel: dist
 
 dist: $(DISTS)
 
