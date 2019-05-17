@@ -20,7 +20,7 @@ class FanfarePlugin { /* exported FanfarePlugin */
   constructor(resolve, reject, client, args) {
     this._args = args;
     this._on = false;
-    this.setupCSS();
+    this._setupCSS();
     ChatCommands.add("ff", this._onFfCmd, "Enable or disable fanfare", this);
     ChatCommands.addUsage("ff", "on", "Enable fanfare", {literal: true});
     ChatCommands.addUsage("ff", "off", "Disable fanfare", {literal: true});
@@ -31,7 +31,7 @@ class FanfarePlugin { /* exported FanfarePlugin */
     resolve(this);
   }
 
-  setupCSS() {
+  _setupCSS() {
     let e = document.createElement("style");
     e.setAttribute("type", "text/css");
     e.setAttribute("id", "ff-styles");

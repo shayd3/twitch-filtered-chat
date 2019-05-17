@@ -70,13 +70,13 @@ var HTMLGenerator = function () {
   }, {
     key: "genName",
     value: function genName(name, color) {
-      var $e = $("<span class=\"username\" data-username=\"1\"></span>");
-      $e.addClass('username');
-      $e.attr('data-username', '1');
+      var $e = $("<span class=\"username\"></span>");
       $e.css('color', color);
       /* Determine the best border color to use */
       var border = Util.GetMaxContrast(color, this._bg_colors);
       $e.css("text-shadow", "-0.8px -0.8px 0 " + border + ",\n                            0.8px -0.8px 0 " + border + ",\n                           -0.8px  0.8px 0 " + border + ",\n                            0.8px  0.8px 0 " + border);
+      /* Makes it so clicking on the name opens the context window */
+      $e.attr('data-username', '1');
       $e.text(name);
       return $e[0].outerHTML;
     }
@@ -212,6 +212,29 @@ var HTMLGenerator = function () {
       return $m[0].innerHTML;
     }
   }, {
+    key: "_remap",
+    value: function _remap(map, mstart, mend, len) {
+      /* IDEA BEHIND MAP ADJUSTMENT:
+       * 1) Maintain two parallel strings, `msg0` (original) and `msg` (final).
+       * 2) Maintain the following invariant:
+       *  a) msg0.indexOf("substr") === map[msg.indexOf("substr")]
+       *  b) msg0[idx] === msg1[map[idx]]
+       * Exceptions:
+       *  If msg0[idx] is part of a formatted entity; msg[map[idx]] may not be
+       *  the same character.
+       * Usage:
+       *  The map allows for formatting the final message based on where items
+       *  appear in the original message.
+       */
+      var start = map[mstart];
+      var end = map[mend];
+      for (var idx = mstart; idx < map.length; ++idx) {
+        if (map[idx] - map[mstart] >= end - start) {
+          map[idx] += len - (end - start);
+        }
+      }
+    }
+  }, {
     key: "_twitchEmote",
     value: function _twitchEmote(emote) {
       if (emote.id !== null) {
@@ -230,9 +253,28 @@ var HTMLGenerator = function () {
       return null;
     }
   }, {
+    key: "_addonEmote",
+    value: function _addonEmote(addon, src, id) {
+      var w = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+      var h = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : null;
+
+      var ident = addon.replace(/[^a-z0-9_]/g, "");
+      var $i = $("<img class=\"emote\">");
+      $i.addClass(ident + "-emote");
+      $i.attr(ident + "-emote-id", id);
+      $i.attr("src", src);
+      if (w !== null) {
+        $i.attr("width", w);
+      }
+      if (h !== null) {
+        $i.attr("height", h);
+      }
+      return $i[0].outerHTML;
+    }
+  }, {
     key: "_genCheer",
     value: function _genCheer(cheer, bits) {
-      /* Use the highest tier that doesn't exceed the cheered bits */
+      /* Use the highest tier image that doesn't exceed the cheered bits */
       var t = cheer.tiers.filter(function (n) {
         return bits >= n.min_bits;
       }).max(function (n) {
@@ -284,7 +326,6 @@ var HTMLGenerator = function () {
     value: function _genBadges(event) {
       var $bc = $("<span class=\"badges\" data-badges=\"1\"></span>");
       $bc.addClass('badges');
-      $bc.attr('data-badges', '1');
       var total_width = 0;
       if (event.flags['badges']) {
         total_width += 18 * event.flags['badges'].length;
@@ -403,24 +444,18 @@ var HTMLGenerator = function () {
         });
         while (matches.length > 0) {
           var match = matches.pop();
-          var cheer = match.cheer;
-          var bits = match.bits;
           var _ref5 = [map[match.start], map[match.end]],
               start = _ref5[0],
               end = _ref5[1];
 
-          var cheer_html = this._genCheer(cheer, bits);
+          var cheer_html = this._genCheer(match.cheer, match.bits);
           var msg_start = message.substr(0, start);
           var msg_end = message.substr(end);
           message = msg_start + cheer_html + msg_end;
           /* Adjust the map */
-          for (var idx = match.start; idx < map.length; ++idx) {
-            if (map[idx] - map[match.start] >= end - start) {
-              map[idx] += cheer_html.length - (end - start);
-            }
-          }
-          var end_words = msg_end.trimStart().split(" ");
+          this._remap(map, match.start, match.end, cheer_html.length);
           /* Scan for cheer effects */
+          var end_words = msg_end.trimStart().split(" ");
           while (end_words.length > 0) {
             var s = GetCheerStyle(end_words[0].toLowerCase());
             /* Stop scanning at the first non-effect word */
@@ -433,6 +468,7 @@ var HTMLGenerator = function () {
               $effects.push(s);
               bits_left -= s.cost;
             }
+            /* TODO: Remove end_words[0] from the message and adjust the map */
             end_words.shift();
           }
         }
@@ -509,29 +545,14 @@ var HTMLGenerator = function () {
         });
         while (results.length > 0) {
           var emote = results.pop();
-          var _ref8 = [emote.start, emote.end + 1],
-              start = _ref8[0],
-              end = _ref8[1];
-          var _ref9 = [map[start], map[end]],
-              mstart = _ref9[0],
-              mend = _ref9[1];
-
-          var url = emote.id.urls[Object.keys(emote.id.urls).min()];
-          var $i = $("<img class=\"emote ffz-emote\" />");
-          $i.attr("ffz-emote-id", emote.id.id);
-          $i.attr('src', url);
-          $i.attr('width', emote.id.width);
-          $i.attr('height', emote.id.height);
-          var msg_start = message.substr(0, mstart);
-          var msg_end = message.substr(mend);
-          var emote_str = $i[0].outerHTML;
+          var edef = emote.id;
+          var url = edef.urls[Object.keys(edef.urls).min()];
+          var emote_str = this._addonEmote("ffz", url, edef.id, edef.width, edef.height);
+          var msg_start = message.substr(0, map[emote.start]);
+          var msg_end = message.substr(map[emote.end + 1]);
           message = "" + msg_start + emote_str + msg_end;
           /* Adjust the map */
-          for (var idx = emote.start; idx < map.length; ++idx) {
-            if (map[idx] - map[emote.start] >= end - start) {
-              map[idx] += emote_str.length - (end - start);
-            }
-          }
+          this._remap(map, emote.start, emote.end + 1, emote_str.length);
         }
       }
       return message;
@@ -548,12 +569,12 @@ var HTMLGenerator = function () {
 
       try {
         for (var _iterator8 = Object.entries(all_emotes)[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-          var _ref10 = _step8.value;
+          var _ref8 = _step8.value;
 
-          var _ref11 = _slicedToArray(_ref10, 2);
+          var _ref9 = _slicedToArray(_ref8, 2);
 
-          var k = _ref11[0];
-          var v = _ref11[1];
+          var k = _ref9[0];
+          var v = _ref9[1];
 
           emotes[k] = v;
         }
@@ -579,12 +600,12 @@ var HTMLGenerator = function () {
 
       try {
         for (var _iterator9 = Object.entries(ch_emotes)[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-          var _ref12 = _step9.value;
+          var _ref10 = _step9.value;
 
-          var _ref13 = _slicedToArray(_ref12, 2);
+          var _ref11 = _slicedToArray(_ref10, 2);
 
-          var _k = _ref13[0];
-          var _v = _ref13[1];
+          var _k = _ref11[0];
+          var _v = _ref11[1];
 
           emotes[_k] = _v;
         }
@@ -636,26 +657,12 @@ var HTMLGenerator = function () {
       while (results.length > 0) {
         var emote = results.pop();
         var edef = emotes[emote.id];
-        var _ref14 = [emote.start, emote.end + 1],
-            start = _ref14[0],
-            end = _ref14[1];
-        var _ref15 = [map[start], map[end]],
-            mstart = _ref15[0],
-            mend = _ref15[1];
-
-        var $i = $("<img class=\"emote bttv-emote\" />");
-        $i.attr("bttv-emote-id", emote.id);
-        $i.attr("src", edef.url);
-        var msg_start = message.substr(0, mstart);
-        var msg_end = message.substr(mend);
-        var emote_str = $i[0].outerHTML;
+        var emote_str = this._addonEmote("bttv", edef.url, edef.id);
+        var msg_start = message.substr(0, map[emote.start]);
+        var msg_end = message.substr(map[emote.end + 1]);
         message = "" + msg_start + emote_str + msg_end;
         /* Adjust the map */
-        for (var idx = emote.start; idx < map.length; ++idx) {
-          if (map[idx] - map[emote.start] >= end - start) {
-            map[idx] += emote_str.length - (end - start);
-          }
-        }
+        this._remap(map, emote.start, emote.end + 1, emote_str.length);
       }
       return message;
     }

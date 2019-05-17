@@ -66,9 +66,7 @@ class HTMLGenerator {
   }
 
   genName(name, color) {
-    let $e = $(`<span class="username" data-username="1"></span>`);
-    $e.addClass('username');
-    $e.attr('data-username', '1');
+    let $e = $(`<span class="username"></span>`);
     $e.css('color', color);
     /* Determine the best border color to use */
     let border = Util.GetMaxContrast(color, this._bg_colors);
@@ -76,6 +74,8 @@ class HTMLGenerator {
                             0.8px -0.8px 0 ${border},
                            -0.8px  0.8px 0 ${border},
                             0.8px  0.8px 0 ${border}`);
+    /* Makes it so clicking on the name opens the context window */
+    $e.attr('data-username', '1');
     $e.text(name);
     return $e[0].outerHTML;
   }
@@ -116,6 +116,28 @@ class HTMLGenerator {
     return $m[0].innerHTML;
   }
 
+  _remap(map, mstart, mend, len) {
+    /* IDEA BEHIND MAP ADJUSTMENT:
+     * 1) Maintain two parallel strings, `msg0` (original) and `msg` (final).
+     * 2) Maintain the following invariant:
+     *  a) msg0.indexOf("substr") === map[msg.indexOf("substr")]
+     *  b) msg0[idx] === msg1[map[idx]]
+     * Exceptions:
+     *  If msg0[idx] is part of a formatted entity; msg[map[idx]] may not be
+     *  the same character.
+     * Usage:
+     *  The map allows for formatting the final message based on where items
+     *  appear in the original message.
+     */
+    let start = map[mstart];
+    let end = map[mend];
+    for (let idx = mstart; idx < map.length; ++idx) {
+      if (map[idx] - map[mstart] >= (end - start)) {
+        map[idx] += len - (end - start);
+      }
+    }
+  }
+
   _twitchEmote(emote) {
     if (emote.id !== null) {
       let $e = $(`<img class="emote twitch-emote" />`);
@@ -133,8 +155,23 @@ class HTMLGenerator {
     return null;
   }
 
+  _addonEmote(addon, src, id, w=null, h=null) {
+    let ident = addon.replace(/[^a-z0-9_]/g, "");
+    let $i = $(`<img class="emote">`);
+    $i.addClass(`${ident}-emote`);
+    $i.attr(`${ident}-emote-id`, id);
+    $i.attr("src", src);
+    if (w !== null) {
+      $i.attr("width", w);
+    }
+    if (h !== null) {
+      $i.attr("height", h);
+    }
+    return $i[0].outerHTML;
+  }
+
   _genCheer(cheer, bits) {
-    /* Use the highest tier that doesn't exceed the cheered bits */
+    /* Use the highest tier image that doesn't exceed the cheered bits */
     let t = cheer.tiers.filter((n) => bits >= n.min_bits).max((n) => n.min_bits);
     /* Use the smallest scale available */
     let url = t.images.dark.animated[cheer.scales.min((s) => +s)];
@@ -178,7 +215,6 @@ class HTMLGenerator {
   _genBadges(event) {
     let $bc = $(`<span class="badges" data-badges="1"></span>`);
     $bc.addClass('badges');
-    $bc.attr('data-badges', '1');
     let total_width = 0;
     if (event.flags['badges']) {
       total_width += 18 * event.flags['badges'].length
@@ -244,21 +280,15 @@ class HTMLGenerator {
       matches.sort((a, b) => a.start - b.start);
       while (matches.length > 0) {
         let match = matches.pop();
-        let cheer = match.cheer;
-        let bits = match.bits;
         let [start, end] = [map[match.start], map[match.end]];
-        let cheer_html = this._genCheer(cheer, bits);
+        let cheer_html = this._genCheer(match.cheer, match.bits);
         let msg_start = message.substr(0, start);
         let msg_end = message.substr(end);
         message = msg_start + cheer_html + msg_end;
         /* Adjust the map */
-        for (let idx = match.start; idx < map.length; ++idx) {
-          if (map[idx] - map[match.start] >= (end - start)) {
-            map[idx] += cheer_html.length - (end - start);
-          }
-        }
-        let end_words = msg_end.trimStart().split(" ");
+        this._remap(map, match.start, match.end, cheer_html.length);
         /* Scan for cheer effects */
+        let end_words = msg_end.trimStart().split(" ");
         while (end_words.length > 0) {
           let s = GetCheerStyle(end_words[0].toLowerCase());
           /* Stop scanning at the first non-effect word */
@@ -269,6 +299,7 @@ class HTMLGenerator {
             $effects.push(s);
             bits_left -= s.cost;
           }
+          /* TODO: Remove end_words[0] from the message and adjust the map */
           end_words.shift();
         }
       }
@@ -312,24 +343,14 @@ class HTMLGenerator {
       results.sort((a, b) => (a.start - b.start));
       while (results.length > 0) {
         let emote = results.pop();
-        let [start, end] = [emote.start, emote.end+1];
-        let [mstart, mend] = [map[start], map[end]];
-        let url = emote.id.urls[Object.keys(emote.id.urls).min()];
-        let $i = $(`<img class="emote ffz-emote" />`);
-        $i.attr("ffz-emote-id", emote.id.id);
-        $i.attr('src', url);
-        $i.attr('width', emote.id.width);
-        $i.attr('height', emote.id.height);
-        let msg_start = message.substr(0, mstart);
-        let msg_end = message.substr(mend);
-        let emote_str = $i[0].outerHTML;
+        let edef = emote.id;
+        let url = edef.urls[Object.keys(edef.urls).min()];
+        let emote_str = this._addonEmote("ffz", url, edef.id, edef.width, edef.height);
+        let msg_start = message.substr(0, map[emote.start]);
+        let msg_end = message.substr(map[emote.end+1]);
         message = `${msg_start}${emote_str}${msg_end}`;
         /* Adjust the map */
-        for (let idx = emote.start; idx < map.length; ++idx) {
-          if (map[idx] - map[emote.start] >= (end - start)) {
-            map[idx] += emote_str.length - (end - start);
-          }
-        }
+        this._remap(map, emote.start, emote.end+1, emote_str.length)
       }
     }
     return message;
@@ -355,21 +376,12 @@ class HTMLGenerator {
     while (results.length > 0) {
       let emote = results.pop();
       let edef = emotes[emote.id];
-      let [start, end] = [emote.start, emote.end+1];
-      let [mstart, mend] = [map[start], map[end]];
-      let $i = $(`<img class="emote bttv-emote" />`);
-      $i.attr("bttv-emote-id", emote.id);
-      $i.attr("src", edef.url);
-      let msg_start = message.substr(0, mstart);
-      let msg_end = message.substr(mend);
-      let emote_str = $i[0].outerHTML;
+      let emote_str = this._addonEmote("bttv", edef.url, edef.id);
+      let msg_start = message.substr(0, map[emote.start]);
+      let msg_end = message.substr(map[emote.end+1]);
       message = `${msg_start}${emote_str}${msg_end}`;
       /* Adjust the map */
-      for (let idx = emote.start; idx < map.length; ++idx) {
-        if (map[idx] - map[emote.start] >= (end - start)) {
-          map[idx] += emote_str.length - (end - start);
-        }
-      }
+      this._remap(map, emote.start, emote.end+1, emote_str.length);
     }
     return message;
   }

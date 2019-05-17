@@ -24,7 +24,7 @@ var FanfarePlugin = function () {
 
     this._args = args;
     this._on = false;
-    this.setupCSS();
+    this._setupCSS();
     ChatCommands.add("ff", this._onFfCmd, "Enable or disable fanfare", this);
     ChatCommands.addUsage("ff", "on", "Enable fanfare", { literal: true });
     ChatCommands.addUsage("ff", "off", "Disable fanfare", { literal: true });
@@ -36,8 +36,8 @@ var FanfarePlugin = function () {
   }
 
   _createClass(FanfarePlugin, [{
-    key: "setupCSS",
-    value: function setupCSS() {
+    key: "_setupCSS",
+    value: function _setupCSS() {
       var e = document.createElement("style");
       e.setAttribute("type", "text/css");
       e.setAttribute("id", "ff-styles");
