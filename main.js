@@ -167,7 +167,6 @@ function loadTWAPI() {
   return Promise.all([
     AddAsset("utility.js", MOD_TWAPI, null, null),
     AddAsset("twitch-utility.js", MOD_TWAPI, null, null),
-    AddAsset("colors.js", MOD_TWAPI, null, null),
     AddAsset("client.js", MOD_TWAPI, null, null)
   ]);
 }

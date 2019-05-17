@@ -625,6 +625,9 @@ class HTMLGenerator {
     return $w[0].outerHTML;
   }
 
+  new_user(event) { /* TODO */
+
+  }
   /* General-use functions below */
 
   url(href=null, text=null, classes=null, id=null) {

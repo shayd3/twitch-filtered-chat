@@ -1439,11 +1439,16 @@ function client_main(layout) { /* exported client_main */
     Content.addHTML(line);
   });
 
+  /* New user's YoHiYo */
+  client.bind("twitch-newuser", function _on_twitch_newuser(e) {
+    Util.StorageAppend("debug-msg-log", e);
+  });
+
   /* Received some other kind of usernotice */
   client.bind("twitch-otherusernotice", function _on_twitch_otherusernotice(e) {
     Util.StorageAppend("debug-msg-log", e);
     /* TODO: submysterygift, rewardgift, giftpaidupgrade, anongiftpaidupgrade,
-     * unraid, ritual, bitsbadgetier */
+     * unraid, bitsbadgetier */
   });
 
   /* Bind the rest of the events and warn about unbound events */

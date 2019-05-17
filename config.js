@@ -98,7 +98,7 @@ var CSSCheerStyles = { /* exported CSSCheerStyles */
 function CSSColorStyle(colorname) { /* exported CSSColorStyle */
   return {
     cost: 1,
-    style: `color: ${AllColors[colorname]}`
+    style: `color: ${ColorNames[colorname]}`
   };
 }
 

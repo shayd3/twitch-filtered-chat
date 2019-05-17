@@ -8,7 +8,6 @@ module.exports = {
     "globals": {
         "Atomics": "readonly",
         "SharedArrayBuffer": "readonly",
-        "USE_DIST": "readonly",
         "Util": "readonly",
         "Twitch": "readonly",
         "TwitchClient": "readonly",
@@ -22,7 +21,6 @@ module.exports = {
         "InitChatCommands": "readonly",
         "ParseLayout": "readonly",
         "FormatLayout": "readonly",
-        "AllColors": "readonly",
         "CSSCheerStyles": "readonly",
         "GetCheerStyle": "readonly",
         "AssetPaths": "readonly",
@@ -33,13 +31,17 @@ module.exports = {
         "ecmaVersion": 2018
     },
     "rules": {
+        "eqeqeq": "warn",
         "no-shadow": "warn",
         "no-trailing-spaces": "warn",
-        "eqeqeq": "warn",
         'no-unused-vars': ['warn', {
             args: 'none',
             ignoreRestSiblings: true
-        }]
+        }],
+        "no-implied-eval": "warn",
+        "no-self-compare": "warn",
+        "no-throw-literal": "warn",
+        "no-unused-expressions": "warn"
     },
     "overrides": [
         {

@@ -17,15 +17,22 @@
   },
   "homepage": "https://github.com/Kaedenn/twitch-filtered-chat#readme",
   "devDependencies": {
+    "babel-preset-minify": "^0.5.0",
     "eslint": "^5.16.0"
   },
   "eslintConfig": {
     "env": {
-      "browser": true
+      "browser": true,
+      "es6": true,
+      "jquery": true
     }
   },
   "dependencies": {
+    "@babel/polyfill": "^7.4.4",
     "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.7.0"
+  },
+  "babel": {
+    "presets": ["babel-preset-env", "babel-preset-minify"]
   }
 }
