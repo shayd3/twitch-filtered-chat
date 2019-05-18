@@ -247,7 +247,7 @@ function Main(global) { /* exported Main */
       $(".header").hide();
       $(".module").addClass("slim");
       $(".content").addClass("slim");
-      $("#settings_button").hide();
+      $("#btnSettings").hide();
     }
 
     /* Initialize the chat commands object */
