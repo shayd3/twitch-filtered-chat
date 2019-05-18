@@ -322,6 +322,15 @@ function getConfigObject(inclSensitive=true) {
   return config;
 }
 
+function setConfigObject(to_merge=null) {
+  let merge = to_merge || {};
+  let config = getConfigObject();
+  for (let [k,v] of Object.entries(merge)) {
+    config[k] = v;
+  }
+  Util.SetWebStorage(config);
+}
+
 /* Module configuration {{{1 */
 
 /* Apply configuration to the module's settings HTML */
@@ -408,6 +417,10 @@ function parseModuleConfig(value) {
   let Decode = (vals) => vals.map((v) => decodeURIComponent(v));
   let parts = Decode(value.split(/,/g));
   while (parts.length < 7) parts.push("");
+  /* Upgrade configuration from 6x to 7x */
+  if (parts[1] === "111111") {
+    parts[1] = "1111111";
+  }
   let bits = Util.DecodeFlags(parts[1], 7);
   let config = {};
   config.Name = parts[0];
@@ -444,11 +457,11 @@ function formatModuleConfig(cfg) {
 
 /* Store the modules' settings in the localStorage */
 function updateModuleConfig() {
-  let config = getConfigObject();
+  let config = {};
   $(".module").each(function() {
     config[$(this).attr("id")] = getModuleSettings($(this));
   });
-  Util.SetWebStorage(config);
+  setConfigObject(config);
 }
 
 /* End module configuration 1}}} */
@@ -1044,26 +1057,21 @@ function client_main(layout) { /* exported client_main */
   $("#txtChannel").keyup(function(e) {
     if (e.keyCode === Util.Key.RETURN) {
       setChannels(client, $(this).val().split(","));
-      let cfg = getConfigObject();
-      cfg.Channels = client.GetJoinedChannels();
-      Util.SetWebStorage(cfg);
+      setConfigObject({"Channels": client.GetJoinedChannels()});
     }
   });
 
   /* Leaving the "Channels" text box */
   $("#txtChannel").blur(function(e) {
     setChannels(client, $(this).val().split(","));
-    let cfg = getConfigObject();
-    cfg.Channels = client.GetJoinedChannels();
-    Util.SetWebStorage(cfg);
+    setConfigObject({"Channels": client.GetJoinedChannels()});
   });
 
   /* Changing the "Scrollbars" checkbox */
   $("#cbScroll").change(function() {
-    let cfg = getConfigObject();
-    cfg.Scroll = $(this).is(":checked");
-    Util.SetWebStorage(cfg);
-    if (cfg.Scroll) {
+    let scroll = $(this).is(":checked");
+    setConfigObject({"Scroll": scroll});
+    if (scroll) {
       $(".module .content").css("overflow-y", "scroll");
     } else {
       $(".module .content").css("overflow-y", "hidden");
@@ -1086,10 +1094,7 @@ function client_main(layout) { /* exported client_main */
 
   /* Changing the "Show Clips" checkbox */
   $("#cbClips").change(function() {
-    let val = Boolean($(this).is(":checked"));
-    let cfg = getConfigObject();
-    cfg.ShowClips = val;
-    Util.SetWebStorage(cfg);
+    setConfigObject({"ShowClips": $(this).is(":checked")});
     updateHTMLGenConfig();
   });
 
