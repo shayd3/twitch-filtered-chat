@@ -136,10 +136,12 @@ input {
 
 .module.no-chat.slim .content {
   height: 100%;
+  margin-top: 0;
 }
 
 .module.has-chat.slim .content {
   height: calc(100% - var(--chat-height));
+  margin-top: 0;
 }
 
 .loading {
