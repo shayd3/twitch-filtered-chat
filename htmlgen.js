@@ -31,6 +31,10 @@ class HTMLGenerator {
     if (!this._config.ShowClips) this._config.ShowClips = false;
   }
 
+  get name() {
+    return this._client.GetName();
+  }
+
   setValue(k, v) {
     this._config[k] = v;
   }
@@ -67,9 +71,15 @@ class HTMLGenerator {
 
   genName(name, color) {
     let $e = $(`<span class="username"></span>`);
-    $e.css('color', color);
+    if (color) {
+      $e.css('color', color);
+    } else if (this.getColorFor(name)) {
+      $e.css("color", this.getColorFor(name));
+    } else {
+      $e.css("color", "#ffffff");
+    }
     /* Determine the best border color to use */
-    let border = Util.GetMaxContrast(color, this._bg_colors);
+    let border = Util.GetMaxContrast($e.css("color"), this._bg_colors);
     $e.css("text-shadow", `-0.8px -0.8px 0 ${border},
                             0.8px -0.8px 0 ${border},
                            -0.8px  0.8px 0 ${border},
@@ -116,6 +126,13 @@ class HTMLGenerator {
     return $m[0].innerHTML;
   }
 
+  _checkUndefined(ev, $w) {
+    if ($w[0].outerHTML.indexOf("undefined") > -1) {
+      Util.Error("msg contains undefined");
+      Util.ErrorOnly(ev, $w, $w[0].outerHTML);
+    }
+  }
+
   _remap(map, mstart, mend, len) {
     /* IDEA BEHIND MAP ADJUSTMENT:
      * 1) Maintain two parallel strings, `msg0` (original) and `msg` (final).
@@ -139,6 +156,7 @@ class HTMLGenerator {
   }
 
   _twitchEmote(emote) {
+    /* Usage: _twitchEmote({id: "Kappa", name: "Kappa"}) */
     if (emote.id !== null) {
       let $e = $(`<img class="emote twitch-emote" />`);
       $e.attr("tw-emote-src", "twitch");
@@ -276,7 +294,7 @@ class HTMLGenerator {
   _msgCheersTransform(event, message, map, $msg, $effects) {
     if (event.flags.bits && event.flags.bits > 0) {
       let bits_left = event.flags.bits;
-      let matches = this._client.FindCheers(event.channel.channel, event.message);
+      let matches = this._client.FindCheers(event.channel, event.message);
       matches.sort((a, b) => a.start - b.start);
       while (matches.length > 0) {
         let match = matches.pop();
@@ -333,7 +351,7 @@ class HTMLGenerator {
   }
 
   _msgFFZEmotesTransform(event, message, map, $msg, $effects) {
-    let ffz_emotes = this._client.GetFFZEmotes(event.channel.channel);
+    let ffz_emotes = this._client.GetFFZEmotes(event.channel);
     if (ffz_emotes && ffz_emotes.emotes) {
       let ffz_emote_arr = [];
       for (let [k,v] of Object.entries(ffz_emotes.emotes)) {
@@ -387,8 +405,9 @@ class HTMLGenerator {
   }
 
   _msgAtUserTransform(event, message, map, $msg, $effects) {
-    message = message.replace(/(^|\b\s*)(@\w+)(\s*\b|$)/g, (function(m, p1, p2, p3) {
-      if (p2.substr(1).toLowerCase() === this._client.GetName().toLowerCase()) {
+    let pat = /(^|\b\s*)(@\w+)(\s*\b|$)/g;
+    message = message.replace(pat, (function(m, p1, p2, p3) {
+      if (p2.substr(1).toLowerCase() === this.name.toLowerCase()) {
         $msg.addClass("highlight");
         return `${p1}<em class="at-user at-self">${p2}</em>${p3}`;
       } else {
@@ -537,13 +556,9 @@ class HTMLGenerator {
     /* Suggested emotes: */
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
-    let plan = TwitchSubEvent.PlanName(event.plan_id);
-    $m.text(`just subscribed with a ${plan} subscription!`);
+    $m.text(Strings.Sub(TwitchSubEvent.PlanName(event.plan_id)));
     $w.append($m);
-    if ($w[0].outerHTML.indexOf('undefined') > -1) {
-      Util.Error("msg contains undefined");
-      Util.ErrorOnly(event, $w, $w[0].outerHTML);
-    }
+    this._checkUndefined(event, $w);
     return $w[0].outerHTML;
   }
 
@@ -555,20 +570,16 @@ class HTMLGenerator {
     let streak = event.streak_months;
     let plan = TwitchSubEvent.PlanName(event.plan_id);
     if (event.share_streak) {
-      $m.text(`resubscribed for ${months} months with a ${plan} subscription, a streak of ${streak} months!`);
+      $m.text(Strings.ResubStreak(months, plan, streak));
     } else {
-      $m.text(`resubscribed for ${months} months with a ${plan} subscription!`);
+      $m.text(Strings.Resub(months, plan));
     }
     $w.append($m);
-    if ($w[0].outerHTML.indexOf('undefined') > -1) {
-      Util.Error("msg contains undefined");
-      Util.ErrorOnly(event, $w, $w[0].outerHTML);
-    }
+    this._checkUndefined(event, $w);
     return $w[0].outerHTML;
   }
 
-  giftsub(event) { /* TODO: Wrap in emotes */
-    /* Suggested emotes: HolidayPresent, GivePLZ, TakeNRG */
+  giftsub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
     if (event.flags['system-msg']) {
@@ -577,56 +588,52 @@ class HTMLGenerator {
       let user = event.recipient;
       let gifter = event.user;
       let plan = TwitchSubEvent.PlanName(event.plan_id);
-      $m.text(`${gifter} gifted a ${plan} subscription to ${user}!`);
+      $m.text(Strings.GiftSub(gifter, plan, user));
     }
+    let e = this._twitchEmote({"id": "HolidayPresent"});
+    $m.html(e + "&nbsp;" + $m.html());
     $w.append($m);
-    if ($w[0].outerHTML.indexOf('undefined') > -1) {
-      Util.Error("msg contains undefined");
-      Util.ErrorOnly(event, $w, $w[0].outerHTML);
-    }
+    this._checkUndefined(event, $w);
     return $w[0].outerHTML;
   }
 
-  anongiftsub(event) { /* TODO: Wrap in emotes */
-    /* Suggested emotes: HolidayPresent, GivePLZ, TakeNRG */
+  anongiftsub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
     if (event.flags["system-msg"]) {
       $m.text(event.flags["system-msg"]);
     } else {
       let user = event.recipient_name || event.recipient;
-      let gifter = "An anonymous user";
       let plan = TwitchSubEvent.PlanName(event.plan_id);
-      $m.text(`${gifter} gifted a ${plan} subscription to ${user}!`);
+      $m.text(Strings.AnonGiftSub(plan, user));
     }
+    let e = this._twitchEmote({"id": "HolidayPresent"});
+    $m.html(e + "&nbsp;" + $m.html());
     $w.append($m);
-    if ($w[0].outerHTML.indexOf('undefined') > -1) {
-      Util.Error("msg contains undefined");
-      Util.ErrorOnly(event, $w, $w[0].outerHTML);
-    }
+    this._checkUndefined(event, $w);
     return $w[0].outerHTML;
   }
 
-  raid(event) { /* TODO: Wrap in emotes */
-    /* Suggested emotes: TombRaid */
+  raid(event) {
     let $w = $(`<div class="chat-line raid"></div>`);
     if (event.flags["system-msg"]) {
       $w.text(event.flags["system-msg"]);
     } else {
+      /* Unlikely */
       let raider = event.flags["msg-param-displayName"] ||
                    event.flags["msg-param-login"];
       let count = event.flags["msg-param-viewerCount"];
-      $w.text(`${raider} is raiding with a total of ${count} viewers!`);
+      let user = this.genName(raider, event.flags.color);
+      $w.html(Strings.Raid(user, count));
     }
-    if ($w[0].outerHTML.indexOf('undefined') > -1) {
-      Util.Error("msg contains undefined");
-      Util.ErrorOnly(event, $w, $w[0].outerHTML);
-    }
+    let e = this._twitchEmote({"id": "TombRaid"});
+    $w.html(e + "&nbsp;" + $w.html());
+    this._checkUndefined(event, $w);
     return $w[0].outerHTML;
   }
 
   new_user(event) { /* TODO */
-
+    /* Strings.NewUser(event.user) */
   }
 
   /* General-use functions below */

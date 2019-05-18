@@ -31,6 +31,29 @@
  *  </div>
  */
 
+/* Strings intended for some kind of i18n support */
+const Strings = { /* exported Strings */
+  USE_HELP: "Use //help to see Twitch Filtered Chat commands",
+  PLEASE_AUTH: "Authentication needed to send messages",
+  PLEASE_JOIN: "No channels configured; type //join &lt;channel&gt; to join one!",
+  TFC_HEADER: "Moderator commands:",
+  TFC_RELOAD: "!tfc reload: Reload the page",
+  TFC_FRELOAD: "!tfc force-reload: Reload the page, discarding cache",
+  TFC_NUKE: "!tfc nuke: Clear the chat",
+  TFC_UNUKE: "!tfc nuke <user>: Remove all messages sent by <user>",
+  AUTH: "Connected (authenticated)",
+  UNAUTH: "Connected (unauthenticated)",
+  OMIT_CID: "Omitted for security; use //config clientid to show",
+  OMIT_PASS: "Omitted for security; use //config pass to show",
+  Sub: (plan) => `just subscribed with a ${plan} subscription!`,
+  ResubStreak: (months, plan, streak) => `resubscribed for ${months} months with a ${plan} subscription. They're on a streak of ${streak} months!`,
+  Resub: (months, plan) => `resubscribed for ${months} months with a ${plan} subscription!`,
+  GiftSub: (gifter, plan, user) => `${gifter} gifted a ${plan} subscription to ${user}!`,
+  AnonGiftSub: (plan, user) => `An anonymous user gifted a ${plan} subscription to ${user}!`,
+  Raid: (raider, count) => `${raider} is raiding with a total of ${count} viewers!`,
+  NewUser: (user) => `${user} is new here! Say hello!`
+};
+
 /* CSS cheer styles */
 var CSSCheerStyles = { /* exported CSSCheerStyles */
   cssmarquee: {

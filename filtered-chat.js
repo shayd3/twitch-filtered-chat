@@ -640,9 +640,10 @@ function handleCommand(value, client) {
         } else if (typeof(v) === "object" && v.Name && v.Name.length > 1) {
           /* It's a window configuration */
           wincfgs.push([k, v]);
-        } else if (k === "ClientID" || k === "Pass") {
-          Content.addHelpLine(k, `Omitted for security; use //config ` +
-                                 `${k.toLowerCase()} to show`);
+        } else if (k === "ClientID") {
+          Content.addHelpLine(k, Strings.OMIT_CID);
+        } else if (k === "Pass") {
+          Content.addHelpLine(k, Strings.OMIT_PASS);
         } else {
           Content.addHelpLine(k, v);
         }
@@ -877,8 +878,7 @@ function client_main(layout) { /* exported client_main */
       document.title += " Read-Only";
       if (config.Layout.Chat) {
         /* Change the chat placeholder and border to reflect read-only */
-        $("#txtChat").attr("placeholder",
-                           "Authentication needed to send messages");
+        $("#txtChat").attr("placeholder", Strings.PLEASE_AUTH);
         Util.CSS.SetProperty("--chat-border", "#cd143c");
       }
     }
@@ -967,15 +967,11 @@ function client_main(layout) { /* exported client_main */
   }
 
   /* Add documentation for the moderator chat commands */
-  ChatCommands.addHelp("Moderator commands:", {literal: true});
-  ChatCommands.addHelp("!tfc reload: Reload the page",
-                       {literal: true,  command: true});
-  ChatCommands.addHelp("!tfc force-reload: Reload the page, discarding cache",
-                       {literal: true,  command: true});
-  ChatCommands.addHelp("!tfc nuke: Clear the chat",
-                       {literal: true,  command: true});
-  ChatCommands.addHelp("!tfc nuke <user>: Remove all messages sent by <user>",
-                       {command: true});
+  ChatCommands.addHelp(Strings.TFC_HEADER, {literal: true});
+  ChatCommands.addHelp(Strings.TFC_RELOAD, {literal: true,  command: true});
+  ChatCommands.addHelp(Strings.TFC_FRELOAD, {literal: true,  command: true});
+  ChatCommands.addHelp(Strings.TFC_NUKE, {literal: true,  command: true});
+  ChatCommands.addHelp(Strings.TFC_UNUKE, {command: true});
 
   /* Bind all of the page assets {{{0 */
 
@@ -1029,7 +1025,7 @@ function client_main(layout) { /* exported client_main */
     } else {
       let config = getConfigObject();
       $("#txtChannel").val(config.Channels.join(","));
-      $("#txtNick").val(config.Name ? config.Name : AUTOGEN_VALUE);
+      $("#txtNick").val(config.Name || AUTOGEN_VALUE);
       if (config.Pass && config.Pass.length > 0) {
         $("#txtPass").attr("disabled", "disabled").hide();
         $("#txtPassDummy").show();
@@ -1039,7 +1035,7 @@ function client_main(layout) { /* exported client_main */
     }
   });
 
-  /* Clicking on the ? in the settings box header */
+  /* Clicking on the `?` in the settings box header */
   $("#settings-help").click(function() {
     let w = window.open(
       "assets/help-window.html",
@@ -1243,17 +1239,10 @@ function client_main(layout) { /* exported client_main */
     $(".loading").remove();
     $("#debug").hide();
     if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
-      let notes = [];
-      if (client.IsAuthed()) {
-        notes.push("(authenticated)");
-      } else {
-        notes.push("(unauthenticated)");
-      }
-      Content.addInfo(`Connected ${notes.join(" ")}`);
+      Content.addInfo(client.IsAuthed() ? Strings.AUTH : Strings.UNAUTH);
     }
     if (getConfigObject().Channels.length === 0) {
-      Content.addInfo("No channels configured; type //join &lt;channel&gt; " +
-                      "to join one!");
+      Content.addInfo(Strings.PLEASE_JOIN);
     }
   });
 
@@ -1308,7 +1297,7 @@ function client_main(layout) { /* exported client_main */
       case "host_target_went_offline":
         break;
       case "cmds_available":
-        Content.addInfo("Use //help to see Twitch Filtered Chat commands");
+        Content.addInfo(Strings.USE_HELP);
         break;
       default:
         Util.Warn(e);

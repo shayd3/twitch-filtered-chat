@@ -23,6 +23,7 @@ module.exports = {
         "FormatLayout": "readonly",
         "CSSCheerStyles": "readonly",
         "GetCheerStyle": "readonly",
+        "Strings": "readonly",
         "AssetPaths": "readonly",
         "setNotify": "readonly",
         "client_main": "readonly"
