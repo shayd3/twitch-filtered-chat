@@ -11,8 +11,7 @@ node_modules/
 package-lock.json
 
 # Ignore reference material
-notes.txt
-ref/
+notes/
 
 # Ignore swap/temporary/compiled files
 *.pyc
