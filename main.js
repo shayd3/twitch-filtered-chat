@@ -245,6 +245,7 @@ function Main(global) { /* exported Main */
     /* If slim layout, remove the entire header */
     if (layout.Slim) {
       $(".header").hide();
+      $("body").addClass("tfc-slim");
       $(".module").addClass("slim");
       $(".content").addClass("slim");
       $("#btnSettings").hide();
