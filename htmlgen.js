@@ -628,6 +628,7 @@ class HTMLGenerator {
   new_user(event) { /* TODO */
 
   }
+
   /* General-use functions below */
 
   url(href=null, text=null, classes=null, id=null) {
