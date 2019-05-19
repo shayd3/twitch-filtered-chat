@@ -116,7 +116,7 @@ class ChatCommandManager {
   }
 
   formatHelp(cmd) {
-    return this.helpLine("//" + cmd.name, cmd.desc, true);
+    return this.helpLine(`//${cmd.name}`, cmd.desc, true);
   }
 
   formatUsage(cmd) {
@@ -199,13 +199,8 @@ function command_log(cmd, tokens, client) {
       this.printHelp();
       this.printUsage();
     } else if (tokens[0] === "show") {
-      if (tokens.length > 1) {
-        let idx = Number.parseInt(tokens[1]);
-        Content.addHelp(`${idx}: ${JSON.stringify(logs[idx]).escape()}`);
-      } else {
-        for (let [i, l] of Object.entries(logs)) {
-          Content.addHelp(`${i}: ${JSON.stringify(l).escape()}`);
-        }
+      for (let [i, l] of Object.entries(logs)) {
+        Content.addHelp(`${i}: ${JSON.stringify(l).escape()}`);
       }
     } else if (tokens[0] === "export") {
       let w = window.open(
@@ -237,7 +232,7 @@ function command_log(cmd, tokens, client) {
       if (line.length > 0) lines.push(line);
       let lidx = 0;
       for (let l of Object.values(lines)) {
-        Content.addHelp(`${lidx}-${lidx+l.length}: ${JSON.stringify(l)}`);
+        Content.addHelp(`${lidx}-${lidx+l.length-1}: ${JSON.stringify(l)}`);
         lidx += l.length;
       }
     } else if (tokens[0] === "shift") {
@@ -251,6 +246,9 @@ function command_log(cmd, tokens, client) {
     } else if (tokens[0] === "size") {
       let b = JSON.stringify(logs).length;
       Content.addHelp(`Logged bytes: ${b} (${b/1024.0} KB)`);
+    } else if (tokens[0] === "clear") {
+      Util.SetWebStorage("debug-msg-log", []);
+      Content.addHelp("Log cleared");
     } else if (tokens[0].match(/^[1-9][0-9]*$/)) {
       let idx = Number(tokens[0]);
       Content.addHelp(JSON.stringify(logs[idx]).escape());
@@ -258,14 +256,7 @@ function command_log(cmd, tokens, client) {
       Content.addHelp(`Unknown argument ${tokens[0]}`);
     }
   } else {
-    Content.addHelp(`Use //log summary to view a summary`);
-    Content.addHelp(`Use //log show to view them all`);
-    Content.addHelp(this.formatArgs(`Use //log show <N> to show item <N>`));
-    Content.addHelp(this.formatArgs(`Use //log <N> to show item <N>`));
-    Content.addHelp(`Use //log shift to remove one entry from the start`);
-    Content.addHelp(`Use //log pop to remove one entry from the end`);
-    Content.addHelp(`Use //log export to open a new window with the logged items`);
-    Content.addHelp(`Use //log size to display the number of bytes logged`);
+    this.printUsage();
   }
 }
 
@@ -430,79 +421,109 @@ function command_raw(cmd, tokens, client) {
   client.SendRaw(tokens.join(" "));
 }
 
+/* Default command definition
+ * Structure:
+ *  <name>: {
+ *    func: <function>,
+ *    desc: description of the command (used by //help)
+ *    alias: array of command aliases (optional)
+ *    usage: array of usage objects:
+ *      [0]: string, array, or null: parameter name(s)
+ *      [1]: description
+ *      [2]: options (optional)
+ *  }
+ */
+const DefaultCommands = {
+  "log": {
+    func: command_log,
+    desc: "Display logged messages",
+    alias: ["logs"],
+    usage: [
+      [null, "Display log command usage"],
+      ["number", "Display the message numbered <number>"],
+      ["show", "Display all logged messages (can be a lot of text!)", {literal: true}],
+      ["summary", "Display a summary of the logged messages", {literal: true}],
+      ["shift", "Remove the first logged message", {literal: true}],
+      ["pop", "Remove the last logged message", {literal: true}],
+      ["export", "Open a new window with all the logged items", {literal: true}],
+      ["size", "Display the number of bytes used by the log", {literal: true}],
+      ["clear", "Clears the entire log (cannot be undone!)", {literal: true}]
+    ]
+  },
+  "clear": {
+    func: command_clear,
+    desc: "Clears all text from either all modules or the specified module",
+    alias: ["nuke"],
+    usage: [
+      [null, "Clears all text from all visible modules"],
+      ["module1", "Clears all text from module1", {literal: true}],
+      ["module2", "Clears all text from module2", {literal: true}]
+    ]
+  },
+  "join": {
+    func: command_join,
+    desc: "Join a channel",
+    usage: [
+      ["Channel", "Connect to <channel>; leading # is optional"]
+    ]
+  },
+  "part": {
+    func: command_part,
+    desc: "Leave a channel",
+    alias: ["leave"],
+    usage: [
+      ["channel", "Disconnect from <channel>; leading # is optional"]
+    ]
+  },
+  "badges": {
+    func: command_badges,
+    desc: "Display all known badges"
+  },
+  "emotes": {
+    func: command_emotes,
+    desc: "Display the requested emotes",
+    usage: [
+      ["kinds", "Display emotes; <kinds> can be one or more of: global, channel, bttv"]
+    ],
+  },
+  "plugins": {
+    func: command_plugins,
+    desc: "Display plugin information, if plugins are enabled"
+  },
+  "client": {
+    func: command_client,
+    desc: "Display numerous things about the client; use //help client for info",
+    usage: [
+      [null, "Show general information about the client"],
+      ["status", "Show current connection information", {literal: true}]
+    ]
+  },
+  "raw": {
+    func: command_raw,
+    desc: "Send a raw message to Twitch (for advanced users only!)",
+    usage: [
+      ["message", "Send <message> to Twitch servers (for advanced users only!)"]
+    ]
+  }
+};
+
 var ChatCommands = null;
 
 function InitChatCommands() { /* exported InitChatCommands */
   ChatCommands = new ChatCommandManager();
-
-  ChatCommands.add("log", command_log,
-                   "Display logged messages");
-  ChatCommands.addAlias("logs", "log");
-  ChatCommands.addUsage("log", null,
-                         "Obtain all logged messages");
-  ChatCommands.addUsage("log", "number",
-                        "Display the message numbered <number>");
-  ChatCommands.addUsage("log", "summary",
-                        "Display a summary of the logged messages",
-                        {literal: true});
-  ChatCommands.addUsage("log", "shift",
-                        "Remove the first logged message",
-                        {literal: true});
-  ChatCommands.addUsage("log", "pop",
-                        "Remove the last logged message",
-                        {literal: true});
-  ChatCommands.addUsage("log", "export",
-                        "Open a new window with all of the logged items",
-                        {literal: true});
-  ChatCommands.addUsage("log", "size",
-                        "Display the number of bytes used by the log",
-                        {literal: true});
-
-  ChatCommands.add("clear", command_clear,
-                   "Clears all text from all visible modules");
-  ChatCommands.addUsage("clear", null,
-                        "Clears all text from all visible modules");
-  ChatCommands.addUsage("clear", "module1",
-                        "Clears all text from module1",
-                        {literal: true});
-  ChatCommands.addUsage("clear", "module2",
-                        "Clears all text from module2",
-                        {literal: true});
-
-  ChatCommands.add("join", command_join,
-                   "Join a channel");
-  ChatCommands.addUsage("join", "channel",
-                        "Connect to <channel>; leading # is optional");
-
-  ChatCommands.add("part", command_part,
-                   "Leave a channel");
-  ChatCommands.addAlias("leave", "part");
-  ChatCommands.addUsage("part", "channel",
-                        "Disconnect from <channel>; leading # is optional");
-
-  ChatCommands.add("badges", command_badges,
-                   "Display all known badges");
-
-  ChatCommands.add("emotes", command_emotes, "Display the requested emotes");
-  ChatCommands.addUsage("emotes", "kinds",
-                        "Display emotes; <kinds> can be one or more of: " +
-                        "global, channel, bttv");
-
-  ChatCommands.add("plugins", command_plugins,
-                   "Display plugin information, if plugins are enabled");
-
-  ChatCommands.add("client", command_client,
-                   "Display numerous things about the client; use //help client for info");
-  ChatCommands.addUsage("client", null,
-                        "Show general information about the client");
-  ChatCommands.addUsage("client", "status",
-                        "Show current connection information",
-                        {literal: true});
-
-  ChatCommands.add("raw", command_raw,
-                   "Send a raw message to Twitch (for advanced users only!)");
-  ChatCommands.addUsage("raw", "message",
-                        "Send <message> to Twitch servers (for advanced users only!)");
+  for (let [cname, cobj] of Object.entries(DefaultCommands)) {
+    ChatCommands.add(cname, cobj.func, cobj.desc);
+    if (cobj.usage) {
+      for (let uobj of cobj.usage) {
+        ChatCommands.addUsage(cname, uobj[0], uobj[1], uobj[2]);
+      }
+    }
+    if (cobj.alias) {
+      for (let aname of cobj.alias) {
+        ChatCommands.addAlias(aname, cname);
+      }
+    }
+  }
 }
 
 /* vim: set ts=2 sts=2 sw=2 et: */
