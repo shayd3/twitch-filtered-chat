@@ -21,7 +21,9 @@ class FanfarePlugin { /* exported FanfarePlugin */
     this._args = args;
     this._on = false;
     this._setupCSS();
-    ChatCommands.add("ff", this._onFfCmd, "Enable or disable fanfare", this);
+    ChatCommands.add("ff", this._onFfCmd,
+                     "From plugin FanfarePlugin: Enable or disable fanfare",
+                     this);
     ChatCommands.addUsage("ff", "on", "Enable fanfare", {literal: true});
     ChatCommands.addUsage("ff", "off", "Disable fanfare", {literal: true});
     client.bind("twitch-sub", this._onSubEvent.bind(this, client));
