@@ -295,30 +295,47 @@ class HTMLGenerator {
     if (event.flags.bits && event.flags.bits > 0) {
       let bits_left = event.flags.bits;
       let matches = this._client.FindCheers(event.channel, event.message);
+      /* Sort the cheer matches from right-to-left */
       matches.sort((a, b) => a.start - b.start);
       while (matches.length > 0) {
         let match = matches.pop();
         let [start, end] = [map[match.start], map[match.end]];
         let cheer_html = this._genCheer(match.cheer, match.bits);
-        let msg_start = message.substr(0, start);
-        let msg_end = message.substr(end);
-        message = msg_start + cheer_html + msg_end;
-        /* Adjust the map */
+        /* Insert the cheer HTML and adjust the map */
+        message = message.substr(0, start) + cheer_html + message.substr(end);
         this._remap(map, match.start, match.end, cheer_html.length);
         /* Scan for cheer effects */
-        let end_words = msg_end.trimStart().split(" ");
-        while (end_words.length > 0) {
-          let s = GetCheerStyle(end_words[0].toLowerCase());
-          /* Stop scanning at the first non-effect word */
-          if (!s) { break; }
-          /* Don't stop scanning for disabled effects, or if the effect uses
-           * more bits than are left. */
-          if (!s._disabled && bits_left >= s.cost) {
-            $effects.push(s);
-            bits_left -= s.cost;
+        let pos = start + cheer_html.length;
+        start = pos;
+        end = pos;
+        while (pos < message.length) {
+          let word = "";
+          if (message[pos].match(/\s/)) {
+            pos += 1;
+          } else {
+            /* NOTE: This would be cleaner with some kind of "search starting
+             * from" function */
+            end = message.substr(pos).search(/\s/);
+            end = end === -1 ? message.length : pos + end;
+            word = message.substring(pos, end);
+            let s = GetCheerStyle(word.toLowerCase());
+            /* Stop scanning at the first non-effect word */
+            if (!s) {
+              end = pos;
+              break;
+            } else if (!s._disabled && bits_left >= s.cost) {
+              /* Don't stop scanning for disabled effects, or if the effect
+               * uses more bits than are left */
+              $effects.push(s);
+              bits_left -= s.cost;
+            }
+            pos = end;
           }
-          /* TODO: Remove end_words[0] from the message and adjust the map */
-          end_words.shift();
+        }
+        if (start !== end) {
+          /* Remove [start:end] from the message and adjust the map */
+          message = message.substr(0, start) + ' ' + message.substr(end);
+          this._remap(map, start, end, 0);
         }
       }
     }
@@ -552,20 +569,21 @@ class HTMLGenerator {
     return $e[0].outerHTML;
   }
 
-  sub(event) { /* TODO: Wrap in emotes */
-    /* Suggested emotes: */
+  sub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
+    let e = this._twitchEmote({"id": "PogChamp"});
     $m.text(Strings.Sub(TwitchSubEvent.PlanName(event.plan_id)));
+    $m.html(e + "&nbsp;" + $m.html());
     $w.append($m);
     this._checkUndefined(event, $w);
     return $w[0].outerHTML;
   }
 
-  resub(event) { /* TODO: Wrap in emotes */
-    /* Suggested emotes: */
+  resub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
+    let e = this._twitchEmote({"id": "PogChamp"});
     let months = event.months || event.total_months;
     let streak = event.streak_months;
     let plan = TwitchSubEvent.PlanName(event.plan_id);
@@ -574,6 +592,7 @@ class HTMLGenerator {
     } else {
       $m.text(Strings.Resub(months, plan));
     }
+    $m.html(e + "&nbsp;" + $m.html());
     $w.append($m);
     this._checkUndefined(event, $w);
     return $w[0].outerHTML;
