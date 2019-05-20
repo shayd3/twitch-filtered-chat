@@ -14,6 +14,10 @@ class ChatCommandManager {
     this.addUsage("help", "command", "Show usage information for <command>");
   }
 
+  _trim(msg) {
+    return msg.replace(/^\/\//, "").replace(/^\./, "");
+  }
+
   add(command, func, desc, ...args) {
     if (!command.match(/^[a-z0-9_-]+$/)) {
       Util.Error(`Invalid command "${command.escape()}"`);
@@ -56,11 +60,11 @@ class ChatCommandManager {
   }
 
   isCommandStr(msg) {
-    return !!msg.match(/^\/\//);
+    return msg.match(/^\/\//) || msg.match(/^\./);
   }
 
   hasCommand(msg, native_only=false) {
-    let cmd = msg.replace(/^\/\//, "");
+    let cmd = this._trim(msg);
     if (this._commands.hasOwnProperty(cmd)) {
       return true;
     } else if (!native_only && this._aliases.hasOwnProperty(cmd)) {
@@ -71,7 +75,7 @@ class ChatCommandManager {
 
   execute(msg, client) {
     if (this.isCommandStr(msg)) {
-      let cmd = msg.split(" ")[0].replace(/^\/\//, "");
+      let cmd = this._trim(msg.split(" ")[0]);
       if (this.hasCommand(cmd)) {
         let tokens = msg.replace(/[\s]*$/, "").split(" ").slice(1);
         try {
@@ -107,7 +111,7 @@ class ChatCommandManager {
   }
 
   getCommand(cmd, native_only=false) {
-    let cname = cmd.replace(/^\/\//, "");
+    let cname = this._trim(cmd);
     let c = this._commands[cname];
     if (!c && !native_only && this._commands[this._aliases[cname]]) {
       c = this._commands[this._aliases[cname]];
@@ -463,6 +467,7 @@ const DefaultCommands = {
   "join": {
     func: command_join,
     desc: "Join a channel",
+    alias: ["j"],
     usage: [
       ["Channel", "Connect to <channel>; leading # is optional"]
     ]
