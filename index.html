@@ -12,14 +12,31 @@ function debug(msg) {
   /* Prepend `msg` to the debug span */
   $("#debug").html(msg + "<br />" + $("#debug").html());
 }
+function doLoadScript(src, onload) {
+  var s = document.createElement("script");
+  s.setAttribute('type', 'text/javascript');
+  s.setAttribute('src', src);
+  if (typeof(onload) === "function") {
+    s.onload = onload;
+  }
+  document.head.appendChild(s);
+}
+function doLoadPolyfill(cb) {
+  doLoadScript("polyfill.js", cb);
+}
 function doLoadMain() {
   /* Use either main.js or dist/main.js based on ?usedist */
-  var uri = window.location.search.match(/\busedist\b/) ? "dist/main.js" : "main.js";
-  var s = document.createElement('script');
-  s.setAttribute('type', 'text/javascript');
-  s.setAttribute('src', uri);
-  s.onload = function() { (new Function("Main(window)"))(); }
-  document.head.appendChild(s);
+  var dist = window.location.search.match(/\busedist\b/);
+  var uri = dist ? "dist/main.js" : "main.js";
+  doLoadScript(uri, function() { (new Function("Main(window)"))(); });
+}
+function doLoad() {
+  var dist = window.location.search.match(/\busedist\b/);
+  if (dist) {
+    doLoadPolyfill(doLoadMain);
+  } else {
+    doLoadMain();
+  }
 }
 function onLoad() {
   /* Show the debug span if debug=2 or debug=trace */

@@ -15,7 +15,7 @@ lint:
 
 babel: dist
 
-dist: $(DISTS)
+dist: $(DISTS) dist/polyfill.js
 
 dist/%.js: %.js
 	test -d dist || mkdir dist
@@ -24,6 +24,9 @@ dist/%.js: %.js
 dist/plugins/%.js: plugins/%.js
 	test -d test/plugins || mkdir -p dist/plugins
 	npx babel --presets babel-preset-env $< -d dist/plugins/
+
+dist/polyfill.js: node_modules/babel-polyfill/dist/polyfill.js
+	cp $< dist/polyfill.js
 
 echo-srcs:
 	echo $(SRCS)
