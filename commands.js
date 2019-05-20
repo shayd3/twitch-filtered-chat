@@ -207,10 +207,11 @@ function command_log(cmd, tokens, client) {
         Content.addHelp(`${i}: ${JSON.stringify(l).escape()}`);
       }
     } else if (tokens[0] === "export") {
+      let width = window.innerWidth * 0.75;
       let w = window.open(
         "assets/log-export.html",
         "TFCLogExportWindow",
-        "menubar=yes,location=yes,resizable=yes,scrollbars=yes,status=yes"
+        `menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes,dependent=yes,width=${Math.floor(width)}`
       );
       if (w) {
         w.onload = function() {
