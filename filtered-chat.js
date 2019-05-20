@@ -1071,10 +1071,13 @@ function client_main(layout) { /* exported client_main */
 
   /* Clicking on the `?` in the settings box header */
   $("#settings-help").click(function() {
-    let w = window.open(
-      "assets/help-window.html",
-      "TFCHelpWindow",
-      "menubar=yes,location=yes,resizable=yes,scrollbars=yes,status=yes");
+    let w = Util.Open("assets/help-window.html",
+                      "TFCHelpWindow",
+                      {"menubar": "yes",
+                       "location": "yes",
+                       "resizable": "yes",
+                       "scrollbars": "yes",
+                       "status": "yes"});
     if (w) {
       w.onload = function() {
         this.addEntry("Help text and settings builder are coming soon!");

@@ -208,11 +208,15 @@ function command_log(cmd, tokens, client) {
       }
     } else if (tokens[0] === "export") {
       let width = window.innerWidth * 0.75;
-      let w = window.open(
-        "assets/log-export.html",
-        "TFCLogExportWindow",
-        `menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes,dependent=yes,width=${Math.floor(width)}`
-      );
+      let w = Util.Open("assets/log-export.html",
+                        "TFCLogExportWindow",
+                        {"menubar": "no",
+                         "location": "no",
+                         "resizable": "no",
+                         "status": "no",
+                         "scrollbars": "yes",
+                         "dependent": "yes",
+                         "width": `${Math.floor(width)}`});
       if (w) {
         w.onload = function() {
           this.addEntries(logs);
