@@ -997,9 +997,9 @@ function client_main(layout) { /* exported client_main */
 
   /* Add documentation for the moderator chat commands */
   ChatCommands.addHelp(Strings.TFC_HEADER, {literal: true});
-  ChatCommands.addHelp(Strings.TFC_RELOAD, {literal: true,  command: true});
-  ChatCommands.addHelp(Strings.TFC_FRELOAD, {literal: true,  command: true});
-  ChatCommands.addHelp(Strings.TFC_NUKE, {literal: true,  command: true});
+  ChatCommands.addHelp(Strings.TFC_RELOAD, {literal: true, command: true});
+  ChatCommands.addHelp(Strings.TFC_FRELOAD, {literal: true, command: true});
+  ChatCommands.addHelp(Strings.TFC_NUKE, {literal: true, command: true});
   ChatCommands.addHelp(Strings.TFC_UNUKE, {command: true});
 
   /* Bind all of the page assets {{{0 */
@@ -1034,7 +1034,7 @@ function client_main(layout) { /* exported client_main */
       } else if (isDown) {
         i = (i - 1 < 0 ? -1 : i - 1);
       }
-      e.target.value = (i > -1 ? client.GetHistoryItem(i) : "");
+      e.target.value = (i > -1 ? client.GetHistoryItem(i).trim() : "");
       $(e.target).attr("hist-index", `${i}`);
       /* Delay moving the cursor until after the text is updated */
       requestAnimationFrame(() => {
@@ -1097,6 +1097,13 @@ function client_main(layout) { /* exported client_main */
     setConfigObject({"Channels": client.GetJoinedChannels()});
   });
 
+  /* Changing the value for "background image" */
+  $("#txtBGStyle").keyup(function(e) {
+    if (e.keyCode === Util.Key.RETURN) {
+      $(".module").css("background-image", $(this).val());
+    }
+  });
+
   /* Changing the "Scrollbars" checkbox */
   $("#cbScroll").change(function() {
     let scroll = $(this).is(":checked");
@@ -1113,13 +1120,6 @@ function client_main(layout) { /* exported client_main */
     let val = $(this).is(":checked");
     updateTransparency(val);
     updateHTMLGenConfig();
-  });
-
-  /* Changing the value for "background image" */
-  $("#txtBGStyle").keyup(function(e) {
-    if (e.keyCode === Util.Key.RETURN) {
-      $(".module").css("background-image", $(this).val());
-    }
   });
 
   /* Changing the "Show Clips" checkbox */
@@ -1284,18 +1284,12 @@ function client_main(layout) { /* exported client_main */
   client.bind("twitch-close", function _on_twitch_close(e) {
     let code = e.raw_line.code;
     let reason = e.raw_line.reason;
-    let msg = "Connection closed";
-    if (reason) {
-      msg = `${msg} (code ${code}: ${reason})`;
-    } else {
-      msg = `${msg} (code ${code})`;
-    }
+    let msg = reason ? `(code ${code}: ${reason})` : `(code ${code})`;
     if (getConfigObject().AutoReconnect) {
-      Content.addError(msg);
+      Content.addError("Connection closed " + msg);
       client.Connect();
     } else {
-      Content.addError(`${msg}<span class="reconnect" data-reconnect="1">` +
-                       `Reconnect</span>`);
+      Content.addError("Connection closed " + msg + Strings.RECONNECT);
     }
   });
 

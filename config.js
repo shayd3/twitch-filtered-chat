@@ -45,6 +45,8 @@ const Strings = { /* exported Strings */
   UNAUTH: "Connected (unauthenticated)",
   OMIT_CID: "Omitted for security; use //config clientid to show",
   OMIT_PASS: "Omitted for security; use //config pass to show",
+  RECONNECT: "<span class=\"reconnect\" data-reconnect=\"1\">Reconnect</span>",
+
   Sub: (plan) => `just subscribed with a ${plan} subscription!`,
   ResubStreak: (months, plan, streak) => `resubscribed for ${months} months with a ${plan} subscription. They're on a streak of ${streak} months!`,
   Resub: (months, plan) => `resubscribed for ${months} months with a ${plan} subscription!`,
