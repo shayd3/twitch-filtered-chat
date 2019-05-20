@@ -69,6 +69,15 @@ class HTMLGenerator {
     return this._user_colors[name];
   }
 
+  genBorderCSS(color) {
+    let border = Util.GetMaxContrast(color, this._bg_colors);
+    return [
+      "text-shadow",
+      `-0.8px -0.8px 0 ${border}, 0.8px -0.8px 0 ${border},
+       -0.8px  0.8px 0 ${border}, 0.8px  0.8px 0 ${border}`
+    ];
+  }
+
   genName(name, color) {
     let $e = $(`<span class="username"></span>`);
     if (color) {
@@ -79,11 +88,8 @@ class HTMLGenerator {
       $e.css("color", "#ffffff");
     }
     /* Determine the best border color to use */
-    let border = Util.GetMaxContrast($e.css("color"), this._bg_colors);
-    $e.css("text-shadow", `-0.8px -0.8px 0 ${border},
-                            0.8px -0.8px 0 ${border},
-                           -0.8px  0.8px 0 ${border},
-                            0.8px  0.8px 0 ${border}`);
+    let [attr, val] = this.genBorderCSS($e.css("color"));
+    $e.css(attr, val);
     /* Makes it so clicking on the name opens the context window */
     $e.attr('data-username', '1');
     $e.text(name);
@@ -557,7 +563,9 @@ class HTMLGenerator {
     if (!event.flags.action) {
       $e.html($e.html() + ":");
     } else {
+      let [attr, val] = this.genBorderCSS(color);
       msg_def.e.css("color", color);
+      msg_def.e.css(attr, val);
     }
     $e.html($e.html() + "&nbsp;");
     let html_pre = [];
