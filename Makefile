@@ -25,8 +25,8 @@ dist/plugins/%.js: plugins/%.js
 	test -d test/plugins || mkdir -p dist/plugins
 	npx babel --presets babel-preset-env $< -d dist/plugins/
 
-dist/polyfill.js: node_modules/babel-polyfill/dist/polyfill.js
-	cp $< dist/polyfill.js
+dist/polyfill.js: 
+	test -f node_modules/babel-polyfill/dist/polyfill.js && cp node_modules/babel-polyfill/dist/polyfill.js dist/polyfill.js
 
 echo-srcs:
 	echo $(SRCS)
