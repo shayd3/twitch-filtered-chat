@@ -64,6 +64,7 @@ html, body {
   height: 100%;
   font-size: var(--body-font-size, 18px);
   color: #cccccc;
+  overflow: hidden;
 }
 
 body {
@@ -629,6 +630,20 @@ body.slim #btnSettings {
 }
 
 /* End username context window 0}}} */
+
+/* URL hover window {{{0 */
+
+#hoverInfo {
+  display: none;
+  position: absolute;
+  border: 10px black solid;
+  border-radius: 10px;
+  border-style: outset;
+  background-image: linear-gradient(to right, darkgray, lightgray);
+  color: black;
+}
+
+/* End URL hover winow 0}}} */
 
 /* CSS custom marquee {{{0 */
 
