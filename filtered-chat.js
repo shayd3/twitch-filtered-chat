@@ -770,14 +770,15 @@ function showContextWindow(client, cw, line) {
     if (!vip) { $cw.append($Line(Link("cw-make-vip", "Make VIP"))); }
   }
 
-  let l_off = $l.offset();
-  let offset = {top: l_off.top + $l.outerHeight() + 2, left: l_off.left};
-  if (offset.top + $cw.outerHeight() + 2 > window.innerHeight) {
-    offset.top = window.innerHeight - $cw.outerHeight() - 2;
-  }
-  if (offset.left + $cw.outerWidth() + 2 > window.innerWidth) {
-    offset.left = window.innerWidth - $cw.outerWidth() - 2;
-  }
+  let lo = $l.offset();
+  let t = lo.top + $l.outerHeight() + 2;
+  let l = lo.left;
+  let w = $cw.outerWidth();
+  let h = $cw.outerHeight();
+  let offset = {top: t, left: l, width: w, height: h};
+  Util.ClampToScreen(offset);
+  delete offset["width"];
+  delete offset["height"];
   $cw.fadeIn().offset(offset);
 }
 
@@ -823,10 +824,38 @@ function updateTransparency(transparent) {
   }
 }
 
-/* Set or clear window notificatin badge */
+/* Set or clear window notification badge */
 function setNotify(notify=true) { /* exported setNotify */
   let asset = notify ? AssetPaths.FAVICON_ALERT : AssetPaths.FAVICON;
   $("link[rel=\"shortcut icon\"]").attr("href", asset);
+}
+
+/* Display the information box when hovering over a URL */
+/* TODO: Use bind selectors rather than onmouseover */
+function onURLHover(elem, show) { /* exported onURLHover */
+  let $e = $(elem);
+  let $hi = $("#hoverInfo");
+  let slug = new URL($e.attr("href")).pathname.replace(/^\//, "");
+  if (!show) {
+    if ($hi.queue().length > 0) {
+      $hi.finish();
+    }
+    $hi.fadeOut();
+    return;
+  }
+
+  /* Position and show the box */
+  let e_offset = $e.offset();
+  let t = e_offset.top + $e.outerHeight() + 2;
+  let l = e_offset.left;
+  let w = $hi.outerWidth();
+  let h = $hi.outerHeight();
+  let offset = {top: t, left: l, width: w, height: h};
+  Util.ClampToScreen(offset);
+  delete offset["width"];
+  delete offset["height"];
+  $hi.text(slug);
+  $hi.offset(offset).fadeIn();
 }
 
 /* Called once when the document loads */
@@ -974,6 +1003,11 @@ function client_main(layout) { /* exported client_main */
   ChatCommands.addHelp(Strings.TFC_UNUKE, {command: true});
 
   /* Bind all of the page assets {{{0 */
+
+  /* URL hover information box */
+  $("#hoverInfo").mouseleave(function(e) {
+    $(this).fadeOut();
+  });
 
   /* Sending a chat message */
   $("#txtChat").keydown(function(e) {

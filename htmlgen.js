@@ -112,7 +112,14 @@ class HTMLGenerator {
       let parts = Util.SplitByMatches(node.nodeValue, matches, to_url);
       let newNodes = [];
       for (let part of parts) {
-        newNodes.push(Util.CreateNode(part));
+        let newnode = Util.CreateNode(part);
+        if (part instanceof URL) {
+          if (part.host === "clips.twitch.tv") {
+            newnode.setAttribute("onmouseover", "onURLHover(this, true)");
+            newnode.setAttribute("onmouseout", "onURLHover(this, false)");
+          }
+        }
+        newNodes.push(newnode);
       }
       replace_info.push([node.parentNode, newNodes]);
     }
