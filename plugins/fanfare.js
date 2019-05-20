@@ -26,6 +26,8 @@ class FanfarePlugin { /* exported FanfarePlugin */
                      this);
     ChatCommands.addUsage("ff", "on", "Enable fanfare", {literal: true});
     ChatCommands.addUsage("ff", "off", "Disable fanfare", {literal: true});
+    ChatCommands.addUsage("ff", "show-sub", "Display the subscriber fanfare",
+                          {literal: true});
     client.bind("twitch-sub", this._onSubEvent.bind(this, client));
     client.bind("twitch-resub", this._onSubEvent.bind(this, client));
     client.bind("twitch-giftsub", this._onSubEvent.bind(this, client));
@@ -53,6 +55,11 @@ class FanfarePlugin { /* exported FanfarePlugin */
     } else if (tokens[0] === "on" || tokens[0] === "off") {
       self._on = tokens[0] === "on";
       Content.addInfo("Fanfare is now " + (self._on ? "enabled" : "disabled"));
+    } else if (tokens[0] === "show-sub") {
+      let old_on = self._on;
+      self._on = true;
+      self._onSubEvent(client, {});
+      self._on = old_on;
     } else {
       Content.addError(`Fanfare: unknown argument ${tokens[0].escape()}`);
       this.printUsage();
@@ -82,9 +89,7 @@ class FanfarePlugin { /* exported FanfarePlugin */
 
   get name() { return "FanfarePlugin"; }
 
-  toString() {
-    return "[object FanfarePlugin]";
-  }
+  toString() { return "[object FanfarePlugin]"; }
 }
 
 /* vim: set ts=2 sts=2 sw=2 et: */
