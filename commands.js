@@ -238,9 +238,11 @@ function command_log(cmd, tokens, client) {
           line = [];
         }
       }
-      if (line.length > 0) lines.push(line);
-      let lidx = 0;
-      for (let l of Object.values(lines)) {
+      if (line.length > 0) {
+        lines.push(line);
+      }
+      for (let lidx = 0; lidx < lines.length; ++lidx) {
+        let l = lines[lidx];
         Content.addHelp(`${lidx}-${lidx+l.length-1}: ${JSON.stringify(l)}`);
         lidx += l.length;
       }
@@ -331,19 +333,19 @@ function command_badges(cmd, tokens, client) {
 
 function command_emotes(cmd, tokens, client) {
   let client_emotes = client.GetEmotes();
-  let emotes = [];
+  let g_emotes = [];
   let ch_emotes = [];
+  let to_display = [];
   for (let [k, v] of Object.entries(client_emotes)) {
     let e = `<img src="${v}" title="${k.escape()}" alt="${k.escape()}" />`;
     if (k.match(/^[a-z]/)) {
       ch_emotes.push(e);
     } else {
-      emotes.push(e);
+      g_emotes.push(e);
     }
   }
-  let to_display = [];
   if (tokens.indexOf("global") > -1) {
-    to_display.push(`Global: ${emotes.join("")}`);
+    to_display.push(`Global: ${g_emotes.join("")}`);
   }
   if (tokens.indexOf("channel") > -1) {
     to_display.push(`Channel: ${ch_emotes.join("")}`);
@@ -392,8 +394,10 @@ function command_plugins(cmd, tokens, client) {
 
 function command_client(cmd, tokens, client) {
   if (tokens.length === 0 || tokens[0] === "status") {
-    Content.addHelp("Client information:");
     let cstatus = client.ConnectionStatus();
+    let channels = client.GetJoinedChannels();
+    let us = client.SelfUserState() || {};
+    Content.addHelp("Client information:");
     Content.addHelpLine("Socket:", cstatus.open ? "Open" : "Closed");
     Content.addHelpLine("Status:", cstatus.connected ? "Connected" : "Not connected");
     Content.addHelpLine("Identified:", cstatus.identified ? "Yes" : "No");
@@ -401,19 +405,17 @@ function command_client(cmd, tokens, client) {
     Content.addHelpLine("Name:", client.GetName());
     Content.addHelpLine("FFZ:", client.FFZEnabled() ? "Enabled" : "Disabled");
     Content.addHelpLine("BTTV:", client.BTTVEnabled() ? "Enabled" : "Disabled");
-    let channels = client.GetJoinedChannels();
-    let us = client.SelfUserState() || {};
     if (channels && channels.length > 0) {
       Content.addHelp(`&gt; Channels connected to: ${channels.length}`);
       for (let c of channels) {
+        let ui = us[c];
         let ci = client.GetChannelInfo(c);
         let nusers = (ci && ci.users ? ci.users.length : 0);
         let rooms = ci.rooms || {};
         let status = (ci.online ? "" : "not ") + "online";
-        Content.addHelpLine(c, "Status: " + status + `; id=${ci.id}`);
+        Content.addHelpLine(c, `Status: ${status}; id=${ci.id}`);
         Content.addHelpLine("&nbsp;", `Active users: ${nusers}`);
         Content.addHelpLine("&nbsp;", `Rooms: ${Object.keys(rooms)}`);
-        let ui = us[c];
         Content.addHelp("User information for " + c + ":");
         if (ui.color) { Content.addHelpLine("Color", ui.color); }
         if (ui.badges) { Content.addHelpLine("Badges", JSON.stringify(ui.badges)); }
