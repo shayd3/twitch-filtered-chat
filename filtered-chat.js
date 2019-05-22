@@ -7,8 +7,8 @@
  * Add layout selection box to #settings (reloads page on change)
  * Add to #settings help link
  * Add to #settings config link
- * Add clip information
- * Add emote information (on hover)
+ * Add clip information on hover
+ * Add emote information on hover
  * Hide getConfigObject() within client_main()
  */
 
@@ -771,8 +771,8 @@ function showContextWindow(client, cw, line) {
   }
 
   let lo = $l.offset();
-  let t = lo.top + $l.outerHeight() + 2;
-  let l = lo.left;
+  let t = Math.round(lo.top) + $l.outerHeight() + 2;
+  let l = Math.round(lo.left);
   let w = $cw.outerWidth();
   let h = $cw.outerHeight();
   let offset = {top: t, left: l, width: w, height: h};
@@ -846,8 +846,8 @@ function onURLHover(elem, show) { /* exported onURLHover */
 
   /* Position and show the box */
   let e_offset = $e.offset();
-  let t = e_offset.top + $e.outerHeight() + 2;
-  let l = e_offset.left;
+  let t = Math.round(e_offset.top) + $e.outerHeight() + 2;
+  let l = Math.round(e_offset.left);
   let w = $hi.outerWidth();
   let h = $hi.outerHeight();
   let offset = {top: t, left: l, width: w, height: h};
@@ -1167,10 +1167,10 @@ function client_main(layout) { /* exported client_main */
       let $settings = $(this).parent().children(".settings");
       let $lbl = $(this).parent().children("label.name");
       let $tb = $(this).parent().children("input.name");
-      updateModuleConfig();
       $tb.hide();
       $lbl.html($tb.val()).show();
       $settings.fadeToggle();
+      updateModuleConfig();
     }
   });
 
@@ -1321,21 +1321,12 @@ function client_main(layout) { /* exported client_main */
 
   /* Notice (or warning) from Twitch */
   client.bind("twitch-notice", function _on_twitch_notice(e) {
-    /* Some notices are benign */
-    switch (e.notice_msgid) {
-      case "host_on":
-        break;
-      case "host_target_went_offline":
-        break;
-      case "cmds_available":
-        Content.addInfo(Strings.USE_HELP);
-        break;
-      default:
-        Util.Warn(e);
-    }
     let channel = Twitch.FormatChannel(e.channel);
     let message = e.message.escape();
     Content.addNotice(`${channel}: ${message}`);
+    if (e.notice_msgid === "cmds_available") {
+      Content.addInfo(Strings.USE_HELP);
+    }
   });
 
   /* Error from Twitch or Twitch Client API */

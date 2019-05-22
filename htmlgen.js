@@ -3,12 +3,11 @@
 "use strict";
 
 /* TODO:
- * Implement raid and calling code
- * Implement TwitchSubEvent htmlgen
- * Add clip formatting code (this._config.ShowClips)
+ * Implement "new user" ritual
  * Implement "light" and "dark" colorschemes
  * Add emote information on hover
- * Add badge information on hover
+ * Add badge information on hover (broken?)
+ * Add clip information on hover
  */
 
 /* exported HTMLGenerator */
@@ -120,7 +119,7 @@ class HTMLGenerator {
       for (let part of parts) {
         let newnode = Util.CreateNode(part);
         if (part instanceof URL) {
-          if (part.host === "clips.twitch.tv") {
+          if (part.host === "clips.twitch.tv" && this._config.ShowClips) {
             newnode.setAttribute("onmouseover", "onURLHover(this, true)");
             newnode.setAttribute("onmouseout", "onURLHover(this, false)");
           }
@@ -228,11 +227,13 @@ class HTMLGenerator {
       let badge_info = this._client.GetGlobalBadge(badge_name, badge_num);
       $b.attr('src', badge_info.image_url_1x);
       $b.attr('tw-badge-scope', 'global');
+      $b.attr("data-text", `Global badge`);
     } else if (this._client.IsChannelBadge(event.channel, badge_name)) {
       let badge_info = this._client.GetChannelBadge(event.channel, badge_name);
       let badge_src = badge_info.alpha || badge_info.image;
       $b.attr('src', badge_src);
       $b.attr('tw-badge', JSON.stringify(badge_info));
+      $b.attr("data-text", `Channel badge`);
       if (event.channel) {
         $b.attr('tw-badge-scope', 'channel');
         $b.attr('tw-badge-channel', event.channel.channel.replace(/^#/, ""));
