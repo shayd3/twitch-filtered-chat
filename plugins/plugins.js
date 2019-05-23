@@ -51,8 +51,8 @@ class PluginStorageClass {
   _path(plugin_def) { /* TODO: allow remote plugins */
     if (this.disabled || PluginStorageClass.disabled) { return; }
     let base = window.location.pathname;
-    if (base.endsWith('/index.html')) {
-      base = base.substr(0, base.lastIndexOf('/'));
+    if (base.endsWith("/index.html")) {
+      base = base.substr(0, base.lastIndexOf("/"));
     }
     return `${base}/plugins/${plugin_def.file}`;
   }
@@ -74,7 +74,7 @@ class PluginStorageClass {
     let self = this;
     let ctor = plugin.ctor;
     return new Promise(function(resolve, reject) {
-      let s = document.createElement('script');
+      let s = document.createElement("script");
       s.src = self._path(plugin);
       s.onload = function() {
         /* Construct the plugin */

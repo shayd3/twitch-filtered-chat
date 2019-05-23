@@ -14,8 +14,8 @@ function debug(msg) {
 }
 function doLoadScript(src, onload) {
   var s = document.createElement("script");
-  s.setAttribute('type', 'text/javascript');
-  s.setAttribute('src', src);
+  s.setAttribute("type", "text/javascript");
+  s.setAttribute("src", src);
   if (typeof(onload) === "function") {
     s.onload = onload;
   }
@@ -207,7 +207,5 @@ function onLoad() {
   <img id="btnSettings" src="assets/settings_white.png" alt="Settings" />
   <!-- Username context window -->
   <div id="userContext" class="userContext" style="display: none"></div>
-  <!-- URL hover information window -->
-  <div id="hoverInfo" class="hoverInfo" style="display: none"></div>
 </body>
 </html>

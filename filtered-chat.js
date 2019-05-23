@@ -2,14 +2,19 @@
 
 "use strict";
 
+/* FIXME:
+ * Subscribe messages aren't shown with subscribe alerts
+ */
+
 /* TODO:
- * Fix cssmarquee: .line::-webkit-scrollbar { display: none; } or something
- * Add layout selection box to #settings (reloads page on change)
  * Add to #settings help link
  * Add to #settings config link
+ * Finish badge information on hover
  * Add clip information on hover
  * Add emote information on hover
+ * Add layout selection box to #settings (reloads page on change)
  * Hide getConfigObject() within client_main()
+ * Fix cssmarquee: .line::-webkit-scrollbar { display: none; } or something
  */
 
 /* IDEA
@@ -17,9 +22,9 @@
  */
 
 /* NOTES:
- * Filtering ws "recv>" messages:
+ * Filtering ws "recv>" messages (to console):
  *   Util.Logger.add_filter(((m) => !`${m}`.startsWith("recv> ")), "DEBUG")
- * Filtering ws PRIVMSG messages:
+ * Filtering ws PRIVMSG messages (to console):
  *   Util.Logger.add_filter(((m) => `${m}`.indexOf(" PRIVMSG ") === -1, "DEBUG")
  */
 
@@ -830,34 +835,6 @@ function setNotify(notify=true) { /* exported setNotify */
   $("link[rel=\"shortcut icon\"]").attr("href", asset);
 }
 
-/* Display the information box when hovering over a URL */
-/* TODO: Use bind selectors rather than onmouseover */
-function onURLHover(elem, show) { /* exported onURLHover */
-  let $e = $(elem);
-  let $hi = $("#hoverInfo");
-  let slug = new URL($e.attr("href")).pathname.replace(/^\//, "");
-  if (!show) {
-    if ($hi.queue().length > 0) {
-      $hi.finish();
-    }
-    $hi.fadeOut();
-    return;
-  }
-
-  /* Position and show the box */
-  let e_offset = $e.offset();
-  let t = Math.round(e_offset.top) + $e.outerHeight() + 2;
-  let l = Math.round(e_offset.left);
-  let w = $hi.outerWidth();
-  let h = $hi.outerHeight();
-  let offset = {top: t, left: l, width: w, height: h};
-  Util.ClampToScreen(offset);
-  delete offset["width"];
-  delete offset["height"];
-  $hi.text(slug);
-  $hi.offset(offset).fadeIn();
-}
-
 /* Called once when the document loads */
 function client_main(layout) { /* exported client_main */
   let client;
@@ -1003,11 +980,6 @@ function client_main(layout) { /* exported client_main */
   ChatCommands.addHelp(Strings.TFC_UNUKE, {command: true});
 
   /* Bind all of the page assets {{{0 */
-
-  /* URL hover information box */
-  $("#hoverInfo").mouseleave(function(e) {
-    $(this).fadeOut();
-  });
 
   /* Sending a chat message */
   $("#txtChat").keydown(function(e) {
@@ -1202,10 +1174,12 @@ function client_main(layout) { /* exported client_main */
     let $cw = $("#userContext");
     let $m1s = $("#module1 .settings");
     let $m2s = $("#module2 .settings");
+    let $m1h = $("#module1 .header");
+    let $m2h = $("#module2 .header");
     /* Clicking off of module1 settings: hide it */
     if ($m1s.length > 0 && $m1s.is(":visible")) {
       if (!Util.PointIsOn(e.clientX, e.clientY, $m1s[0])
-          && !Util.PointIsOn(e.clientX, e.clientY, $("#module1 .header")[0])) {
+          && !Util.PointIsOn(e.clientX, e.clientY, $m1h[0])) {
         updateModuleConfig();
         let $tb = $m1s.siblings("input.name").hide();
         $m1s.siblings("label.name").html($tb.val()).show();
@@ -1215,7 +1189,7 @@ function client_main(layout) { /* exported client_main */
     /* Clicking off of module2 settings: hide it */
     if ($m2s.length > 0 && $m2s.is(":visible")) {
       if (!Util.PointIsOn(e.clientX, e.clientY, $m2s[0])
-          && !Util.PointIsOn(e.clientX, e.clientY, $("#module2 .header")[0])) {
+          && !Util.PointIsOn(e.clientX, e.clientY, $m2h[0])) {
         updateModuleConfig();
         let $tb = $m2s.siblings("input.name").hide();
         $m2s.siblings("label.name").html($tb.val()).show();

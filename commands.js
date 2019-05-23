@@ -52,8 +52,8 @@ class ChatCommandManager {
     if (!o.literal) t = this.formatArgs(t);
     if (o.indent) t = "&nbsp;&nbsp;" + t;
     if (o.command) {
-      let cmd = t.substr(0, t.indexOf(':'));
-      let msg = t.substr(t.indexOf(':')+1);
+      let cmd = t.substr(0, t.indexOf(":"));
+      let msg = t.substr(t.indexOf(":")+1);
       t = this.helpLine(cmd, msg);
     }
     this._help_text.push(t);
@@ -180,7 +180,7 @@ class ChatCommandManager {
   }
 
   formatArgs(s) {
-    return s.replace(/<([^>]+)>/g, (m, g) => '&lt;' + this.arg(g) + '&gt;');
+    return s.replace(/<([^>]+)>/g, (m, g) => "&lt;" + this.arg(g) + "&gt;");
   }
 
   printUsage(cmdobj) {
@@ -226,7 +226,7 @@ function command_log(cmd, tokens, client) {
       let lines = [];
       let line = [];
       for (let l of Object.values(logs)) {
-        let desc = '';
+        let desc = "";
         if (l._cmd) {
           desc = l._cmd;
         } else {
@@ -318,16 +318,17 @@ function command_badges(cmd, tokens, client) {
     }
   }
   /* Print global badges */
-  Content.addNotice(badges.join(''));
+  Content.addNotice(badges.join(""));
   /* Obtain channel badges */
   for (let ch of client.GetJoinedChannels()) {
     badges = [];
     for (let [bname, badge] of Object.entries(client.GetChannelBadges(ch))) {
       let url = badge.image || badge.svg || badge.alpha;
-      badges.push(`<img src="${url}" width="36" height="36" title="${bname}" alt="${bname}" />`);
+      let size = "width=\"36\" height=\"36\"";
+      badges.push(`<img src="${url}" ${size} title="${bname}" alt="${bname}" />`);
     }
     /* Print channel badges */
-    Content.addNotice(Twitch.FormatChannel(ch) + ": " + badges.join(''));
+    Content.addNotice(Twitch.FormatChannel(ch) + ": " + badges.join(""));
   }
 }
 

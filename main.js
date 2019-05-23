@@ -3,8 +3,8 @@
 "use strict";
 
 /* Module names (also used as directory names) */
-const MOD_TFC = 'twitch-filtered-chat';
-const MOD_TWAPI = 'twitch-api';
+const MOD_TFC = "twitch-filtered-chat";
+const MOD_TWAPI = "twitch-api";
 
 /* Obtain information based on window.location and navigator.userAgent */
 const URI = `${window.location}`;
@@ -12,10 +12,10 @@ const IS_LOCAL = window.location.protocol === "file:";
 const IS_HTTP = window.location.protocol === "http:";
 const IS_HTTPS = window.location.protocol === "https:";
 const IS_TESLA = Boolean(navigator.userAgent.match(/\bTesla\b/));
-const IS_GITIO = window.location.hostname.indexOf('github.io') > -1;
+const IS_GITIO = window.location.hostname.indexOf("github.io") > -1;
 const USE_DIST = Boolean(window.location.search.match(/\busedist\b/)) || IS_TESLA;
-const BASE_URI = URI.substr(0, URI.indexOf(MOD_TFC)).replace(/\/$/, '');
-const SELF_URI = URI.replace(/\/index.html(\?.*)?$/, '');
+const BASE_URI = URI.substr(0, URI.indexOf(MOD_TFC)).replace(/\/$/, "");
+const SELF_URI = URI.replace(/\/index.html(\?.*)?$/, "");
 
 /* Asset storage object */
 var ASSETS = {};
@@ -36,9 +36,9 @@ function _console_debug(...args) { return _console("debug", ...args); }
 /* Parse layout= query string value */
 function ParseLayout(str) { /* exported ParseLayout */
   let layout = {Cols: null, Chat: true, Slim: false};
-  if (str.indexOf(':') > -1) {
-    let v1 = str.substr(0, str.indexOf(':'));
-    let v2 = str.substr(str.indexOf(':')+1);
+  if (str.indexOf(":") > -1) {
+    let v1 = str.substr(0, str.indexOf(":"));
+    let v2 = str.substr(str.indexOf(":")+1);
     if (v1 === "single") {
       layout.Cols = "single";
     } else if (v1 === "double") {
@@ -53,7 +53,7 @@ function ParseLayout(str) { /* exported ParseLayout */
       layout.Slim = true;
       layout.Chat = false;
     } else if (v2 !== "chat") {
-      _console_warn('Unknown layout option', v2);
+      _console_warn("Unknown layout option", v2);
     }
   } else if (str === "single") {
     layout.Cols = "single";
@@ -94,7 +94,7 @@ function FormatLayout(layout) { /* exported FormatLayout */
 /* Obtain the final path to an asset */
 function GetAssetURL(file, tree) {
   let path = file;
-  let root = '';
+  let root = "";
   if (tree === MOD_TFC) {
     if (USE_DIST) {
       root = `${SELF_URI}/dist`;
@@ -111,7 +111,7 @@ function GetAssetURL(file, tree) {
     } else {
       root = `${BASE_URI}/${MOD_TWAPI}`;
     }
-  } else if (file.startsWith('//')) {
+  } else if (file.startsWith("//")) {
     if (IS_HTTPS) {
       path = `https:${file}`;
     } else if (IS_HTTP) {
@@ -209,19 +209,19 @@ function Main(global) { /* exported Main */
     let $Module1 = $("#module1");
     let $Module2 = $("#module2");
     let $Modules = $(".module");
-    $Modules.find('.clear-chat-icon')
+    $Modules.find(".clear-chat-icon")
             .attr("width", "1.1em")
             .attr("height", "1.1em");
-    $Modules.find('.header .settings input[type="checkbox"]')
-            .attr('checked', 'checked');
-    $Modules.find('.header label.name')
-            .val('Chat');
-    $Modules.find('.header input.name')
-            .attr("value", 'Chat');
+    $Modules.find(".header .settings input[type=\"checkbox\"]")
+            .attr("checked", "checked");
+    $Modules.find(".header label.name")
+            .val("Chat");
+    $Modules.find(".header input.name")
+            .attr("value", "Chat");
 
     if (layout.Cols === "single") {
       $Column1.removeClass("left").addClass("full");
-      $Module1.removeClass("left").addClass('full');
+      $Module1.removeClass("left").addClass("full");
       $Column1.show();
       $Column2.remove();
     } else {
