@@ -17,8 +17,9 @@
  * Fix cssmarquee: .line::-webkit-scrollbar { display: none; } or something
  */
 
-/* IDEA
+/* IDEAS:
  * Allow for a configurable number of columns?
+ * Add re-include (post-exclude) filtering options?
  */
 
 /* NOTES:

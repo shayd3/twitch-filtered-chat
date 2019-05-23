@@ -203,22 +203,21 @@ function Main(global) { /* exported Main */
             .attr("hist-index", "-1");
     let $Chat = $(`<div id="chat"></div>`).append($ChatBox);
 
+    /* Apply default settings and formatting */
     let $Column1 = $("#column1");
     let $Column2 = $("#column2");
     let $Columns = $(".column");
     let $Module1 = $("#module1");
     let $Module2 = $("#module2");
     let $Modules = $(".module");
-    $Modules.find(".clear-chat-icon")
-            .attr("width", "1.1em")
-            .attr("height", "1.1em");
+    /* Default: all checkboxes are checked */
     $Modules.find(".header .settings input[type=\"checkbox\"]")
             .attr("checked", "checked");
-    $Modules.find(".header label.name")
-            .val("Chat");
-    $Modules.find(".header input.name")
-            .attr("value", "Chat");
+    /* Default: modules are named "Chat" */
+    $Modules.find(".header label.name").val("Chat");
+    $Modules.find(".header input.name").attr("value", "Chat");
 
+    /* Apply single-column layout */
     if (layout.Cols === "single") {
       $Column1.removeClass("left").addClass("full");
       $Module1.removeClass("left").addClass("full");

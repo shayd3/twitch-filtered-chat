@@ -9,8 +9,9 @@
  * Add layout selection box to #settings (reloads page on change)
  * Hide getConfigObject() within client_main()
  * Fix cssmarquee: .line::-webkit-scrollbar { display: none; } or something
- *//* IDEA
+ *//* IDEAS:
  * Allow for a configurable number of columns?
+ * Add re-include (post-exclude) filtering options?
  *//* NOTES:
  * Filtering ws "recv>" messages (to console):
  *   Util.Logger.add_filter(((m) => !`${m}`.startsWith("recv> ")), "DEBUG")
