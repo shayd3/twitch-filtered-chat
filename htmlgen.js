@@ -2,8 +2,12 @@
 
 "use strict";
 
+/* FIXME:
+ * URL transform removes emotes, at-user
+ */
+
 /* TODO:
- * Add badge information on hover
+ * Add more badge information on hover
  * Add emote information on hover (wrap emote in <span>)
  * Add clip information on hover
  * Implement "new user" ritual
@@ -30,10 +34,6 @@ class HTMLGenerator {
     if (!this._config.ShowClips) this._config.ShowClips = false;
   }
 
-  get name() {
-    return this._client.GetName();
-  }
-
   setValue(k, v) {
     this._config[k] = v;
   }
@@ -52,8 +52,7 @@ class HTMLGenerator {
   getColorFor(username) {
     let name = `${username}`;
     if (typeof(username) !== "string") {
-      Util.Error(`Expected string, got ${typeof(username)}: ` +
-                 JSON.stringify(username));
+      Util.Error("Expected string, got", typeof(username), JSON.stringify(username));
     }
     if (!this._user_colors.hasOwnProperty(name)) {
       /* Taken from Twitch vendor javascript */
@@ -79,17 +78,11 @@ class HTMLGenerator {
 
   genName(name, color) {
     let $e = $(`<span class="username"></span>`);
-    if (color) {
-      $e.css("color", color);
-    } else if (this.getColorFor(name)) {
-      $e.css("color", this.getColorFor(name));
-    } else {
-      $e.css("color", "#ffffff");
-    }
+    $e.css("color", color || this.getColorFor(name) || "#ffffff");
     /* Determine the best border color to use */
     let [attr, val] = this.genBorderCSS($e.css("color"));
     $e.css(attr, val);
-    /* Makes it so clicking on the name opens the context window */
+    /* Clicking on the name will open the context window */
     $e.attr("data-username", "1");
     $e.text(name);
     return $e[0].outerHTML;
@@ -167,26 +160,37 @@ class HTMLGenerator {
   }
 
   _emote(source, url, opts=null) {
-    let $i = $(`<img class="emote ${source.replace(/[^a-z0-9_]/g, "")}">`);
+    let cls = `${source.replace(/[^a-z0-9_]/g, "")}-emote`;
+    let $w = $(`<span class="emote-wrapper ${cls}"></span>`);
+    let $i = $(`<img class="emote ${cls}" />`);
     $i.attr("src", url);
     $i.attr("data-emote-src", source);
-    if (opts.id) {
-      $i.attr("data-emote-id", opts.id);
-      $i.attr("alt", opts.name);
-      $i.attr("title", opts.name);
+    if (opts) {
+      if (opts.id) {
+        $i.attr("data-emote-id", opts.id);
+        $i.attr("alt", opts.name);
+        $i.attr("title", opts.name);
+        $w.attr("data-emote-name", opts.id);
+      }
+      if (opts.name) {
+        $i.attr("data-emote-name", opts.name);
+        /* opts.name overrides opts.id */
+        $i.attr("alt", opts.name);
+        $i.attr("title", opts.name);
+        $w.attr("data-emote-name", opts.id);
+      }
+      if (opts.w || opts.width) {
+        $i.attr("width", opts.w || opts.width);
+      }
+      if (opts.h || opts.height) {
+        $i.attr("height", opts.h || opts.height);
+      }
+      if (opts.def) {
+        $i.attr("data-emote-def", JSON.stringify(opts.def));
+      }
     }
-    if (opts.name) {
-      $i.attr("data-emote-name", opts.name);
-      $i.attr("alt", opts.name);
-      $i.attr("title", opts.name);
-    }
-    if (opts.w || opts.width) {
-      $i.attr("width", opts.w || opts.width);
-    }
-    if (opts.h || opts.height) {
-      $i.attr("height", opts.h || opts.height);
-    }
-    return $i[0].outerHTML;
+    $w.append($i);
+    return $("<div></div>").append($w).html();
   }
 
   _twitchEmote(id) {
@@ -393,7 +397,7 @@ class HTMLGenerator {
         let msg_start = message.substr(0, emote.start);
         let msg_end = message.substr(emote.end+1);
         let emote_str = this._emote("twitch", this._client.GetEmote(emote.id),
-                                    {id: emote.id, name: emote.name});
+                                    {id: emote.id, name: emote.name, def: emote});
         message = `${msg_start}${emote_str}${msg_end}`;
         /* Adjust the map */
         for (let idx = emote.ostart; idx < map.length; ++idx) {
@@ -420,7 +424,7 @@ class HTMLGenerator {
         let edef = emote.id;
         let url = edef.urls[Object.keys(edef.urls).min()];
         let emote_str = this._emote("ffz", url,
-                                    {id: edef.id, w: edef.width, h: edef.height});
+                                    {id: edef.id, w: edef.width, h: edef.height, def: edef});
         let msg_start = message.substr(0, map[emote.start]);
         let msg_end = message.substr(map[emote.end+1]);
         message = `${msg_start}${emote_str}${msg_end}`;
@@ -451,7 +455,7 @@ class HTMLGenerator {
     while (results.length > 0) {
       let emote = results.pop();
       let edef = emotes[emote.id];
-      let emote_str = this._emote("bttv", edef.url, {id: edef.id});
+      let emote_str = this._emote("bttv", edef.url, {id: edef.id, name: edef.code, def: edef});
       let msg_start = message.substr(0, map[emote.start]);
       let msg_end = message.substr(map[emote.end+1]);
       message = `${msg_start}${emote_str}${msg_end}`;
@@ -464,7 +468,8 @@ class HTMLGenerator {
   _msgAtUserTransform(event, message, map, $msg, $effects) {
     let pat = /(^|\b\s*)(@\w+)(\s*\b|$)/g;
     message = message.replace(pat, (function(m, p1, p2, p3) {
-      if (p2.substr(1).toLowerCase() === this.name.toLowerCase()) {
+      let name = this._client.GetName().toLowerCase();
+      if (p2.substr(1).toLowerCase() === name) {
         $msg.addClass("highlight");
         return `${p1}<em class="at-user at-self">${p2}</em>${p3}`;
       } else {
@@ -475,7 +480,9 @@ class HTMLGenerator {
   }
 
   _msgURLTransform(event, message, map, $msg, $effects) {
-    return this.formatURLs(message);
+    /* FIXME: Breaks non-text elements */
+    /*return this.formatURLs(message);*/
+    return message;
   }
 
   _genMsgInfo(event) {

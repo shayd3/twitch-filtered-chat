@@ -7,8 +7,6 @@
  * Feel free to change the default variables below.
  */
 
-/* FIXME: Badge tooltip window doesn't show */
-
 :root {
   /* Default colors (used by ?trans=1 because "-color-default") */
   --body-color-default: #0E0E0E;
@@ -439,7 +437,7 @@ input {
 .module .content .line span.badge:hover::after {
   content: attr(data-text);
   position: absolute;
-  padding: 12px;
+  padding: 4px;
   top: 24px;
   left: 0;
   border: 1px #aaaaaa solid;
@@ -450,12 +448,6 @@ input {
   white-space: pre-wrap;
   z-index: 18;
 }
-
-/* Following does not work
-.module .content .line span.badge[data-icon-large-src]:hover::after {
-  content: url(attr(data-icon-large-src)) attr(data-text);
-}
-*/
 
 .module .content .line span.badge img.badge {
   position: relative;
@@ -829,9 +821,11 @@ body.slim #btnSettings {
  *  div.line.line-wrapper
  *   div.chat-line
  *    span.badges
- *     img.badge
+ *     span.badge
+ *      img.badge
  *    span.username
  *    span.message
- *     img.emote (one of .twitch-emote, .ffz-emote, or .bttv-emote)
+ *     span.emote-wrapper (one of .twitch-emote, .ffz-emote, or .bttv-emote)
+ *      img.emote (one of .twitch-emote, .ffz-emote, or .bttv-emote)
  */
 
