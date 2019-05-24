@@ -36,12 +36,18 @@ const CFGKEY_DEFAULT = "tfc-config";
 /* Document writing functions {{{0 */
 
 class Content { /* exported Content */
-  static addHTML(content, container=null) {
+  static addHTML(content, container=null, callbacks=null) {
     let $Line = $(`<div class="line line-wrapper"></div>`);
-    let $Content = container ? $(container) : $(".module").find(".content");
-    $Line.append(content);
-    $Content.append($Line);
-    $Content.scrollTop(Math.pow(2, 31) - 1);
+    let $Container = container ? $(container) : $(".module").find(".content");
+    let $Content = $(content);
+    if (callbacks) {
+      for (let cb of callbacks) {
+        cb($Content);
+      }
+    }
+    $Line.append($Content);
+    $Container.append($Line);
+    $Container.scrollTop(Math.pow(2, 31) - 1);
   }
   static addPre(content) {
     Content.addHTML($(`<div class="pre"></div>`).html(content));
