@@ -166,37 +166,31 @@ class HTMLGenerator {
     }
   }
 
-  _twitchEmote(emote) {
-    /* Usage: _twitchEmote({id: "Kappa", name: "Kappa"}) */
-    if (emote.id !== null) {
-      let $e = $(`<img class="emote twitch-emote" />`);
-      $e.attr("data-emote-src", "twitch");
-      $e.attr("data-emote-id", emote.id);
-      $e.attr("src", this._client.GetEmote(emote.id));
-      if (emote.name) {
-        $e.attr("alt", emote.name);
-        $e.attr("title", emote.name);
-      }
-      let html = $e[0].outerHTML;
-      emote.final_length = html.length;
-      return html;
+  _emote(source, url, opts=null) {
+    let $i = $(`<img class="emote ${source.replace(/[^a-z0-9_]/g, "")}">`);
+    $i.attr("src", url);
+    $i.attr("data-emote-src", source);
+    if (opts.id) {
+      $i.attr("data-emote-id", opts.id);
+      $i.attr("alt", opts.name);
+      $i.attr("title", opts.name);
     }
-    return null;
-  }
-
-  _addonEmote(addon, src, id, w=null, h=null) {
-    let ident = addon.replace(/[^a-z0-9_]/g, "");
-    let $i = $(`<img class="emote">`);
-    $i.addClass(`${ident}-emote`);
-    $i.attr(`${ident}-emote-id`, id);
-    $i.attr("src", src);
-    if (w !== null) {
-      $i.attr("width", w);
+    if (opts.name) {
+      $i.attr("data-emote-name", opts.name);
+      $i.attr("alt", opts.name);
+      $i.attr("title", opts.name);
     }
-    if (h !== null) {
-      $i.attr("height", h);
+    if (opts.w || opts.width) {
+      $i.attr("width", opts.w || opts.width);
+    }
+    if (opts.h || opts.height) {
+      $i.attr("height", opts.h || opts.height);
     }
     return $i[0].outerHTML;
+  }
+
+  _twitchEmote(id) {
+    return this._emote("twitch", this._client.GetEmote(id), {id: id});
   }
 
   _genCheer(cheer, bits) {
@@ -222,50 +216,35 @@ class HTMLGenerator {
         $s.attr(attr, elem.attr(attr));
       }
     }
-    let data = (aname) => elem.attr("data-" + aname);
+    let getData = (aname) => elem.attr("data-" + aname);
     let lines = [];
-    /* TODO: Obtain formatted badge name (title-case) */
-    lines.push(data("badge-name") + "/" + data("badge-num"));
-    let scope = data("badge-scope");
+    let info_str = getData("badge");
+    if (info_str.length > 0) {
+      let info = JSON.parse(info_str);
+      if (info.image_url_4x) {
+        $s.attr("data-icon-large-src", info.image_url_4x);
+      } else if (info.image_url_2x) {
+        $s.attr("data-icon-large-src", info.image_url_2x);
+      }
+    }
+    let badge_desc = `${getData("badge-name")} (${getData("badge-num")})`;
+    badge_desc = badge_desc.replace(/^[a-z]/, (e) => e.toUpperCase());
+    lines.push(badge_desc);
+    let scope = getData("badge-scope");
     if (scope === "global") {
       lines.push("Global");
     } else if (scope === "channel") {
-      lines.push(data("badge-channel"));
+      lines.push("Channel Badge");
+      lines.push("#" + getData("badge-channel"));
     } else if (scope === "ffz") {
       lines.push("FFZ");
     } else if (scope === "bttv") {
       lines.push("BTTV");
     }
     /* TODO: Add more to $s.attr("data-text") */
-    $s.attr("data-text", lines.join("\n"));
+    /* Replace spaces in each line with &nbsp; (\xa0, 160) */
+    $s.attr("data-text", lines.map((l) => l.replace(/ /g, "\xa0")).join("\n"));
     return $s.append(elem);
-  }
-
-  _genTwitchBadge(event, badge_name, badge_num) {
-    let $b = $(`<img class="badge" width="18px" height="18px" />`);
-    $b.attr("data-badge-name", badge_name);
-    $b.attr("data-badge-num", badge_num);
-    $b.attr("data-badge-cause", JSON.stringify([badge_name, badge_num]));
-    $b.attr("data-badge", "1");
-    $b.attr("title", `${badge_name}/${badge_num}`);
-    $b.attr("alt", `${badge_name}/${badge_num}`);
-    if (this._client.IsGlobalBadge(badge_name, badge_num)) {
-      let badge_info = this._client.GetGlobalBadge(badge_name, badge_num);
-      $b.attr("src", badge_info.image_url_1x);
-      $b.attr("data-badge-scope", "global");
-    } else if (this._client.IsChannelBadge(event.channel, badge_name)) {
-      let badge_info = this._client.GetChannelBadge(event.channel, badge_name);
-      let badge_src = badge_info.alpha || badge_info.image;
-      $b.attr("src", badge_src);
-      $b.attr("data-badge", JSON.stringify(badge_info));
-      if (event.channel) {
-        $b.attr("data-badge-scope", "channel");
-        $b.attr("data-badge-channel", event.channel.channel.replace(/^#/, ""));
-      }
-    } else {
-      return null;
-    }
-    return this._wrapBadge($b);
   }
 
   _genBadges(event) {
@@ -287,13 +266,30 @@ class HTMLGenerator {
     /* Add Twitch-native badges */
     if (event.flags.badges) {
       for (let [badge_name, badge_num] of event.flags.badges) {
-        let $b = this._genTwitchBadge(event, badge_name, badge_num);
-        if ($b === null) {
+        let $b = $(`<img class="badge" width="18px" height="18px" />`);
+        $b.attr("data-badge-name", badge_name);
+        $b.attr("data-badge-num", badge_num);
+        $b.attr("data-badge-cause", JSON.stringify([badge_name, badge_num]));
+        $b.attr("data-badge", "1");
+        $b.attr("title", `${badge_name}/${badge_num}`);
+        $b.attr("alt", `${badge_name}/${badge_num}`);
+        if (this._client.IsGlobalBadge(badge_name, badge_num)) {
+          let badge_info = this._client.GetGlobalBadge(badge_name, badge_num);
+          $b.attr("src", badge_info.image_url_1x);
+          $b.attr("data-badge-scope", "global");
+          $b.attr("data-badge", JSON.stringify(badge_info));
+        } else if (this._client.IsChannelBadge(event.channel, badge_name)) {
+          let badge_info = this._client.GetChannelBadge(event.channel, badge_name);
+          let badge_src = badge_info.alpha || badge_info.image;
+          $b.attr("src", badge_src);
+          $b.attr("data-badge", JSON.stringify(badge_info));
+          $b.attr("data-badge-scope", "channel");
+          $b.attr("data-badge-channel", event.channel.channel.replace(/^#/, ""));
+        } else {
           Util.Warn("Unknown badge", badge_name, badge_num, "for", event);
           continue;
-        } else {
-          $bc.append(this._wrapBadge($b));
         }
+        $bc.append(this._wrapBadge($b));
       }
     }
     /* Add FFZ badges */
@@ -396,12 +392,13 @@ class HTMLGenerator {
         let emote = emotes.pop();
         let msg_start = message.substr(0, emote.start);
         let msg_end = message.substr(emote.end+1);
-        let emote_str = this._twitchEmote(emote);
+        let emote_str = this._emote("twitch", this._client.GetEmote(emote.id),
+                                    {id: emote.id, name: emote.name});
         message = `${msg_start}${emote_str}${msg_end}`;
         /* Adjust the map */
         for (let idx = emote.ostart; idx < map.length; ++idx) {
           if (map[idx] >= emote.end) {
-            map[idx] += emote.final_length - (emote.end - emote.start) - 1;
+            map[idx] += emote_str.length - (emote.end - emote.start) - 1;
           }
         }
       }
@@ -422,7 +419,8 @@ class HTMLGenerator {
         let emote = results.pop();
         let edef = emote.id;
         let url = edef.urls[Object.keys(edef.urls).min()];
-        let emote_str = this._addonEmote("ffz", url, edef.id, edef.width, edef.height);
+        let emote_str = this._emote("ffz", url,
+                                    {id: edef.id, w: edef.width, h: edef.height});
         let msg_start = message.substr(0, map[emote.start]);
         let msg_end = message.substr(map[emote.end+1]);
         message = `${msg_start}${emote_str}${msg_end}`;
@@ -453,7 +451,7 @@ class HTMLGenerator {
     while (results.length > 0) {
       let emote = results.pop();
       let edef = emotes[emote.id];
-      let emote_str = this._addonEmote("bttv", edef.url, edef.id);
+      let emote_str = this._emote("bttv", edef.url, {id: edef.id});
       let msg_start = message.substr(0, map[emote.start]);
       let msg_end = message.substr(map[emote.end+1]);
       message = `${msg_start}${emote_str}${msg_end}`;
@@ -616,7 +614,7 @@ class HTMLGenerator {
   sub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
-    let e = this._twitchEmote({"id": "PogChamp"});
+    let e = this._twitchEmote("PogChamp");
     $m.text(Strings.Sub(TwitchSubEvent.PlanName(event.plan_id)));
     $m.html(e + "&nbsp;" + $m.html());
     $w.append($m);
@@ -627,7 +625,7 @@ class HTMLGenerator {
   resub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
-    let e = this._twitchEmote({"id": "PogChamp"});
+    let e = this._twitchEmote("PogChamp");
     let months = event.months || event.total_months;
     let streak = event.streak_months;
     let plan = TwitchSubEvent.PlanName(event.plan_id);
@@ -653,7 +651,7 @@ class HTMLGenerator {
       let plan = TwitchSubEvent.PlanName(event.plan_id);
       $m.text(Strings.GiftSub(gifter, plan, user));
     }
-    let e = this._twitchEmote({"id": "HolidayPresent"});
+    let e = this._twitchEmote("HolidayPresent");
     $m.html(e + "&nbsp;" + $m.html());
     $w.append($m);
     this._checkUndefined(event, $w);
@@ -670,7 +668,7 @@ class HTMLGenerator {
       let plan = TwitchSubEvent.PlanName(event.plan_id);
       $m.text(Strings.AnonGiftSub(plan, user));
     }
-    let e = this._twitchEmote({"id": "HolidayPresent"});
+    let e = this._twitchEmote("HolidayPresent");
     $m.html(e + "&nbsp;" + $m.html());
     $w.append($m);
     this._checkUndefined(event, $w);
@@ -689,7 +687,7 @@ class HTMLGenerator {
       let user = this.genName(raider, event.flags.color);
       $w.html(Strings.Raid(user, count));
     }
-    let e = this._twitchEmote({"id": "TombRaid"});
+    let e = this._twitchEmote("TombRaid");
     $w.html(e + "&nbsp;" + $w.html());
     this._checkUndefined(event, $w);
     return $w[0].outerHTML;

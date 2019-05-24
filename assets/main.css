@@ -439,15 +439,23 @@ input {
 .module .content .line span.badge:hover::after {
   content: attr(data-text);
   position: absolute;
-  left: 0;
+  padding: 12px;
   top: 24px;
+  left: 0;
   border: 1px #aaaaaa solid;
   border-radius: 10px;
-  background-color: #3c3c3c;
   color: #c3c3c3;
-  padding: 12px;
+  background-color: #3c3c3c;
+  text-align: center;
+  white-space: pre-wrap;
   z-index: 18;
 }
+
+/* Following does not work
+.module .content .line span.badge[data-icon-large-src]:hover::after {
+  content: url(attr(data-icon-large-src)) attr(data-text);
+}
+*/
 
 .module .content .line span.badge img.badge {
   position: relative;
@@ -651,6 +659,20 @@ body.slim #btnSettings {
 }
 
 /* End username context window 0}}} */
+
+/* Hover context window {{{0 */
+
+#hoverContext {
+  position: absolute;
+  border: 1px #aaaaaa solid;
+  border-radius: 10px;
+  color: #c3c3c3;
+  background-color: #3c3c3c;
+  text-align: center;
+  z-index: 18;
+}
+
+/* End hover context window 0}}} */
 
 /* CSS custom marquee {{{0 */
 
