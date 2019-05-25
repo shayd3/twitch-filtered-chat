@@ -3,12 +3,13 @@
 "use strict";
 
 /* FIXME:
- * URL transform removes emotes, at-user
+ * Subs show "1000" instead of "Tier 1"
+ * (maybe?) Tier 2+ subs show as "1000"
  */
 
 /* TODO:
  * Add more badge information on hover
- * Add emote information on hover (wrap emote in <span>)
+ * Add emote information on hover
  * Add clip information on hover
  * Implement "new user" ritual
  * Implement "light" and "dark" colorschemes
@@ -480,9 +481,54 @@ class HTMLGenerator {
   }
 
   _msgURLTransform(event, message, map, $msg, $effects) {
-    /* FIXME: Breaks non-text elements */
-    /*return this.formatURLs(message);*/
-    return message;
+    let $m = $("<span></span>").html(message);
+    /* SearchTree predicate */
+    function text_and_has_url(elem) {
+      if (elem.nodeType === Node.TEXT_NODE) {
+        if (elem.nodeValue.match(Util.URL_REGEX)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    /* SplitByMatches map function */
+    let to_url = (u) => new URL(Util.URL(u));
+    /* Obtain the text nodes that contain URLs */
+    let nodes = Util.SearchTree($m[0], text_and_has_url);
+    let replace_info = [];
+    /* Populate nodes and their new contents */
+    for (let node of nodes) {
+      let matches = node.nodeValue.match(Util.URL_REGEX);
+      let parts = Util.SplitByMatches(node.nodeValue, matches, to_url);
+      let newNodes = [];
+      /* Populate the previous siblings */
+      for (let n = node.previousSibling; n; n = n.previousSibling) {
+        newNodes.unshift(n);
+      }
+      /* Populate the URL */
+      for (let part of parts) {
+        let newnode = Util.CreateNode(part);
+        if (part instanceof URL) {
+          if (part.host === "clips.twitch.tv" && this._config.ShowClips) {
+            newnode.setAttribute("data-clip", "1");
+          }
+        }
+        newNodes.push(newnode);
+      }
+      /* Populate the subsequent siblings */
+      for (let n = node.nextSibling; n; n = n.nextSibling) {
+        newNodes.push(n);
+      }
+      replace_info.push([node.parentNode, newNodes]);
+    }
+    /* Replace the nodes' contents with the new children */
+    for (let [node, children] of replace_info) {
+      node.innerHTML = "";
+      for (let child of children) {
+        node.innerHTML += Util.GetHTML(child);
+      }
+    }
+    return $m.html();
   }
 
   _genMsgInfo(event) {
