@@ -30,7 +30,7 @@ function BuildMessage(flag_obj, cmd=null, msg=null) {
 
   let flag_str = Object.entries(flags).map(([k,v]) => (`${k}=${v}`)).join(";");
   let message = `@${flag_str} :${user} ${cmd} ${ch}`;
-  if (cmd === "PRIVMSG") { message = `${message} :${msg}`; }
+  if (msg !== null) { message = `${message} :${msg}`; }
   if (!message.endsWith("\r\n")) message += "\r\n";
 
   console.log(flags, user, ch, message);
@@ -48,6 +48,16 @@ const TEST_MESSAGES = {
   "NEW_CHATTER": "@badge-info=;badges=;color=;display-name=SevenTest1;flags=;id=37feed0f-b9c7-4c3a-b475-21c6c6d21c3d;mod=0;subscriber=0;turbo=0;emotes=30259:0-6;user-type=;user-id=131260580;room-id=6316121;tmi-sent-ts=1508363903826;login=seventest1;msg-id=ritual;msg-param-ritual-name=new_chatter;system-msg=Seventoes\\sis\\snew\\shere! :kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv USERNOTICE #dwangoac\r\n"
 };
 
+TEST_MESSAGES.RESUB2 = BuildMessage({
+  "msg-id": "resub",
+  "msg-param-cumulative-months": "6",
+  "msg-param-streak-months": "2",
+  "msg-param-should-share-streak": "1",
+  "msg-param-sub-plan": "1000",
+  "msg-param-sub-plan-name": "1000",
+  "system-msg": "An unknown user has possibly subscribed for 6 months!"
+}, "USERNOTICE", "Great stream -- keep it up!");
+
 TEST_MESSAGES.GIFTSUB2 = BuildMessage({
   "msg-id": "subgift",
   "msg-param-months": "1",
@@ -60,6 +70,7 @@ TEST_MESSAGES.GIFTSUB2 = BuildMessage({
   "msg-param-sub-plan": "1000",
   "system-msg": "Kaedenn gifted a Tier 1 sub to Kaedenn_! This is their first Gift Sub in the channel!"
 }, "USERNOTICE");
+
 TEST_MESSAGES.EFFECT1 = BuildMessage({"bits": "100"}, "PRIVMSG",
   "cheer100 bold marquee rainbow This text is bold, rainbow, and scrolling across the screen");
 TEST_MESSAGES.EFFECT2 = BuildMessage({"bits": "100"}, "PRIVMSG",
