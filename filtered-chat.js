@@ -14,6 +14,7 @@
 /* TODO:
  * Add to #settings help link
  * Add to #settings config link
+ * Implement //config set and //config setobj
  * Finish badge information on hover
  * Add clip information on hover
  * Add emote information on hover
@@ -1169,8 +1170,8 @@ function client_main(layout) { /* exported client_main */
 
   /* Clicking on a "Clear" link */
   $(".module .header .clear-link").click(function() {
-    /* TODO: ESCAPE */
-    $(`#${$(this).attr("data-for")} .content`).find(".line-wrapper").remove();
+    let modid = CSS.escape($(this).attr("data-for"));
+    $(`#${modid} .content`).find(".line-wrapper").remove();
   });
 
   /* Pressing enter on one of the module menu text boxes */
@@ -1377,8 +1378,8 @@ function client_main(layout) { /* exported client_main */
             $(".content").children().remove();
           } else if (tokens[1] === "nuke") {
             if (tokens[2] && tokens[2].length > 1) {
-              /* TODO: ESCAPE */
-              $(`[data-user="${tokens[2].toLowerCase()}"]`).parent().remove();
+              let name = CSS.escape(tokens[2].toLowerCase());
+              $(`[data-user="${name}"]`).parent().remove();
             } else {
               $(".content").children().remove();
             }
@@ -1401,8 +1402,8 @@ function client_main(layout) { /* exported client_main */
   client.bind("twitch-clearchat", function _on_twitch_clearchat(e) {
     if (e.has_flag("target-user-id")) {
       /* Moderator timed out a user */
-      let r = e.flags["room-id"]; /* TODO: ESCAPE */
-      let u = e.flags["target-user-id"]; /* TODO: ESCAPE */
+      let r = CSS.escape(e.flags["room-id"]);
+      let u = CSS.escape(e.flags["target-user-id"]);
       let l = $(`.chat-line[data-channel-id="${r}"][data-user-id="${u}"]`);
       l.parent().remove();
     } else {

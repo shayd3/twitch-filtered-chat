@@ -15,7 +15,6 @@
  * Add clip information on hover
  * Implement "new user" ritual
  * Implement "light" and "dark" colorschemes
- * Implement //config set and //config setobj
  */
 
 /* exported HTMLGenerator */
