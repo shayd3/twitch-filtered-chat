@@ -3,6 +3,11 @@
 "use strict";
 
 /* FIXME:
+ * HTMLGen @user transform broken
+ * HTMLGen shows Tier 1 subs as "1000"
+ * HTMLGen shows Tier 2+ subs as "1000" (unconfirmed)
+ * Configuration is lost if &module configuration is present
+ *  getConfigObject overrides changes with query string
  * Subscribe messages aren't shown with subscribe alerts
  */
 
@@ -335,11 +340,17 @@ function getConfigObject(inclSensitive=true) {
 }
 
 /* Store configuration */
-function setConfigObject(to_merge=null) {
+function mergeConfigObject(to_merge=null) {
   let merge = to_merge || {};
   let config = getConfigObject();
-  for (let [k,v] of Object.entries(merge)) {
-    config[k] = v;
+  if (Util.IsArray(merge)) {
+    for (let [k, v] of merge) {
+      config[k] = v;
+    }
+  } else {
+    for (let [k,v] of Object.entries(merge)) {
+      config[k] = v;
+    }
   }
   Util.SetWebStorage(config);
 }
@@ -474,7 +485,7 @@ function updateModuleConfig() {
   $(".module").each(function() {
     config[$(this).attr("id")] = getModuleSettings($(this));
   });
-  setConfigObject(config);
+  mergeConfigObject(config);
 }
 
 /* End module configuration 1}}} */
@@ -820,8 +831,7 @@ function client_main(layout) { /* exported client_main */
           Content.addHelpLine("git", "Generate link using github.io");
           Content.addHelpLine("text", "Don't base64-encode the URL");
           Content.addHelpLine("auth", "Include ClientID and OAuth information");
-          Content.addHelp("//config &lt;key&gt; set &lt;value&gt;: change &lt;key&gt; to &lt;value&gt; (dangerous)");
-          Content.addHelp("//config &lt;key&gt; setobj &lt;value&gt;: change &lt;key&gt; to JSON object &lt;value&gt; (dangerous)");
+          Content.addHelp("//config set &lt;key&gt; &lt;value&gt;: change &lt;key&gt; to &lt;value&gt; (dangerous)");
         } else if (t0 === "purge") {
           Util.SetWebStorage({});
           Content.addNotice(`Purged storage "${Util.GetWebStorageKey()}"`);
@@ -875,16 +885,29 @@ function client_main(layout) { /* exported client_main */
             url += "?base64=" + encodeURIComponent(btoa(qs.join("&")));
           }
           Content.addHelp(client.get("HTMLGen").url(url));
+        } else if (t0 === "set" || t0 === "setobj" && tokens.length > 2) {
+          let key = tokens[1];
+          let val = tokens.slice(2).join(" ");
+          let valobj = null;
+          /* TODO: allow //config set module1.Bits true */
+          if (t0 === "setobj") {
+            valobj = JSON.parse(val);
+          } else if (val === "true") {
+            valobj = true;
+          } else if (val === "false") {
+            valobj = false;
+          } else if (val.match(/^[+-]?[1-9][0-9]*$/)) {
+            valobj = Number.parseInt(val);
+          } else if (val.match(/^[-+]?(?:[0-9]*\.[0-9]+|[0-9]+)$/)) {
+            valobj = Number.parseFloat(val);
+          }
+          Util.Log(`Changing ${key} from "${cfg[key]}" to "${JSON.stringify(valobj)}"`);
+          Content.addHelpLine(key, JSON.stringify(cfg[key]));
+          Content.addHelpLine(key, JSON.stringify(valobj));
+          /* TODO */
+          Content.addNotice("Not yet implemented");
         } else if (cfg.hasOwnProperty(t0)) {
           Content.addHelpLine(t0, JSON.stringify(cfg[t0]));
-          if (tokens.length > 2 && tokens[1].startsWith("set")) {
-            let val = tokens.slice(2).join(" ");
-            if (tokens[1] === "set") {
-              Util.Log(`Setting ${t0} to "${val}"`);
-            } else if (tokens[1] === "setobj") {
-              Util.Log(`Setting ${t0} to object "${val}"`);
-            }
-          }
         } else {
           Content.addError(`Unknown config key &quot;${tokens[0]}&quot;`, true);
         }
@@ -1061,14 +1084,14 @@ function client_main(layout) { /* exported client_main */
   $("#txtChannel").keyup(function(e) {
     if (e.keyCode === Util.Key.RETURN) {
       setChannels(client, $(this).val().split(","));
-      setConfigObject({"Channels": client.GetJoinedChannels()});
+      mergeConfigObject({"Channels": client.GetJoinedChannels()});
     }
   });
 
   /* Leaving the "Channels" text box */
   $("#txtChannel").blur(function(e) {
     setChannels(client, $(this).val().split(","));
-    setConfigObject({"Channels": client.GetJoinedChannels()});
+    mergeConfigObject({"Channels": client.GetJoinedChannels()});
   });
 
   /* Changing the value for "background image" */
@@ -1081,7 +1104,7 @@ function client_main(layout) { /* exported client_main */
   /* Changing the "Scrollbars" checkbox */
   $("#cbScroll").change(function() {
     let scroll = $(this).is(":checked");
-    setConfigObject({"Scroll": scroll});
+    mergeConfigObject({"Scroll": scroll});
     if (scroll) {
       $(".module .content").css("overflow-y", "scroll");
     } else {
@@ -1098,7 +1121,7 @@ function client_main(layout) { /* exported client_main */
 
   /* Changing the "Show Clips" checkbox */
   $("#cbClips").change(function() {
-    setConfigObject({"ShowClips": $(this).is(":checked")});
+    mergeConfigObject({"ShowClips": $(this).is(":checked")});
     updateHTMLGenConfig();
   });
 

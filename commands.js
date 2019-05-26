@@ -147,7 +147,6 @@ class ChatCommandManager {
     return usages;
   }
 
-  /* Built-in //help command */
   command_help(cmd, tokens, client) {
     if (tokens.length === 0) {
       Content.addHelp("Commands:");
@@ -442,7 +441,7 @@ function command_raw(cmd, tokens, client) {
  *    usage: array of usage objects:
  *      [0]: string, array, or null: parameter name(s)
  *      [1]: description
- *      [2]: options (optional)
+ *      [2]: formatting options (optional)
  *  }
  */
 const DefaultCommands = {
