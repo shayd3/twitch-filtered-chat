@@ -263,7 +263,7 @@ function command_log(cmd, tokens, client) {
       let idx = Number(tokens[0]);
       Content.addHelp(JSON.stringify(logs[idx]).escape());
     } else {
-      Content.addHelp(`Unknown argument ${tokens[0]}`);
+      Content.addHelp(`Unknown argument ${tokens[0].escape()}`);
     }
   } else {
     this.printUsage();
@@ -273,10 +273,13 @@ function command_log(cmd, tokens, client) {
 function command_clear(cmd, tokens, client) {
   if (tokens.length === 0) {
     $(".content").find(".line-wrapper").remove();
-  } else if (tokens[0] === "module1") {
-    $("#module1").find(".line-wrapper").remove();
-  } else if (tokens[0] === "module2") {
-    $("#module2").find(".line-wrapper").remove();
+  } else if (tokens[0].match(/module[\d]+/)) {
+    let e = document.getElementById(tokens[0]);
+    if (e) {
+      $(e).find(".line-wrapper").remove();
+    } else {
+      Content.addHelp(`Unknown module ${tokens[0]}`);
+    }
   } else {
     this.printUsage();
   }
@@ -371,9 +374,9 @@ function command_emotes(cmd, tokens, client) {
 function command_plugins(cmd, tokens, client) {
   try {
     for (let [n, p] of Object.entries(Plugins.plugins)) {
-      let msg = `${n}: ${p.file} @ ${p.order}`;
+      let msg = `${n}: ${p.file} @ ${p.order}`.escape();
       if (p._error) {
-        Content.addError(`${msg}: Failed: ${JSON.stringify(p._error_obj)}`);
+        Content.addError(`${msg}: Failed: ${JSON.stringify(p._error_obj).escape()}`);
       } else if (p._loaded) {
         msg = `${msg}: Loaded`;
         if (p.commands) {
@@ -467,8 +470,7 @@ const DefaultCommands = {
     alias: ["nuke"],
     usage: [
       [null, "Clears all text from all visible modules"],
-      ["module1", "Clears all text from module1", {literal: true}],
-      ["module2", "Clears all text from module2", {literal: true}]
+      ["module", "Clears all text from <module> (module1, module2)"]
     ]
   },
   "join": {

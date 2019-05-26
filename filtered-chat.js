@@ -4,7 +4,6 @@
 
 /* FIXME:
  * HTMLGen @user transform broken
- * HTMLGen shows Tier 1 subs as "1000"
  * HTMLGen shows Tier 2+ subs as "1000" (unconfirmed)
  * Configuration is lost if &module configuration is present
  *  getConfigObject overrides changes with query string
@@ -14,18 +13,18 @@
 /* TODO:
  * Add to #settings help link
  * Add to #settings config link
- * Implement //config set and //config setobj
+ * Finish //config set and //config setobj
  * Finish badge information on hover
  * Add clip information on hover
  * Add emote information on hover
- * Add layout selection box to #settings (reloads page on change)
  * Hide getConfigObject() within client_main()
  * Fix cssmarquee: .line::-webkit-scrollbar { display: none; } or something
  */
 
 /* IDEAS:
+ * Add layout selection box to #settings (reloads page on change)?
  * Allow for a configurable number of columns?
- * Add re-include (post-exclude) filtering options?
+ * Add re-include (post-exclude) filtering options for Mods, Bits, Subs, etc?
  */
 
 /* NOTES:
@@ -137,7 +136,7 @@ function parseQueryString(config, qs=null) {
     } else if (k === "hmax") {
       key = "HistorySize";
       val = typeof(v) === "number" ? v : TwitchClient.DEFAULT_HISTORY_SIZE;
-    } else if (k.match(/^module[12]?$/)) {
+    } else if (k.match(/^module[\d]*?$/)) {
       key = k === "module" ? "module1" : k;
       val = parseModuleConfig(v);
     } else if (k === "trans" || k === "transparent") {
@@ -357,6 +356,15 @@ function mergeConfigObject(to_merge=null) {
 }
 
 /* Module configuration {{{1 */
+
+/* Enumerate the active modules */
+function getModules() {
+  let m = {};
+  for (let elem of $(".module")) {
+    m[$(elem).attr("id")] = elem;
+  }
+  return m;
+}
 
 /* Apply configuration to the module's settings HTML */
 function setModuleSettings(module, config) {
@@ -858,9 +866,9 @@ function client_main(layout) { /* exported client_main */
           if (cfg.NoFFZ) { qsAdd("noffz", cfg.NoFFZ); }
           if (cfg.NoBTTV) { qsAdd("nobttv", cfg.NoBTTV); }
           if (cfg.HistorySize) { qsAdd("hmax", cfg.HistorySize); }
-          /* TODO: Allow for more than 2 modules */
-          qsAdd("module1", formatModuleConfig(cfg.module1));
-          qsAdd("module2", formatModuleConfig(cfg.module2));
+          for (let module of Object.keys(getModules())) {
+            qsAdd(module, formatModuleConfig(cfg[module]));
+          }
           qsAdd("layout", FormatLayout(cfg.Layout));
           if (cfg.Transparent) { qsAdd("trans", "1"); }
           if (cfg.AutoReconnect) { qsAdd("reconnect", "1"); }
@@ -1195,28 +1203,20 @@ function client_main(layout) { /* exported client_main */
   $(document).click(function(e) {
     let $t = $(e.target);
     let $cw = $("#userContext");
-    let $m1s = $("#module1 .settings");
-    let $m2s = $("#module2 .settings");
-    let $m1h = $("#module1 .header");
-    let $m2h = $("#module2 .header");
-    /* Clicking off of module1 settings: hide it */
-    if ($m1s.length > 0 && $m1s.is(":visible")) {
-      if (!Util.PointIsOn(e.clientX, e.clientY, $m1s[0])
-          && !Util.PointIsOn(e.clientX, e.clientY, $m1h[0])) {
-        updateModuleConfig();
-        let $tb = $m1s.siblings("input.name").hide();
-        $m1s.siblings("label.name").html($tb.val()).show();
-        $m1s.fadeOut();
-      }
-    }
-    /* Clicking off of module2 settings: hide it */
-    if ($m2s.length > 0 && $m2s.is(":visible")) {
-      if (!Util.PointIsOn(e.clientX, e.clientY, $m2s[0])
-          && !Util.PointIsOn(e.clientX, e.clientY, $m2h[0])) {
-        updateModuleConfig();
-        let $tb = $m2s.siblings("input.name").hide();
-        $m2s.siblings("label.name").html($tb.val()).show();
-        $m2s.fadeOut();
+    /* Clicking off of module settings: hide it */
+    for (let module of Object.values(getModules())) {
+      let $m = $(module);
+      if ($m.is(":visible")) {
+        let $ms = $m.find(".settings");
+        let $mh = $m.find(".header");
+        if (!Util.PointIsOn(e.clientX, e.clientY, $ms[0])) {
+          if (!Util.PointIsOn(e.clientX, e.clientY, $mh[0])) {
+            updateModuleConfig();
+            let $tb = $ms.siblings("input.name").hide();
+            $ms.siblings("label.name").html($tb.val()).show();
+            $ms.fadeOut();
+          }
+        }
       }
     }
     /* Clicking on the username context window */
