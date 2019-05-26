@@ -180,3 +180,5 @@ YoshiRulz - Improving rainbow effect
 Inverted - Improving username contrast, helping with disco effect
 
 SighnWave - Creating the disco effect
+
+Feeve - Assisting with debugging resub bugs

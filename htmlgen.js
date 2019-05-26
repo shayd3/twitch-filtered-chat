@@ -617,7 +617,7 @@ class HTMLGenerator {
     return $w[0].outerHTML;
   }
 
-  /* FIXME: Messages are omitted */
+  /* FIXME: Messages are omitted (TEST_MESSAGES.RESUB3) */
   resub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
