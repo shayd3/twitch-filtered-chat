@@ -91,12 +91,9 @@ function parseQueryString(config, qs=null) {
     qs_data = qs;
   }
 
-  if (qs_data.debug === undefined) qs_data.debug = false;
-  if (qs_data.channels !== undefined) {
-    if (typeof(qs_data.channels) !== "string") {
-      qs_data.channels = "";
-    }
-  }
+  /* Ensure debug and channels attributes exist, at the very least */
+  if (!qs_data.hasOwnProperty("debug")) qs_data.debug = false;
+  if (typeof(qs_data.channels) !== "string") qs_data.channels = "";
 
   let query_remove = [];
   for (let [k, v] of Object.entries(qs_data)) {
@@ -237,6 +234,9 @@ function getConfigObject(inclSensitive=true) {
   if (config.hasOwnProperty("AutoReconnect")) delete config["AutoReconnect"];
   if (config.hasOwnProperty("Layout")) delete config["Layout"];
   if (config.hasOwnProperty("Plugins")) delete config["Plugins"];
+  if (config.hasOwnProperty("nols")) delete config["nols"];
+  if (config.hasOwnProperty("enable")) delete config["enable"];
+  if (config.hasOwnProperty("disable")) delete config["disable"];
 
   /* Ensure certain keys are present and have expected values */
   if (!config.hasOwnProperty("MaxMessages")) {
@@ -334,6 +334,7 @@ function getConfigObject(inclSensitive=true) {
   return config;
 }
 
+/* Store configuration */
 function setConfigObject(to_merge=null) {
   let merge = to_merge || {};
   let config = getConfigObject();
@@ -548,134 +549,6 @@ function shouldFilter(module, event) {
   return false;
 }
 
-/* Handle a chat command */
-function handleCommand(value, client) {
-  let tokens = value.split(" ");
-  let command = tokens.shift();
-
-  /* Clear empty tokens at the end (\r\n related) */
-  while (tokens.length > 0 && tokens[tokens.length-1].length === 0) {
-    tokens.pop();
-  }
-
-  if (ChatCommands.isCommandStr(value)) {
-    if (ChatCommands.hasCommand(command)) {
-      ChatCommands.execute(value, client);
-      return true;
-    }
-  }
-
-  /* Handle config command */
-  if (command === "//config") {
-    let config = getConfigObject();
-    if (tokens.length > 0) {
-      if (tokens[0] === "clientid") {
-        Content.addHelpLine("ClientID", config.ClientID);
-      } else if (tokens[0] === "pass") {
-        Content.addHelpLine("Pass", config.Pass);
-      } else if (tokens[0] === "purge") {
-        Util.SetWebStorage({});
-        Content.addNotice(`Purged storage "${Util.GetWebStorageKey()}"`);
-      } else if (tokens[0] === "url") {
-        let url = "";
-        if (tokens.length > 1) {
-          if (tokens[1].startsWith("git")) {
-            url = "https://kaedenn.github.io/twitch-filtered-chat/index.html";
-          }
-        } else {
-          url = window.location.protocol + "//" +
-                window.location.hostname +
-                window.location.pathname;
-        }
-        let qs = [];
-        let qsAdd = (k, v) => (qs.push(`${k}=${encodeURIComponent(v)}`));
-        if (config.Debug > 0) {
-          qsAdd("debug", config.Debug);
-        }
-        if (config.__clientid_override) {
-          if (config.ClientID && config.ClientID.length === 30) {
-            qsAdd("clientid", config.ClientID);
-          }
-        }
-        if (config.Channels.length > 0) {
-          qsAdd("channels", config.Channels.join(","));
-        }
-        if (tokens.indexOf("auth") > -1) {
-          if (config.Name && config.Name.length > 0) {
-            qsAdd("user", config.Name);
-          }
-          if (config.Pass && config.Pass.length > 0) {
-            qsAdd("pass", config.Pass);
-          }
-        }
-        if (config.NoAssets) { qsAdd("noassets", config.NoAssets); }
-        if (config.NoFFZ) { qsAdd("noffz", config.NoFFZ); }
-        if (config.NoBTTV) { qsAdd("nobttv", config.NoBTTV); }
-        if (config.HistorySize) { qsAdd("hmax", config.HistorySize); }
-        qsAdd("module1", formatModuleConfig(config.module1));
-        qsAdd("module2", formatModuleConfig(config.module2));
-        qsAdd("layout", FormatLayout(config.Layout));
-        if (config.Transparent) { qsAdd("trans", "1"); }
-        if (config.AutoReconnect) { qsAdd("reconnect", "1"); }
-        {
-          let font_size = Util.CSS.GetProperty("--body-font-size");
-          if (font_size !== Util.CSS.GetProperty("--body-font-size-default")) {
-            qsAdd("size", font_size.replace(/[^0-9]/g, ""));
-          }
-        }
-        if (config.Plugins) { qsAdd("plugins", "1"); }
-        if (config.MaxMessages !== TwitchClient.DEFAULT_MAX_MESSAGES) {
-          qsAdd("max", `${config.MaxMessages}`);
-        }
-        if (config.Font) {
-          qsAdd("font", config.Font);
-        }
-        if (config.Scroll) { qsAdd("scroll", "1"); }
-        if (config.ShowClips) { qsAdd("clips", "1"); }
-        /* Format QS object */
-        if (tokens[tokens.length-1] === "text") {
-          url += "?" + qs.join("&");
-        } else {
-          url += "?base64=" + encodeURIComponent(btoa(qs.join("&")));
-        }
-        Content.addHelp(client.get("HTMLGen").url(url));
-      } else if (config.hasOwnProperty(tokens[0])) {
-        Content.addHelpLine(tokens[0], JSON.stringify(config[tokens[0]]));
-      } else {
-        Content.addError(`Unknown config key &quot;${tokens[0]}&quot;`, true);
-      }
-    } else {
-      let wincfgs = [];
-      for (let [k, v] of Object.entries(config)) {
-        if (k === "Layout") {
-          Content.addHelpLine(k, FormatLayout(v));
-        } else if (typeof(v) === "object" && v.Name && v.Name.length > 1) {
-          /* It's a window configuration */
-          wincfgs.push([k, v]);
-        } else if (k === "ClientID") {
-          Content.addHelpLine(k, Strings.OMIT_CID);
-        } else if (k === "Pass") {
-          Content.addHelpLine(k, Strings.OMIT_PASS);
-        } else {
-          Content.addHelpLine(k, v);
-        }
-      }
-      Content.addHelp(`Window Configurations:`);
-      for (let [k, v] of wincfgs) {
-        Content.addHelp(`Module <span class="arg">${k}</span>: ` +
-                        `&quot;${v.Name}&quot;:`);
-        for (let [cfgk, cfgv] of Object.entries(v)) {
-          if (cfgk === "Name") continue;
-          Content.addHelpLine(cfgk, `&quot;${cfgv}&quot;`);
-        }
-      }
-    }
-  } else {
-    return false;
-  }
-  return true;
-}
-
 /* Populate and show the username context window */
 function showContextWindow(client, cw, line) {
   let $cw = $(cw);
@@ -845,7 +718,7 @@ function setNotify(notify=true) { /* exported setNotify */
 /* Called once when the document loads */
 function client_main(layout) { /* exported client_main */
   let client;
-  let ConfigCommon = {};
+  let config = {};
 
   /* Hook Logger messages */
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
@@ -879,88 +752,204 @@ function client_main(layout) { /* exported client_main */
 
   /* Obtain configuration, construct client */
   (function _configure_construct_client() {
-    let config = getConfigObject();
-    client = new TwitchClient(config);
-    Util.DebugLevel = config.Debug;
+    let configObj = getConfigObject();
+    client = new TwitchClient(configObj);
+    Util.DebugLevel = configObj.Debug;
 
     /* Change the document title to show our authentication state */
     document.title += " -";
-    if (config.Pass && config.Pass.length > 0) {
+    if (configObj.Pass && configObj.Pass.length > 0) {
       document.title += " Authenticated";
     } else {
       document.title += " Read-Only";
-      if (config.Layout.Chat) {
+      if (configObj.Layout.Chat) {
         /* Change the chat placeholder and border to reflect read-only */
         $("#txtChat").attr("placeholder", Strings.PLEASE_AUTH);
         Util.CSS.SetProperty("--chat-border", "#cd143c");
       }
     }
 
-    /* Simulate clicking cbTransparent if config.Transparent is set */
-    if (config.Transparent) {
-      updateTransparency(true);
-    }
-
-    /* Set the text size if given */
-    if (config.Size) {
-      Util.CSS.SetProperty("--body-font-size", config.Size);
-    }
-
-    /* Set the font if given */
-    if (config.Font) {
-      Util.CSS.SetProperty("--body-font", config.Font);
-    }
-
-    /* If scrollbars are configured, enable them */
-    if (config.Scroll) {
-      $(".module .content").css("overflow-y", "scroll");
-      $("#cbScroll").attr("checked", "checked");
-    } else {
-      $("#cbScroll").removeAttr("checked");
-    }
-
     /* After all that, sync the final settings up with the html */
     $(".module").each(function() {
-      setModuleSettings(this, config[$(this).attr("id")]);
+      setModuleSettings(this, configObj[$(this).attr("id")]);
     });
 
+    /* Add the //config command */
+    ChatCommands.add("config",
+      (function _config_command(cmd, tokens, clientObj) {
+        let cfg = getConfigObject();
+        let t0 = tokens.length > 0 ? tokens[0] : "";
+        if (tokens.length === 0) {
+          let mcfgs = [];
+          Content.addHelp(`<em>Global Configuration:</em>`);
+          for (let [k, v] of Object.entries(cfg)) {
+            let [key, val] = [k, `${v}`];
+            if (k === "Layout") {
+              val = FormatLayout(v);
+            } else if (k === "ClientID") {
+              val = Strings.OMIT_CID;
+            } else if (k === "Pass") {
+              val = Strings.OMIT_PASS;
+            } else if (typeof(v) === "object" && v.Name && v.Name.length > 0) {
+              key = null;
+              val = null;
+              mcfgs.push([k, v]);
+            }
+            if (key !== null) {
+              Content.addHelpLine(key, val);
+            }
+          }
+          Content.addHelp(`<em>Window Configurations:</em>`);
+          for (let [k, v] of mcfgs) {
+            let quote = (e) => `&quot;${e}&quot`;
+            Content.addHelp(`Module <span class="arg">${k}</span>: ${quote(v.Name)}`);
+            for (let [ck, cv] of Object.entries(v)) {
+              if (ck !== "Name") {
+                Content.addHelpLine(ck, quote(cv));
+              }
+            }
+          }
+        } else if (t0 === "help") {
+          Content.addHelpLine("//config", "Show global and module configurations");
+          Content.addHelp("//config parameters:");
+          Content.addHelpLine("purge", "Clear local storage (cannot be undone!)");
+          Content.addHelpLine("clientid", "Displays ClientID");
+          Content.addHelpLine("pass", "Displays OAuth token (if specified)");
+          Content.addHelpLine("url", "Generate a URL from the current config");
+          Content.addHelp("//config url parameters (can be used in any order):");
+          Content.addHelpLine("git", "Generate link using github.io");
+          Content.addHelpLine("text", "Don't base64-encode the URL");
+          Content.addHelpLine("auth", "Include ClientID and OAuth information");
+          Content.addHelp("//config &lt;key&gt; set &lt;value&gt;: change &lt;key&gt; to &lt;value&gt; (dangerous)");
+          Content.addHelp("//config &lt;key&gt; setobj &lt;value&gt;: change &lt;key&gt; to JSON object &lt;value&gt; (dangerous)");
+        } else if (t0 === "purge") {
+          Util.SetWebStorage({});
+          Content.addNotice(`Purged storage "${Util.GetWebStorageKey()}"`);
+        } else if (t0 === "clientid") {
+          Content.addHelpLine("ClientID", cfg.ClientID);
+        } else if (t0 === "pass") {
+          Content.addHelpLine("Pass", cfg.Pass);
+        } else if (t0 === "url") {
+          let url = "";
+          let qs = [];
+          let qsAdd = (k, v) => qs.push(`${k}=${encodeURIComponent(v)}`);
+          if (tokens.indexOf("git") > -1) {
+            url = "https://kaedenn.github.io/twitch-filtered-chat/index.html";
+          } else {
+            url = window.location.protocol + "//" +
+                  window.location.hostname +
+                  window.location.pathname;
+          }
+          if (cfg.Debug > 0) { qsAdd("debug", cfg.Debug); }
+          if (cfg.__clientid_override) { qsAdd("clientid", cfg.ClientID); }
+          qsAdd("channels", cfg.Channels.join(","));
+          if (cfg.NoAssets) { qsAdd("noassets", cfg.NoAssets); }
+          if (cfg.NoFFZ) { qsAdd("noffz", cfg.NoFFZ); }
+          if (cfg.NoBTTV) { qsAdd("nobttv", cfg.NoBTTV); }
+          if (cfg.HistorySize) { qsAdd("hmax", cfg.HistorySize); }
+          /* TODO: Allow for more than 2 modules */
+          qsAdd("module1", formatModuleConfig(cfg.module1));
+          qsAdd("module2", formatModuleConfig(cfg.module2));
+          qsAdd("layout", FormatLayout(cfg.Layout));
+          if (cfg.Transparent) { qsAdd("trans", "1"); }
+          if (cfg.AutoReconnect) { qsAdd("reconnect", "1"); }
+          let font_curr = Util.CSS.GetProperty("--body-font-size");
+          let font_dflt = Util.CSS.GetProperty("--body-font-size-default");
+          if (font_curr !== font_dflt) {
+            qsAdd("size", font_curr.replace(/[^0-9]/g, ""));
+          }
+          if (cfg.Plugins) { qsAdd("plugins", "1"); }
+          if (cfg.MaxMessages !== TwitchClient.DEFAULT_MAX_MESSAGES) {
+            qsAdd("max", `${cfg.MaxMessages}`);
+          }
+          if (cfg.Font) { qsAdd("font", cfg.Font); }
+          if (cfg.Scroll) { qsAdd("scroll", "1"); }
+          if (cfg.ShowClips) { qsAdd("clips", "1"); }
+          if (tokens.indexOf("auth") > -1) {
+            qsAdd("user", cfg.Name);
+            qsAdd("pass", cfg.Pass);
+          }
+          if (tokens[tokens.length - 1] === "text") {
+            url += "?" + qs.join("&");
+          } else {
+            url += "?base64=" + encodeURIComponent(btoa(qs.join("&")));
+          }
+          Content.addHelp(client.get("HTMLGen").url(url));
+        } else if (cfg.hasOwnProperty(t0)) {
+          Content.addHelpLine(t0, JSON.stringify(cfg[t0]));
+          if (tokens.length > 2 && tokens[1].startsWith("set")) {
+            let val = tokens.slice(2).join(" ");
+            if (tokens[1] === "set") {
+              Util.Log(`Setting ${t0} to "${val}"`);
+            } else if (tokens[1] === "setobj") {
+              Util.Log(`Setting ${t0} to object "${val}"`);
+            }
+          }
+        } else {
+          Content.addError(`Unknown config key &quot;${tokens[0]}&quot;`, true);
+        }
+      }), "Obtain and modify configuration information");
+
     /* Set values we'll want to use later */
-    ConfigCommon = Util.JSONClone(config);
-    delete ConfigCommon["Pass"];
-    delete ConfigCommon["ClientID"];
-    ConfigCommon.Plugins = config.Plugins ? true : false;
-    ConfigCommon.MaxMessages = config.MaxMessages || 100;
-
-    /* If no channels are configured, show the settings panel */
-    if (config.Channels.length === 0) {
-      $("#settings").fadeIn();
-    }
-
-    /* Apply the show-clips config to the settings div */
-    if (config.ShowClips) {
-      $("#cbClips").attr("checked", "checked");
-    } else {
-      $("#cbClips").removeAttr("checked");
-    }
+    config = Util.JSONClone(configObj);
+    delete config["Pass"];
+    delete config["ClientID"];
+    config.Plugins = configObj.Plugins ? true : false;
+    config.MaxMessages = configObj.MaxMessages || 100;
   })();
 
+  /* Simulate clicking cbTransparent if config.Transparent is set */
+  if (config.Transparent) {
+    updateTransparency(true);
+  }
+
+  /* Set the text size if given */
+  if (config.Size) {
+    Util.CSS.SetProperty("--body-font-size", config.Size);
+  }
+
+  /* Set the font if given */
+  if (config.Font) {
+    Util.CSS.SetProperty("--body-font", config.Font);
+  }
+
+  /* If scrollbars are configured, enable them */
+  if (config.Scroll) {
+    $(".module .content").css("overflow-y", "scroll");
+    $("#cbScroll").attr("checked", "checked");
+  } else {
+    $("#cbScroll").removeAttr("checked");
+  }
+
+  /* If no channels are configured, show the settings panel */
+  if (config.Channels.length === 0) {
+    $("#settings").fadeIn();
+  }
+
+  /* Apply the show-clips config to the settings div */
+  if (config.ShowClips) {
+    $("#cbClips").attr("checked", "checked");
+  } else {
+    $("#cbClips").removeAttr("checked");
+  }
+
   /* Construct the HTML Generator and tell it and the client about each other */
-  client.set("HTMLGen", new HTMLGenerator(client, ConfigCommon));
+  client.set("HTMLGen", new HTMLGenerator(client, config));
 
   /* Call to sync configuration to HTMLGen */
   function updateHTMLGenConfig() {
-    let config = Util.JSONClone(getConfigObject());
-    delete config["Pass"];
-    delete config["ClientID"];
-    config.Plugins = Boolean(config.Plugins);
-    for (let [k, v] of Object.entries(config)) {
+    let configObj = Util.JSONClone(getConfigObject());
+    delete configObj["Pass"];
+    delete configObj["ClientID"];
+    configObj.Plugins = Boolean(configObj.Plugins);
+    for (let [k, v] of Object.entries(configObj)) {
       client.get("HTMLGen").setValue(k, v);
     }
   }
 
   /* Construct the plugins */
   try {
-    if (ConfigCommon.Plugins) {
+    if (config.Plugins) {
       Plugins.loadAll(client);
     } else {
       Plugins.disable();
@@ -992,33 +981,36 @@ function client_main(layout) { /* exported client_main */
   $("#txtChat").keydown(function(e) {
     const isUp = (e.keyCode === Util.Key.UP);
     const isDown = (e.keyCode === Util.Key.DOWN);
+    let t = event.target;
     if (e.keyCode === Util.Key.RETURN) {
-      if (e.target.value.trim().length > 0) {
-        if (!handleCommand(e.target.value, client)) {
-          client.SendMessageToAll(e.target.value);
+      if (t.value.trim().length > 0) {
+        if (ChatCommands.isCommandStr(t.value)) {
+          ChatCommands.execute(t.value, client);
+        } else {
+          client.SendMessageToAll(t.value);
         }
-        client.AddHistory(e.target.value);
-        $(e.target).attr("hist-index", "-1");
-        e.target.value = "";
+        client.AddHistory(t.value);
+        t.setAttribute("hist-index", "-1");
+        t.value = "";
       }
       /* Prevent bubbling */
       e.preventDefault();
       return false;
     } else if (isUp || isDown) {
       /* Handle traversing message history */
-      let i = Number.parseInt($(e.target).attr("hist-index"));
+      let i = Number.parseInt($(t).attr("hist-index"));
       let l = client.GetHistoryLength();
       if (isUp) {
         i = (i + 1 >= l - 1 ? l - 1 : i + 1);
       } else if (isDown) {
         i = (i - 1 < 0 ? -1 : i - 1);
       }
-      e.target.value = (i > -1 ? client.GetHistoryItem(i).trim() : "");
-      $(e.target).attr("hist-index", `${i}`);
+      t.value = (i > -1 ? client.GetHistoryItem(i).trim() : "");
+      $(t).attr("hist-index", `${i}`);
       /* Delay moving the cursor until after the text is updated */
       requestAnimationFrame(() => {
-        e.target.selectionStart = e.target.value.length;
-        e.target.selectionEnd = e.target.value.length;
+        t.selectionStart = t.value.length;
+        t.selectionEnd = t.value.length;
       });
     }
   });
@@ -1036,14 +1028,14 @@ function client_main(layout) { /* exported client_main */
     if ($("#settings").is(":visible")) {
       $("#settings").fadeOut();
     } else {
-      let config = getConfigObject();
-      $("#txtChannel").val(config.Channels.join(","));
-      $("#txtNick").val(config.Name || AUTOGEN_VALUE);
-      if (config.Pass && config.Pass.length > 0) {
+      let configObj = getConfigObject();
+      $("#txtChannel").val(configObj.Channels.join(","));
+      $("#txtNick").val(configObj.Name || AUTOGEN_VALUE);
+      if (configObj.Pass && configObj.Pass.length > 0) {
         $("#txtPass").attr("disabled", "disabled").hide();
         $("#txtPassDummy").show();
       }
-      $("#selDebug").val(`${config.Debug}`);
+      $("#selDebug").val(`${configObj.Debug}`);
       $("#settings").fadeIn();
     }
   });
@@ -1154,6 +1146,7 @@ function client_main(layout) { /* exported client_main */
 
   /* Clicking on a "Clear" link */
   $(".module .header .clear-link").click(function() {
+    /* TODO: ESCAPE */
     $(`#${$(this).attr("data-for")} .content`).find(".line-wrapper").remove();
   });
 
@@ -1340,7 +1333,7 @@ function client_main(layout) { /* exported client_main */
   client.bind("twitch-streaminfo", function _on_twitch_streaminfo(e) {
     let cinfo = client.GetChannelInfo(e.channel.channel);
     if (!cinfo.online) {
-      if (ConfigCommon.Layout && !ConfigCommon.Layout.Slim) {
+      if (config.Layout && !config.Layout.Slim) {
         Content.addNotice(`${e.channel.channel} is not currently streaming`);
       }
     }
@@ -1361,6 +1354,7 @@ function client_main(layout) { /* exported client_main */
             $(".content").children().remove();
           } else if (tokens[1] === "nuke") {
             if (tokens[2] && tokens[2].length > 1) {
+              /* TODO: ESCAPE */
               $(`[data-user="${tokens[2].toLowerCase()}"]`).parent().remove();
             } else {
               $(".content").children().remove();
@@ -1384,8 +1378,8 @@ function client_main(layout) { /* exported client_main */
   client.bind("twitch-clearchat", function _on_twitch_clearchat(e) {
     if (e.has_flag("target-user-id")) {
       /* Moderator timed out a user */
-      let r = e.flags["room-id"];
-      let u = e.flags["target-user-id"];
+      let r = e.flags["room-id"]; /* TODO: ESCAPE */
+      let u = e.flags["target-user-id"]; /* TODO: ESCAPE */
       let l = $(`.chat-line[data-channel-id="${r}"][data-user-id="${u}"]`);
       l.parent().remove();
     } else {
