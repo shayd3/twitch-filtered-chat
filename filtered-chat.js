@@ -54,28 +54,28 @@ class Content { /* exported Content */
     $Container.append($Line);
     $Container.scrollTop(Math.pow(2, 31) - 1);
   }
-  static addPre(content) {
+  static addPre(content) { /* does not escape */
     Content.addHTML($(`<div class="pre"></div>`).html(content));
   }
-  static addInfo(content, pre=false) {
+  static addInfo(content, pre=false) { /* does not escape */
     let e = $(`<div class="info"></div>`).html(content);
     if (pre) e.addClass("pre");
     Content.addHTML(e);
   }
-  static addNotice(content, pre=false) {
+  static addNotice(content, pre=false) { /* does not escape */
     let e = $(`<div class="notice"></div>`).html(content);
     if (pre) e.addClass("pre");
     Content.addHTML(e);
   }
-  static addError(content, pre=false) {
+  static addError(content, pre=false) { /* does not escape */
     let e = $(`<div class="error"></div>`).html(content);
     if (pre) e.addClass("pre");
     Content.addHTML(e);
   }
-  static addHelp(s) {
+  static addHelp(s) { /* does not escape */
     Content.addPre($(`<div class="help pre">${s}</div>`));
   }
-  static addHelpLine(c, s) {
+  static addHelpLine(c, s) { /* escapes */
     Content.addPre(ChatCommands.helpLine(c, s));
   }
 }
@@ -289,7 +289,9 @@ function getConfigObject(inclSensitive=true) {
   /* Populate configs for each module */
   $(".module").each(function() {
     let id = $(this).attr("id");
-    if (!config[id]) { config[id] = getModuleSettings($(this)); }
+    if (!config[id]) {
+      config[id] = getModuleSettings($(this));
+    }
     config[id].Pleb = Boolean(config[id].Pleb);
     config[id].Sub = Boolean(config[id].Sub);
     config[id].VIP = Boolean(config[id].VIP);
@@ -322,6 +324,7 @@ function getConfigObject(inclSensitive=true) {
     if (is_base64) {
       new_qs = "?base64=" + encodeURIComponent(btoa(new_qs));
     }
+    /* Reloads the page */
     window.location.search = new_qs;
   }
 
@@ -849,9 +852,12 @@ function client_main(layout) { /* exported client_main */
         } else if (t0 === "pass") {
           Content.addHelpLine("Pass", cfg.Pass);
         } else if (t0 === "url") {
+          /* Generate a URL with the current configuration, omitting items
+           * left at default values */
           let url = "";
           let qs = [];
           let qsAdd = (k, v) => qs.push(`${k}=${encodeURIComponent(v)}`);
+          /* URL without the query string */
           if (tokens.indexOf("git") > -1) {
             url = "https://kaedenn.github.io/twitch-filtered-chat/index.html";
           } else {
@@ -859,6 +865,7 @@ function client_main(layout) { /* exported client_main */
                   window.location.hostname +
                   window.location.pathname;
           }
+          /* Generate and append query string items */
           if (cfg.Debug > 0) { qsAdd("debug", cfg.Debug); }
           if (cfg.__clientid_override) { qsAdd("clientid", cfg.ClientID); }
           qsAdd("channels", cfg.Channels.join(","));
@@ -888,6 +895,7 @@ function client_main(layout) { /* exported client_main */
             qsAdd("user", cfg.Name);
             qsAdd("pass", cfg.Pass);
           }
+          /* Append query string to the URL */
           if (tokens[tokens.length - 1] === "text") {
             url += "?" + qs.join("&");
           } else {
@@ -895,6 +903,7 @@ function client_main(layout) { /* exported client_main */
           }
           Content.addHelp(client.get("HTMLGen").url(url));
         } else if (t0 === "set" || t0 === "setobj" && tokens.length > 2) {
+          /* Allow changing configuration by command (dangerous) */
           let key = tokens[1];
           let val = tokens.slice(2).join(" ");
           let valobj = null;
@@ -918,7 +927,7 @@ function client_main(layout) { /* exported client_main */
         } else if (cfg.hasOwnProperty(t0)) {
           Content.addHelpLine(t0, JSON.stringify(cfg[t0]));
         } else {
-          Content.addError(`Unknown config key &quot;${tokens[0]}&quot;`, true);
+          Content.addError(`Unknown config key &quot;${t0.escape()}&quot;`, true);
         }
       }), "Obtain and modify configuration information");
 
