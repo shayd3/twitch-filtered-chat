@@ -1113,9 +1113,8 @@ function client_main(layout) { /* exported client_main */
   /* Changing the debug level */
   $("#selDebug").change(function() {
     let v = parseInt($(this).val());
-    let old = client.GetDebug();
-    Util.Log(`Changing debug level from ${Util.DebugLevel} (${old}) to ${v}`);
-    client.SetDebug(v);
+    Util.Log(`Changing debug level from ${Util.DebugLevel} to ${v}`);
+    Util.DebugLevel = v;
   });
 
   /* Clicking on the reconnect link in the settings box */
