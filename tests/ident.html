@@ -288,12 +288,24 @@ window.DFLT_WINDOW_ATTRIBS = [
   <script type="text/javascript">
 
 function Checks() {
-  function add_message(s, cls) {
-    let $d = $(`<div class="line"></div>`);
+  function escape(s) {
+    return s.replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&apos;");
+  }
+  function add_message(s, cls, istext) {
+    var $d = $(`<div class="line"></div>`);
     if (!!cls) {
       $d.addClass(cls);
     }
-    $("div.content")[0].appendChild($d.html(s)[0]);
+    if (istext) {
+      $d.text(s);
+    } else {
+      $d.html(s);
+    }
+    $("div.content")[0].appendChild($d[0]);
   }
 
   function has_reflect() {
@@ -325,8 +337,8 @@ function Checks() {
   }
 
   function check_reflect_window() {
-    let new_attrs = [];
-    let a;
+    var new_attrs = [];
+    var a;
     for (a of window["Reflect"].ownKeys(window)) {
       if (a == "DFLT_WINDOW_ATTRIBS") continue;
       if (a == "_ident_onready") continue;
@@ -359,13 +371,22 @@ function Checks() {
   }
 
   function check_navigator() {
-    let members = ["oscpu", "vendor", "vendorSub", "productSub", "buildID",
+    var members = ["oscpu", "vendor", "vendorSub", "productSub", "buildID",
                    "appCodeName", "appName", "appVersion", "platform", "product"];
-    for (let m of members) {
-      let k = `navigator["${m}"]`;
-      let v = `${JSON.stringify(navigator[m])}`;
+    for (var m of members) {
+      var k = `navigator["${m}"]`;
+      var v = `${JSON.stringify(navigator[m])}`;
       add_message(`<pre>${k}</pre> = <pre>${v}</pre>`);
     }
+  }
+
+  function check_stack_format() {
+    function foo() { throw new Error("test"); }
+    function bar() { return foo(); }
+    var stack = "";
+    try { bar(); } catch (e) { stack = e.stack; }
+    stack = escape(stack).replace(/\n/g, "<br/>");
+    add_message(`Stacktrace: <pre>${stack}</pre>`);
   }
 
   return {
@@ -375,7 +396,8 @@ function Checks() {
     check_obs: check_obs,
     check_reflect_window: check_reflect_window,
     check_reflect_navigator: check_reflect_navigator,
-    check_navigator: check_navigator
+    check_navigator: check_navigator,
+    check_stack_format: check_stack_format
   };
 }
 
@@ -406,6 +428,7 @@ function _ident_onready() {
   } else {
     C.add_message("Window does not have reflect object");
   }
+  C.check_stack_format();
 }
 
 $(document).ready(_ident_onready);
