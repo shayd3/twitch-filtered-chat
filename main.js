@@ -8,14 +8,14 @@ const MOD_TWAPI = "twitch-api";
 
 /* Obtain information based on window.location and navigator.userAgent */
 const URI = `${window.location}`;
-const IS_LOCAL = window.location.protocol === "file:";
-const IS_HTTP = window.location.protocol === "http:";
-const IS_HTTPS = window.location.protocol === "https:";
 const IS_TESLA = Boolean(navigator.userAgent.match(/\bTesla\b/));
-const IS_GITIO = window.location.hostname.indexOf("github.io") > -1;
 const USE_DIST = Boolean(window.location.search.match(/\busedist\b/)) || IS_TESLA;
 const BASE_URI = URI.substr(0, URI.indexOf(MOD_TFC)).replace(/\/$/, "");
 const SELF_URI = URI.replace(/\/index.html(\?.*)?$/, "");
+
+/* Paths to modules */
+const PATH_TFC = SELF_URI + (USE_DIST ? "/dist" : "");
+const PATH_TWAPI = BASE_URI + "/" + MOD_TWAPI + (USE_DIST ? "/dist" : "");
 
 /* Asset storage object */
 var ASSETS = {};
@@ -91,49 +91,31 @@ function FormatLayout(layout) { /* exported FormatLayout */
   return `${k}:${v}`;
 }
 
-/* Obtain the final path to an asset */
-function GetAssetURL(file, tree) {
-  let path = file;
-  let root = "";
-  if (tree === MOD_TFC) {
-    if (USE_DIST) {
-      root = `${SELF_URI}/dist`;
-    } else if (IS_GITIO) {
-      root = SELF_URI;
-    } else {
-      root = SELF_URI;
-    }
-  } else if (tree === MOD_TWAPI) {
-    if (USE_DIST) {
-      root = `${BASE_URI}/${MOD_TWAPI}/dist`;
-    } else if (IS_GITIO) {
-      root = `${BASE_URI}/${MOD_TWAPI}`;
-    } else {
-      root = `${BASE_URI}/${MOD_TWAPI}`;
-    }
-  } else if (file.startsWith("//")) {
-    if (IS_HTTPS) {
-      path = `https:${file}`;
-    } else if (IS_HTTP) {
-      path = `http:${file}`;
-    } else if (IS_LOCAL) {
-      path = `http:${file}`;
-    } else {
-      _console_info(`Unknown protocol`, window.location.protocol);
-      path = `http:${file}`;
-    }
-  }
-  let result = root ? `${root}/${path}` : path;
-  _console_debug("GetAssetURL(", file, tree, ") ->", result);
-  return result;
-}
-
 /* Add an asset to be loaded; returns a Promise */
 function AddAsset(src, tree=null, loadcb=null, errcb=null) {
-  let path = GetAssetURL(src, tree);
+  /* Determine the final path to the asset */
+  let path = src;
+  switch (tree) {
+    case MOD_TFC:
+      path = PATH_TFC + "/" + src;
+      break;
+    case MOD_TWAPI:
+      path = PATH_TWAPI + "/" + src;
+      break;
+    default:
+      if (src.startsWith('//')) {
+        path = window.location.protocol + src;
+      }
+      break;
+  }
+  _console_debug(`${src} @ ${tree} -> ${path}`);
+
+  /* Prevent double-loading */
   if (ASSETS[path]) {
     throw new Error(`Asset ${path} already added: ${JSON.stringify(ASSETS[path])}`);
   }
+
+  /* Construct and load the asset */
   ASSETS[path] = {};
   let asset = ASSETS[path];
   return new Promise(function(resolve, reject) {
@@ -147,6 +129,7 @@ function AddAsset(src, tree=null, loadcb=null, errcb=null) {
     asset.script.setAttribute("type", "text/javascript");
     asset.script.setAttribute("src", asset.src);
     asset.script.onload = function() {
+      _console_debug("Loaded", asset);
       _console_log(`${asset.src} loaded`);
       asset.loaded = true;
       if (loadcb) { loadcb(asset); }
@@ -160,28 +143,6 @@ function AddAsset(src, tree=null, loadcb=null, errcb=null) {
     }
     document.head.appendChild(asset.script);
   });
-}
-
-/* Load TWAPI */
-function loadTWAPI() {
-  return Promise.all([
-    AddAsset("utility.js", MOD_TWAPI, null, null),
-    AddAsset("twitch-utility.js", MOD_TWAPI, null, null),
-    AddAsset("client.js", MOD_TWAPI, null, null)
-  ]);
-}
-
-/* Load TFC */
-function loadTFC() {
-  /* Load config.js before everything else */
-  return AddAsset("config.js", MOD_TFC, null, null)
-    .then(() => Promise.all([
-      AddAsset("htmlgen.js", MOD_TFC, null, null),
-      AddAsset("commands.js", MOD_TFC, null, null),
-      AddAsset("filtered-chat.js", MOD_TFC, null, null),
-      AddAsset("plugins/plugins.js", MOD_TFC, null, null)
-    ])
-  );
 }
 
 /* Called by body.onload */
@@ -204,12 +165,10 @@ function Main(global) { /* exported Main */
     let $Chat = $(`<div id="chat"></div>`).append($ChatBox);
 
     /* Apply default settings and formatting */
-    let $Column1 = $("#column1");
-    let $Column2 = $("#column2");
     let $Columns = $(".column");
-    let $Module1 = $("#module1");
-    let $Module2 = $("#module2");
     let $Modules = $(".module");
+    let [$Column1, $Column2] = [$("#column1"), $("#column2")];
+    let [$Module1, $Module2] = [$("#module1"), $("#module2")];
     /* Default: all checkboxes are checked */
     $Modules.find(".header .settings input[type=\"checkbox\"]")
             .attr("checked", "checked");
@@ -265,41 +224,51 @@ function Main(global) { /* exported Main */
       try {
         client_main(layout);
       } catch(e) {
+        _console_error(e);
         if (e.name === "ReferenceError") {
           if ((e.message || "").match(/\bclient_main\b.*(?:not |un)defined\b/)) {
             alert("FATAL: filtered-chat.js failed to load; client_main is undefined");
-            throw e;
           }
+        } else {
+          let msg = "client_main error: " + e.toString();
+          if (e.stack) msg += ";\nstack: " + e.stack.toString();
+          alert(msg);
         }
-        _console_error(e);
-        let msg = "client_main error: " + e.toString();
-        if (e.stack) msg += ";\nstack: " + e.stack.toString();
-        alert(msg);
         throw e;
       }
     });
   }
 
   /* Add TWAPI assets, then TFC assets, and then call index_main */
-  loadTWAPI()
-    .then(loadTFC)
-    .then(index_main)
-    .catch(function(e) {
-      let msg = "TWAPI/TFC Failure: ";
-      let t = e.target || e.srcElement || e.originalTarget;
-      if (t.attributes && t.attributes.src && t.attributes.src.value) {
-        msg += "while loading " + t.attributes.src.value;
-      } else if (t.outerHTML) {
-        msg += "while loading " + t.outerHTML;
-      } else {
-        msg += "while loading " + t;
-      }
-      _console_error(msg, e);
-      if (e.stack) {
-        msg += ": stack: " + e.stack;
-      }
-      alert(msg);
-    });
+  Promise.all([
+    AddAsset("utility.js", MOD_TWAPI, null, null),
+    AddAsset("twitch-utility.js", MOD_TWAPI, null, null),
+    AddAsset("client.js", MOD_TWAPI, null, null)])
+  .then(() => AddAsset("config.js", MOD_TFC, null, null))
+  .then(() => Promise.all([
+    AddAsset("htmlgen.js", MOD_TFC, null, null),
+    AddAsset("commands.js", MOD_TFC, null, null),
+    AddAsset("filtered-chat.js", MOD_TFC, null, null),
+    AddAsset("plugins/plugins.js", MOD_TFC, null, null)]))
+  .then(index_main)
+  .catch((e) => {
+    let msg = "TWAPI/TFC Failure: ";
+    let t = e.target || e.srcElement || e.originalTarget;
+    if (t.attributes && t.attributes.src && t.attributes.src.value) {
+      msg += "while loading " + t.attributes.src.value;
+    } else if (t.outerHTML) {
+      msg += "while loading " + t.outerHTML;
+    } else if (t.nodeValue) {
+      msg += "while loading " + t.nodeValue;
+    } else {
+      msg += "while loading " + t;
+    }
+    _console_error(msg, e);
+    if (e.stack) {
+      msg += ": stack: " + e.stack;
+    }
+    alert(msg);
+  });
 }
 
 /* vim: set ts=2 sts=2 sw=2 et: */
