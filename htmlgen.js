@@ -2,12 +2,6 @@
 
 "use strict";
 
-/* FIXME:
- * @user transform broken
- * Subs show "1000" instead of "Tier 1"
- * (maybe?) Tier 2+ subs show as "1000"
- */
-
 /* TODO:
  * Unify all the regex-based transforms into one function
  * Add more badge information on hover
@@ -616,26 +610,27 @@ class HTMLGenerator {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
     let e = this.twitchEmote("PogChamp");
-    $m.text(Strings.Sub(TwitchSubEvent.PlanName(event.plan_id)));
-    $m.html(e + "&nbsp;" + $m.html());
+    $m.text(Strings.Sub(TwitchSubEvent.PlanName(`${event.plan_id}`)));
+    $m.html($m.html() + e + "&nbsp;");
     $w.append($m);
     this._checkUndefined(event, $w);
     return $w[0].outerHTML;
   }
 
+  /* FIXME: Messages are omitted */
   resub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
     let e = this.twitchEmote("PogChamp");
     let months = event.months || event.total_months;
     let streak = event.streak_months;
-    let plan = TwitchSubEvent.PlanName(event.plan_id);
+    let plan = TwitchSubEvent.PlanName(`${event.plan_id}`);
     if (event.share_streak) {
       $m.text(Strings.ResubStreak(months, plan, streak));
     } else {
       $m.text(Strings.Resub(months, plan));
     }
-    $m.html(e + "&nbsp;" + $m.html());
+    $m.html($m.html() + "&nbsp;" + e);
     $w.append($m);
     this._checkUndefined(event, $w);
     return $w[0].outerHTML;
@@ -649,11 +644,11 @@ class HTMLGenerator {
     } else {
       let user = event.recipient;
       let gifter = event.user;
-      let plan = TwitchSubEvent.PlanName(event.plan_id);
+      let plan = TwitchSubEvent.PlanName(`${event.plan_id}`);
       $m.text(Strings.GiftSub(gifter, plan, user));
     }
     let e = this.twitchEmote("HolidayPresent");
-    $m.html(e + "&nbsp;" + $m.html());
+    $m.html($m.html() + e + "&nbsp;");
     $w.append($m);
     this._checkUndefined(event, $w);
     return $w[0].outerHTML;
@@ -666,11 +661,11 @@ class HTMLGenerator {
       $m.text(event.flags["system-msg"]);
     } else {
       let user = event.recipient_name || event.recipient;
-      let plan = TwitchSubEvent.PlanName(event.plan_id);
+      let plan = TwitchSubEvent.PlanName(`${event.plan_id}`);
       $m.text(Strings.AnonGiftSub(plan, user));
     }
     let e = this.twitchEmote("HolidayPresent");
-    $m.html(e + "&nbsp;" + $m.html());
+    $m.html($m.html() + e + "&nbsp;");
     $w.append($m);
     this._checkUndefined(event, $w);
     return $w[0].outerHTML;
