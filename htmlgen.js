@@ -3,11 +3,13 @@
 "use strict";
 
 /* FIXME:
+ * @user transform broken
  * Subs show "1000" instead of "Tier 1"
  * (maybe?) Tier 2+ subs show as "1000"
  */
 
 /* TODO:
+ * Unify all the regex-based transforms into one function
  * Add more badge information on hover
  * Add emote information on hover
  * Add clip information on hover
@@ -41,13 +43,6 @@ class HTMLGenerator {
 
   getValue(k) {
     return this._config[k];
-  }
-
-  set bgcolors(colors) {
-    this._bg_colors = [];
-    for (let c of colors) {
-      this._bg_colors.push(c);
-    }
   }
 
   getColorFor(username) {
@@ -89,49 +84,12 @@ class HTMLGenerator {
     return $e[0].outerHTML;
   }
 
-  formatURLs(message) {
-    let $m = $("<span></span>").html(message);
-    /* SearchTree predicate */
-    function text_and_has_url(elem) {
-      if (elem.nodeType === Node.TEXT_NODE) {
-        if (elem.nodeValue.match(Util.URL_REGEX)) {
-          return true;
-        }
-      }
-      return false;
-    }
-    /* SplitByMatches map function */
-    let to_url = (u) => new URL(Util.URL(u));
-    /* Obtain text nodes with URLs */
-    let nodes = Util.SearchTree($m[0], text_and_has_url);
-    let replace_info = [];
-    /* Populate nodes and their new contents */
-    for (let node of nodes) {
-      let matches = node.nodeValue.match(Util.URL_REGEX);
-      let parts = Util.SplitByMatches(node.nodeValue, matches, to_url);
-      let newNodes = [];
-      for (let part of parts) {
-        let newnode = Util.CreateNode(part);
-        if (part instanceof URL) {
-          if (part.host === "clips.twitch.tv" && this._config.ShowClips) {
-            newnode.setAttribute("data-clip", "1");
-          }
-        }
-        newNodes.push(newnode);
-      }
-      replace_info.push([node.parentNode, newNodes]);
-    }
-    /* Replace the nodes' contents with the new children */
-    for (let [node, children] of replace_info) {
-      node.innerHTML = "";
-      for (let child of children) {
-        node.innerHTML += Util.GetHTML(child);
-      }
-    }
-    return $m[0].innerHTML;
+  twitchEmote(id) {
+    return this._emote("twitch", this._client.GetEmote(id), {id: id});
   }
 
   _checkUndefined(ev, $w) {
+    /* Verify the message doesn't contain "undefined" */
     if ($w[0].outerHTML.indexOf("undefined") > -1) {
       Util.Error("msg contains undefined");
       Util.ErrorOnly(ev, $w, $w[0].outerHTML);
@@ -192,10 +150,6 @@ class HTMLGenerator {
     }
     $w.append($i);
     return $("<div></div>").append($w).html();
-  }
-
-  _twitchEmote(id) {
-    return this._emote("twitch", this._client.GetEmote(id), {id: id});
   }
 
   _genCheer(cheer, bits) {
@@ -388,24 +342,17 @@ class HTMLGenerator {
   _msgEmotesTransform(event, message, map, $msg, $effects) {
     if (event.flags.emotes) {
       let emotes = event.flags.emotes.map(function(e) {
-        return {"id": e.id, "name": e.name,
-                "start": map[e.start], "end": map[e.end],
-                "ostart": e.start, "oend": e.end};
+        return {id: e.id, name: e.name, start: e.start, end: e.end, def: e};
       });
-      emotes.sort((a, b) => a.start - b.start);
+      emotes.sort((a, b) => map[a.start] - map[b.start]);
       while (emotes.length > 0) {
         let emote = emotes.pop();
-        let msg_start = message.substr(0, emote.start);
-        let msg_end = message.substr(emote.end+1);
-        let emote_str = this._emote("twitch", this._client.GetEmote(emote.id),
-                                    {id: emote.id, name: emote.name, def: emote});
+        let msg_start = message.substr(0, map[emote.start]);
+        let msg_end = message.substr(map[emote.end]+1);
+        let emote_str = this._emote("twitch", this._client.GetEmote(emote.id), emote);
         message = `${msg_start}${emote_str}${msg_end}`;
         /* Adjust the map */
-        for (let idx = emote.ostart; idx < map.length; ++idx) {
-          if (map[idx] >= emote.end) {
-            map[idx] += emote_str.length - (emote.end - emote.start) - 1;
-          }
-        }
+        this._remap(map, emote.start, emote.end, emote_str.length - 1);
       }
     }
     return message;
@@ -425,11 +372,11 @@ class HTMLGenerator {
         let edef = emote.id;
         let url = edef.urls[Object.keys(edef.urls).min()];
         let emote_str = this._emote("ffz", url,
-                                    {id: edef.id, w: edef.width, h: edef.height, def: edef});
+                                    {id: edef.id, w: edef.width, h: edef.height,
+                                     def: edef});
         let msg_start = message.substr(0, map[emote.start]);
         let msg_end = message.substr(map[emote.end+1]);
         message = `${msg_start}${emote_str}${msg_end}`;
-        /* Adjust the map */
         this._remap(map, emote.start, emote.end+1, emote_str.length)
       }
     }
@@ -456,17 +403,17 @@ class HTMLGenerator {
     while (results.length > 0) {
       let emote = results.pop();
       let edef = emotes[emote.id];
-      let emote_str = this._emote("bttv", edef.url, {id: edef.id, name: edef.code, def: edef});
+      let emote_str = this._emote("bttv", edef.url,
+                                  {id: edef.id, name: edef.code, def: edef});
       let msg_start = message.substr(0, map[emote.start]);
       let msg_end = message.substr(map[emote.end+1]);
       message = `${msg_start}${emote_str}${msg_end}`;
-      /* Adjust the map */
       this._remap(map, emote.start, emote.end+1, emote_str.length);
     }
     return message;
   }
 
-  _msgAtUserTransform(event, message, map, $msg, $effects) {
+  _msgAtUserTransform_old(event, message, map, $msg, $effects) {
     let pat = /(^|\b\s*)(@\w+)(\s*\b|$)/g;
     message = message.replace(pat, (function(m, p1, p2, p3) {
       let name = this._client.GetName().toLowerCase();
@@ -480,55 +427,54 @@ class HTMLGenerator {
     return message;
   }
 
+  _msgAtUserTransform(event, message, map, $msg, $effects) {
+    let pat = /(?:^|\b\s*)(@\w+)(?:\s*\b|$)/g;
+    let locations = [];
+    let arr = null;
+    while ((arr = pat.exec(event.message)) !== null) {
+      let start = arr.index + arr[0].indexOf(arr[1]);
+      let end = start + arr[1].length;
+      locations.push({part: arr[1], start: start, end: end});
+    }
+    /* Ensure the locations array is indeed sorted */
+    locations.sort((a, b) => (a.start - b.start));
+    while (locations.length > 0) {
+      let location = locations.pop();
+      let node = $(`<em class="at-user"></em>`).text(location.part);
+      if (location.part.substr(1).toLowerCase() === this._client.GetName().toLowerCase()) {
+        node.addClass("at-self");
+      }
+      let msg_start = message.substr(0, map[location.start]);
+      let msg_part = node[0].outerHTML;
+      let msg_end = message.substr(map[location.end]);
+      message = msg_start + msg_part + msg_end;
+      this._remap(map, location.start, location.end, msg_part.length);
+    }
+    return message;
+  }
+
   _msgURLTransform(event, message, map, $msg, $effects) {
-    let $m = $("<span></span>").html(message);
-    /* SearchTree predicate */
-    function text_and_has_url(elem) {
-      if (elem.nodeType === Node.TEXT_NODE) {
-        if (elem.nodeValue.match(Util.URL_REGEX)) {
-          return true;
-        }
-      }
-      return false;
+    let locations = [];
+    let arr = null;
+    while ((arr = Util.URL_REGEX.exec(event.message)) !== null) {
+      /* arr = [wholeMatch, matchPart] */
+      let start = arr.index + arr[0].indexOf(arr[1]);
+      let end = start + arr[1].length;
+      locations.push({whole: arr[0], part: arr[1], start: start, end: end});
     }
-    /* SplitByMatches map function */
-    let to_url = (u) => new URL(Util.URL(u));
-    /* Obtain the text nodes that contain URLs */
-    let nodes = Util.SearchTree($m[0], text_and_has_url);
-    let replace_info = [];
-    /* Populate nodes and their new contents */
-    for (let node of nodes) {
-      let matches = node.nodeValue.match(Util.URL_REGEX);
-      let parts = Util.SplitByMatches(node.nodeValue, matches, to_url);
-      let newNodes = [];
-      /* Populate the previous siblings */
-      for (let n = node.previousSibling; n; n = n.previousSibling) {
-        newNodes.unshift(n);
-      }
-      /* Populate the URL */
-      for (let part of parts) {
-        let newnode = Util.CreateNode(part);
-        if (part instanceof URL) {
-          if (part.host === "clips.twitch.tv" && this._config.ShowClips) {
-            newnode.setAttribute("data-clip", "1");
-          }
-        }
-        newNodes.push(newnode);
-      }
-      /* Populate the subsequent siblings */
-      for (let n = node.nextSibling; n; n = n.nextSibling) {
-        newNodes.push(n);
-      }
-      replace_info.push([node.parentNode, newNodes]);
+    /* Ensure the locations array is indeed sorted */
+    locations.sort((a, b) => (a.start - b.start));
+    while (locations.length > 0) {
+      let location = locations.pop();
+      let url = location.part;
+      let anchor = Util.CreateNode(new URL(Util.URL(url)));
+      let msg_start = message.substr(0, map[location.start]);
+      let msg_part = anchor.outerHTML;
+      let msg_end = message.substr(map[location.end]);
+      message = msg_start + msg_part + msg_end;
+      this._remap(map, location.start, location.end, msg_part.length);
     }
-    /* Replace the nodes' contents with the new children */
-    for (let [node, children] of replace_info) {
-      node.innerHTML = "";
-      for (let child of children) {
-        node.innerHTML += Util.GetHTML(child);
-      }
-    }
-    return $m.html();
+    return message;
   }
 
   _genMsgInfo(event) {
@@ -565,8 +511,10 @@ class HTMLGenerator {
     message = this._msgCheersTransform(event, message, map, $msg, $effects);
     message = this._msgFFZEmotesTransform(event, message, map, $msg, $effects);
     message = this._msgBTTVEmotesTransform(event, message, map, $msg, $effects);
-    message = this._msgAtUserTransform(event, message, map, $msg, $effects);
     message = this._msgURLTransform(event, message, map, $msg, $effects);
+    /* FIXME: Broken.
+    message = this._msgAtUserTransform(event, message, map, $msg, $effects);
+    */
 
     /* Handle mod-only antics */
     if (event.ismod && !$("#cbForce").is(":checked") && event.flags.force) {
@@ -667,7 +615,7 @@ class HTMLGenerator {
   sub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
-    let e = this._twitchEmote("PogChamp");
+    let e = this.twitchEmote("PogChamp");
     $m.text(Strings.Sub(TwitchSubEvent.PlanName(event.plan_id)));
     $m.html(e + "&nbsp;" + $m.html());
     $w.append($m);
@@ -678,7 +626,7 @@ class HTMLGenerator {
   resub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
-    let e = this._twitchEmote("PogChamp");
+    let e = this.twitchEmote("PogChamp");
     let months = event.months || event.total_months;
     let streak = event.streak_months;
     let plan = TwitchSubEvent.PlanName(event.plan_id);
@@ -704,7 +652,7 @@ class HTMLGenerator {
       let plan = TwitchSubEvent.PlanName(event.plan_id);
       $m.text(Strings.GiftSub(gifter, plan, user));
     }
-    let e = this._twitchEmote("HolidayPresent");
+    let e = this.twitchEmote("HolidayPresent");
     $m.html(e + "&nbsp;" + $m.html());
     $w.append($m);
     this._checkUndefined(event, $w);
@@ -721,7 +669,7 @@ class HTMLGenerator {
       let plan = TwitchSubEvent.PlanName(event.plan_id);
       $m.text(Strings.AnonGiftSub(plan, user));
     }
-    let e = this._twitchEmote("HolidayPresent");
+    let e = this.twitchEmote("HolidayPresent");
     $m.html(e + "&nbsp;" + $m.html());
     $w.append($m);
     this._checkUndefined(event, $w);
@@ -740,7 +688,7 @@ class HTMLGenerator {
       let user = this.genName(raider, event.flags.color);
       $w.html(Strings.Raid(user, count));
     }
-    let e = this._twitchEmote("TombRaid");
+    let e = this.twitchEmote("TombRaid");
     $w.html(e + "&nbsp;" + $w.html());
     this._checkUndefined(event, $w);
     return $w[0].outerHTML;
