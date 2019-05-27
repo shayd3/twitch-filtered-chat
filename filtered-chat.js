@@ -6,8 +6,7 @@
  * HTMLGen @user transform broken
  * HTMLGen shows Tier 2+ subs as "1000" (unconfirmed)
  * Configuration is lost if &module configuration is present
- *  getConfigObject overrides changes with query string
- * Subscribe messages aren't shown with subscribe alerts
+ *   Allow localStorage to override query string in certain circumstances
  */
 
 /* TODO:
@@ -1439,6 +1438,15 @@ function client_main(layout) { /* exported client_main */
     Util.StorageAppend("debug-msg-log", e);
     let line = client.get("HTMLGen").resub(e);
     Content.addHTML(line);
+    /* Display the resub message, if one is present */
+    if (e.message) {
+      let msg = client.get("HTMLGen").gen(e);
+      let $msg = $(msg);
+      $msg.addClass("message");
+      $msg.addClass("sub-message");
+      $msg.addClass("sub-user-message");
+      Content.addHTML($msg);
+    }
   });
 
   /* User gifted a subscription */

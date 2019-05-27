@@ -151,11 +151,11 @@ class HTMLGenerator {
     let t = cheer.tiers.filter((n) => bits >= n.min_bits).max((n) => n.min_bits);
     /* Use the smallest scale available */
     let url = t.images.dark.animated[cheer.scales.min((s) => +s)];
-    let $w = $(`<span class="cheer cheermote"></span>`);
-    $w.css("color", t.color);
     let $img = $(`<img class="cheer-image" />`);
+    let $w = $(`<span class="cheer cheermote"></span>`);
     $img.attr("alt", cheer.prefix).attr("title", cheer.prefix);
     $img.attr("src", url);
+    $w.css("color", t.color);
     $w.append($img);
     $w.append(bits);
     return $w[0].outerHTML;
@@ -497,6 +497,7 @@ class HTMLGenerator {
         message = msgprefix + message.substr(wordlen);
         event.flags.bits = 1000;
         event.flags.force = true;
+        /* The map doesn't need updating because the message lengths don't change */
       }
     }
 
@@ -610,26 +611,33 @@ class HTMLGenerator {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
     let e = this.twitchEmote("PogChamp");
-    $m.text(Strings.Sub(TwitchSubEvent.PlanName(`${event.plan_id}`)));
+    if (event.flags["system-msg"]) {
+      $m.text(event.flags["system-msg"]);
+    } else {
+      $m.text(Strings.Sub(TwitchSubEvent.PlanName(`${event.plan_id}`)));
+    }
+    $m.addClass("effect-rainbow").addClass("effect-disco");
     $m.html($m.html() + e + "&nbsp;");
     $w.append($m);
     this._checkUndefined(event, $w);
     return $w[0].outerHTML;
   }
 
-  /* FIXME: Messages are omitted (TEST_MESSAGES.RESUB3) */
   resub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
     let e = this.twitchEmote("PogChamp");
     let months = event.months || event.total_months;
     let streak = event.streak_months;
-    let plan = TwitchSubEvent.PlanName(`${event.plan_id}`);
-    if (event.share_streak) {
+    let plan = event.plan || TwitchSubEvent.PlanName(`${event.plan_id}`);
+    if (event.flags["system-msg"]) {
+      $m.text(event.flags["system-msg"]);
+    } else if (event.share_streak) {
       $m.text(Strings.ResubStreak(months, plan, streak));
     } else {
       $m.text(Strings.Resub(months, plan));
     }
+    $m.addClass("effect-rainbow").addClass("effect-disco");
     $m.html($m.html() + "&nbsp;" + e);
     $w.append($m);
     this._checkUndefined(event, $w);
@@ -648,6 +656,7 @@ class HTMLGenerator {
       $m.text(Strings.GiftSub(gifter, plan, user));
     }
     let e = this.twitchEmote("HolidayPresent");
+    $m.addClass("effect-rainbow").addClass("effect-disco");
     $m.html($m.html() + e + "&nbsp;");
     $w.append($m);
     this._checkUndefined(event, $w);
@@ -665,6 +674,7 @@ class HTMLGenerator {
       $m.text(Strings.AnonGiftSub(plan, user));
     }
     let e = this.twitchEmote("HolidayPresent");
+    $m.addClass("effect-rainbow").addClass("effect-disco");
     $m.html($m.html() + e + "&nbsp;");
     $w.append($m);
     this._checkUndefined(event, $w);
@@ -673,17 +683,19 @@ class HTMLGenerator {
 
   raid(event) {
     let $w = $(`<div class="chat-line raid"></div>`);
+    let $m = $(`<span class="message raid-message"></span>`);
     if (event.flags["system-msg"]) {
-      $w.text(event.flags["system-msg"]);
+      $m.text(event.flags["system-msg"]);
     } else {
       /* Unlikely */
       let raider = event.flags["msg-param-displayName"] ||
                    event.flags["msg-param-login"];
       let count = event.flags["msg-param-viewerCount"];
-      let user = this.genName(raider, event.flags.color);
-      $w.html(Strings.Raid(user, count));
+      $m.html(Strings.Raid(raider, count));
     }
     let e = this.twitchEmote("TombRaid");
+    $m.addClass("effect-rainbow").addClass("effect-disco");
+    $w.append($m);
     $w.html(e + "&nbsp;" + $w.html());
     this._checkUndefined(event, $w);
     return $w[0].outerHTML;
