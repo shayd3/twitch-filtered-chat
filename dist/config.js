@@ -1,4 +1,4 @@
-/* Twitch Filtered Chat Main Configuration */"use strict";/** Defining a new CSS style:
+/* Twitch Filtered Chat Main Configuration */"use strict";/** Defining a new CSS style (see "Line format" below):
  *  <style_name>: {
  *    cost: Number: number of bits the effect requires/consumes,
  *    class: String: CSS class name(s) for text "span" element,
@@ -6,8 +6,10 @@
  *    wclass: String: CSS class name(s) for containing "div" element,
  *    wstyle: String: CSS style(s) for containing "div" element,
  *    html_pre: String: HTML to place before the line "span" element,
- *    html_post: String: HTML to place after the line "span" element,
+ *    html_post: String: HTML to place after the line "span" element
  *  }
+ *
+ ** Plugins can add or modify cheer styles by modifying CSSCheerStyles.
  *
  ** Line format:
  *  <div class="line line-wrapper">
