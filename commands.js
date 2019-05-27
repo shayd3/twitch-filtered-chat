@@ -1,5 +1,11 @@
 /* Twitch Filtered Chat Commands */
 
+/* TODO:
+ * Change usage parsing to use brackets:
+ *   ["<arg>": "argument is <arg>"]
+ *   ["arg1 <arg2>": "arg1 is literal, <arg2> is an argument"]
+ */
+
 class ChatCommandManager {
   constructor() {
     this._command_list = [];
@@ -132,6 +138,7 @@ class ChatCommandManager {
         let argstr = "";
         let usagestr = this.formatArgs(entry.usage);
         if (Util.IsArray(entry.args)) {
+          /* TODO: Escape only the last item */
           argstr = entry.args.map((a) => fmtArg(a)).join(" ");
           usages.push(this.helpLine(`//${cmd.name} ${argstr}`, usagestr));
         } else if (entry.args) {
@@ -195,17 +202,18 @@ class ChatCommandManager {
 }
 
 function command_log(cmd, tokens, client) {
+  let t0 = tokens.length > 0 ? tokens[0] : "";
   let logs = Util.GetWebStorage("debug-msg-log") || [];
   Content.addHelp(`Debug message log length: ${logs.length}`);
   if (tokens.length > 0) {
-    if (tokens[0] === "help") {
+    if (t0 === "help") {
       this.printHelp();
       this.printUsage();
-    } else if (tokens[0] === "show") {
+    } else if (t0 === "show") {
       for (let [i, l] of Object.entries(logs)) {
         Content.addHelp(`${i}: ${JSON.stringify(l).escape()}`);
       }
-    } else if (tokens[0] === "export") {
+    } else if (t0 === "export") {
       let width = window.innerWidth * 0.75;
       let w = Util.Open("assets/log-export.html",
                         "TFCLogExportWindow",
@@ -221,17 +229,11 @@ function command_log(cmd, tokens, client) {
           this.addEntries(logs);
         }
       }
-    } else if (tokens[0] === "summary") {
+    } else if (t0 === "summary") {
       let lines = [];
       let line = [];
       for (let l of Object.values(logs)) {
-        let desc = "";
-        if (l._cmd) {
-          desc = l._cmd;
-        } else {
-          desc = JSON.stringify(l).substr(0, 10);
-        }
-        line.push(desc);
+        line.push(l._cmd || JSON.stringify(l).substr(0, 10));
         if (line.length >= 10) {
           lines.push(line);
           line = [];
@@ -240,30 +242,78 @@ function command_log(cmd, tokens, client) {
       if (line.length > 0) {
         lines.push(line);
       }
+      let lnum = 0;
       for (let lidx = 0; lidx < lines.length; ++lidx) {
         let l = lines[lidx];
-        Content.addHelp(`${lidx}-${lidx+l.length-1}: ${JSON.stringify(l)}`);
-        lidx += l.length;
+        Content.addHelp(`${lnum}-${lnum+l.length-1}: ${JSON.stringify(l)}`);
+        lnum += l.length;
       }
-    } else if (tokens[0] === "shift") {
+    } else if (["search", "filter", "filter-out"].indexOf(t0) > -1) {
+      if (tokens.length > 1) {
+        let needle = tokens.slice(1).join(" ");
+        let unmatched = [];
+        let matched = [];
+        for (let [i, l] of Object.entries(logs)) {
+          let cond = JSON.stringify(l).includes(needle);
+          if (t0 === "filter-out") {
+            cond = !cond;
+          }
+          if (cond) {
+            matched.push([i, l]);
+          } else {
+            unmatched.push([i, l]);
+          }
+        }
+        let pl = `${matched.length} item` + (matched.length === 1 ? "" : "s");
+        Content.addHelp(`Found ${pl} containing "${needle}"`.escape());
+        if (t0 === "search") {
+          for (let [i, l] of matched) {
+            Content.addHelp(`${i}: ${l._cmd || JSON.stringify(l).substr(0, 10)}`);
+          }
+        } else {
+          Content.addHelp(`Removing ${unmatched.length} of ${logs.length} items`);
+          Content.addHelp(`New logs length: ${matched.length}`);
+          Util.SetWebStorage("debug-msg-log", matched.map((i) => i[1]));
+        }
+      } else {
+        Content.addHelp(`Usage: //log ${t0} &lt;string&gt;`);
+      }
+    } else if (t0 === "remove") {
+      let n = tokens.slice(1)
+        .map((e) => Number.parseInt(e))
+        .filter((e) => !Number.isNaN(e));
+      if (n.length > 0) {
+        Content.addHelp(`Removing ${n.length} item` + (n.length === 1 ? "" : "s"));
+        let result = [];
+        for (let i = 0; i < logs.length; ++i) {
+          if (n.indexOf(i) === -1) {
+            result.push(logs[i]);
+          }
+        }
+        Content.addHelp(`New logs length: ${result.length}`);
+        Util.SetWebStorage("debug-msg-log", result);
+      } else {
+        Content.addHelp("No items to remove");
+      }
+    } else if (t0 === "shift") {
       logs.shift();
       Content.addHelp(`New logs length: ${logs.length}`);
       Util.SetWebStorage("debug-msg-log", logs);
-    } else if (tokens[0] === "pop") {
+    } else if (t0 === "pop") {
       logs.pop();
       Content.addHelp(`New logs length: ${logs.length}`);
       Util.SetWebStorage("debug-msg-log", logs);
-    } else if (tokens[0] === "size") {
+    } else if (t0 === "size") {
       let b = JSON.stringify(logs).length;
       Content.addHelp(`Logged bytes: ${b} (${b/1024.0} KB)`);
-    } else if (tokens[0] === "clear") {
+    } else if (t0 === "clear") {
       Util.SetWebStorage("debug-msg-log", []);
       Content.addHelp("Log cleared");
-    } else if (tokens[0].match(/^[1-9][0-9]*$/)) {
-      let idx = Number(tokens[0]);
+    } else if (!Number.isNaN(Number.parseInt(t0))) {
+      let idx = Number(t0);
       Content.addHelp(JSON.stringify(logs[idx]).escape());
     } else {
-      Content.addHelp(`Unknown argument ${tokens[0].escape()}`);
+      Content.addHelp(`Unknown argument ${t0.escape()}`);
     }
   } else {
     this.printUsage();
@@ -450,13 +500,17 @@ function command_raw(cmd, tokens, client) {
 const DefaultCommands = {
   "log": {
     func: command_log,
-    desc: "Display logged messages",
+    desc: "Display or manipulate logged messages",
     alias: ["logs"],
     usage: [
       [null, "Display log command usage"],
       ["number", "Display the message numbered <number>"],
       ["show", "Display all logged messages (can be a lot of text!)", {literal: true}],
       ["summary", "Display a summary of the logged messages", {literal: true}],
+      [["search", "string"], "Show logs containing <string>"],
+      [["remove", "index..."], "Remove items with the given indexes"],
+      [["filter", "string"], "Remove items containing <string>"],
+      [["filter-out", "string"], "Remove items that don't contain <string>"],
       ["shift", "Remove the first logged message", {literal: true}],
       ["pop", "Remove the last logged message", {literal: true}],
       ["export", "Open a new window with all the logged items", {literal: true}],
@@ -478,7 +532,7 @@ const DefaultCommands = {
     desc: "Join a channel",
     alias: ["j"],
     usage: [
-      ["Channel", "Connect to <channel>; leading # is optional"]
+      ["channel", "Connect to <channel>; leading # is optional"]
     ]
   },
   "part": {
@@ -506,7 +560,7 @@ const DefaultCommands = {
   },
   "client": {
     func: command_client,
-    desc: "Display numerous things about the client; use //help client for info",
+    desc: "Display numerous things about the client",
     usage: [
       [null, "Show general information about the client"],
       ["status", "Show current connection information", {literal: true}]
