@@ -2,8 +2,9 @@
 
 "use strict";
 
+/*** TODO Rebuild the HTML generator to use tokenization TODO ***/
+
 /* TODO:
- * Unify all the regex-based transforms into one function
  * Add more badge information on hover
  * Add emote information on hover
  * Add clip information on hover
@@ -75,7 +76,7 @@ class HTMLGenerator {
     /* Clicking on the name will open the context window */
     $e.attr("data-username", "1");
     $e.text(name);
-    return $e[0].outerHTML;
+    return $e;
   }
 
   twitchEmote(id) {
@@ -87,28 +88,6 @@ class HTMLGenerator {
     if ($w[0].outerHTML.indexOf("undefined") > -1) {
       Util.Error("msg contains undefined");
       Util.ErrorOnly(ev, $w, $w[0].outerHTML);
-    }
-  }
-
-  _remap(map, mstart, mend, len) {
-    /* IDEA BEHIND MAP ADJUSTMENT:
-     * 1) Maintain two parallel strings, `msg0` (original) and `msg` (final).
-     * 2) Maintain the following invariant:
-     *  a) msg0.indexOf("substr") === map[msg.indexOf("substr")]
-     *  b) msg0[idx] === msg1[map[idx]]
-     * Exceptions:
-     *  If msg0[idx] is part of a formatted entity; msg[map[idx]] may not be
-     *  the same character.
-     * Usage:
-     *  The map allows for formatting the final message based on where items
-     *  appear in the original message.
-     */
-    let start = map[mstart];
-    let end = map[mend];
-    for (let idx = mstart; idx < map.length; ++idx) {
-      if (map[idx] - map[mstart] >= (end - start)) {
-        map[idx] += len - (end - start);
-      }
     }
   }
 
@@ -280,6 +259,28 @@ class HTMLGenerator {
     let color = event.flags.color || this.getColorFor(event.user);
     if (!color) { color = "#ffffff"; }
     return this.genName(user, color);
+  }
+
+  _remap(map, mstart, mend, len) {
+    /* IDEA BEHIND MAP ADJUSTMENT:
+     * 1) Maintain two parallel strings, `msg0` (original) and `msg` (final).
+     * 2) Maintain the following invariant:
+     *  a) msg0.indexOf("substr") === map[msg.indexOf("substr")]
+     *  b) msg0[idx] === msg1[map[idx]]
+     * Exceptions:
+     *  If msg0[idx] is part of a formatted entity; msg[map[idx]] may not be
+     *  the same character.
+     * Usage:
+     *  The map allows for formatting the final message based on where items
+     *  appear in the original message.
+     */
+    let start = map[mstart];
+    let end = map[mend];
+    for (let idx = mstart; idx < map.length; ++idx) {
+      if (map[idx] - map[mstart] >= (end - start)) {
+        map[idx] += len - (end - start);
+      }
+    }
   }
 
   _msgCheersTransform(event, message, map, $msg, $effects) {
@@ -558,8 +559,8 @@ class HTMLGenerator {
   _genSubWrapper(event) {
     let $e = $(`<div></div>`);
     $e.addClass("chat-line").addClass("sub").addClass("notice");
-    $e.append($(this._genBadges(event)));
-    $e.append($(this._genName(event)));
+    $e.append(this._genBadges(event));
+    $e.append(this._genName(event));
     $e.html($e.html() + "&nbsp;");
     return $e;
   }
@@ -580,8 +581,8 @@ class HTMLGenerator {
       if (event.flags.broadcaster) $e.addClass("chat-caster");
     }
     /* Generate line content */
-    $e.append($(this._genBadges(event)));
-    $e.append($(this._genName(event)));
+    $e.append(this._genBadges(event));
+    $e.append(this._genName(event));
     let msg_def = this._genMsgInfo(event);
     if (!event.flags.action) {
       $e.html($e.html() + ":");
@@ -604,7 +605,7 @@ class HTMLGenerator {
       }
     }
     $e.append($(html_pre.join("") + msg_def.e[0].outerHTML + html_post.join("")));
-    return $e[0].outerHTML;
+    return $e;
   }
 
   sub(event) {
@@ -620,7 +621,7 @@ class HTMLGenerator {
     $m.html($m.html() + e + "&nbsp;");
     $w.append($m);
     this._checkUndefined(event, $w);
-    return $w[0].outerHTML;
+    return $w[0];
   }
 
   resub(event) {
@@ -641,7 +642,7 @@ class HTMLGenerator {
     $m.html($m.html() + "&nbsp;" + e);
     $w.append($m);
     this._checkUndefined(event, $w);
-    return $w[0].outerHTML;
+    return $w;
   }
 
   giftsub(event) {
@@ -660,7 +661,7 @@ class HTMLGenerator {
     $m.html($m.html() + e + "&nbsp;");
     $w.append($m);
     this._checkUndefined(event, $w);
-    return $w[0].outerHTML;
+    return $w;
   }
 
   anongiftsub(event) {
@@ -678,7 +679,7 @@ class HTMLGenerator {
     $m.html($m.html() + e + "&nbsp;");
     $w.append($m);
     this._checkUndefined(event, $w);
-    return $w[0].outerHTML;
+    return $w;
   }
 
   raid(event) {
@@ -698,7 +699,7 @@ class HTMLGenerator {
     $w.append($m);
     $w.html(e + "&nbsp;" + $w.html());
     this._checkUndefined(event, $w);
-    return $w[0].outerHTML;
+    return $w;
   }
 
   new_user(event) { /* TODO */
@@ -733,7 +734,7 @@ class HTMLGenerator {
     if (id !== null) {
       $l.attr("id", id);
     }
-    return $l[0].outerHTML;
+    return $l;
   }
 
   checkbox(value, id=null, classes=null, checked=false) {

@@ -536,6 +536,24 @@ input {
   text-decoration: underline;
 }
 
+#settings footer #btnClose {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+#settings footer #btnClose:hover {
+  text-decoration: underline;
+}
+
+#settings footer #btnReconnect {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+#settings footer #btnReconnect:hover {
+  text-decoration: underline;
+}
+
 #settings ul {
   margin: 0.5em 0;
 }

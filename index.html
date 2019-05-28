@@ -186,8 +186,8 @@ function onLoad() {
   <div id="settings">
     <!-- TODO: Separate "help" and "settings builder", make latter more obvious -->
     <header style="display: inline-block; width: 100%">
-      <span class="fl">Settings<a class="help" id="settings-help">?</a></span>
-      <span class="fr"><a class="builder" id="settings-builder">Builder</a></span>
+      <span class="fl">Settings<a class="help" id="btnSettingsHelp">?</a></span>
+      <span class="fr"><a class="builder" id="btnSettingsBuilder">Builder</a></span>
     </header>
     <ul>
       <!-- HTML formatted to remove unwanted Text elements -->
@@ -202,8 +202,8 @@ function onLoad() {
       <li><label>Debugging:</label><select id="selDebug"><option value="0" selected>Disabled</option><option value="1">Debug</option><option value="2">Trace</option></select></li>
     </ul>
     <footer>
-      <span class="fl"><a onclick="$('#btnSettings').click();">Close</a></span>
-      <span class="fr" id="reconnect"><a>Reconnect</a></span>
+      <span class="fl" id="btnClose">Close</span>
+      <span class="fr" id="btnReconnect">Reconnect</span>
     </footer>
   </div>
   <img id="btnSettings" src="assets/settings_white.png" alt="Settings" />

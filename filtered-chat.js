@@ -4,14 +4,12 @@
 
 /* FIXME:
  * HTMLGen @user transform broken
- * HTMLGen shows Tier 2+ subs as "1000" (unconfirmed)
- * Configuration is lost if &module configuration is present
- *   Allow localStorage to override query string in certain circumstances
  */
 
 /* TODO:
+ * Add way to send a message to a specific channel
  * Add to #settings help link
- * Add to #settings config link
+ * Create page for the #settings config link
  * Finish //config set and //config setobj
  * Finish badge information on hover
  * Add clip information on hover
@@ -208,6 +206,7 @@ function getConfigObject(inclSensitive=true) {
    *  a) from localStorage
    *  b) from query string (overrides (a))
    *  c) from settings elements (overrides (b))
+   *  d) from liveStorage (module settings only, overrides (c))
    * 2) Store module configuration in each modules' settings window
    * 3) Remove sensitive values from the query string, if present
    */
@@ -285,11 +284,19 @@ function getConfigObject(inclSensitive=true) {
 
   function toArray(val) { return Util.IsArray(val) ? val : []; }
 
-  /* Populate configs for each module */
+  /* Populate configs from each module */
   $(".module").each(function() {
     let id = $(this).attr("id");
     if (!config[id]) {
       config[id] = getModuleSettings($(this));
+    }
+    /* Populate module configuration from liveStorage (if present) */
+    if (window.liveStorage) {
+      if (window.liveStorage[id]) {
+        for (let [k, v] of Object.entries(window.liveStorage[id])) {
+          config[id][k] = v;
+        }
+      }
     }
     config[id].Pleb = Boolean(config[id].Pleb);
     config[id].Sub = Boolean(config[id].Sub);
@@ -490,11 +497,16 @@ function formatModuleConfig(cfg) {
   return Encode(values).join(",");
 }
 
-/* Store the modules' settings in the localStorage */
+/* Store the modules' settings in both localStorage and liveStorage */
 function updateModuleConfig() {
   let config = {};
   $(".module").each(function() {
-    config[$(this).attr("id")] = getModuleSettings($(this));
+    let id = $(this).attr("id");
+    config[id] = getModuleSettings($(this));
+    if (!window.liveStorage) {
+      window.liveStorage = {};
+    }
+    window.liveStorage[id] = config[id];
   });
   mergeConfigObject(config);
 }
@@ -559,8 +571,8 @@ function shouldFilter(module, event) {
       }
     }
   } else if (event instanceof TwitchEvent) {
+    /* Filter out events and notices */
     if (!rules.Event) {
-      /* Filter out events and notices */
       if (event.command === "USERNOTICE") {
         return true;
       } else if (event.command === "NOTICE") {
@@ -604,14 +616,22 @@ function showContextWindow(client, cw, line) {
   $cw.attr("data-id", id);
 
   /* Define functions for building elements */
-  let $Line = (s) => $(`<div class="item">${s}</div>`);
-  let Link = (i, text) => client.get("HTMLGen").url(null, text, "cw-link", i);
+  function $Line(s) {
+    let $i = $(`<div class="item"></div>`);
+    if (typeof(s) === "string") {
+      $i.html(s);
+    } else {
+      $i.append(s);
+    }
+    return $i;
+  }
+  let $Link = (i, text) => client.get("HTMLGen").url(null, text, "cw-link", i);
   let $Em = (s) => $(`<span class="em pad">${s}</span>`);
 
   /* Add user's display name */
   let $username = $l.find(".username");
-  let classes = $username.attr("class");
-  let css = $username.attr("style");
+  let classes = $username.attr("class").escape();
+  let css = $username.attr("style").escape();
   let e_name = `<span class="${classes}" style="${css}">${name}</span>`;
   $cw.append($Line(`${e_name} in <span class="em">${channel}</span>`));
 
@@ -619,7 +639,7 @@ function showContextWindow(client, cw, line) {
   if (client.IsMod(channel)) {
     let $tl = $(`<div class="cw-timeout">Timeout:</div>`);
     for (let dur of "1s 10s 60s 10m 30m 1h 12h 24h".split(" ")) {
-      let $ta = $(Link(`cw-timeout-${user}-${dur}`, dur));
+      let $ta = $Link(`cw-timeout-${user}-${dur}`, dur);
       $ta.addClass("cw-timeout-dur");
       $ta.attr("data-channel", channel);
       $ta.attr("data-user", user);
@@ -639,7 +659,7 @@ function showContextWindow(client, cw, line) {
 
   /* Add link which places "/ban <user>" into the chat textbox */
   if (client.IsMod(channel)) {
-    let $ba = $(Link(`cw-ban-${user}`, "Ban"));
+    let $ba = $Link(`cw-ban-${user}`, "Ban");
     $ba.attr("data-channel", channel);
     $ba.attr("data-user", user);
     $ba.click(function() {
@@ -657,24 +677,30 @@ function showContextWindow(client, cw, line) {
 
   /* Add roles (and ability to remove roles, for the caster) */
   if (mod || vip || sub || caster) {
-    let $roles = $Line(`User Role:`);
-    if (mod) { $roles.append($Em("Mod")); $roles.append(","); }
-    if (vip) { $roles.append($Em("VIP")); $roles.append(","); }
-    if (sub) { $roles.append($Em("Sub")); $roles.append(","); }
-    if (caster) { $roles.append($Em("Host")); $roles.append(","); }
-    /* Remove the last comma */
-    $roles[0].removeChild($roles[0].lastChild);
-    $cw.append($roles);
+    let $roles = $Line(`User Role: `);
+    let roles = [];
+    if (mod) { roles.push($Em("Mod")); }
+    if (vip) { roles.push($Em("VIP")); }
+    if (sub) { roles.push($Em("Sub")); }
+    if (caster) { roles.push($Em("Host")); }
+    if (roles.length > 0) {
+      $roles.append(roles[0]);
+      for (let role of roles.slice(1)) {
+        $roles.append(", ");
+        $roles.append(role);
+      }
+      $cw.append($roles);
+    }
     if (client.IsCaster(channel) && !client.IsUIDSelf(userid)) {
-      if (mod) { $cw.append($Line(Link("cw-unmod", "Remove Mod"))); }
-      if (vip) { $cw.append($Line(Link("cw-unvip", "Remove VIP"))); }
+      if (mod) { $cw.append($Line($Link("cw-unmod", "Remove Mod"))); }
+      if (vip) { $cw.append($Line($Link("cw-unvip", "Remove VIP"))); }
     }
   }
 
   /* Add the ability to add roles (for the caster) */
   if (client.IsCaster(channel) && !client.IsUIDSelf(userid)) {
-    if (!mod) { $cw.append($Line(Link("cw-make-mod", "Make Mod"))); }
-    if (!vip) { $cw.append($Line(Link("cw-make-vip", "Make VIP"))); }
+    if (!mod) { $cw.append($Line($Link("cw-make-mod", "Make Mod"))); }
+    if (!vip) { $cw.append($Line($Link("cw-make-vip", "Make VIP"))); }
   }
 
   let lo = $l.offset();
@@ -1081,7 +1107,25 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Clicking on the `?` in the settings box header */
-  $("#settings-help").click(function() {
+  $("#btnSettingsHelp").click(function() {
+    let w = Util.Open("assets/help-window.html",
+                      "TFCHelpWindow",
+                      {"menubar": "yes",
+                       "location": "yes",
+                       "resizable": "yes",
+                       "scrollbars": "yes",
+                       "status": "yes"});
+    if (w) {
+      w.onload = function() {
+        this.addEntry("Help text and settings builder are coming soon!");
+        this.setConfig(getConfigObject(false));
+      }
+    }
+  });
+
+  /* Clicking on the "Builder" link in the settings box header */
+  $("#btnSettingsBuilder").click(function() {
+    /* TODO: Make a separate page for the settings builder */
     let w = Util.Open("assets/help-window.html",
                       "TFCHelpWindow",
                       {"menubar": "yes",
@@ -1122,11 +1166,7 @@ function client_main(layout) { /* exported client_main */
   $("#cbScroll").change(function() {
     let scroll = $(this).is(":checked");
     mergeConfigObject({"Scroll": scroll});
-    if (scroll) {
-      $(".module .content").css("overflow-y", "scroll");
-    } else {
-      $(".module .content").css("overflow-y", "hidden");
-    }
+    $(".module .content").css("overflow-y", scroll ? "scroll" : "hidden");
   });
 
   /* Changing the "stream is transparent" checkbox */
@@ -1149,8 +1189,13 @@ function client_main(layout) { /* exported client_main */
     Util.DebugLevel = v;
   });
 
+  /* Clicking on the "close settings" link */
+  $("#btnClose").click(function() {
+    $("#btnSettings").click();
+  });
+
   /* Clicking on the reconnect link in the settings box */
-  $("#reconnect").click(function() {
+  $("#btnReconnect").click(function() {
     client.Connect();
   });
 
@@ -1186,8 +1231,7 @@ function client_main(layout) { /* exported client_main */
 
   /* Clicking on a "Clear" link */
   $(".module .header .clear-link").click(function() {
-    let modid = CSS.escape($(this).attr("data-for"));
-    $(`#${modid} .content`).find(".line-wrapper").remove();
+    $(this).parentsUntil(".column").find(".line-wrapper").remove();
   });
 
   /* Pressing enter on one of the module menu text boxes */
@@ -1353,7 +1397,7 @@ function client_main(layout) { /* exported client_main */
       }
     }
     /* Avoid flooding the DOM with stale chat messages */
-    let max = getConfigObject().MaxMessages || 100;
+    let max = getConfigObject().MaxMessages || TwitchClient.DEFAULT_MAX_MESSAGES;
     for (let c of $(".content")) {
       while ($(c).find(".line-wrapper").length > max) {
         $(c).find(".line-wrapper").first().remove();
@@ -1364,9 +1408,11 @@ function client_main(layout) { /* exported client_main */
   /* Received streamer info */
   client.bind("twitch-streaminfo", function _on_twitch_streaminfo(e) {
     let cinfo = client.GetChannelInfo(e.channel.channel);
-    if (!cinfo.online) {
-      if (config.Layout && !config.Layout.Slim) {
+    if (config.Layout && !config.Layout.Slim) {
+      if (!cinfo.online) {
         Content.addNotice(`${e.channel.channel} is not currently streaming`);
+      } else {
+        Content.addNotice(`${e.channel.channel} is streaming`);
       }
     }
   });
@@ -1391,8 +1437,8 @@ function client_main(layout) { /* exported client_main */
             } else {
               $(".content").children().remove();
             }
-            return;
           }
+          return;
         }
       }
     }
@@ -1400,7 +1446,7 @@ function client_main(layout) { /* exported client_main */
       if (!shouldFilter($(this), event)) {
         let $c = $(this).find(".content");
         let $w = $(`<div class="line line-wrapper"></div>`);
-        $w.html(client.get("HTMLGen").gen(event));
+        $w.append(client.get("HTMLGen").gen(event));
         Content.addHTML($w, $c);
       }
     });
@@ -1408,7 +1454,7 @@ function client_main(layout) { /* exported client_main */
 
   /* Received CLEARCHAT event */
   client.bind("twitch-clearchat", function _on_twitch_clearchat(e) {
-    if (e.has_flag("target-user-id")) {
+    if (e.flags["target-user-id"]) {
       /* Moderator timed out a user */
       let r = CSS.escape(e.flags["room-id"]);
       let u = CSS.escape(e.flags["target-user-id"]);
@@ -1429,22 +1475,20 @@ function client_main(layout) { /* exported client_main */
   /* User subscribed */
   client.bind("twitch-sub", function _on_twitch_sub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    let line = client.get("HTMLGen").sub(e);
-    Content.addHTML(line);
+    Content.addHTML(client.get("HTMLGen").sub(e));
   });
 
   /* User resubscribed */
   client.bind("twitch-resub", function _on_twitch_resub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    let line = client.get("HTMLGen").resub(e);
-    Content.addHTML(line);
+    Content.addHTML(client.get("HTMLGen").resub(e));
     /* Display the resub message, if one is present */
     if (e.message) {
-      let msg = client.get("HTMLGen").gen(e);
-      let $msg = $(msg);
+      let $msg = client.get("HTMLGen").gen(e);
       $msg.addClass("message");
       $msg.addClass("sub-message");
       $msg.addClass("sub-user-message");
+      $msg.addClass("rainbow").addClass("disco");
       Content.addHTML($msg);
     }
   });
@@ -1452,22 +1496,19 @@ function client_main(layout) { /* exported client_main */
   /* User gifted a subscription */
   client.bind("twitch-giftsub", function _on_twitch_giftsub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    let line = client.get("HTMLGen").giftsub(e);
-    Content.addHTML(line);
+    Content.addHTML(client.get("HTMLGen").giftsub(e));
   });
 
   /* Anonymous user gifted a subscription */
   client.bind("twitch-anongiftsub", function _on_twitch_anongiftsub(e) {
     Util.StorageAppend("debug-msg-log", e);
-    let line = client.get("HTMLGen").anongiftsub(e);
-    Content.addHTML(line);
+    Content.addHTML(client.get("HTMLGen").anongiftsub(e));
   });
 
   /* Channel was raided */
   client.bind("twitch-raid", function _on_twitch_raid(e) {
     Util.StorageAppend("debug-msg-log", e);
-    let line = client.get("HTMLGen").raid(e);
-    Content.addHTML(line);
+    Content.addHTML(client.get("HTMLGen").raid(e));
   });
 
   /* New user's YoHiYo */
@@ -1483,6 +1524,9 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Bind the rest of the events and warn about unbound events */
+  client.bind("twitch-hosttarget", function _on_twitch_hosttarget(e) {
+    Util.StorageAppend("debug-msg-log", e);
+  });
   client.bind("twitch-userstate", function _on_twitch_userstate(e) {});
   client.bind("twitch-roomstate", function _on_twitch_roomstate(e) {});
   client.bind("twitch-globaluserstate", function _on_twitch_globaluserstate(e) {});
@@ -1494,9 +1538,6 @@ function client_main(layout) { /* exported client_main */
   client.bind("twitch-privmsg", function _on_twitch_privmsg(e) {});
   client.bind("twitch-whisper", function _on_twitch_whisper(e) {});
   client.bind("twitch-mode", function _on_twitch_mode(e) {});
-  client.bind("twitch-hosttarget", function _on_twitch_hosttarget(e) {
-    Util.StorageAppend("debug-msg-log", e);
-  });
   client.bind("twitch-other", function _on_twitch_other(e) {});
 
   client.bindDefault(function _on_default(e) {
@@ -1504,7 +1545,7 @@ function client_main(layout) { /* exported client_main */
     Util.StorageAppend("debug-msg-log", e);
   });
 
-  /* End of all the binding 0}}} */
+  /* End of all of the binding 0}}} */
 
   /* Finally, connect */
   client.Connect();
