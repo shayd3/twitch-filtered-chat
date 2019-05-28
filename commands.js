@@ -538,7 +538,7 @@ const DefaultCommands = {
   "part": {
     func: command_part,
     desc: "Leave a channel",
-    alias: ["leave"],
+    alias: ["p", "leave"],
     usage: [
       ["channel", "Disconnect from <channel>; leading # is optional"]
     ]
