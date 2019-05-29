@@ -35,6 +35,8 @@
 
 /* Strings intended for some kind of i18n support */
 const Strings = { /* exported Strings */
+  CACHED: "Cached",
+  AUTOGEN: "Auto-Generated",
   USE_HELP: "Use //help to see Twitch Filtered Chat commands",
   PLEASE_AUTH: "Authentication needed to send messages",
   PLEASE_JOIN: "No channels configured; type //join &lt;channel&gt; to join one!",
@@ -48,7 +50,15 @@ const Strings = { /* exported Strings */
   OMIT_CID: "Omitted for security; use //config clientid to show",
   OMIT_PASS: "Omitted for security; use //config pass to show",
   RECONNECT: "<span class=\"reconnect\" data-reconnect=\"1\">Reconnect</span>",
+  RECONNECTING: "Reconnecting...",
+  CONN_CLOSED: "Connection closed",
+  CFG_FROM: "From user: ",
+  CFG_CONTAINS: "Contains: ",
+  CFG_STARTS: "Starts with: ",
+  CFG_CHANNEL: "Channel: ",
 
+  Active: (ch) => `${ch} is streaming`,
+  InActive: (ch) => `${ch} is not currently streaming`,
   Sub: (plan) => `just subscribed with a ${plan} subscription!`,
   ResubStreak: (months, plan, streak) => `resubscribed for ${months} months with a ${plan} subscription! They're on a streak of ${streak} months!`,
   Resub: (months, plan) => `resubscribed for ${months} months with a ${plan} subscription!`,

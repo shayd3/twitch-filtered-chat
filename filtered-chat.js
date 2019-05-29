@@ -31,8 +31,6 @@
  *   Util.Logger.add_filter(((m) => `${m}`.indexOf(" PRIVMSG ") === -1, "DEBUG")
  */
 
-const CACHED_VALUE = "Cached";
-const AUTOGEN_VALUE = "Auto-Generated";
 const CFGKEY_DEFAULT = "tfc-config";
 
 /* Document writing functions {{{0 */
@@ -267,10 +265,10 @@ function getConfigObject(inclSensitive=true) {
       }
     }
   }
-  if (txtNick.value && txtNick.value !== AUTOGEN_VALUE) {
+  if (txtNick.value && txtNick.value !== Strings.AUTOGEN) {
     config.Name = txtNick.value;
   }
-  if (txtPass.value && txtPass.value !== CACHED_VALUE) {
+  if (txtPass.value && txtPass.value !== Strings.CACHED) {
     config.Pass = txtPass.value;
   }
 
@@ -409,11 +407,11 @@ function setModuleSettings(module, config) {
       }
     }
   }
-  addInput("include_user", "From user: ", config.IncludeUser);
-  addInput("include_keyword", "Contains: ", config.IncludeKeyword);
-  addInput("exclude_user", "From user: ", config.ExcludeUser);
-  addInput("exclude_startswith", "Starts with: ", config.ExcludeStartsWith);
-  addInput("from_channel", "Channel:", config.FromChannel);
+  addInput("include_user", Strings.CFG_FROM, config.IncludeUser);
+  addInput("include_keyword", Strings.CFG_CONTAINS, config.IncludeKeyword);
+  addInput("exclude_user", Strings.CFG_FROM, config.ExcludeUser);
+  addInput("exclude_startswith", Strings.CFG_STARTS, config.ExcludeStartsWith);
+  addInput("from_channel", Strings.CFG_CHANNEL, config.FromChannel);
 }
 
 /* Obtain the settings from the module's settings HTML */
@@ -868,7 +866,8 @@ function client_main(layout) { /* exported client_main */
           Content.addHelpLine("git", "Generate link using github.io");
           Content.addHelpLine("text", "Don't base64-encode the URL");
           Content.addHelpLine("auth", "Include ClientID and OAuth information");
-          Content.addHelp("//config set &lt;key&gt; &lt;value&gt;: change &lt;key&gt; to &lt;value&gt; (dangerous)");
+          Content.addHelp("//config set <key> <value>: change <key> to <value> (dangerous)".escape());
+          Content.addHelp("//config setobj <key> <value>: change <key> to JSON <value> (dangerous)".escape());
         } else if (t0 === "purge") {
           Util.SetWebStorage({});
           Content.addNotice(`Purged storage "${Util.GetWebStorageKey()}"`);
@@ -927,32 +926,40 @@ function client_main(layout) { /* exported client_main */
             url += "?base64=" + encodeURIComponent(btoa(qs.join("&")));
           }
           Content.addHelp(client.get("HTMLGen").url(url));
-        } else if (t0 === "set" || t0 === "setobj" && tokens.length > 2) {
+        } else if ((t0 === "set" || t0 === "setobj") && tokens.length > 2) {
           /* Allow changing configuration by command (dangerous) */
           let key = tokens[1];
-          let val = tokens.slice(2).join(" ");
-          let valobj = null;
-          /* TODO: allow //config set module1.Bits true */
-          if (t0 === "setobj") {
-            valobj = JSON.parse(val);
-          } else if (val === "true") {
-            valobj = true;
-          } else if (val === "false") {
-            valobj = false;
-          } else if (val.match(/^[+-]?[1-9][0-9]*$/)) {
-            valobj = Number.parseInt(val);
-          } else if (val.match(/^[-+]?(?:[0-9]*\.[0-9]+|[0-9]+)$/)) {
-            valobj = Number.parseFloat(val);
+          if (Util.ObjectHas(cfg, key)) {
+            let val = tokens.slice(2).join(" ");
+            let oldval = Util.ObjectGet(cfg, key);
+            let newval = null;
+            if (t0 === "setobj") {
+              newval = JSON.parse(val);
+            } else if (val === "true") {
+              newval = true;
+            } else if (val === "false") {
+              newval = false;
+            } else if (!Number.isNaN(Number.parseInt(val))) {
+              newval = Number.parseInt(val);
+            } else if (!Number.isNaN(Number.parseFloat(val))) {
+              newval = Number.parseFloat(val);
+            } else {
+              newval = val;
+            }
+            let oldstr = JSON.stringify(oldval);
+            let newstr = JSON.stringify(newval);
+            Util.Log(`Changing ${key} from "${oldstr}" to "${newstr}"`);
+            Content.addHelpLine(key, JSON.stringify(oldval));
+            Content.addHelpLine(key, JSON.stringify(newval));
+            Util.ObjectSet(cfg, key, newval);
+            mergeConfigObject(cfg);
+          } else {
+            Content.addError(`Config item ${key.escape()} does not exist`);
           }
-          Util.Log(`Changing ${key} from "${cfg[key]}" to "${JSON.stringify(valobj)}"`);
-          Content.addHelpLine(key, JSON.stringify(cfg[key]));
-          Content.addHelpLine(key, JSON.stringify(valobj));
-          /* TODO */
-          Content.addNotice("Not yet implemented");
-        } else if (cfg.hasOwnProperty(t0)) {
-          Content.addHelpLine(t0, JSON.stringify(cfg[t0]));
+        } else if (Util.ObjectHas(cfg, t0)) {
+          Content.addHelpLine(t0, JSON.stringify(Util.ObjectGet(cfg, t0)));
         } else {
-          Content.addError(`Unknown config key &quot;${t0.escape()}&quot;`, true);
+          Content.addError(`Unknown config command or key &quot;${t0.escape()}&quot;`, true);
         }
       }), "Obtain and modify configuration information");
 
@@ -1014,19 +1021,10 @@ function client_main(layout) { /* exported client_main */
   }
 
   /* Construct the plugins */
-  try {
-    if (config.Plugins) {
-      Plugins.loadAll(client);
-    } else {
-      Plugins.disable();
-    }
-  }
-  catch (e) {
-    if (e.name !== "ReferenceError") {
-      throw e;
-    } else {
-      Util.Warn("Plugins object not present");
-    }
+  if (config.Plugins) {
+    Plugins.loadAll(client);
+  } else {
+    Plugins.disable();
   }
 
   /* Allow JS access if debugging is enabled */
@@ -1096,7 +1094,7 @@ function client_main(layout) { /* exported client_main */
     } else {
       let configObj = getConfigObject();
       $("#txtChannel").val(configObj.Channels.join(","));
-      $("#txtNick").val(configObj.Name || AUTOGEN_VALUE);
+      $("#txtNick").val(configObj.Name || Strings.AUTOGEN);
       if (configObj.Pass && configObj.Pass.length > 0) {
         $("#txtPass").attr("disabled", "disabled").hide();
         $("#txtPassDummy").show();
@@ -1311,7 +1309,7 @@ function client_main(layout) { /* exported client_main */
     /* Clicking on a "Reconnect" link */
     if ($t.attr("data-reconnect") === "1") {
       /* Clicked on a reconnect link */
-      Content.addNotice(`Reconnecting...`);
+      Content.addNotice(Strings.RECONNECTING);
       client.Connect();
     }
   });
@@ -1338,10 +1336,10 @@ function client_main(layout) { /* exported client_main */
     let reason = e.raw_line.reason;
     let msg = reason ? `(code ${code}: ${reason})` : `(code ${code})`;
     if (getConfigObject().AutoReconnect) {
-      Content.addError("Connection closed " + msg);
+      Content.addError(Strings.CONN_CLOSED + msg);
       client.Connect();
     } else {
-      Content.addError("Connection closed " + msg + Strings.RECONNECT);
+      Content.addError(Strings.CONN_CLOSED + msg + Strings.RECONNECT);
     }
   });
 
@@ -1409,10 +1407,10 @@ function client_main(layout) { /* exported client_main */
   client.bind("twitch-streaminfo", function _on_twitch_streaminfo(e) {
     let cinfo = client.GetChannelInfo(e.channel.channel);
     if (config.Layout && !config.Layout.Slim) {
-      if (!cinfo.online) {
-        Content.addNotice(`${e.channel.channel} is not currently streaming`);
+      if (cinfo.online) {
+        Content.addNotice(Strings.Active(e.channel.channel));
       } else {
-        Content.addNotice(`${e.channel.channel} is streaming`);
+        Content.addNotice(Strings.InActive(e.channel.channel));
       }
     }
   });

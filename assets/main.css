@@ -96,6 +96,14 @@ input {
   font-weight: bold;
 }
 
+span.em {
+  font-weight: bold;
+}
+
+em {
+  font-weight: bold;
+}
+
 /* End top-level rules 0}}} */
 
 /* Column and module CSS {{{0 */
@@ -396,10 +404,6 @@ input {
   font-weight: bold;
 }
 
-.module .content .line em {
-  font-weight: bold;
-}
-
 .module .content .line .info {
   border: 2px solid forestgreen;
   font-weight: bold;
@@ -580,24 +584,20 @@ input {
 
 #settings a.help {
   vertical-align: text-top;
-  text-decoration: underline;
+  text-decoration: none;
   font-size: 0.6em;
   content: "?";
   cursor: pointer;
+}
+
+#settings a.help:hover {
+  text-decoration: underline;
 }
 
 #settings footer {
   line-height: 30px;
   padding-top: 0.2em;
   border-top: solid 1px #aaaaaa;
-}
-
-#settings footer a {
-  cursor: pointer;
-}
-
-#settings footer a:hover {
-  text-decoration: underline;
 }
 
 #btnSettings {
@@ -646,10 +646,6 @@ body.slim #btnSettings {
 #userContext .item {
   display: block;
   font-family: monospace;
-}
-
-#userContext .item .em {
-  font-weight: bold;
 }
 
 #userContent .em.pad {
