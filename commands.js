@@ -1,11 +1,5 @@
 /* Twitch Filtered Chat Commands */
 
-/* TODO:
- * Change usage parsing to use brackets:
- *   ["<arg>": "argument is <arg>"]
- *   ["arg1 <arg2>": "arg1 is literal, <arg2> is an argument"]
- */
-
 class ChatCommandManager {
   constructor() {
     this._command_list = [];
@@ -32,6 +26,7 @@ class ChatCommandManager {
       c.name = command;
       c.func = func;
       c.desc = desc;
+      c.aliases = [];
       c.dflt_args = args.length > 0 ? args : null;
       this._command_list.push(command);
       this._commands[command] = c;
@@ -39,7 +34,12 @@ class ChatCommandManager {
   }
 
   addAlias(command, referred_command) {
-    this._aliases[command] = referred_command;
+    if (this.hasCommand(referred_command, true)) {
+      this._aliases[command] = referred_command;
+      this._commands[referred_command].aliases.push(command);
+    } else {
+      Util.Error(`Invalid command: ${referred_command}`);
+    }
   }
 
   addUsage(command, argstr, usagestr, opts=null) {
@@ -55,7 +55,6 @@ class ChatCommandManager {
   addHelp(text, opts=null) {
     let o = opts || {};
     let t = text;
-    if (!o.literal) t = this.formatArgs(t);
     if (o.indent) t = "&nbsp;&nbsp;" + t;
     if (o.command) {
       let cmd = t.substr(0, t.indexOf(":"));
@@ -133,16 +132,9 @@ class ChatCommandManager {
     let usages = [];
     if (cmd.usage) {
       for (let entry of cmd.usage) {
-        let fmtArg = (a) => `&lt;${this.arg(a)}&gt;`;
-        if (entry.opts.literal) fmtArg = (a) => a;
-        let argstr = "";
         let usagestr = this.formatArgs(entry.usage);
-        if (Util.IsArray(entry.args)) {
-          /* TODO: Escape only the last item */
-          argstr = entry.args.map((a) => fmtArg(a)).join(" ");
-          usages.push(this.helpLine(`//${cmd.name} ${argstr}`, usagestr));
-        } else if (entry.args) {
-          argstr = fmtArg(entry.args);
+        if (entry.args) {
+          let argstr = this.formatArgs(entry.args);
           usages.push(this.helpLine(`//${cmd.name} ${argstr}`, usagestr));
         } else {
           usages.push(this.helpLine(`//${cmd.name}`, usagestr));
@@ -150,6 +142,9 @@ class ChatCommandManager {
       }
     } else {
       usages.push(this.helpLine(`//${cmd.name}`, this.formatArgs(cmd.desc)));
+    }
+    for (let a of cmd.aliases) {
+      usages.push(this.helpLine(`//${a}`, `Alias for command //${cmd.name}`));
     }
     return usages;
   }
@@ -504,18 +499,18 @@ const DefaultCommands = {
     alias: ["logs"],
     usage: [
       [null, "Display log command usage"],
-      ["number", "Display the message numbered <number>"],
-      ["show", "Display all logged messages (can be a lot of text!)", {literal: true}],
-      ["summary", "Display a summary of the logged messages", {literal: true}],
-      [["search", "string"], "Show logs containing <string>"],
-      [["remove", "index..."], "Remove items with the given indexes"],
-      [["filter", "string"], "Remove items containing <string>"],
-      [["filter-out", "string"], "Remove items that don't contain <string>"],
-      ["shift", "Remove the first logged message", {literal: true}],
-      ["pop", "Remove the last logged message", {literal: true}],
-      ["export", "Open a new window with all the logged items", {literal: true}],
-      ["size", "Display the number of bytes used by the log", {literal: true}],
-      ["clear", "Clears the entire log (cannot be undone!)", {literal: true}]
+      ["<number>", "Display the message numbered <number>"],
+      ["show", "Display all logged messages (can be a lot of text!)"],
+      ["summary", "Display a summary of the logged messages"],
+      ["search <string>", "Show logs containing <string>"],
+      ["remove <index...>", "Remove items with the given indexes"],
+      ["filter <string>", "Remove items that don't contain <string>"],
+      ["filter-out <string>", "Remove items containing <string>"],
+      ["shift", "Remove the first logged message"],
+      ["pop", "Remove the last logged message"],
+      ["export", "Open a new window with all the logged items"],
+      ["size", "Display the number of bytes used by the log"],
+      ["clear", "Clears the entire log (cannot be undone!)"]
     ]
   },
   "clear": {
@@ -524,7 +519,7 @@ const DefaultCommands = {
     alias: ["nuke"],
     usage: [
       [null, "Clears all text from all visible modules"],
-      ["module", "Clears all text from <module> (module1, module2)"]
+      ["<module>", "Clears all text from <module> (module1, module2)"]
     ]
   },
   "join": {
@@ -532,7 +527,7 @@ const DefaultCommands = {
     desc: "Join a channel",
     alias: ["j"],
     usage: [
-      ["channel", "Connect to <channel>; leading # is optional"]
+      ["<channel>", "Connect to <channel>; leading # is optional"]
     ]
   },
   "part": {
@@ -540,7 +535,7 @@ const DefaultCommands = {
     desc: "Leave a channel",
     alias: ["p", "leave"],
     usage: [
-      ["channel", "Disconnect from <channel>; leading # is optional"]
+      ["<channel>", "Disconnect from <channel>; leading # is optional"]
     ]
   },
   "badges": {
@@ -551,7 +546,7 @@ const DefaultCommands = {
     func: command_emotes,
     desc: "Display the requested emotes",
     usage: [
-      ["kinds", "Display emotes; <kinds> can be one or more of: global, channel, bttv"]
+      ["<kinds>", "Display emotes; <kinds> can be one or more of: global, channel, bttv"]
     ],
   },
   "plugins": {
@@ -563,14 +558,14 @@ const DefaultCommands = {
     desc: "Display numerous things about the client",
     usage: [
       [null, "Show general information about the client"],
-      ["status", "Show current connection information", {literal: true}]
+      ["status", "Show current connection information"]
     ]
   },
   "raw": {
     func: command_raw,
     desc: "Send a raw message to Twitch (for advanced users only!)",
     usage: [
-      ["message", "Send <message> to Twitch servers (for advanced users only!)"]
+      ["<message>", "Send <message> to Twitch servers (for advanced users only!)"]
     ]
   }
 };
