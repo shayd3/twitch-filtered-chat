@@ -684,37 +684,99 @@ body.slim #btnSettings {
 
 /* End hover context window 0}}} */
 
-/* CSS custom marquee {{{0 */
+/* Custom marquees {{{0 */
 
 .effect-marquee {
   overflow: hidden;
   position: absolute;
-  text-align: left;
+  text-align: middle;
+  width: 100%;
   height: 1.3em;
   -moz-transform: translateX(100%);
   -webkit-transform: translateX(100%);
   transform: translateX(100%);
-  -moz-animation: marquee 15s linear infinite;
-  -webkit-animation: marquee 15s linear infinite;
-  animation: marquee 10s linear infinite;
+  -moz-animation: tfc-marquee 15s linear infinite;
+  -webkit-animation: tfc-marquee 15s linear infinite;
+  animation: tfc-marquee 15s linear infinite;
 }
 
-@-moz-keyframes marquee {
+@-moz-keyframes tfc-marquee {
   0% { -moz-transform: translateX(100%); }
   100% { -moz-transform: translateX(-100%); }
 }
 
-@-webkit-keyframes marquee {
+@-webkit-keyframes tfc-marquee {
   0% { -webkit-transform: translateX(100%); }
   100% { -webkit-transform: translateX(-100%); }
 }
 
-@keyframes marquee {
+@keyframes tfc-marquee {
   0% { transform: translateX(100%); }
   100% { transform: translateX(-100%); }
 }
 
-/* End CSS custom marquee 0}}} */
+.effect-scroll {
+  overflow: hidden;
+  position: absolute;
+  text-align: middle;
+  width: 100%;
+  height: 1.3em;
+  -moz-transform: translateX(-100%);
+  -webkit-transform: translateX(-100%);
+  transform: translateX(-100%);
+  -moz-animation: tfc-scroll 15s linear infinite;
+  -webkit-animation: tfc-scroll 15s linear infinite;
+  animation: tfc-scroll 15s linear infinite;
+}
+
+@-moz-keyframes tfc-scroll {
+  0% { -moz-transform: translateX(-100%); }
+  100% { -moz-transform: translateX(100%); }
+}
+
+@-webkit-keyframes tfc-scroll {
+  0% { -webkit-transform: translateX(-100%); }
+  100% { -webkit-transform: translateX(100%); }
+}
+
+@keyframes tfc-scroll {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.effect-bounce {
+  overflow: hidden;
+  position: absolute;
+  text-align: middle;
+  width: 100%;
+  height: 1.3em;
+  -moz-transform: translateX(100%);
+  -webkit-transform: translateX(100%);
+  transform: translateX(100%);
+  -moz-animation: tfc-bounce 15s linear infinite;
+  -webkit-animation: tfc-bounce 15s linear infinite;
+  animation: tfc-bounce 15s linear infinite;
+}
+
+@-moz-keyframes tfc-bounce {
+  0% { -moz-transform: translateX(100%); }
+  50% { -moz-transform: translateX(-100%); }
+  100% { -moz-transform: translateX(100%); }
+}
+
+@-webkit-keyframes tfc-bounce {
+  0% { -webkit-transform: translateX(100%); }
+  50% { -webkit-transform: translateX(-100%); }
+  100% { -webkit-transform: translateX(100%); }
+}
+
+@keyframes tfc-bounce {
+  0% { transform: translateX(100%); }
+  50% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* End custom marquees 0}}} */
 
 /* CSS cheer effects {{{0 */
 

@@ -50,7 +50,7 @@ const Strings = { /* exported Strings */
   RECONNECT: "<span class=\"reconnect\" data-reconnect=\"1\">Reconnect</span>",
 
   Sub: (plan) => `just subscribed with a ${plan} subscription!`,
-  ResubStreak: (months, plan, streak) => `resubscribed for ${months} months with a ${plan} subscription. They're on a streak of ${streak} months!`,
+  ResubStreak: (months, plan, streak) => `resubscribed for ${months} months with a ${plan} subscription! They're on a streak of ${streak} months!`,
   Resub: (months, plan) => `resubscribed for ${months} months with a ${plan} subscription!`,
   GiftSub: (gifter, plan, user) => `${gifter} gifted a ${plan} subscription to ${user}!`,
   AnonGiftSub: (plan, user) => `An anonymous user gifted a ${plan} subscription to ${user}!`,
@@ -60,10 +60,22 @@ const Strings = { /* exported Strings */
 
 /* CSS cheer styles */
 var CSSCheerStyles = { /* exported CSSCheerStyles */
-  cssmarquee: {
+  slide: {
     _disabled: true,
     cost: 1,
     class: "effect-marquee",
+    wclass: "effect-marquee-container"
+  },
+  scroll: {
+    _disabled: true,
+    cost: 1,
+    class: "effect-scroll",
+    wclass: "effect-marquee-container"
+  },
+  bounce: {
+    _disabled: true,
+    cost: 1,
+    class: "effect-bounce",
     wclass: "effect-marquee-container"
   },
   marquee: {

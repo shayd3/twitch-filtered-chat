@@ -122,7 +122,7 @@ class HTMLGenerator {
       }
     }
     $w.append($i);
-    return $("<div></div>").append($w).html();
+    return $w[0].outerHTML;
   }
 
   _genCheer(cheer, bits) {
@@ -558,6 +558,7 @@ class HTMLGenerator {
 
   _genSubWrapper(event) {
     let $e = $(`<div></div>`);
+    this._addChatAttrs($e, event);
     $e.addClass("chat-line").addClass("sub").addClass("notice");
     $e.append(this._genBadges(event));
     $e.append(this._genName(event));
