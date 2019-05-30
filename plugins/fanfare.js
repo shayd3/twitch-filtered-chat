@@ -4,15 +4,22 @@
  * someone subscribes.
  *
  * Commands:
- *  //ff on:    Enables fanfare
- *  //ff off:   Disables fanfare
- *  //ff:       Displays //ff usage and whether or not fanfare is enabled
+ *  //ff on:        Enables fanfare
+ *  //ff off:       Disables fanfare
+ *  //ff show-sub:  Demonstrates the subscription fanfare
+ *  //ff:           Displays //ff usage and whether or not fanfare is enabled
  */
 
 const FanfareCSS = `
-img.fanfare {
+img.ff.ff-sub {
   position: absolute;
   display: none;
+}
+.ff.ff-particle {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  z-index: 100;
 }
 `;
 
@@ -20,14 +27,16 @@ class FanfarePlugin { /* exported FanfarePlugin */
   constructor(resolve, reject, client, args) {
     this._args = args;
     this._on = false;
+    this._particles = [];
+    this._nparticles = args.nparticles || 10;
     this._setupCSS();
-    ChatCommands.add("ff", this._onFfCmd,
-                     "From plugin FanfarePlugin: Enable or disable fanfare",
-                     this);
-    ChatCommands.addUsage("ff", "on", "Enable fanfare", {literal: true});
-    ChatCommands.addUsage("ff", "off", "Disable fanfare", {literal: true});
-    ChatCommands.addUsage("ff", "show-sub", "Display the subscriber fanfare",
-                          {literal: true});
+    this._setupParticles();
+    let prefix = "From plugin FanfarePlugin: ";
+    ChatCommands.add("ff", this._onFfCmd, prefix + "Enable or disable fanfare", this);
+    ChatCommands.addUsage("ff", "on", prefix + "Enable fanfare");
+    ChatCommands.addUsage("ff", "off", prefix + "Disable fanfare");
+    ChatCommands.addUsage("ff", "show-sub", prefix + "Display the subscriber fanfare");
+    ChatCommands.addUsage("ff", "particles <N>", prefix + "Set the number of particles to <N>");
     client.bind("twitch-sub", this._onSubEvent.bind(this, client));
     client.bind("twitch-resub", this._onSubEvent.bind(this, client));
     client.bind("twitch-giftsub", this._onSubEvent.bind(this, client));
@@ -42,6 +51,19 @@ class FanfarePlugin { /* exported FanfarePlugin */
     e.setAttribute("data-from", "plugin");
     e.innerText = FanfareCSS;
     document.head.appendChild(e);
+  }
+
+  _setupParticles() {
+    for (let p of this._particles) {
+      $(p).remove();
+    }
+    this._particles = [];
+    for (let i = 0; i < this._nparticles; ++i) {
+      let p = $("<span class=\"ff ff-particle\"></span>");
+      p.attr("id", `ff-particle-${i}`);
+      p.hide();
+      $("body").append(p);
+    }
   }
 
   _onFfCmd(cmd, tokens, client, self) {
@@ -70,7 +92,7 @@ class FanfarePlugin { /* exported FanfarePlugin */
     if (this._on) {
       for (let c of $(".module .content")) {
         let $c = $(c);
-        let $i = $(`<img class="fanfare" width="100%" height="100%" />`);
+        let $i = $(`<img class="ff ff-sub" width="100%" height="100%" />`);
         $i.attr("src", client.GetEmote("FrankerZ"));
         $i.css("position", "absolute");
         let self = this;
