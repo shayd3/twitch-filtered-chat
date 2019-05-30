@@ -56,12 +56,25 @@ class ChatCommandManager {
     let o = opts || {};
     let t = text;
     if (o.indent) t = "&nbsp;&nbsp;" + t;
+    if (o.literal) t = t.escape();
     if (o.command) {
       let cmd = t.substr(0, t.indexOf(":"));
       let msg = t.substr(t.indexOf(":")+1);
       t = this.helpLine(cmd, msg);
     }
     this._help_text.push(t);
+  }
+
+  complete(complete_args) {
+    /* TODO: Command completion */
+    let text = complete_args.text || complete_args.orig_text;
+    let pos = complete_args.pos || complete_args.orig_pos;
+    return {
+      orig_text: complete_args.text || complete_args.orig_text,
+      orig_pos: complete_args.pos || complete_args.orig_pos,
+      curr_text: text,
+      curr_pos: pos
+    };
   }
 
   isCommandStr(msg) {
@@ -149,27 +162,6 @@ class ChatCommandManager {
     return usages;
   }
 
-  command_help(cmd, tokens, client) {
-    if (tokens.length === 0) {
-      Content.addHelp("Commands:");
-      for (let c of Object.values(this._command_list)) {
-        Content.addHelp(this.formatHelp(this._commands[c]));
-      }
-      Content.addHelp(this.formatArgs("Enter //help <command> for help on <command>"));
-      for (let line of this._help_text) {
-        Content.addHelp(line);
-      }
-    } else if (this.hasCommand(tokens[0])) {
-      Content.addHelp("Commands:");
-      let obj = this.getCommand(tokens[0]);
-      for (let line of this.formatUsage(obj)) {
-        Content.addHelp(line);
-      }
-    } else {
-      Content.addError(`Invalid command ${tokens[0].escape()}`);
-    }
-  }
-
   arg(s) {
     return `<span class="arg">${s.escape()}</span>`;
   }
@@ -193,6 +185,27 @@ class ChatCommandManager {
 
   printHelp(cmdobj) {
     Content.addHelp(this.formatHelp(cmdobj));
+  }
+
+  command_help(cmd, tokens, client) {
+    if (tokens.length === 0) {
+      Content.addHelp("Commands:");
+      for (let c of Object.values(this._command_list)) {
+        Content.addHelp(this.formatHelp(this._commands[c]));
+      }
+      Content.addHelp(this.formatArgs("Enter //help <command> for help on <command>"));
+      for (let line of this._help_text) {
+        Content.addHelp(line);
+      }
+    } else if (this.hasCommand(tokens[0])) {
+      Content.addHelp("Commands:");
+      let obj = this.getCommand(tokens[0]);
+      for (let line of this.formatUsage(obj)) {
+        Content.addHelp(line);
+      }
+    } else {
+      Content.addError(`Invalid command ${tokens[0].escape()}`);
+    }
   }
 }
 
@@ -480,6 +493,16 @@ function command_raw(cmd, tokens, client) {
   client.SendRaw(tokens.join(" "));
 }
 
+function command_to(cmd, tokens, client) {
+  if (tokens.length >= 2) {
+    let ch = Twitch.ParseChannel(tokens[0]);
+    let msg = tokens.slice(2).join(" ");
+    client.SendMessge(ch, msg);
+  } else {
+    this.printUsage();
+  }
+}
+
 /* Default command definition
  * Structure:
  *  <name>: {
@@ -566,6 +589,13 @@ const DefaultCommands = {
     desc: "Send a raw message to Twitch (for advanced users only!)",
     usage: [
       ["<message>", "Send <message> to Twitch servers (for advanced users only!)"]
+    ]
+  },
+  "to": {
+    func: command_to,
+    desc: "Send a command to a specific joined channel",
+    usage: [
+      ["<channel> <message>", "Send <message> to <channel>"]
     ]
   }
 };
