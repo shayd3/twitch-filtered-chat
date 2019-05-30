@@ -2,10 +2,6 @@
 
 "use strict";
 
-/* FIXME:
- * HTMLGen @user transform broken
- */
-
 /* TODO:
  * Add way to send a message to a specific channel
  * Add to #settings help link
@@ -25,10 +21,11 @@
  */
 
 /* NOTES:
- * Filtering ws "recv>" messages (to console):
- *   Util.Logger.add_filter(((m) => !`${m}`.startsWith("recv> ")), "DEBUG")
- * Filtering ws PRIVMSG messages (to console):
- *   Util.Logger.add_filter(((m) => `${m}`.indexOf(" PRIVMSG ") === -1, "DEBUG")
+ * Filter function returning true -> message is hidden
+ * Filtering JOIN and PART messages
+ *   Util.Logger.add_filter(/^ws recv.*\b(JOIN|PART)\b/)
+ * Filtering PRIVMSG messages
+ *   Util.Logger.add_filter(/^ws recv.*\bPRIVMSG\b/)
  */
 
 const CFGKEY_DEFAULT = "tfc-config";
@@ -1055,9 +1052,15 @@ function client_main(layout) { /* exported client_main */
         }
         client.AddHistory(t.value);
         t.setAttribute("hist-index", "-1");
+        t.setAttribute("complete-text", "");
+        t.setAttribute("complete-pos", "0");
         t.value = "";
       }
       /* Prevent bubbling */
+      e.preventDefault();
+      return false;
+    } else if (e.keyCode === Util.Key.TAB) {
+      /* TODO: tab completion */
       e.preventDefault();
       return false;
     } else if (isUp || isDown) {
@@ -1070,7 +1073,9 @@ function client_main(layout) { /* exported client_main */
         i = (i - 1 < 0 ? -1 : i - 1);
       }
       t.value = (i > -1 ? client.GetHistoryItem(i).trim() : "");
-      $(t).attr("hist-index", `${i}`);
+      t.setAttribute("hist-index", `${i}`);
+      t.setAttribute("complete-text", "");
+      t.setAttribute("complete-pos", "0");
       /* Delay moving the cursor until after the text is updated */
       requestAnimationFrame(() => {
         t.selectionStart = t.value.length;
