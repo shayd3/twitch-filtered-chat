@@ -261,7 +261,7 @@ class HTMLGenerator {
     return this.genName(user, color);
   }
 
-  _remap(map, mstart, mend, len) {
+  _remap(map, start, end, len) {
     /* IDEA BEHIND MAP ADJUSTMENT:
      * 1) Maintain two parallel strings, `msg0` (original) and `msg` (final).
      * 2) Maintain the following invariant:
@@ -274,12 +274,15 @@ class HTMLGenerator {
      *  The map allows for formatting the final message based on where items
      *  appear in the original message.
      */
-    let start = map[mstart];
-    let end = map[mend];
-    for (let idx = mstart; idx < map.length; ++idx) {
-      if (map[idx] - map[mstart] >= (end - start)) {
-        map[idx] += len - (end - start);
-      }
+    let mstart = map[start];
+    let mend = map[end];
+    for (let idx = start; idx < end; ++idx) {
+      /* Set values within the range to the end */
+      map[idx] = mend + len;
+    }
+    for (let idx = end; idx < map.length; ++idx) {
+      /* Adjust values beyond the range by length */
+      map[idx] += len - (mend - mstart);
     }
   }
 
@@ -408,20 +411,6 @@ class HTMLGenerator {
     return message;
   }
 
-  _msgAtUserTransform_old(event, message, map, $msg, $effects) {
-    let pat = /(^|\b\s*)(@\w+)(\s*\b|$)/g;
-    message = message.replace(pat, (function(m, p1, p2, p3) {
-      let name = this._client.GetName().toLowerCase();
-      if (p2.substr(1).toLowerCase() === name) {
-        $msg.addClass("highlight");
-        return `${p1}<em class="at-user at-self">${p2}</em>${p3}`;
-      } else {
-        return `${p1}<em class="at-user">${p2}</em>${p3}`;
-      }
-    }).bind(this));
-    return message;
-  }
-
   _msgAtUserTransform(event, message, map, $msg, $effects) {
     let pat = /(?:^|\b\s*)(@\w+)(?:\s*\b|$)/g;
     let locations = [];
@@ -436,7 +425,7 @@ class HTMLGenerator {
     while (locations.length > 0) {
       let location = locations.pop();
       let node = $(`<em class="at-user"></em>`).text(location.part);
-      if (location.part.substr(1).toLowerCase() === this._client.GetName().toLowerCase()) {
+      if (location.part.substr(1).equalsLowerCase(this._client.GetName())) {
         node.addClass("at-self");
       }
       let msg_start = message.substr(0, map[location.start]);
@@ -461,10 +450,24 @@ class HTMLGenerator {
     locations.sort((a, b) => (a.start - b.start));
     while (locations.length > 0) {
       let location = locations.pop();
-      let url = location.part;
-      let anchor = Util.CreateNode(new URL(Util.URL(url)));
+      let url = null;
+      try {
+        url = new URL(Util.URL(location.part));
+      }
+      catch (e) {
+        Util.Error("Invalid URL", location, e);
+        continue;
+      }
+      let new_node = null;
+      if (this._config.ShowClips && url.hostname === "clips.twitch.tv") {
+        /* TODO: Generate clip box (need callback or <script> elem) */
+        /*let slug = url.pathname;*/
+        new_node = Util.CreateNode(url);
+      } else {
+        new_node = Util.CreateNode(url);
+      }
       let msg_start = message.substr(0, map[location.start]);
-      let msg_part = anchor.outerHTML;
+      let msg_part = new_node.outerHTML;
       let msg_end = message.substr(map[location.end]);
       message = msg_start + msg_part + msg_end;
       this._remap(map, location.start, location.end, msg_part.length);
@@ -508,9 +511,7 @@ class HTMLGenerator {
     message = this._msgFFZEmotesTransform(event, message, map, $msg, $effects);
     message = this._msgBTTVEmotesTransform(event, message, map, $msg, $effects);
     message = this._msgURLTransform(event, message, map, $msg, $effects);
-    /* FIXME: Broken.
     message = this._msgAtUserTransform(event, message, map, $msg, $effects);
-    */
 
     /* Handle mod-only antics */
     if (event.ismod && !$("#cbForce").is(":checked") && event.flags.force) {
