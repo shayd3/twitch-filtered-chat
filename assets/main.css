@@ -473,6 +473,24 @@ em {
   text-decoration: underline;
 }
 
+/* Clip preview box {{{1 */
+
+.clip-preview {
+  border: 2px lightgray inset;  
+  padding: 2px 2px 2px 2px;
+  vertical-align: middle;
+}
+
+.clip-preview .clip-thumbnail {
+  float: left;
+}
+
+.clip-preview .clip-title {
+  font-style: italic;
+}
+
+/* End of clip preview box 1}}} */
+
 /* End of line CSS 0}}} */
 
 /* Chat textbox {{{0 */

@@ -2,12 +2,10 @@
 
 "use strict";
 
-/*** TODO Rebuild the HTML generator to use tokenization TODO ***/
-
 /* TODO:
  * Add more badge information on hover
  * Add emote information on hover
- * Add clip information on hover
+ * Add clip information
  * Implement "new user" ritual
  * Implement "light" and "dark" colorschemes
  */
@@ -458,14 +456,10 @@ class HTMLGenerator {
         Util.Error("Invalid URL", location, e);
         continue;
       }
-      let new_node = null;
       if (this._config.ShowClips && url.hostname === "clips.twitch.tv") {
-        /* TODO: Generate clip box (need callback or <script> elem) */
-        /*let slug = url.pathname;*/
-        new_node = Util.CreateNode(url);
-      } else {
-        new_node = Util.CreateNode(url);
+        $msg.attr("data-clip", url.pathname.strip("/"));
       }
+      let new_node = Util.CreateNode(url);
       let msg_start = message.substr(0, map[location.start]);
       let msg_part = new_node.outerHTML;
       let msg_end = message.substr(map[location.end]);
@@ -706,6 +700,23 @@ class HTMLGenerator {
 
   new_user(event) { /* TODO */
     /* Strings.NewUser(event.user) */
+  }
+
+  genClip(slug, clip_data, game_data) {
+    /* TODO: Polish, CSS */
+    Util.Log("genClip", slug, clip_data, game_data);
+    let $w = $("<div class=\"clip-preview\"></div>");
+    let streamer = clip_data.broadcaster_name;
+    let game = game_data.name;
+    let clipper = clip_data.creator_name;
+    let title = clip_data.title;
+    let image = clip_data.thumbnail_url;
+    $w.attr("data-slug", slug);
+    $w.append($("<img class=\"clip-thumbnail\" height=\"48px\"/>").attr("src", image));
+    $w.append($("<div class=\"clip-title\"></div>").text(title));
+    $w.append($("<div class=\"clip-desc\"></div>").text(`${streamer} playing ${game}`));
+    $w.append($("<div class=\"clip-creator\"></div>").text(`Clipped by ${clipper}`));
+    return $w;
   }
 
   /* General-use functions below */

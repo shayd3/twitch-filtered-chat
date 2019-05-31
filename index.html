@@ -5,15 +5,18 @@
   <meta charset="utf-8" />
   <link href="assets/settings_white.png" rel="shortcut icon" type="image/png" />
   <link href="assets/main.css" rel="stylesheet" type="text/css" />
+  <script type="text/javascript" src="assets/jquery-3.4.0.js"></script>
   <!-- CSS.escape polyfill -->
   <script type="text/javascript" src="assets/css.escape.js"></script>
-  <script type="text/javascript" src="assets/jquery-3.4.0.js"></script>
-  <!-- NOTE: All JS here must be ES5-compliant -->
+  <!-- Script injector (NOTE: All JS here must be ES5-compliant) -->
   <script type="text/javascript" id="main-inject">
+
+/* Prepend `msg` to the debug span */
 function debug(msg) {
-  /* Prepend `msg` to the debug span */
   $("#debug").html(msg + "<br />" + $("#debug").html());
 }
+
+/* Load a script, with an optional onload callback */
 function doLoadScript(src, onload) {
   var s = document.createElement("script");
   s.setAttribute("type", "text/javascript");
@@ -23,30 +26,33 @@ function doLoadScript(src, onload) {
   }
   document.head.appendChild(s);
 }
+
+/* Load Babel ES6 polyfill */
 function doLoadPolyfill(cb) {
   doLoadScript("polyfill.js", cb);
 }
+
+/* Load main.js */
 function doLoadMain() {
   /* Use either main.js or dist/main.js based on ?usedist */
   var dist = window.location.search.match(/\busedist\b/);
   var uri = dist ? "dist/main.js" : "main.js";
   doLoadScript(uri, function() { (new Function("Main(window)"))(); });
 }
-function doLoad() {
-  var dist = window.location.search.match(/\busedist\b/);
-  if (dist) {
-    doLoadPolyfill(doLoadMain);
-  } else {
-    doLoadMain();
-  }
-}
+
+/* Called by body.onload */
 function onLoad() {
   /* Show the debug span if debug=2 or debug=trace */
   if (window.location.search.match(/\bdebug=(?:2|trace)\b/)) {
     document.getElementById("debug").removeAttribute("style");
   }
-  doLoadMain();
+  if (window.location.search.match(/\busedist\b/)) {
+    doLoadPolyfill(doLoadMain);
+  } else {
+    doLoadMain();
+  }
 }
+
   </script>
 </head>
 <body onload="onLoad()">
@@ -67,6 +73,7 @@ function onLoad() {
               <img class="clear-icon" src="assets/no-entry.svg" />
             </a>
           </span>
+          <!-- Module 1 settings panel -->
           <div class="settings">
             <fieldset>
               <legend>Include:</legend>
@@ -111,10 +118,11 @@ function onLoad() {
               </ul>
             </fieldset>
           </div>
-          <!-- Module display name -->
+          <!-- Module 1 display name -->
           <label class="name"></label>
           <input type="text" class="name"></input>
         </div>
+        <!-- Module 1 content -->
         <div class="content"><div class="loading">Loading...</div></div>
       </div>
     </div>
@@ -130,6 +138,7 @@ function onLoad() {
               <img class="clear-icon" src="assets/no-entry.svg" />
             </a>
           </span>
+          <!-- Module 2 settings panel -->
           <div class="settings">
             <fieldset>
               <legend>Include:</legend>
@@ -174,38 +183,39 @@ function onLoad() {
               </ul>
             </fieldset>
           </div>
-          <!-- Module display name -->
+          <!-- Module 2 display name -->
           <label class="name"></label>
           <input type="text" class="name"></input>
         </div>
+        <!-- Module 2 content -->
         <div class="content"><div class="loading">Loading...</div></div>
       </div>
     </div>
   </div>
   <!-- Global settings -->
   <div id="settings">
-    <!-- TODO: Separate "help" and "settings builder", make latter more obvious -->
     <header style="display: inline-block; width: 100%">
       <span class="fl">Settings<a class="help" id="btnSettingsHelp">?</a></span>
       <span class="fr"><a class="builder" id="btnSettingsBuilder">Builder</a></span>
     </header>
     <ul>
-      <!-- HTML formatted to remove unwanted Text elements -->
-      <li><label>Channels:</label><input type="text" id="txtChannel" /></li>
-      <li><label>Nick:</label><input type="text" id="txtNick" /></li>
-      <li><label>OAuth:</label><input type="password" id="txtPass" /><input type="text" id="txtPassDummy" value="Cached" disabled /></li>
-      <li><label>BG CSS:</label><input type="text" id="txtBGStyle" /></li>
-      <li><label>Scrollbars:</label><input type="checkbox" id="cbScroll" class="middle" /></li>
-      <li><label>Transparent:</label><input type="checkbox" id="cbTransparent" class="middle" /></li>
-      <li><label>Show Clips:</label><input type="checkbox" id="cbClips" class="middle" /></li>
-      <li><label>No Force:</label><input type="checkbox" id="cbForce" class="middle" /></li>
-      <li><label>Debugging:</label><select id="selDebug"><option value="0" selected>Disabled</option><option value="1">Debug</option><option value="2">Trace</option></select></li>
+      <!-- Global settings (formatted to remove unwanted Text elements) -->
+      <li><label for="txtChannel">Channels:</label><input type="text" id="txtChannel" /></li>
+      <li><label for="txtNick">Nick:</label><input type="text" id="txtNick" /></li>
+      <li><label for="txtPass">OAuth:</label><input type="password" id="txtPass" /><input type="text" id="txtPassDummy" value="Cached" disabled /></li>
+      <li><label for="txtBGStyle">BG CSS:</label><input type="text" id="txtBGStyle" /></li>
+      <li><label for="cbScroll">Scrollbars:</label><input type="checkbox" id="cbScroll" class="middle" /></li>
+      <li><label for="cbTransparent">Transparent:</label><input type="checkbox" id="cbTransparent" class="middle" /></li>
+      <li><label for="cbClips">Show Clips:</label><input type="checkbox" id="cbClips" class="middle" /></li>
+      <li><label for="cbForce">No Force:</label><input type="checkbox" id="cbForce" class="middle" /></li>
+      <li><label for="selDebug">Debugging:</label><select id="selDebug"><option value="0" selected>Disabled</option><option value="1">Debug</option><option value="2">Trace</option></select></li>
     </ul>
     <footer>
       <span class="fl" id="btnClose">Close</span>
       <span class="fr" id="btnReconnect">Reconnect</span>
     </footer>
   </div>
+  <!-- Button to show/hide settings panel -->
   <img id="btnSettings" src="assets/settings_white.png" alt="Settings" />
   <!-- Username context window -->
   <div id="userContext" class="userContext" style="display: none"></div>

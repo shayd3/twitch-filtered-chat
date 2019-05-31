@@ -3,18 +3,16 @@
 "use strict";
 
 /* TODO:
- * Add way to send a message to a specific channel
  * Add to #settings help link
  * Create page for the #settings config link
- * Finish //config set and //config setobj
  * Finish badge information on hover
- * Add clip information on hover
+ * Finish clip information
  * Add emote information on hover
  * Hide getConfigObject() within client_main()
- * Fix cssmarquee: .line::-webkit-scrollbar { display: none; } or something
  */
 
 /* IDEAS:
+ * Auto-complete commands, command arguments, and @user names?
  * Add layout selection box to #settings (reloads page on change)?
  * Allow for a configurable number of columns?
  * Add re-include (post-exclude) filtering options for Mods, Bits, Subs, etc?
@@ -29,22 +27,24 @@
  */
 
 const CFGKEY_DEFAULT = "tfc-config";
+const GITHUB_URL = "https://kaedenn.github.io/twitch-filtered-chat/index.html";
+const CURRENT_URL = ((l) => `${l.protocol}//${l.hostname}${l.pathname}`)(window.location);
 
 /* Document writing functions {{{0 */
 
 class Content { /* exported Content */
   static addHTML(content, container=null, callbacks=null) {
-    let $Line = $(`<div class="line line-wrapper"></div>`);
-    let $Container = container ? $(container) : $(".module").find(".content");
+    let $Container = container ? $(container) : $(".module .content");
     let $Content = $(content);
     if (callbacks) {
       for (let cb of callbacks) {
         cb($Content);
       }
     }
-    $Line.append($Content);
-    $Container.append($Line);
-    $Container.scrollTop(Math.pow(2, 31) - 1);
+    $Container.append($(`<div class="line line-wrapper"></div>`).append($Content));
+    if (!$Container.attr("data-no-scroll")) {
+      $Container.scrollTop(Math.pow(2, 31) - 1);
+    }
   }
   static addPre(content) { /* does not escape */
     Content.addHTML($(`<div class="pre"></div>`).html(content));
@@ -110,26 +110,41 @@ function parseQueryString(config, qs=null) {
       val = v.split(",").map((c) => Twitch.FormatChannel(c));
     } else if (k === "debug") {
       key = "Debug";
-      if (v === "debug") val = Util.LEVEL_DEBUG;
-      else if (v === "trace") val = Util.LEVEL_TRACE;
-      else if (typeof(v) === "number") val = v;
-      else val = Number(Boolean(v));
+      if (v === "debug") {
+        val = Util.LEVEL_DEBUG;
+      } else if (v === "trace") {
+        val = Util.LEVEL_TRACE;
+      } else if (typeof(v) === "number") {
+        val = v;
+      } else {
+        val = Number(Boolean(v));
+      }
       if (val < Util.LEVEL_MIN) val = Util.LEVEL_MIN;
       if (val > Util.LEVEL_MAX) val = Util.LEVEL_MAX;
     } else if (k === "noassets") {
       key = "NoAssets";
-      val = v ? true : false;
+      val = Boolean(v);
     } else if (k === "noffz") {
       key = "NoFFZ";
-      val = v ? true : false;
+      val = Boolean(v);
     } else if (k === "nobttv") {
       key = "NoBTTV";
-      val = v ? true : false;
+      val = Boolean(v);
     } else if (k === "hmax") {
       key = "HistorySize";
-      val = typeof(v) === "number" ? v : TwitchClient.DEFAULT_HISTORY_SIZE;
+      if (v === "inf") {
+        val = Infinity;
+      } else if (typeof(v) === "number") {
+        val = v;
+      } else {
+        val = TwitchClient.DEFAULT_HISTORY_SIZE;
+      }
     } else if (k.match(/^module[\d]*?$/)) {
-      key = k === "module" ? "module1" : k;
+      if (k === "module") {
+        key = "module1";
+      } else {
+        key = k;
+      }
       val = parseModuleConfig(v);
     } else if (k === "trans" || k === "transparent") {
       key = "Transparent";
@@ -145,22 +160,18 @@ function parseQueryString(config, qs=null) {
       val = `${v}pt`;
     } else if (k === "plugins") {
       key = "Plugins";
-      val = v ? true : false;
+      val = Boolean(v);
     } else if (k === "disable") {
-      for (let e of `${v}`.split(",")) {
-        if (CSSCheerStyles[e]) {
-          CSSCheerStyles[e]._disabled = true;
-        }
-      }
+      key = "DisableEffects";
+      val = v.split(",");
     } else if (k === "enable") {
-      for (let e of `${v}`.split(",")) {
-        if (CSSCheerStyles[e]) {
-          CSSCheerStyles[e]._disabled = false;
-        }
-      }
+      key = "EnableEffects";
+      val = v.split(",");
     } else if (k === "max") {
       key = "MaxMessages";
-      if (typeof(v) === "number") {
+      if (v === "inf" || v === -1) {
+        val = Infinity;
+      } else if (typeof(v) === "number") {
         val = v;
       } else {
         val = TwitchClient.DEFAULT_MAX_MESSAGES;
@@ -170,10 +181,10 @@ function parseQueryString(config, qs=null) {
       val = `${v}`;
     } else if (k === "scroll") {
       key = "Scroll";
-      val = v ? true : false;
+      val = Boolean(v);
     } else if (k === "clips") {
       key = "ShowClips";
-      val = v ? true : false;
+      val = Boolean(v);
     }
     config[key] = val;
   }
@@ -233,8 +244,8 @@ function getConfigObject(inclSensitive=true) {
   if (config.hasOwnProperty("Layout")) delete config["Layout"];
   if (config.hasOwnProperty("Plugins")) delete config["Plugins"];
   if (config.hasOwnProperty("nols")) delete config["nols"];
-  if (config.hasOwnProperty("enable")) delete config["enable"];
-  if (config.hasOwnProperty("disable")) delete config["disable"];
+  if (config.hasOwnProperty("EnableEffects")) delete config["EnableEffects"];
+  if (config.hasOwnProperty("DisableEffects")) delete config["DisableEffects"];
 
   /* Ensure certain keys are present and have expected values */
   if (!config.hasOwnProperty("MaxMessages")) {
@@ -357,6 +368,7 @@ function mergeConfigObject(to_merge=null) {
     }
   }
   Util.SetWebStorage(config);
+  window.liveStorage = config;
 }
 
 /* Module configuration {{{1 */
@@ -824,7 +836,7 @@ function client_main(layout) { /* exported client_main */
         let t0 = tokens.length > 0 ? tokens[0] : "";
         if (tokens.length === 0) {
           let mcfgs = [];
-          Content.addHelp(`<em>Global Configuration:</em>`);
+          Content.addHelp(`<em>Global Configuration Values:</em>`);
           for (let [k, v] of Object.entries(cfg)) {
             let [key, val] = [k, `${v}`];
             if (k === "Layout") {
@@ -842,7 +854,7 @@ function client_main(layout) { /* exported client_main */
               Content.addHelpLine(key, val);
             }
           }
-          Content.addHelp(`<em>Window Configurations:</em>`);
+          Content.addHelp(`<em>Window Configuration Values:</em>`);
           for (let [k, v] of mcfgs) {
             let quote = (e) => `&quot;${e}&quot`;
             Content.addHelp(`Module <span class="arg">${k}</span>: ${quote(v.Name)}`);
@@ -867,6 +879,7 @@ function client_main(layout) { /* exported client_main */
           Content.addHelp("//config setobj <key> <value>: change <key> to JSON <value> (dangerous)".escape());
         } else if (t0 === "purge") {
           Util.SetWebStorage({});
+          window.liveStorage = {};
           Content.addNotice(`Purged storage "${Util.GetWebStorageKey()}"`);
         } else if (t0 === "clientid") {
           Content.addHelpLine("ClientID", cfg.ClientID);
@@ -875,17 +888,10 @@ function client_main(layout) { /* exported client_main */
         } else if (t0 === "url") {
           /* Generate a URL with the current configuration, omitting items
            * left at default values */
-          let url = "";
+          let url = tokens.indexOf("git") > -1 ? GITHUB_URL : CURRENT_URL;
           let qs = [];
           let qsAdd = (k, v) => qs.push(`${k}=${encodeURIComponent(v)}`);
-          /* URL without the query string */
-          if (tokens.indexOf("git") > -1) {
-            url = "https://kaedenn.github.io/twitch-filtered-chat/index.html";
-          } else {
-            url = window.location.protocol + "//" +
-                  window.location.hostname +
-                  window.location.pathname;
-          }
+
           /* Generate and append query string items */
           if (cfg.Debug > 0) { qsAdd("debug", cfg.Debug); }
           if (cfg.__clientid_override) { qsAdd("clientid", cfg.ClientID); }
@@ -916,6 +922,7 @@ function client_main(layout) { /* exported client_main */
             qsAdd("user", cfg.Name);
             qsAdd("pass", cfg.Pass);
           }
+
           /* Append query string to the URL */
           if (tokens[tokens.length - 1] === "text") {
             url += "?" + qs.join("&");
@@ -964,9 +971,31 @@ function client_main(layout) { /* exported client_main */
     config = Util.JSONClone(configObj);
     delete config["Pass"];
     delete config["ClientID"];
-    config.Plugins = configObj.Plugins ? true : false;
-    config.MaxMessages = configObj.MaxMessages || 100;
+    config.Plugins = Boolean(configObj.Plugins);
+    if (configObj.MaxMessages) {
+      config.MaxMessages = configObj.MaxMessages;
+    } else {
+      config.MaxMessages = TwitchClient.DEFAULT_MAX_MESSAGES;
+    }
   })();
+
+  /* Disable configured events */
+  if (config.DisableEffects) {
+    for (let effect of config.EnableEffects) {
+      if (CSSCheerStyles[effect]) {
+        CSSCheerStyles[effect]._disabled = true;
+      }
+    }
+  }
+
+  /* Enable configured effects */
+  if (config.EnableEffects) {
+    for (let effect of config.EnableEffects) {
+      if (CSSCheerStyles[effect]) {
+        CSSCheerStyles[effect]._disabled = false;
+      }
+    }
+  }
 
   /* Simulate clicking cbTransparent if config.Transparent is set */
   if (config.Transparent) {
@@ -1036,14 +1065,31 @@ function client_main(layout) { /* exported client_main */
   ChatCommands.addHelp(Strings.TFC_NUKE, {literal: true, command: true});
   ChatCommands.addHelp(Strings.TFC_UNUKE, {command: true});
 
-  /* Bind all of the page assets {{{0 */
+  /* Bind events for page assets and DOM elements {{{0 */
+
+  /* ScrollLock: pause or resume auto-scroll */
+  $(document).keydown(function(e) {
+    if (e.key === "ScrollLock") {
+      let $c = $(".module .content");
+      let val = $c.attr("data-no-scroll");
+      if (val) {
+        /* Enable scrolling */
+        $c.removeAttr("data-no-scroll");
+        Util.Log("Auto-scroll enabled");
+        Content.addHelp("Auto-scroll enabled");
+      } else {
+        /* Disable scrolling */
+        $c.attr("data-no-scroll", "1");
+        Util.Log("Auto-scroll disabled");
+        Content.addHelp("Auto-scroll disabled");
+      }
+    }
+  });
 
   /* Sending a chat message */
   $("#txtChat").keydown(function(e) {
-    const isUp = (e.keyCode === Util.Key.UP);
-    const isDown = (e.keyCode === Util.Key.DOWN);
     let t = event.target;
-    if (e.keyCode === Util.Key.RETURN) {
+    if (e.key === "Enter") {
       if (t.value.trim().length > 0) {
         if (ChatCommands.isCommandStr(t.value)) {
           ChatCommands.execute(t.value, client);
@@ -1051,31 +1097,28 @@ function client_main(layout) { /* exported client_main */
           client.SendMessageToAll(t.value);
         }
         client.AddHistory(t.value);
-        t.setAttribute("hist-index", "-1");
-        t.setAttribute("complete-text", "");
-        t.setAttribute("complete-pos", "0");
+        t.setAttribute("data-hist-index", "-1");
+        t.setAttribute("data-complete-text", "");
+        t.setAttribute("data-complete-pos", "0");
         t.value = "";
       }
       /* Prevent bubbling */
       e.preventDefault();
       return false;
-    } else if (e.keyCode === Util.Key.TAB) {
+    } else if (e.key === "Tab") {
       /* TODO: tab completion */
       e.preventDefault();
       return false;
-    } else if (isUp || isDown) {
+    } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
       /* Handle traversing message history */
-      let i = Number.parseInt($(t).attr("hist-index"));
+      let i = Number.parseInt($(t).attr("data-hist-index"));
       let l = client.GetHistoryLength();
-      if (isUp) {
-        i = (i + 1 >= l - 1 ? l - 1 : i + 1);
-      } else if (isDown) {
-        i = (i - 1 < 0 ? -1 : i - 1);
-      }
+      /* Restrict i to [-1, l-1] */
+      i = Math.clamp(i + (e.key === "ArrowUp" ? 1 : -1), -1, l - 1);
       t.value = (i > -1 ? client.GetHistoryItem(i).trim() : "");
-      t.setAttribute("hist-index", `${i}`);
-      t.setAttribute("complete-text", "");
-      t.setAttribute("complete-pos", "0");
+      t.setAttribute("data-hist-index", `${i}`);
+      t.setAttribute("data-complete-text", "");
+      t.setAttribute("data-complete-pos", "0");
       /* Delay moving the cursor until after the text is updated */
       requestAnimationFrame(() => {
         t.selectionStart = t.value.length;
@@ -1086,14 +1129,14 @@ function client_main(layout) { /* exported client_main */
 
   /* Pressing enter while on the settings box */
   $("#settings").keyup(function(e) {
-    if (e.keyCode === Util.Key.RETURN) {
+    if (e.key === "Enter") {
       updateModuleConfig();
       $("#btnSettings").click();
     }
   });
 
   /* Clicking the settings button */
-  $("#btnSettings").click(function() {
+  $("#btnSettings").click(function(e) {
     if ($("#settings").is(":visible")) {
       $("#settings").fadeOut();
     } else {
@@ -1110,7 +1153,7 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Clicking on the `?` in the settings box header */
-  $("#btnSettingsHelp").click(function() {
+  $("#btnSettingsHelp").click(function(e) {
     let w = Util.Open("assets/help-window.html",
                       "TFCHelpWindow",
                       {"menubar": "yes",
@@ -1127,7 +1170,7 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Clicking on the "Builder" link in the settings box header */
-  $("#btnSettingsBuilder").click(function() {
+  $("#btnSettingsBuilder").click(function(e) {
     /* TODO: Make a separate page for the settings builder */
     let w = Util.Open("assets/help-window.html",
                       "TFCHelpWindow",
@@ -1146,7 +1189,7 @@ function client_main(layout) { /* exported client_main */
 
   /* Pressing enter on the "Channels" text box */
   $("#txtChannel").keyup(function(e) {
-    if (e.keyCode === Util.Key.RETURN) {
+    if (e.key === "Enter") {
       setChannels(client, $(this).val().split(","));
       mergeConfigObject({"Channels": client.GetJoinedChannels()});
     }
@@ -1160,13 +1203,13 @@ function client_main(layout) { /* exported client_main */
 
   /* Changing the value for "background image" */
   $("#txtBGStyle").keyup(function(e) {
-    if (e.keyCode === Util.Key.RETURN) {
+    if (e.key === "Enter") {
       $(".module").css("background-image", $(this).val());
     }
   });
 
   /* Changing the "Scrollbars" checkbox */
-  $("#cbScroll").change(function() {
+  $("#cbScroll").change(function(e) {
     let scroll = $(this).is(":checked");
     mergeConfigObject({"Scroll": scroll});
     $(".module .content").css("overflow-y", scroll ? "scroll" : "hidden");
@@ -1180,30 +1223,30 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Changing the "Show Clips" checkbox */
-  $("#cbClips").change(function() {
+  $("#cbClips").change(function(e) {
     mergeConfigObject({"ShowClips": $(this).is(":checked")});
     updateHTMLGenConfig();
   });
 
   /* Changing the debug level */
-  $("#selDebug").change(function() {
+  $("#selDebug").change(function(e) {
     let v = parseInt($(this).val());
     Util.Log(`Changing debug level from ${Util.DebugLevel} to ${v}`);
     Util.DebugLevel = v;
   });
 
   /* Clicking on the "close settings" link */
-  $("#btnClose").click(function() {
+  $("#btnClose").click(function(e) {
     $("#btnSettings").click();
   });
 
   /* Clicking on the reconnect link in the settings box */
-  $("#btnReconnect").click(function() {
+  $("#btnReconnect").click(function(e) {
     client.Connect();
   });
 
   /* Opening one of the module menus */
-  $(".menu").click(function() {
+  $(".menu").click(function(e) {
     let $settings = $(this).parent().children(".settings");
     let $lbl = $(this).parent().children("label.name");
     let $tb = $(this).parent().children("input.name");
@@ -1220,8 +1263,8 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Pressing enter on the module's name text box */
-  $(".module .header input.name").on("keyup", function(e) {
-    if (e.keyCode === Util.Key.RETURN) {
+  $(".module .header input.name").keyup(function(e) {
+    if (e.key === "Enter") {
       let $settings = $(this).parent().children(".settings");
       let $lbl = $(this).parent().children("label.name");
       let $tb = $(this).parent().children("input.name");
@@ -1233,15 +1276,15 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Clicking on a "Clear" link */
-  $(".module .header .clear-link").click(function() {
+  $(".module .header .clear-link").click(function(e) {
     $(this).parentsUntil(".column").find(".line-wrapper").remove();
   });
 
   /* Pressing enter on one of the module menu text boxes */
-  $(".module .settings input[type=\"text\"]").on("keyup", function(e) {
+  $(".module .settings input[type=\"text\"]").keyup(function(e) {
     let v = $(this).val();
     if (v.length > 0) {
-      if (e.keyCode === Util.Key.RETURN) {
+      if (e.key === "Enter") {
         let $cli = $(this).closest("li");
         let cls = $cli.attr("class").replace("textbox", "").trim();
         let cb = client.get("HTMLGen").checkbox(v, null, cls, true);
@@ -1274,6 +1317,7 @@ function client_main(layout) { /* exported client_main */
         }
       }
     }
+
     /* Clicking on the username context window */
     if (Util.PointIsOn(e.clientX, e.clientY, $cw[0])) {
       let ch = $cw.attr("data-channel");
@@ -1301,8 +1345,7 @@ function client_main(layout) { /* exported client_main */
     } else if ($t.attr("data-username") === "1") {
       /* Clicked on a username; show context window */
       let $l = $t.parent();
-      if ($cw.is(":visible") &&
-          $cw.attr("data-user-id") === $l.attr("data-user-id")) {
+      if ($cw.is(":visible") && $cw.attr("data-user-id") === $l.attr("data-user-id")) {
         $cw.fadeOut();
       } else {
         showContextWindow(client, $cw, $l);
@@ -1311,6 +1354,7 @@ function client_main(layout) { /* exported client_main */
       /* Clicked somewhere else: close context window */
       $cw.fadeOut();
     }
+
     /* Clicking on a "Reconnect" link */
     if ($t.attr("data-reconnect") === "1") {
       /* Clicked on a reconnect link */
@@ -1401,6 +1445,7 @@ function client_main(layout) { /* exported client_main */
     }
     /* Avoid flooding the DOM with stale chat messages */
     let max = getConfigObject().MaxMessages || TwitchClient.DEFAULT_MAX_MESSAGES;
+    /* FIXME: Causes flickering for some reason */
     for (let c of $(".content")) {
       while ($(c).find(".line-wrapper").length > max) {
         $(c).find(".line-wrapper").first().remove();
@@ -1421,10 +1466,10 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Received chat message */
-  client.bind("twitch-chat", function _on_twitch_chat(event) {
-    if (event instanceof TwitchChatEvent) {
-      let m = typeof(event.message) === "string" ? event.message : "";
-      if (event.flags && event.flags.mod && m.indexOf(" ") > -1) {
+  client.bind("twitch-chat", function _on_twitch_chat(e) {
+    if (e instanceof TwitchChatEvent) {
+      let m = typeof(e.message) === "string" ? e.message : "";
+      if (e.flags && e.flags.mod && m.indexOf(" ") > -1) {
         let tokens = m.split(" ");
         if (tokens[0] === "!tfc") {
           if (tokens[1] === "reload") {
@@ -1446,10 +1491,23 @@ function client_main(layout) { /* exported client_main */
       }
     }
     $(".module").each(function() {
-      if (!shouldFilter($(this), event)) {
+      let H = client.get("HTMLGen");
+      if (!shouldFilter($(this), e)) {
         let $c = $(this).find(".content");
         let $w = $(`<div class="line line-wrapper"></div>`);
-        $w.append(client.get("HTMLGen").gen(event));
+        let $e = H.gen(e);
+        let $clip = $e.find(".message[data-clip]");
+        if ($clip.length > 0) {
+          let slug = $clip.attr("data-clip");
+          client.GetClip(slug)
+            .then((clip_data) => {
+              client.GetGame(clip_data.game_id)
+                .then((game_data) => {
+                  Content.addHTML(H.genClip(slug, clip_data, game_data), $c);
+                });
+            });
+        }
+        $w.append($e);
         Content.addHTML($w, $c);
       }
     });
