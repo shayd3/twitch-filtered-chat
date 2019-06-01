@@ -66,14 +66,35 @@ class ChatCommandManager {
   }
 
   complete(complete_args) {
-    /* TODO: Command completion */
-    let text = complete_args.text || complete_args.orig_text;
-    let pos = complete_args.pos || complete_args.orig_pos;
+    /* TODO: Complete command arguments, fix //<tab> */
+    let text = complete_args.orig_text;
+    let pos = complete_args.orig_pos;
+    let idx = complete_args.index;
+    /* Gather completions */
+    if (this.isCommandStr(text)) {
+      let word = this._trim(text.substr(0, pos));
+      let prefix = word.length === 0 ? text : text.substr(0, text.indexOf(word));
+      let matches = [];
+      for (let k of Object.keys(this._commands).sort()) {
+        if (word.length === 0 || k.startsWith(word)) {
+          matches.push(k);
+        }
+      }
+      if (idx < matches.length) {
+        text = prefix + matches[idx];
+        /* TODO: adjust curr_pos */
+      }
+      idx += 1;
+      if (idx >= matches.length) {
+        idx = 0;
+      }
+    }
     return {
-      orig_text: complete_args.text || complete_args.orig_text,
-      orig_pos: complete_args.pos || complete_args.orig_pos,
+      orig_text: complete_args.orig_text,
+      orig_pos: complete_args.orig_pos,
       curr_text: text,
-      curr_pos: pos
+      curr_pos: pos,
+      index: idx
     };
   }
 

@@ -9,10 +9,10 @@
  * Finish clip information
  * Add emote information on hover
  * Hide getConfigObject() within client_main()
+ * Auto-complete commands (wip), command arguments, and @user names
  */
 
 /* IDEAS:
- * Auto-complete commands, command arguments, and @user names?
  * Add layout selection box to #settings (reloads page on change)?
  * Allow for a configurable number of columns?
  * Add re-include (post-exclude) filtering options for Mods, Bits, Subs, etc?
@@ -185,8 +185,18 @@ function parseQueryString(config, qs=null) {
     } else if (k === "clips") {
       key = "ShowClips";
       val = Boolean(v);
+    } else if (k === "plugincfg") {
+      key = "PluginConfig";
+      try {
+        val = JSON.parse(v);
+      } catch (e) {
+        Util.Error(e);
+        val = null;
+      }
     }
-    config[key] = val;
+    if (key) {
+      config[key] = val;
+    }
   }
   /* Ensure there's a layout property present */
   if (!config.hasOwnProperty("Layout")) {
@@ -246,6 +256,7 @@ function getConfigObject(inclSensitive=true) {
   if (config.hasOwnProperty("nols")) delete config["nols"];
   if (config.hasOwnProperty("EnableEffects")) delete config["EnableEffects"];
   if (config.hasOwnProperty("DisableEffects")) delete config["DisableEffects"];
+  if (config.hasOwnProperty("PluginConfig")) delete config["PluginConfig"];
 
   /* Ensure certain keys are present and have expected values */
   if (!config.hasOwnProperty("MaxMessages")) {
@@ -1048,7 +1059,7 @@ function client_main(layout) { /* exported client_main */
 
   /* Construct the plugins */
   if (config.Plugins) {
-    Plugins.loadAll(client);
+    Plugins.loadAll(client, config);
   } else {
     Plugins.disable();
   }
@@ -1064,6 +1075,32 @@ function client_main(layout) { /* exported client_main */
   ChatCommands.addHelp(Strings.TFC_FRELOAD, {literal: true, command: true});
   ChatCommands.addHelp(Strings.TFC_NUKE, {literal: true, command: true});
   ChatCommands.addHelp(Strings.TFC_UNUKE, {command: true});
+
+  /* Functions used by events below */
+  function closeSettings() {
+    updateModuleConfig();
+    $("#settings").fadeOut();
+  }
+
+  function openSettings() {
+    let cfg = getConfigObject();
+    $("#txtChannel").val(cfg.Channels.join(","));
+    $("#txtNick").val(cfg.Name || Strings.AUTOGEN);
+    if (cfg.Pass && cfg.Pass.length > 0) {
+      $("#txtPass").attr("disabled", "disabled").hide();
+      $("#txtPassDummy").show();
+    }
+    $("#selDebug").val(`${cfg.Debug}`);
+    $("#settings").fadeIn();
+  }
+
+  function toggleSettings() {
+    if ($("#settings").is(":visible")) {
+      closeSettings();
+    } else {
+      openSettings();
+    }
+  }
 
   /* Bind events for page assets and DOM elements {{{0 */
 
@@ -1086,7 +1123,7 @@ function client_main(layout) { /* exported client_main */
     }
   });
 
-  /* Sending a chat message */
+  /* Pressing a key on the chat box */
   $("#txtChat").keydown(function(e) {
     let t = event.target;
     if (e.key === "Enter") {
@@ -1099,14 +1136,41 @@ function client_main(layout) { /* exported client_main */
         client.AddHistory(t.value);
         t.setAttribute("data-hist-index", "-1");
         t.setAttribute("data-complete-text", "");
-        t.setAttribute("data-complete-pos", "0");
+        t.setAttribute("data-complete-pos", "-1");
+        t.setAttribute("data-complete-index", "0");
         t.value = "";
       }
       /* Prevent bubbling */
       e.preventDefault();
       return false;
     } else if (e.key === "Tab") {
-      /* TODO: tab completion */
+      /* FIXME: Doesn't quite work with "//<tab>"
+       * TODO: Complete command arguments and @user names */
+      let orig_text = t.getAttribute("data-complete-text") || t.value;
+      let orig_pos = Number.parseInt(t.getAttribute("data-complete-pos"));
+      let compl_index = Number.parseInt(t.getAttribute("data-complete-index"));
+      if (Number.isNaN(orig_pos) || orig_pos === -1) {
+        orig_pos = t.selectionStart;
+      }
+      if (Number.isNaN(compl_index)) {
+        compl_index = 0;
+      }
+      let compl_obj = {
+        orig_text: orig_text,
+        orig_pos: orig_pos,
+        curr_text: t.value,
+        curr_pos: t.selectionStart,
+        index: compl_index
+      };
+      compl_obj = ChatCommands.complete(compl_obj);
+      t.setAttribute("data-complete-text", compl_obj.orig_text);
+      t.setAttribute("data-complete-pos", compl_obj.orig_pos);
+      t.setAttribute("data-complete-index", compl_obj.index);
+      t.value = compl_obj.curr_text;
+      requestAnimationFrame(() => {
+        t.selectionStart = compl_obj.curr_pos;
+        t.selectionEnd = compl_obj.curr_pos;
+      });
       e.preventDefault();
       return false;
     } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
@@ -1118,38 +1182,30 @@ function client_main(layout) { /* exported client_main */
       t.value = (i > -1 ? client.GetHistoryItem(i).trim() : "");
       t.setAttribute("data-hist-index", `${i}`);
       t.setAttribute("data-complete-text", "");
-      t.setAttribute("data-complete-pos", "0");
+      t.setAttribute("data-complete-pos", "-1");
+      t.setAttribute("data-complete-index", "0");
       /* Delay moving the cursor until after the text is updated */
       requestAnimationFrame(() => {
         t.selectionStart = t.value.length;
         t.selectionEnd = t.value.length;
       });
+    } else {
+      t.setAttribute("data-complete-text", "");
+      t.setAttribute("data-complete-pos", "-1");
+      t.setAttribute("data-complete-index", "0");
     }
   });
 
   /* Pressing enter while on the settings box */
   $("#settings").keyup(function(e) {
     if (e.key === "Enter") {
-      updateModuleConfig();
-      $("#btnSettings").click();
+      toggleSettings();
     }
   });
 
   /* Clicking the settings button */
   $("#btnSettings").click(function(e) {
-    if ($("#settings").is(":visible")) {
-      $("#settings").fadeOut();
-    } else {
-      let configObj = getConfigObject();
-      $("#txtChannel").val(configObj.Channels.join(","));
-      $("#txtNick").val(configObj.Name || Strings.AUTOGEN);
-      if (configObj.Pass && configObj.Pass.length > 0) {
-        $("#txtPass").attr("disabled", "disabled").hide();
-        $("#txtPassDummy").show();
-      }
-      $("#selDebug").val(`${configObj.Debug}`);
-      $("#settings").fadeIn();
-    }
+    toggleSettings();
   });
 
   /* Clicking on the `?` in the settings box header */
@@ -1173,7 +1229,7 @@ function client_main(layout) { /* exported client_main */
   $("#btnSettingsBuilder").click(function(e) {
     /* TODO: Make a separate page for the settings builder */
     let w = Util.Open("assets/help-window.html",
-                      "TFCHelpWindow",
+                      "TFCBuilderWindow",
                       {"menubar": "yes",
                        "location": "yes",
                        "resizable": "yes",
@@ -1237,7 +1293,7 @@ function client_main(layout) { /* exported client_main */
 
   /* Clicking on the "close settings" link */
   $("#btnClose").click(function(e) {
-    $("#btnSettings").click();
+    closeSettings();
   });
 
   /* Clicking on the reconnect link in the settings box */
