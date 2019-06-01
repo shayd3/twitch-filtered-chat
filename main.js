@@ -134,13 +134,13 @@ function AddAsset(src, tree=null, loadcb=null, errcb=null) {
       asset.loaded = true;
       if (loadcb) { loadcb(asset); }
       resolve(asset);
-    }
+    };
     asset.script.onerror = function(e) {
       _console_error("Failed loading", asset, e);
       asset.error = true;
       if (errcb) { errcb(asset, e); }
       reject(e);
-    }
+    };
     document.head.appendChild(asset.script);
   });
 }

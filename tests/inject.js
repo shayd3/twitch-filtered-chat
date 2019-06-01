@@ -114,7 +114,7 @@ TEST_MESSAGES.EFFECT3 = BuildMessage({"bits": "100"}, "PRIVMSG",
 TEST_MESSAGES.CLIP = BuildMessage({"emotes": "25:5-9,75-79"},
   "PRIVMSG",
   "Test Kappa test https://clips.twitch.tv/BillowingCreativePastaHeyGuys " +
-  "test Kappa test")
+  "test Kappa test");
 
 TEST_MESSAGES.RAID = BuildMessage({
   "display-name": "Kaedenn_",
@@ -145,16 +145,25 @@ TEST_MESSAGES.NEW_CHATTER = BuildMessage({
 }, "USERNOTICE");
 
 function inject_message(msg) { /* exported inject_message */
-  let e = new Event("message");
-  e.data = msg;
-  window.client._onWebsocketMessage(e);
+  if (Util.Defined("client")) {
+    let e = new Event("message");
+    e.data = msg;
+    (new Function("return client"))()._onWebsocketMessage(e);
+  } else {
+    Util.ErrorOnly("Can't inject messages; client object isn't global");
+  }
 }
-
-/* Tests:
-var TwitchColors = ["blue","blueviolet","cadetblue","chocolate","coral","dodgerblue","firebrick","goldenrod","green","hotpink","orangered","red","seagreen","springgreen","yellowgreen"];
-
-var MsgWithColor = ((c) => inject_message(BuildMessage({"color": c}, "PRIVMSG", c)));
-client.get("HTMLGen")._default_colors.forEach(MsgWithColor);
-*/
+if (Util.Defined("client")) {
+  let clientObj = (new Function("return client"))();
+  TEST_MESSAGES.COLORS = {};
+  TEST_MESSAGES.COLORS_ME = {};
+  for (let color of clientObj.get("HTMLGen")._default_colors) {
+    let key = color.toUpperCase();
+    let msg1 = BuildMessage({"color": color}, "PRIVMSG", color);
+    let msg2 = BuildMessage({"color": color}, "PRIVMSG", `\x01ACTION ${color}\x01`);
+    TEST_MESSAGES.COLORS[key] = msg1;
+    TEST_MESSAGES.COLORS_ME[key] = msg2;
+  }
+}
 
 /* vim: set ts=2 sts=2 sw=2 et: */

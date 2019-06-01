@@ -111,7 +111,7 @@ class PluginStorageClass {
         } else {
           resolve();
         }
-      }
+      };
       document.head.appendChild(s);
     });
   }

@@ -1255,7 +1255,7 @@ function client_main(layout) { /* exported client_main */
       w.onload = function() {
         this.addEntry("Help text and settings builder are coming soon!");
         this.setConfig(getConfigObject(false));
-      }
+      };
     }
   });
 
@@ -1273,7 +1273,7 @@ function client_main(layout) { /* exported client_main */
       w.onload = function() {
         this.addEntry("Help text and settings builder are coming soon!");
         this.setConfig(getConfigObject(false));
-      }
+      };
     }
   });
 

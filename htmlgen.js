@@ -182,13 +182,13 @@ class HTMLGenerator {
     $bc.addClass("badges");
     let total_width = 0;
     if (event.flags["badges"]) {
-      total_width += 18 * event.flags["badges"].length
+      total_width += 18 * event.flags["badges"].length;
     }
     if (event.flags["ffz-badges"]) {
-      total_width += 18 * event.flags["ffz-badges"].length
+      total_width += 18 * event.flags["ffz-badges"].length;
     }
     if (event.flags["bttv-badges"]) {
-      total_width += 18 * event.flags["bttv-badges"].length
+      total_width += 18 * event.flags["bttv-badges"].length;
     }
     $bc.css("overflow", "hidden");
     $bc.css("width", `${total_width}px`);
@@ -371,7 +371,7 @@ class HTMLGenerator {
         let msg_start = message.substr(0, map[emote.start]);
         let msg_end = message.substr(map[emote.end+1]);
         message = `${msg_start}${emote_str}${msg_end}`;
-        this._remap(map, emote.start, emote.end+1, emote_str.length)
+        this._remap(map, emote.start, emote.end+1, emote_str.length);
       }
     }
     return message;

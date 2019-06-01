@@ -256,7 +256,7 @@ function command_log(cmd, tokens, client) {
       if (w) {
         w.onload = function() {
           this.addEntries(logs);
-        }
+        };
       }
     } else if (t0 === "summary") {
       let lines = [];

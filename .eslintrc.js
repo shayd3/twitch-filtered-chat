@@ -42,7 +42,8 @@ module.exports = {
         "no-implied-eval": "warn",
         "no-self-compare": "warn",
         "no-throw-literal": "warn",
-        "no-unused-expressions": "warn"
+        "no-unused-expressions": "warn",
+        "semi": "warn"
     },
     "overrides": [
         {
