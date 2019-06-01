@@ -1,7 +1,8 @@
 
-SRCS = $(wildcard *.js) $(wildcard plugins/*.js)
+SOURCES = $(wildcard *.js) $(wildcard plugins/*.js)
+EXTRA_SOURCES = tests/inject.js
 DIST = dist
-DISTS = $(patsubst %,$(DIST)/%,$(SRCS))
+DISTS = $(patsubst %,$(DIST)/%,$(SOURCES))
 
 .PHONY: all lint twitch-api babel dist echo-srcs echo-dists
 
@@ -11,7 +12,7 @@ twitch-api:
 	cd twitch-api && git pull
 
 lint:
-	npx eslint $(SRCS)
+	npx eslint $(SOURCES) $(EXTRA_SOURCES)
 
 babel: dist
 
@@ -29,7 +30,7 @@ dist/polyfill.js:
 	test -f node_modules/babel-polyfill/dist/polyfill.js && cp node_modules/babel-polyfill/dist/polyfill.js dist/polyfill.js
 
 echo-srcs:
-	echo $(SRCS)
+	echo $(SOURCES)
 
 echo-dists:
 	echo $(DISTS)
