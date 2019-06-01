@@ -102,12 +102,12 @@ class HTMLGenerator {
         $i.attr("title", opts.name);
         $w.attr("data-emote-name", opts.id);
       }
+      /* opts.name overrides opts.id for all but $i[data-emote-id] */
       if (opts.name) {
         $i.attr("data-emote-name", opts.name);
-        /* opts.name overrides opts.id */
         $i.attr("alt", opts.name);
         $i.attr("title", opts.name);
-        $w.attr("data-emote-name", opts.id);
+        $w.attr("data-emote-name", opts.name);
       }
       if (opts.w || opts.width) {
         $i.attr("width", opts.w || opts.width);
@@ -294,33 +294,32 @@ class HTMLGenerator {
         let match = matches.pop();
         let [start, end] = [map[match.start], map[match.end]];
         let cheer_html = this._genCheer(match.cheer, match.bits);
+        let pos = start + cheer_html.length;
         /* Insert the cheer HTML and adjust the map */
         message = message.substr(0, start) + cheer_html + message.substr(end);
         this._remap(map, match.start, match.end, cheer_html.length);
         /* Scan for cheer effects */
-        let pos = start + cheer_html.length;
-        start = pos;
-        end = pos;
+        start = end = pos;
         while (pos < message.length) {
           let word = "";
           if (message[pos].match(/\s/)) {
             pos += 1;
           } else {
             /* NOTE: This would be cleaner with some kind of "search starting
-             * from" function */
+             * from" function: message.matchFrom(/\s/, pos) */
             end = message.substr(pos).search(/\s/);
             end = end === -1 ? message.length : pos + end;
             word = message.substring(pos, end);
             let s = GetCheerStyle(word.toLowerCase());
-            /* Stop scanning at the first non-effect word */
-            if (!s) {
-              end = pos;
-              break;
-            } else if (!s._disabled && bits_left >= s.cost) {
-              /* Don't stop scanning for disabled effects, or if the effect
-               * uses more bits than are left */
+            if (s && !s._disabled && bits_left >= s.cost) {
+              /* Continue scanning for disabled effects and effects using more
+               * bits than are left */
               $effects.push(s);
               bits_left -= s.cost;
+            } else {
+              /* Stop scanning at the first non-effect word */
+              end = pos;
+              break;
             }
             pos = end;
           }
@@ -367,9 +366,8 @@ class HTMLGenerator {
         let emote = results.pop();
         let edef = emote.id;
         let url = edef.urls[Object.keys(edef.urls).min()];
-        let emote_str = this._emote("ffz", url,
-                                    {id: edef.id, w: edef.width, h: edef.height,
-                                     def: edef});
+        let emote_opts = {id: edef.id, w: edef.width, h: edef.height, def: edef};
+        let emote_str = this._emote("ffz", url, emote_opts);
         let msg_start = message.substr(0, map[emote.start]);
         let msg_end = message.substr(map[emote.end+1]);
         message = `${msg_start}${emote_str}${msg_end}`;
@@ -399,8 +397,8 @@ class HTMLGenerator {
     while (results.length > 0) {
       let emote = results.pop();
       let edef = emotes[emote.id];
-      let emote_str = this._emote("bttv", edef.url,
-                                  {id: edef.id, name: edef.code, def: edef});
+      let emote_opts = {id: edef.id, name: edef.code, def: edef};
+      let emote_str = this._emote("bttv", edef.url, emote_opts);
       let msg_start = message.substr(0, map[emote.start]);
       let msg_end = message.substr(map[emote.end+1]);
       message = `${msg_start}${emote_str}${msg_end}`;
