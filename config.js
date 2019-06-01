@@ -2,26 +2,33 @@
 
 "use strict";
 
-/** Defining a new CSS style (see "Line format" below):
+/** Defining a new CSS style (see "Line format" and CSSCheerStyles below):
  *  <style_name>: {
+ *    _disabled: Boolean: (optional) mark the effect as disabled,
  *    cost: Number: number of bits the effect requires/consumes,
- *    class: String: CSS class name(s) for text "span" element,
- *    style: String: CSS style(s) for text "span" element,
- *    wclass: String: CSS class name(s) for containing "div" element,
- *    wstyle: String: CSS style(s) for containing "div" element,
- *    html_pre: String: HTML to place before the line "span" element,
- *    html_post: String: HTML to place after the line "span" element
+ *    class: String: span.message CSS class name(s),
+ *    style: String: span.message CSS style(s),
+ *    wclass: String: div.chat-line CSS class name(s),
+ *    wstyle: String: div.chat-line CSS style(s),
+ *    html_pre: String: HTML to insert before div.chat-line,
+ *    html_post: String: HTML to insert after div.chat-line
  *  }
  *
- ** Plugins can add or modify cheer styles by modifying CSSCheerStyles.
+ ** Defining a new color (see ColorNames below):
+ *  <color-name>: #<color-hex>
+ *
+ ** Plugins are able (and encouraged!) to define new cheer styles and colors:
+ *  Add cheer styles by adding to or modifying CSSCheerStyles directly.
+ *  Define new colors by adding to or modifying ColorNames directly.
  *
  ** Line format:
  *  <div class="line line-wrapper">
+ *    <!-- Begin HTMLGen generated elements -->
  *    <div class="chat-line ${wclass}" style="${wstyle}">
  *      <span class="badges" data-badges="1">
  *        <img class="badge" ... />
  *      </span>
- *      <span class="username" style="color: ${username_color}; ${text_shadow}">
+ *      <span class="username" data-username="1" style="color: ${c}; ${text_shadow}">
  *        username
  *      </span>
  *      ${html_pre}
@@ -30,7 +37,12 @@
  *      </span>
  *      ${html_post}
  *    </div>
+ *    <!-- End HTMLGen generated elements -->
  *  </div>
+ *
+ ** Other variables used above:
+ *  ${c}:           Username color, deduced and populated by HTMLGen
+ *  ${text_shadow}: Username shadow CSS, calculated and populated by HTMLGen
  */
 
 /* Strings intended for some kind of i18n support */
