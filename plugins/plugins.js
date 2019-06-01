@@ -69,7 +69,7 @@ class PluginStorageClass {
   }
 
   /* Load the given plugin object with the TwitchClient instance given */
-  _load(plugin, client) {
+  _load(plugin, client, config) {
     if (this.disabled || PluginStorageClass.disabled) { return; }
     let self = this;
     let ctor = plugin.ctor;
@@ -85,19 +85,19 @@ class PluginStorageClass {
           /* Last level of security against code injection */
           let cname = ctor.replace(/[^A-Za-z0-9_]/g, "");
           let cfunc = (new Function(`return ${cname}`))();
-          let obj = new (cfunc)(resolve, reject, client, plugin.args);
+          let obj = new (cfunc)(resolve, reject, client, plugin.args, config);
           obj._plugin_name = ctor;
           self._plugins[ctor]._loaded = true;
           self._plugins[ctor].obj = obj;
         }
         catch (e) {
-          if (!self._plugins[ctor].silent) {
+          if (self._plugins[ctor].silent) {
+            Util.ErrorOnly(e);
+            resolve();
+          } else {
             self._plugins[ctor]._error = true;
             self._plugins[ctor]._error_obj = e;
             reject(e);
-          } else {
-            Util.ErrorOnly(e);
-            resolve();
           }
         }
       };
@@ -134,7 +134,7 @@ class PluginStorageClass {
   }
 
   /* Load all added plugin objects */
-  loadAll(client) {
+  loadAll(client, config) {
     if (this.disabled || PluginStorageClass.disabled) { return; }
     return new Promise((function(resolve, reject) {
       let order = Object.keys(this._plugins).sort((a, b) => this._cmp(a, b));
@@ -142,11 +142,12 @@ class PluginStorageClass {
         let p = this._plugins[n];
         Util.LogOnly("Loading plugin " + JSON.stringify(p));
         try {
-          this._load(p, client)
+          this._load(p, client, config)
             .then(function() { resolve(); })
             .catch(function(e) { reject(e); });
         }
         catch (e) {
+          Util.Error("Failed loading plugin", n, p, e);
           Content.addError(e);
         }
       }

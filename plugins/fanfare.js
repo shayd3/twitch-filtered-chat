@@ -24,15 +24,26 @@ img.ff.ff-sub {
 `;
 
 class FanfarePlugin { /* exported FanfarePlugin */
-  constructor(resolve, reject, client, args) {
+  constructor(resolve, reject, client, args, config) {
     this._args = args;
     this._on = false;
     this._particles = [];
     this._nparticles = args.nparticles || 10;
+    if (config.PluginConfig) {
+      if (config.PluginConfig.Fanfare) {
+        let ffcfg = config.PluginConfig.Fanfare;
+        if (ffcfg.N) {
+          this._nparticles = ffcfg.N;
+        }
+        if (ffcfg.On) {
+          this._on = true;
+        }
+      }
+    }
     this._setupCSS();
     this._setupParticles();
     let prefix = "From plugin FanfarePlugin: ";
-    ChatCommands.add("ff", this._onFfCmd, prefix + "Enable or disable fanfare", this);
+    ChatCommands.add("ff", this._onCmd, prefix + "Enable or disable fanfare", this);
     ChatCommands.addUsage("ff", "on", prefix + "Enable fanfare");
     ChatCommands.addUsage("ff", "off", prefix + "Disable fanfare");
     ChatCommands.addUsage("ff", "show-sub", prefix + "Display the subscriber fanfare");
@@ -60,13 +71,15 @@ class FanfarePlugin { /* exported FanfarePlugin */
     this._particles = [];
     for (let i = 0; i < this._nparticles; ++i) {
       let p = $("<span class=\"ff ff-particle\"></span>");
+      p.attr("data-source", "FanfarePlugin");
+      p.attr("data-ff-particle", i);
       p.attr("id", `ff-particle-${i}`);
       p.hide();
       $("body").append(p);
     }
   }
 
-  _onFfCmd(cmd, tokens, client, self) {
+  _onCmd(cmd, tokens, client, self) {
     if (tokens.length === 0) {
       if (self._on) {
         Content.addInfo("Fanfare is enabled");
