@@ -28,7 +28,7 @@
 
 const CFGKEY_DEFAULT = "tfc-config";
 const GITHUB_URL = "https://kaedenn.github.io/twitch-filtered-chat/index.html";
-const CURRENT_URL = ((l) => `${l.protocol}//${l.hostname}${l.pathname}`)(window.location);
+const CURR_URL = ((l) => `${l.protocol}//${l.hostname}${l.pathname}`)(window.location);
 
 /* Document writing functions {{{0 */
 
@@ -115,12 +115,10 @@ function parseQueryString(config, qs=null) {
       } else if (v === "trace") {
         val = Util.LEVEL_TRACE;
       } else if (typeof(v) === "number") {
-        val = v;
+        val = Math.clamp(v, Util.LEVEL_MIN, Util.LEVEL_MAX);
       } else {
         val = Number(Boolean(v));
       }
-      if (val < Util.LEVEL_MIN) val = Util.LEVEL_MIN;
-      if (val > Util.LEVEL_MAX) val = Util.LEVEL_MAX;
     } else if (k === "noassets") {
       key = "NoAssets";
       val = Boolean(v);
@@ -191,9 +189,10 @@ function parseQueryString(config, qs=null) {
         val = JSON.parse(v);
       } catch (e) {
         Util.Error(e);
-        val = null;
+        key = val = null;
       }
     }
+    /* Skip items with a falsy key */
     if (key) {
       config[key] = val;
     }
@@ -238,7 +237,7 @@ function getConfigObject(inclSensitive=true) {
     config_key = getConfigKey();
     Util.SetWebStorageKey(config_key);
     if (config_key !== CFGKEY_DEFAULT) {
-      Util.LogOnly(`Using custom config key "${Util.GetWebStorageKey()}"`);
+      Util.LogOnlyOnce(`Using custom config key "${Util.GetWebStorageKey()}"`);
     }
     config = Util.GetWebStorage() || {};
     config.key = config_key;
@@ -748,7 +747,7 @@ function updateTransparency(transparent) {
   }
   catch (e) {
     /* Unable to enumerate properties; use hard-coded ones */
-    Util.Error("Failed getting main.css :root", e);
+    Util.ErrorOnce("Failed getting main.css :root", e);
     props = [
       "--body-color",
       "--header-color",
@@ -899,39 +898,74 @@ function client_main(layout) { /* exported client_main */
         } else if (t0 === "url") {
           /* Generate a URL with the current configuration, omitting items
            * left at default values */
-          let url = tokens.indexOf("git") > -1 ? GITHUB_URL : CURRENT_URL;
+
+          /* Base URL, query string array, and function to add items */
+          let url = tokens.indexOf("git") > -1 ? GITHUB_URL : CURR_URL;
           let qs = [];
           let qsAdd = (k, v) => qs.push(`${k}=${encodeURIComponent(v)}`);
 
           /* Generate and append query string items */
-          if (cfg.Debug > 0) { qsAdd("debug", cfg.Debug); }
-          if (cfg.__clientid_override) { qsAdd("clientid", cfg.ClientID); }
+          if (cfg.Debug > 0) {
+            qsAdd("debug", cfg.Debug);
+          }
+          if (cfg.__clientid_override) {
+            qsAdd("clientid", cfg.ClientID);
+          }
           qsAdd("channels", cfg.Channels.join(","));
-          if (cfg.NoAssets) { qsAdd("noassets", cfg.NoAssets); }
-          if (cfg.NoFFZ) { qsAdd("noffz", cfg.NoFFZ); }
-          if (cfg.NoBTTV) { qsAdd("nobttv", cfg.NoBTTV); }
-          if (cfg.HistorySize) { qsAdd("hmax", cfg.HistorySize); }
+          if (cfg.NoAssets) {
+            qsAdd("noassets", cfg.NoAssets);
+          }
+          if (cfg.NoFFZ) {
+            qsAdd("noffz", cfg.NoFFZ);
+          }
+          if (cfg.NoBTTV) {
+            qsAdd("nobttv", cfg.NoBTTV);
+          }
+          if (cfg.HistorySize) {
+            qsAdd("hmax", cfg.HistorySize);
+          }
           for (let module of Object.keys(getModules())) {
             qsAdd(module, formatModuleConfig(cfg[module]));
           }
           qsAdd("layout", FormatLayout(cfg.Layout));
-          if (cfg.Transparent) { qsAdd("trans", "1"); }
-          if (cfg.AutoReconnect) { qsAdd("reconnect", "1"); }
+          if (cfg.Transparent) {
+            qsAdd("trans", "1");
+          }
+          if (cfg.AutoReconnect) {
+            qsAdd("reconnect", "1");
+          }
           let font_curr = Util.CSS.GetProperty("--body-font-size");
           let font_dflt = Util.CSS.GetProperty("--body-font-size-default");
           if (font_curr !== font_dflt) {
             qsAdd("size", font_curr.replace(/[^0-9]/g, ""));
           }
-          if (cfg.Plugins) { qsAdd("plugins", "1"); }
+          if (cfg.Plugins) {
+            qsAdd("plugins", "1");
+          }
           if (cfg.MaxMessages !== TwitchClient.DEFAULT_MAX_MESSAGES) {
             qsAdd("max", `${cfg.MaxMessages}`);
           }
-          if (cfg.Font) { qsAdd("font", cfg.Font); }
-          if (cfg.Scroll) { qsAdd("scroll", "1"); }
-          if (cfg.ShowClips) { qsAdd("clips", "1"); }
+          if (cfg.Font) {
+            qsAdd("font", cfg.Font);
+          }
+          if (cfg.Scroll) {
+            qsAdd("scroll", "1");
+          }
+          if (cfg.ShowClips) {
+            qsAdd("clips", "1");
+          }
           if (tokens.indexOf("auth") > -1) {
             qsAdd("user", cfg.Name);
             qsAdd("pass", cfg.Pass);
+          }
+          if (cfg.DisableEffects) {
+            qsAdd("disable", cfg.DisableEffects.join(","));
+          }
+          if (cfg.EnableEffects) {
+            qsAdd("enable", cfg.EnableEffects.join(","));
+          }
+          if (cfg.PluginConfig) {
+            qsAdd("plugincfg", JSON.stringify(cfg.PluginConfig));
           }
 
           /* Append query string to the URL */
