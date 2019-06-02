@@ -559,11 +559,10 @@ function shouldFilter(module, event) {
   let rules = getModuleSettings(module);
   if (plugin_results && plugin_results.length > 0) {
     for (let i of plugin_results) {
-      if (i === true) {
-        return true;
-      } else if (i === false) {
-        return false;
+      if (typeof(i) === "boolean") {
+        return i;
       }
+      /* Other values: continue the filtering logic */
     }
   }
   if (event instanceof TwitchChatEvent) {
@@ -1000,9 +999,15 @@ function client_main(layout) { /* exported client_main */
               newval = true;
             } else if (val === "false") {
               newval = false;
-            } else if (!Number.isNaN(Number.parseInt(val))) {
+            } else if (val === "Infinity") {
+              newval = Infinity;
+            } else if (val === "-Infinity") {
+              newval = -Infinity;
+            } else if (val === "NaN") {
+              newval = NaN;
+            } else if (val.match(/^[+-]?(?:\d|[1-9]\d*)$/)) {
               newval = Number.parseInt(val);
-            } else if (!Number.isNaN(Number.parseFloat(val))) {
+            } else if (val.match(/^[-+]?(?:\d*\.\d+|\d+)$/)) {
               newval = Number.parseFloat(val);
             } else {
               newval = val;
@@ -1679,6 +1684,7 @@ function client_main(layout) { /* exported client_main */
   /* New user's YoHiYo */
   client.bind("twitch-newuser", function _on_twitch_newuser(e) {
     Util.StorageAppend("debug-msg-log", e);
+    /* TODO: HTMLGen.newUser */
   });
 
   /* Received some other kind of usernotice */

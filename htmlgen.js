@@ -696,7 +696,7 @@ class HTMLGenerator {
     return $w;
   }
 
-  new_user(event) { /* TODO */
+  newUser(event) { /* TODO */
     /* Strings.NewUser(event.user) */
   }
 
