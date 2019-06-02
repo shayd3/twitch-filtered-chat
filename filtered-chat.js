@@ -1694,7 +1694,7 @@ function client_main(layout) { /* exported client_main */
      * unraid, bitsbadgetier */
   });
 
-  /* Bind the rest of the events and warn about unbound events */
+  /* Bind to the rest of the events */
   client.bind("twitch-hosttarget", function _on_twitch_hosttarget(e) {
     Util.StorageAppend("debug-msg-log", e);
   });
@@ -1711,6 +1711,7 @@ function client_main(layout) { /* exported client_main */
   client.bind("twitch-mode", function _on_twitch_mode(e) {});
   client.bind("twitch-other", function _on_twitch_other(e) {});
 
+  /* Warn about unbound events */
   client.bindDefault(function _on_default(e) {
     Util.Warn("Unbound event:", e);
     Util.StorageAppend("debug-msg-log", e);

@@ -20,7 +20,7 @@ function BuildMessage(flag_obj, cmd=null, msg=null) {
   flags["tmi-sent-ts"] = Number(new Date());
   flags["__injected"] = 1;
   for (let [k, v] of Object.entries(flag_obj)) {
-    flags[k] = v.replace(/ /g, "\\s");
+    flags[k] = Twitch.EncodeFlag(v);
   }
   let user = "kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv";
   let ch = "#dwangoac";
@@ -32,35 +32,23 @@ function BuildMessage(flag_obj, cmd=null, msg=null) {
   if (msg !== null) { message = `${message} :${msg}`; }
   if (!message.endsWith("\r\n")) message += "\r\n";
 
-  Util.LogOnly(flags, user, ch, message);
+  Util.DebugOnly(flags, JSON.stringify(message));
   return message;
 }
 
 var TEST_MESSAGES = { };
 
-TEST_MESSAGES.CHEER1 = BuildMessage({
-  "bits": "1"
-}, "PRIVMSG", ":cheer1");
-
-TEST_MESSAGES.CHEER2 = BuildMessage({
-  "bits": "400"
-}, "PRIVMSG", "test cheer100 Kappa cheer100 :D cheer100 BlessRNG cheer100 test");
-
-TEST_MESSAGES.CHEER3 = BuildMessage({
-  "bits": "400"
-}, "PRIVMSG", "&&&& cheer100 Kappa cheer100 :D cheer100 BlessRNG cheer100 test");
-
 TEST_MESSAGES.GIFTSUB = BuildMessage({
   "msg-id": "subgift",
   "msg-param-months": "1",
-  "msg-param-origin-id": "da\\s39\\sa3\\see\\s5e\\s6b\\s4b\\s0d\\s32\\s55\\sbf\\sef\\s95\\s60\\s18\\s90\\saf\\sd8\\s07\\s09",
+  "msg-param-origin-id": "da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 90 af d8 07 09",
   "msg-param-recipient-display-name": "KatDevsGames",
   "msg-param-recipient-id": "31157663",
   "msg-param-recipient-user-name": "katdevsgames",
   "msg-param-sender-count": "1",
-  "msg-param-sub-plan-name": "Channel\\sSubscription\\s(dwangoAC)",
+  "msg-param-sub-plan-name": "Channel Subscription (dwangoAC)",
   "msg-param-sub-plan": "1000",
-  "system-msg": "Melos_Solro\\sgifted\\sa\\sTier\\s1\\ssub\\sto\\sKatDevsGames!\\sThis\\sis\\stheir\\sfirst\\sGift\\sSub\\sin\\sthe\\schannel!"
+  "system-msg": "Melos_Solro gifted a Tier 1 sub to KatDevsGames! This is their first Gift Sub in the channel!"
 }, "USERNOTICE");
 
 TEST_MESSAGES.RESUB = BuildMessage({
@@ -69,9 +57,9 @@ TEST_MESSAGES.RESUB = BuildMessage({
   "msg-param-cumulative-months": "3",
   "msg-param-months": "0",
   "msg-param-should-share-streak": "0",
-  "msg-param-sub-plan-name": "Channel\\sSubscription\\s(dwangoAC)",
+  "msg-param-sub-plan-name": "Channel Subscription (dwangoAC)",
   "msg-param-sub-plan": "1000",
-  "system-msg": "Shewolf25\\ssubscribed\\sat\\sTier\\s1.\\sThey've\\ssubscribed\\sfor\\s3\\smonths!"
+  "system-msg": "Shewolf25 subscribed at Tier 1. They've subscribed for 3 months!"
 }, "USERNOTICE", "dose this break anything wolfsLUL");
 
 TEST_MESSAGES.RESUB2 = BuildMessage({
@@ -81,22 +69,22 @@ TEST_MESSAGES.RESUB2 = BuildMessage({
   "msg-param-months": "0",
   "msg-param-should-share-streak": "1",
   "msg-param-streak-months": "1",
-  "msg-param-sub-plan-name": "Channel\\sSubscription\\s(dwangoAC)",
+  "msg-param-sub-plan-name": "Channel Subscription (dwangoAC)",
   "msg-param-sub-plan": "1000",
-  "system-msg": "Feevey\\ssubscribed\\sat\\sTier\\s1.\\sThey've\\ssubscribed\\sfor\\s2\\smonths,\\scurrently\\son\\sa\\s1\\smonth\\sstreak!"
+  "system-msg": "Feevey subscribed at Tier 1. They've subscribed for 2 months, currently on a 1 month streak!"
 }, "USERNOTICE", "PogChamp");
 
 TEST_MESSAGES.GIFTSUB2 = BuildMessage({
   "msg-id": "subgift",
   "msg-param-months": "1",
-  "msg-param-origin-id": "da\\s39\\sa3\\see\\s5e\\s6b\\s4b\\s0d\\s32\\s55\\sbf\\sef\\s95\\s60\\s18\\s90\\saf\\sd8\\s07\\s09",
+  "msg-param-origin-id": "da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 90 af d8 07 09",
   "msg-param-recipient-display-name": "Kaedenn_",
   "msg-param-recipient-id": "175437030",
   "msg-param-recipient-user-name": "Kaedenn_",
   "msg-param-sender-count": "1",
-  "msg-param-sub-plan-name": "Channel\\sSubscription\\s(dwangoAC)",
+  "msg-param-sub-plan-name": "Channel Subscription (dwangoAC)",
   "msg-param-sub-plan": "1000",
-  "system-msg": "Kaedenn\\sgifted\\sa\\sTier\\s1\\ssub\\sto\\sKaedenn_!\\sThis\\sis\\stheir\\sfirst\\sGift\\sSub\\sin\\sthe\\schannel!"
+  "system-msg": "Kaedenn gifted a Tier 1 sub to Kaedenn_! This is their first Gift Sub in the channel!"
 }, "USERNOTICE");
 
 TEST_MESSAGES.EFFECT1 = BuildMessage({"bits": "100"}, "PRIVMSG",
@@ -141,7 +129,7 @@ TEST_MESSAGES.NEW_CHATTER = BuildMessage({
   "login": "seventest1",
   "msg-id": "ritual",
   "msg-param-ritual-name": "new_chatter",
-  "system-msg": "Seventoes\\sis\\snew\\shere!"
+  "system-msg": "Seventoes is new here!"
 }, "USERNOTICE");
 
 function inject_message(msg) { /* exported inject_message */
@@ -164,6 +152,7 @@ if (Util.Defined("client")) {
     TEST_MESSAGES.COLORS[key] = msg1;
     TEST_MESSAGES.COLORS_ME[key] = msg2;
   }
+  Util.DebugOnly(`Initialized ${Object.keys(TEST_MESSAGES).length} test messages`);
 }
 
 /* vim: set ts=2 sts=2 sw=2 et: */
