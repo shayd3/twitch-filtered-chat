@@ -43,13 +43,23 @@ module.exports = {
         "no-self-compare": "warn",
         "no-throw-literal": "warn",
         "no-unused-expressions": "warn",
-        "semi": "warn"
+        "semi": "warn",
+        "no-self-compare": "warn",
+        "no-param-reassign": "warn",
+        "no-lonely-if": "warn",
+        "no-tabs": "error"
     },
     "overrides": [
         {
             "files": ["main.js"],
             "rules": {
                 "no-console": "off"
+            }
+        },
+        {
+            "files": ["htmlgen.js"],
+            "rules": {
+                "no-param-reassign": "off"
             }
         }
     ]
