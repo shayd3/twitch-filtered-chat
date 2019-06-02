@@ -497,13 +497,25 @@ class HTMLGenerator {
       }
     }
 
+    let logMessage = () => {};
+    /* Un-comment to log transformations in detail
+    let idx = 1;
+    logMessage = (...args) => { Util.LogOnly(idx, message, ...args); idx += 1; }
+     */
     /* Apply message transformations */
+    logMessage(event);
     message = this._msgEmotesTransform(event, message, map, $msg, $effects);
+    logMessage();
     message = this._msgCheersTransform(event, message, map, $msg, $effects);
+    logMessage();
     message = this._msgFFZEmotesTransform(event, message, map, $msg, $effects);
+    logMessage();
     message = this._msgBTTVEmotesTransform(event, message, map, $msg, $effects);
+    logMessage();
     message = this._msgURLTransform(event, message, map, $msg, $effects);
+    logMessage();
     message = this._msgAtUserTransform(event, message, map, $msg, $effects);
+    logMessage();
 
     /* Handle mod-only antics */
     if (event.ismod && !$("#cbForce").is(":checked") && event.flags.force) {

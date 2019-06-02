@@ -1687,6 +1687,12 @@ function client_main(layout) { /* exported client_main */
     /* TODO: HTMLGen.newUser */
   });
 
+  /* User gifting a subscription to the community */
+  client.bind("twitch-mysterygift", function _on_twitch_mysterygift(e) {
+    Util.StorageAppend("debug-msg-log", e);
+    /* TODO: HTMLGen */
+  });
+
   /* Received some other kind of usernotice */
   client.bind("twitch-otherusernotice", function _on_twitch_otherusernotice(e) {
     Util.StorageAppend("debug-msg-log", e);
