@@ -123,8 +123,6 @@ class FanfarePlugin { /* exported FanfarePlugin */
   }
 
   get name() { return "FanfarePlugin"; }
-
-  toString() { return "[object FanfarePlugin]"; }
 }
 
 /* vim: set ts=2 sts=2 sw=2 et: */

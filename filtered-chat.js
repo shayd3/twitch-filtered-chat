@@ -8,6 +8,8 @@
  * Finish badge information on hover
  * Finish clip information
  * Add emote information on hover
+ * Allow plugins to define custom filtering
+ * Create a README.md file for the plugins directory
  * Hide getConfigObject() within client_main()
  * Auto-complete commands (wip), command arguments, and @user names
  */
@@ -79,13 +81,13 @@ class Content { /* exported Content */
 /* Merge the query string into the config object given and return removals */
 function parseQueryString(config, qs=null) {
   let qs_data;
-  if (qs === null) {
-    qs = window.location.search;
-    qs_data = Util.ParseQueryString(qs);
-  } else if (typeof(qs) === "string") {
-    qs_data = Util.ParseQueryString(qs);
-  } else if (typeof(qs) === "object") {
-    qs_data = qs;
+  let qs_obj = qs === null ? window.location.search : qs;
+  if (typeof(qs_obj) === "string") {
+    qs_data = Util.ParseQueryString(qs_obj);
+  } else if (typeof(qs_obj) === "object") {
+    qs_data = qs_obj;
+  } else {
+    Util.Error("Refusing to parse strange query string object", qs_obj);
   }
 
   /* Ensure debug and channels attributes exist, at the very least */
@@ -435,16 +437,16 @@ function setModuleSettings(module, config) {
 
 /* Obtain the settings from the module's settings HTML */
 function getModuleSettings(module) {
-  module = $(module);
+  let $module = $(module);
   let s = {
-    Name: module.find("input.name").val(),
-    Pleb: module.find("input.pleb").is(":checked"),
-    Sub: module.find("input.sub").is(":checked"),
-    VIP: module.find("input.vip").is(":checked"),
-    Mod: module.find("input.mod").is(":checked"),
-    Event: module.find("input.event").is(":checked"),
-    Bits: module.find("input.bits").is(":checked"),
-    Me: module.find("input.me").is(":checked"),
+    Name: $module.find("input.name").val(),
+    Pleb: $module.find("input.pleb").is(":checked"),
+    Sub: $module.find("input.sub").is(":checked"),
+    VIP: $module.find("input.vip").is(":checked"),
+    Mod: $module.find("input.mod").is(":checked"),
+    Event: $module.find("input.event").is(":checked"),
+    Bits: $module.find("input.bits").is(":checked"),
+    Me: $module.find("input.me").is(":checked"),
     IncludeUser: [],
     IncludeKeyword: [],
     ExcludeUser: [],
@@ -452,19 +454,19 @@ function getModuleSettings(module) {
     FromChannel: []
   };
 
-  module.find("input.include_user:checked").each(function() {
+  $module.find("input.include_user:checked").each(function() {
     s.IncludeUser.push($(this).val());
   });
-  module.find("input.include_keyword:checked").each(function() {
+  $module.find("input.include_keyword:checked").each(function() {
     s.IncludeKeyword.push($(this).val());
   });
-  module.find("input.exclude_user:checked").each(function() {
+  $module.find("input.exclude_user:checked").each(function() {
     s.ExcludeUser.push($(this).val());
   });
-  module.find("input.exclude_startswith:checked").each(function() {
+  $module.find("input.exclude_startswith:checked").each(function() {
     s.ExcludeStartsWith.push($(this).val());
   });
-  module.find("input.from_channel:checked").each(function() {
+  $module.find("input.from_channel:checked").each(function() {
     s.FromChannel.push($(this).val());
   });
 
@@ -553,11 +555,21 @@ function setChannels(client, channels) {
 
 /* Return whether or not the event should be filtered */
 function shouldFilter(module, event) {
+  let plugin_results = Plugins.invoke("shouldFilter", module, event);
   let rules = getModuleSettings(module);
+  if (plugin_results && plugin_results.length > 0) {
+    for (let i of plugin_results) {
+      if (i === true) {
+        return true;
+      } else if (i === false) {
+        return false;
+      }
+    }
+  }
   if (event instanceof TwitchChatEvent) {
     let user = event.user ? event.user.toLowerCase() : "";
     let message = event.message ? event.message.toLowerCase() : "";
-    /* sub < vip < mod for classification */
+    /* NOTE: pleb < sub < vip < mod */
     let role = "pleb";
     if (event.issub) role = "sub";
     if (event.isvip) role = "vip";
@@ -1110,12 +1122,13 @@ function client_main(layout) { /* exported client_main */
   ChatCommands.addHelp(Strings.TFC_NUKE, {literal: true, command: true});
   ChatCommands.addHelp(Strings.TFC_UNUKE, {command: true});
 
-  /* Functions used by events below */
+  /* Close the main settings window */
   function closeSettings() {
     updateModuleConfig();
     $("#settings").fadeOut();
   }
 
+  /* Open the main settings window */
   function openSettings() {
     let cfg = getConfigObject();
     $("#txtChannel").val(cfg.Channels.join(","));
@@ -1128,6 +1141,7 @@ function client_main(layout) { /* exported client_main */
     $("#settings").fadeIn();
   }
 
+  /* Toggle the main settings window */
   function toggleSettings() {
     if ($("#settings").is(":visible")) {
       closeSettings();
@@ -1136,7 +1150,7 @@ function client_main(layout) { /* exported client_main */
     }
   }
 
-  /* Bind events for page assets and DOM elements {{{0 */
+  /* Bind DOM events {{{0 */
 
   /* ScrollLock: pause or resume auto-scroll */
   $(document).keydown(function(e) {
@@ -1455,7 +1469,7 @@ function client_main(layout) { /* exported client_main */
 
   /* End of the DOM event binding 0}}} */
 
-  /* Bind to numerous TwitchEvent events {{{0 */
+  /* Bind TwitchEvent events {{{0 */
 
   /* WebSocket opened */
   client.bind("twitch-open", function _on_twitch_open(e) {

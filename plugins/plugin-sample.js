@@ -1,7 +1,6 @@
 
 class SamplePlugin { /* exported SamplePlugin */
   constructor(resolve, reject, client, args) {
-    this._debug = client.GetDebug();
     this._args = args;
     let prefix = "From plugin " + this.name + ": ";
     ChatCommands.add("sample-plugin", this._say_hi.bind(this), prefix + "Say hello");
@@ -19,10 +18,6 @@ class SamplePlugin { /* exported SamplePlugin */
   }
 
   get name() { return "SamplePlugin"; }
-
-  toString() {
-    return "[object SamplePlugin]";
-  }
 }
 
 /* vim: set ts=2 sts=2 sw=2 et: */

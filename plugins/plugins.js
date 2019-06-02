@@ -1,5 +1,7 @@
 /* Twitch Filtered Chat: Plugin support */
 
+/* TODO: Make a README.md */
+
 /** Plugin registration and usage
  *
  * To add your own plugins, place them in this directory and call
@@ -8,28 +10,33 @@
  *   file: the path to the plugin relative to this directory
  *   args: passed as a 4th argument to the plugin constructor
  *   order: the order in which the plugins are constructed
- *   silent: if present and non-falsy, don't report loading errors
+ *   silent: if present and non-falsy, silence loading errors
+ *   remote: if present and non-falsy, treat file as an absolute path
+ *
+ * All registered plugins are loaded once the page loads. To load a
+ * plugin after that, add it with Plugins.add and call Plugins.load.
  *
  * Plugins with lower order are constructed before plugins with higher
  * order. Default order is 1000.
- *
  */
 
-/** Expected plugin API
+/*** Expected plugin API
  *
- * constructor(resolve, reject[, client [, args]])
- *  resolve: call once the plugin has finished constructing
- *  reject:  call with an Error() on failure loading the plugin
- *  client:  reference to the TwitchClient object (optional)
- *  args:    value of the plugin definition "args" key
+ ** constructor(resolve, reject[, client [, args[, config]]])
+ *    resolve: call with `this` when the plugin has finished constructing
+ *    reject:  call with an Error() if loading the plugin fails
+ *    client:  reference to the TwitchClient object
+ *    args:    value of the plugin definition "args" key
+ *    config:  configuration object, excluding sensitive items
+ ** name:      plugin's name, as a string or getter attribute
  *
- * name:     either a getter or a string attribute with the plugin's name.
+ *** Available plugin API
  *
- * For security reasons, if the plugin stores a reference to the
- * client, then the constructed plugin should not store references to
- * itself in any globally-accessible object.
- *
- * Plugins are not given the configuration object. Sorry.
+ ** shouldFilter(module, event)
+ *  Return true to filter out the event, false to hide it, or some other
+ *  value to continue testing subsequent filters.
+ *    module:  a HTML DOM element referring to one of the modules
+ *    event:   a TwitchEvent (or TwitchChatEvent, or TwitchSubEvent)
  */
 
 class PluginStorageClass {
@@ -47,48 +54,43 @@ class PluginStorageClass {
     return Util.JSONClone(this._plugins);
   }
 
-  /* Resolve the path to a plugin */
-  _path(plugin_def) { /* TODO: allow remote plugins */
-    if (this.disabled || PluginStorageClass.disabled) { return; }
-    let base = window.location.pathname;
-    if (base.endsWith("/index.html")) {
-      base = base.substr(0, base.lastIndexOf("/"));
-    }
-    return `${base}/plugins/${plugin_def.file}`;
-  }
-
-  /* Return which plugin (by name) loads first */
-  _cmp(n1, n2) {
-    let p1 = this._plugins[n1];
-    let p2 = this._plugins[n2];
-    if (p1.order === p2.order) {
-      return p1.ctor > p2.ctor;
-    } else {
-      return p1.order > p2.order;
-    }
-  }
-
   /* Load the given plugin object with the TwitchClient instance given */
   _load(plugin, client, config) {
     if (this.disabled || PluginStorageClass.disabled) { return; }
+    Util.LogOnly("Loading plugin " + JSON.stringify(plugin));
     let self = this;
     let ctor = plugin.ctor;
     return new Promise(function(resolve, reject) {
       let s = document.createElement("script");
-      s.src = self._path(plugin);
+      if (plugin.remote) {
+        s.src = plugin.file;
+      } else {
+        let base = window.location.pathname;
+        if (base.endsWith("/index.html")) {
+          base = base.substr(0, base.lastIndexOf("/"));
+        }
+        s.src = `${base}/plugins/${plugin.file}`;
+      }
       s.onload = function() {
         /* Construct the plugin */
         if (!Util.Defined(ctor)) {
-          throw new Error(`Constructor "${ctor}" not found`);
+          reject(new Error(`Constructor "${ctor}" not found`));
         }
         try {
-          /* Last level of security against code injection */
+          /* Last level of security against ACE: sanitize plugin names */
           let cname = ctor.replace(/[^A-Za-z0-9_]/g, "");
+          /* Obtain plugin name and construct it */
           let cfunc = (new Function(`return ${cname}`))();
           let obj = new (cfunc)(resolve, reject, client, plugin.args, config);
+          /* Ensure plugin defines a name attribute */
+          if (typeof(obj.name) !== "string") {
+            obj.name = ctor;
+          }
+          /* Store the plugin and mark it as loaded */
           obj._plugin_name = ctor;
           self._plugins[ctor]._loaded = true;
           self._plugins[ctor].obj = obj;
+          Util.DebugOnly("Plugin", self._plugins[ctor], "loaded");
         }
         catch (e) {
           if (self._plugins[ctor].silent) {
@@ -102,6 +104,7 @@ class PluginStorageClass {
         }
       };
       s.onerror = function(e) {
+        /* Silent plugins fail silently */
         if (!self._plugins[ctor].silent) {
           let err = new Error(`Loading ${ctor} failed: ${JSON.stringify(e)}`);
           self._plugins[ctor]._error = true;
@@ -123,9 +126,6 @@ class PluginStorageClass {
     if (!plugin_def.ctor.match(/^[A-Za-z0-9_]+$/)) {
       throw new Error("Invalid plugin name: " + plugin_def.ctor);
     }
-    if (typeof(plugin_def.order) !== "number") {
-      plugin_def.order = 1000;
-    }
     if (!Util.IsArray(plugin_def.args)) {
       plugin_def.args = [];
     }
@@ -137,21 +137,45 @@ class PluginStorageClass {
   loadAll(client, config) {
     if (this.disabled || PluginStorageClass.disabled) { return; }
     return new Promise((function(resolve, reject) {
-      let order = Object.keys(this._plugins).sort((a, b) => this._cmp(a, b));
-      for (let n of order) {
-        let p = this._plugins[n];
-        Util.LogOnly("Loading plugin " + JSON.stringify(p));
+      Promise.all(Object.values(this._plugins).map((p) => {
+        this._load(p, client, config);
+      }))
+        .then(() => resolve())
+        .catch((e) => reject(e));
+    }).bind(this));
+  }
+
+  /* Load a plugin by name */
+  load(ctor, client, config) {
+    if (this.disabled || PluginStorageClass.disabled) { return; }
+    return new Promise((function(resolve, reject) {
+      let plugin_def = this._plugins[ctor];
+      if (plugin_def) {
         try {
-          this._load(p, client, config)
+          this._load(plugin_def, client, config)
             .then(function() { resolve(); })
             .catch(function(e) { reject(e); });
         }
         catch (e) {
-          Util.Error("Failed loading plugin", n, p, e);
+          Util.Error("Failed loading plugin", ctor, plugin_def, e);
           Content.addError(e);
+          reject(e);
         }
+      } else {
+        reject(new Error(`Invalid plugin ${ctor}`));
       }
     }).bind(this));
+  }
+
+  /* Call a plugin function and return an array of results */
+  invoke(func, ...args) {
+    let results = [];
+    for (let plugin of Object.values(this._plugins)) {
+      if (typeof(plugin[func]) === "function") {
+        results.push(plugin[func](...args));
+      }
+    }
+    return results;
   }
 
   /* Disable plugin support entirely */
@@ -167,7 +191,7 @@ class PluginStorageClass {
 const Plugins = new PluginStorageClass(
   {ctor: "SamplePlugin", args: ["Example", "arguments"], file: "plugin-sample.js"},
   {ctor: "SamplePlugin2", file: "plugin-sample-2.js"},
-  {ctor: "FanfarePlugin", file: "fanfare.js"}
+  {ctor: "FanfarePlugin", file: "fanfare.js", order: 1001}
 );
 
 /* The following plugin is custom and not distributed */
