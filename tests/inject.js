@@ -25,10 +25,10 @@ function BuildMessage(flag_obj, cmd=null, msg=null) {
   let user = "kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv";
   let ch = "#dwangoac";
 
-  if (!cmd) cmd = "PRIVMSG";
+  let command = cmd || "PRIVMSG";
 
   let fstr = Object.entries(flags).map(([k,v]) => (`${k}=${v}`)).join(";");
-  let message = `@${fstr} :${user} ${cmd} ${ch}`;
+  let message = `@${fstr} :${user} ${command} ${ch}`;
   if (msg !== null) { message = `${message} :${msg}`; }
   if (!message.endsWith("\r\n")) message += "\r\n";
 
