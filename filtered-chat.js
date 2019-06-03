@@ -1200,26 +1200,39 @@ function client_main(layout) { /* exported client_main */
     }
   }
 
-  /* Bind DOM events {{{0 */
+  /* Close a module's settings window */
+  function closeModuleSettings(module) {
+    /* Update module configurations on close */
+    updateModuleConfig();
+    let $ms = $(module).find(".settings");
+    let $in = $ms.siblings("input.name");
+    let $ln = $ms.siblings("label.name");
+    $in.hide();
+    $ln.html($in.val()).show();
+    $ms.fadeOut();
+  }
 
-  /* ScrollLock: pause or resume auto-scroll */
-  $(document).keydown(function(e) {
-    if (e.key === "ScrollLock") {
-      let $c = $(".module .content");
-      let val = $c.attr("data-no-scroll");
-      if (val) {
-        /* Enable scrolling */
-        $c.removeAttr("data-no-scroll");
-        Util.Log("Auto-scroll enabled");
-        Content.addHelp("Auto-scroll enabled");
-      } else {
-        /* Disable scrolling */
-        $c.attr("data-no-scroll", "1");
-        Util.Log("Auto-scroll disabled");
-        Content.addHelp("Auto-scroll disabled");
-      }
+  /* Open a module's settings window */
+  function openModuleSettings(module) {
+    let $ms = $(module).find(".settings");
+    let $in = $ms.siblings("input.name");
+    let $ln = $ms.siblings("label.name");
+    $ln.hide();
+    $in.val($ln.html()).show();
+    $ms.fadeIn();
+  }
+
+  /* Toggle a module's settings window */
+  function toggleModuleSettings(module) {
+    let $ms = $(module).find(".settings");
+    if ($ms.is(":visible")) {
+      closeModuleSettings(module);
+    } else {
+      openModuleSettings(module);
     }
-  });
+  }
+
+  /* Bind DOM events {{{0 */
 
   /* Pressing a key on the chat box */
   $("#txtChat").keydown(function(e) {
@@ -1389,43 +1402,22 @@ function client_main(layout) { /* exported client_main */
     Util.DebugLevel = v;
   });
 
-  /* Clicking on the "close settings" link */
-  $("#btnClose").click(function(e) {
-    closeSettings();
-  });
-
   /* Clicking on the reconnect link in the settings box */
   $("#btnReconnect").click(function(e) {
     client.Connect();
   });
 
-  /* Opening one of the module menus */
-  $(".menu").click(function(e) {
-    let $settings = $(this).parent().children(".settings");
-    let $lbl = $(this).parent().children("label.name");
-    let $tb = $(this).parent().children("input.name");
-    if ($settings.is(":visible")) {
-      /* Update module configurations on close */
-      updateModuleConfig();
-      $tb.hide();
-      $lbl.html($tb.val()).show();
-    } else {
-      $lbl.hide();
-      $tb.val($lbl.html()).show();
-    }
-    $settings.fadeToggle();
-  });
-
-  /* Pressing enter on the module's name text box */
+  /* Pressing enter or escape on the module's name text box */
   $(".module .header input.name").keyup(function(e) {
+    let $m = $(this).parentsUntil(".column").last();
     if (e.key === "Enter") {
-      let $settings = $(this).parent().children(".settings");
-      let $lbl = $(this).parent().children("label.name");
-      let $tb = $(this).parent().children("input.name");
-      $tb.hide();
-      $lbl.html($tb.val()).show();
-      $settings.fadeToggle();
-      updateModuleConfig();
+      closeModuleSettings($m);
+    } else if (e.key === "Escape") {
+      /* Revert name change */
+      let $in = $m.find("input.name");
+      let $ln = $m.find("label.name");
+      $in.val($ln.html());
+      closeModuleSettings($m);
     }
   });
 
@@ -1434,11 +1426,11 @@ function client_main(layout) { /* exported client_main */
     $(this).parentsUntil(".column").find(".line-wrapper").remove();
   });
 
-  /* Pressing enter on one of the module menu text boxes */
+  /* Pressing enter or escape on one of the module menu text boxes */
   $(".module .settings input[type=\"text\"]").keyup(function(e) {
-    let v = $(this).val();
-    if (v.length > 0) {
-      if (e.key === "Enter") {
+    if (e.key === "Enter") {
+      let v = $(this).val();
+      if (v.length > 0) {
         let $cli = $(this).closest("li");
         let cls = $cli.attr("class").replace("textbox", "").trim();
         let cb = client.get("HTMLGen").checkbox(v, null, cls, true);
@@ -1448,6 +1440,38 @@ function client_main(layout) { /* exported client_main */
         $(this).val("");
         updateModuleConfig();
       }
+    } else if (e.key === "Escape") {
+      closeModuleSettings($(this).parentsUntil(".column").last());
+    }
+  });
+
+  /* Key presses at the document level */
+  $(document).keyup(function(e) {
+    if (e.key === "ScrollLock") {
+      /* ScrollLock: pause or resume auto-scroll */
+      let $c = $(".module .content");
+      let val = $c.attr("data-no-scroll");
+      if (val) {
+        /* Enable scrolling */
+        $c.removeAttr("data-no-scroll");
+        Util.Log("Auto-scroll enabled");
+        Content.addHelp("Auto-scroll enabled");
+      } else {
+        /* Disable scrolling */
+        $c.attr("data-no-scroll", "1");
+        Util.Log("Auto-scroll disabled");
+        Content.addHelp("Auto-scroll disabled");
+      }
+    } else if (e.key === "Escape") {
+      /* Escape: hide all open settings windows */
+      if ($("#settings").is(":visible")) {
+        $("#settings").fadeOut();
+      }
+      for (let m of Object.values(getModules())) {
+        if ($(m).find(".settings").is(":visible")) {
+          closeModuleSettings($(m));
+        }
+      }
     }
   });
 
@@ -1455,20 +1479,28 @@ function client_main(layout) { /* exported client_main */
   $(document).click(function(e) {
     let $t = $(e.target);
     let $cw = $("#userContext");
-    /* Clicking off of module settings: hide it */
+    /* Clicking on or off of the module settings button or box */
     for (let module of Object.values(getModules())) {
       let $m = $(module);
-      if ($m.is(":visible")) {
-        let $ms = $m.find(".settings");
-        let $mh = $m.find(".header");
-        if (!Util.PointIsOn(e.clientX, e.clientY, $ms[0])) {
-          if (!Util.PointIsOn(e.clientX, e.clientY, $mh[0])) {
-            updateModuleConfig();
-            let $tb = $ms.siblings("input.name").hide();
-            $ms.siblings("label.name").html($tb.val()).show();
-            $ms.fadeOut();
+      let $mm = $m.find(".menu");
+      let $mh = $m.find(".header");
+      let $ms = $m.find(".settings");
+      if (Util.PointIsOn(e.clientX, e.clientY, $mm)) {
+        toggleModuleSettings($m);
+      } else if ($ms.is(":visible")) {
+        if (!Util.PointIsOn(e.clientX, e.clientY, $ms)) {
+          if (!Util.PointIsOn(e.clientX, e.clientY, $mh)) {
+            closeModuleSettings($m);
           }
         }
+      }
+    }
+
+    /* Clicking off the main settings window */
+    let $sw = $("#settings");
+    if ($sw.is(":visible")) {
+      if (!Util.PointIsOn(e.clientX, e.clientY, $sw[0])) {
+        closeSettings();
       }
     }
 
