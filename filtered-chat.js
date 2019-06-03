@@ -4,17 +4,22 @@
 
 /* FIXME:
  * dwangoAC's Caster badge doesn't show
+ * Configuration problems:
+ *   cbTransparent is still selected after refresh
+ *     Select -> refresh -> still selected
+ *   Should config.Scroll set cbScroll or the other way around?
+ *     See getConfigObject below txtPass
+ *   Should config.ShowClips set cbClips or the other way around?
+ *     See getConfigObject below txtPass
  */
 
 /* TODO:
- * Add to #settings help link
- * Create page for the #settings config link
- * Finish badge information on hover
- * Finish clip information
+ * Add to #settings help link and #settings config link
+ * Finish clip information generation
  * Add emote information on hover
  * Allow plugins to define custom filtering
  * Create a README.md file for the plugins directory
- * Hide getConfigObject() within client_main()
+ * Detect getConfigObject() caller for omitting ClientID, Pass
  * Auto-complete commands (wip), command arguments, and @user names
  */
 
@@ -33,8 +38,8 @@
  */
 
 const CFGKEY_DEFAULT = "tfc-config";
-const GITHUB_URL = "https://kaedenn.github.io/twitch-filtered-chat/index.html";
-const CURR_URL = ((l) => `${l.protocol}//${l.hostname}${l.pathname}`)(window.location);
+const GIT_URL = "https://kaedenn.github.io/twitch-filtered-chat/index.html";
+const CUR_URL = ((l) => `${l.protocol}//${l.hostname}${l.pathname}`)(window.location);
 
 /* Document writing functions {{{0 */
 
@@ -93,10 +98,6 @@ function parseQueryString(config, qs=null) {
   } else {
     Util.Error("Refusing to parse strange query string object", qs_obj);
   }
-
-  /* Ensure debug and channels attributes exist, at the very least */
-  if (!qs_data.hasOwnProperty("debug")) qs_data.debug = false;
-  if (typeof(qs_data.channels) !== "string") qs_data.channels = "";
 
   let query_remove = [];
   for (let [k, v] of Object.entries(qs_data)) {
@@ -201,7 +202,10 @@ function parseQueryString(config, qs=null) {
       key = "ColorScheme";
       if (v === "light") {
         val = "light";
+      } else if (v === "dark") {
+        val = "dark";
       } else {
+        Util.WarnOnly(`Invalid colorscheme value ${v}, defaulting to dark`);
         val = "dark";
       }
     }
@@ -211,6 +215,12 @@ function parseQueryString(config, qs=null) {
     }
   }
   /* Ensure there's a layout property present */
+  if (!config.hasOwnProperty("Debug")) {
+    config.Debug = false;
+  }
+  if (!config.hasOwnProperty("Channels")) {
+    config.Channels = [];
+  }
   if (!config.hasOwnProperty("Layout")) {
     config.Layout = ParseLayout("double:chat");
   }
@@ -260,16 +270,14 @@ function getConfigObject(inclSensitive=true) {
   let query_remove = [];
 
   /* Certain unwanted items may be preserved in localStorage */
-  if (config.hasOwnProperty("NoAssets")) delete config["NoAssets"];
-  if (config.hasOwnProperty("Debug")) delete config["Debug"];
-  if (config.hasOwnProperty("AutoReconnect")) delete config["AutoReconnect"];
-  if (config.hasOwnProperty("Layout")) delete config["Layout"];
-  if (config.hasOwnProperty("Plugins")) delete config["Plugins"];
-  if (config.hasOwnProperty("nols")) delete config["nols"];
-  if (config.hasOwnProperty("EnableEffects")) delete config["EnableEffects"];
-  if (config.hasOwnProperty("DisableEffects")) delete config["DisableEffects"];
-  if (config.hasOwnProperty("PluginConfig")) delete config["PluginConfig"];
-  if (config.hasOwnProperty("ColorScheme")) delete config["ColorScheme"];
+  const purge_props = ["NoAssets", "Debug", "AutoReconnect", "Layout",
+                       "Transparent", "Plugins", "nols", "EnableEffects",
+                       "DisableEffects", "PluginConfig", "ColorScheme"];
+  for (let prop of purge_props) {
+    if (config.hasOwnProperty(prop)) {
+      delete config[prop];
+    }
+  }
 
   /* Ensure certain keys are present and have expected values */
   if (!config.hasOwnProperty("MaxMessages")) {
@@ -370,6 +378,7 @@ function getConfigObject(inclSensitive=true) {
     134, 83,  3,119,166, 86, 39, 38,167,135,134,147,214, 38, 55
   ].map((i) => Util.ASCII[((i&15)*16+(i&240)/16)]).join("");
 
+  /* TODO: Detect caller and omit these for unauthorized callers */
   if (!inclSensitive) {
     delete config["ClientID"];
     delete config["Pass"];
@@ -933,7 +942,7 @@ function client_main(layout) { /* exported client_main */
            * left at default values */
 
           /* Base URL, query string array, and function to add items */
-          let url = tokens.indexOf("git") > -1 ? GITHUB_URL : CURR_URL;
+          let url = tokens.indexOf("git") > -1 ? GIT_URL : CUR_URL;
           let qs = [];
           let qsAdd = (k, v) => qs.push(`${k}=${encodeURIComponent(v)}`);
 
@@ -999,6 +1008,11 @@ function client_main(layout) { /* exported client_main */
           }
           if (cfg.PluginConfig) {
             qsAdd("plugincfg", JSON.stringify(cfg.PluginConfig));
+          }
+          if (cfg.ColorScheme === "dark") {
+            qsAdd("scheme", "dark");
+          } else if (cfg.ColorScheme === "light") {
+            qsAdd("scheme", "light");
           }
 
           /* Append query string to the URL */
@@ -1084,6 +1098,9 @@ function client_main(layout) { /* exported client_main */
   /* Simulate clicking cbTransparent if config.Transparent is set */
   if (config.Transparent) {
     updateTransparency(true);
+    $("cbTransparent").attr("checked", "checked");
+  } else {
+    $("cbTransparent").removeAttr("checked");
   }
 
   /* Set the text size if given */
