@@ -203,18 +203,18 @@ class HTMLGenerator {
         $b.attr("data-badge", "1");
         $b.attr("title", `${badge_name}/${badge_num}`);
         $b.attr("alt", `${badge_name}/${badge_num}`);
-        if (this._client.IsGlobalBadge(badge_name, badge_num)) {
-          let badge_info = this._client.GetGlobalBadge(badge_name, badge_num);
-          $b.attr("src", badge_info.image_url_1x);
-          $b.attr("data-badge-scope", "global");
-          $b.attr("data-badge", JSON.stringify(badge_info));
-        } else if (this._client.IsChannelBadge(event.channel, badge_name)) {
+        if (this._client.IsChannelBadge(event.channel, badge_name)) {
           let badge_info = this._client.GetChannelBadge(event.channel, badge_name);
           let badge_src = badge_info.alpha || badge_info.image;
           $b.attr("src", badge_src);
           $b.attr("data-badge", JSON.stringify(badge_info));
           $b.attr("data-badge-scope", "channel");
           $b.attr("data-badge-channel", event.channel.channel.replace(/^#/, ""));
+        } else if (this._client.IsGlobalBadge(badge_name, badge_num)) {
+          let badge_info = this._client.GetGlobalBadge(badge_name, badge_num);
+          $b.attr("src", badge_info.image_url_1x);
+          $b.attr("data-badge-scope", "global");
+          $b.attr("data-badge", JSON.stringify(badge_info));
         } else {
           Util.Warn("Unknown badge", badge_name, badge_num, "for", event);
           continue;

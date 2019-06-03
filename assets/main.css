@@ -18,9 +18,6 @@
   --chat-color-default: #0e0e0e;
   --textarea-color-default: #1a1a1a;
 
-  /* Default colors (not used by ?trans=1) */
-  --chat-border-default: #7d5bbe;
-
   /* The following colors are affected by ?trans=1 (because "-color") */
   --body-color: var(--body-color-default);
   --header-color: var(--header-color-default);
@@ -31,7 +28,8 @@
   --chat-color: var(--chat-color-default);
   --textarea-color: var(--textarea-color-default);
 
-  /* The following colors are not */
+  /* Chat border color */
+  --chat-border-default: #7d5bbe;
   --chat-border: var(--chat-border-default);
 
   /* Font and text information */
@@ -69,6 +67,10 @@ html, body {
 
 body {
   background: var(--body-color, var(--body-color-default));
+}
+
+body.light {
+  color: #333333;
 }
 
 .fl {
@@ -161,6 +163,10 @@ em {
   text-align: center;
   vertical-align: middle;
   top: calc(50% - 16pt);
+}
+
+body.light .loading {
+  color: red;
 }
 
 #wrapper-loading.loading {
@@ -355,6 +361,10 @@ em {
   color: #e0e0e0;
 }
 
+body.light .module .content .line .message {
+  color: #1f1f1f;
+}
+
 .module .content .line .chat-line.chat-vip:not(.chat-sub) {
   border: 2px inset darkorchid;
 }
@@ -379,6 +389,12 @@ em {
   text-shadow: -1px -1px 1px black,
                -1px  1px 1px black,
                 2px  2px 1px black;
+}
+
+body.light .module .content .line .message {
+  text-shadow: -1px -1px 1px white,
+               -1px  1px 1px white,
+                2px  2px 1px white;
 }
 
 /* Specific effect overrides {{{1 */
@@ -464,9 +480,17 @@ em {
   color: #999999;
 }
 
+body.light .module .content .line .sub {
+  color: #777777;
+}
+
 .module .content a {
   color: #999999;
   text-decoration: none;
+}
+
+body.light .module .content a {
+  color: #777777;
 }
 
 .module .content a:hover {
@@ -516,6 +540,10 @@ em {
   color: #f0f0f0;
   font-size: 1em;
   transition: border linear 0.3s;
+}
+
+body.light #chat textarea {
+  color: #0f0f0f;
 }
 
 #chat textarea:focus {

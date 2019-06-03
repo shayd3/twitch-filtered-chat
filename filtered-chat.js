@@ -2,6 +2,10 @@
 
 "use strict";
 
+/* FIXME:
+ * dwangoAC's Caster badge doesn't show
+ */
+
 /* TODO:
  * Add to #settings help link
  * Create page for the #settings config link
@@ -783,6 +787,16 @@ function updateTransparency(transparent) {
       $("body").removeClass("transparent");
     }
   }
+}
+
+/* Set the colorscheme to dark */
+function setDarkScheme() { /* exported setDarkScheme */
+  $("body").removeClass("light").addClass("dark");
+}
+
+/* Set the colorscheme to light */
+function setLightScheme() { /* exported setLightScheme */
+  $("body").removeClass("dark").addClass("light");
 }
 
 /* Set or clear window notification badge */
