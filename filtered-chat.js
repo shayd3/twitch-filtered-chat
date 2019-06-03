@@ -197,6 +197,13 @@ function parseQueryString(config, qs=null) {
         Util.Error(e);
         key = val = null;
       }
+    } else if (key === "scheme") {
+      key = "ColorScheme";
+      if (v === "light") {
+        val = "light";
+      } else {
+        val = "dark";
+      }
     }
     /* Skip items with a falsy key */
     if (key) {
@@ -262,6 +269,7 @@ function getConfigObject(inclSensitive=true) {
   if (config.hasOwnProperty("EnableEffects")) delete config["EnableEffects"];
   if (config.hasOwnProperty("DisableEffects")) delete config["DisableEffects"];
   if (config.hasOwnProperty("PluginConfig")) delete config["PluginConfig"];
+  if (config.hasOwnProperty("ColorScheme")) delete config["ColorScheme"];
 
   /* Ensure certain keys are present and have expected values */
   if (!config.hasOwnProperty("MaxMessages")) {
@@ -1106,6 +1114,12 @@ function client_main(layout) { /* exported client_main */
     $("#cbClips").attr("checked", "checked");
   } else {
     $("#cbClips").removeAttr("checked");
+  }
+
+  if (config.ColorScheme === "dark") {
+    setDarkScheme();
+  } else if (config.ColorScheme === "light") {
+    setLightScheme();
   }
 
   /* Construct the HTML Generator and tell it and the client about each other */

@@ -18,11 +18,11 @@ URL: `https://kaedenn.github.io/twitch-filtered-chat/index.html?<OPTIONS>`
 |  `user`        | Username to use (requires `pass`) |
 |  `pass`        | OAuth token to use (requires `user`; removed once parsed) |
 |  `debug`       | Either a number or one of `false` (0), `true` or `debug` (1), or `trace` (2) (default: 0) |
-|  `channels`    | Channels to join (without #), separated by commas |
+|  `channels`    | Channels to join (with or without #), separated by commas |
 |  `noffz`       | Disable FFZ support (badges and emotes) entirely |
 |  `nobttv`      | Disable BTTV support (emotes) entirely |
 |  `noassets`    | Prevents loading of image (badge, emote, cheer) assets (implies `noffz` and `nobttv`) |
-|  `hmax`        | Maximum number of chat history messages to retain (default 300) |
+|  `hmax`        | Maximum size of sent chat history (default 300) |
 |  `trans`       | Makes the backgrounds completely transparent |
 |  `module1`     | The encoded module configuration for module 1 (explained below) |
 |  `module2`     | The encoded module configuration for module 2 (explained below) |
@@ -31,11 +31,14 @@ URL: `https://kaedenn.github.io/twitch-filtered-chat/index.html?<OPTIONS>`
 |  `plugins`     | If present, enables use of plugins (see plugins directory) |
 |  `disable`     | Disable specific cheer effects, separated by commas |
 |  `enable`      | Enable specific cheer effects, separated by commas |
-|  `max`         | Maximum number of sent chat messages to retain (default 100) |
+|  `max`         | Maximum number of chat messages to retain (default 100) |
 |  `font`        | Override default font `'Segoe UI', Tahoma, Geneva, Verdana, sans-serif` |
 |  `scroll`      | If non-empty, show scroll bars (default: hidden) |
 |  `clips`       | If non-empty, show clip information in chat (default: hidden) |
 |  `nols`        | Forcibly disable `localStorage` support. Note that this disables `pass` support entirely, as `localStorage` is needed to store passwords |
+|  `scheme`      | Color scheme to use. Valid values: `light` and `dark`. Default: `dark` |
+
+All option values must be URL-encoded.
 
 ### Layout:
 

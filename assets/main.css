@@ -70,7 +70,7 @@ body {
 }
 
 body.light {
-  color: #333333;
+  color: #0a0a0a;
 }
 
 .fl {
@@ -362,7 +362,7 @@ body.light .loading {
 }
 
 body.light .module .content .line .message {
-  color: #1f1f1f;
+  color: #0a0a0a;
 }
 
 .module .content .line .chat-line.chat-vip:not(.chat-sub) {
