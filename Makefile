@@ -1,12 +1,19 @@
 
+# Distributed sources to be transpiled
 SOURCES = $(wildcard *.js) $(wildcard plugins/*.js)
+
+# Distributed sources not to be transpiled
 EXTRA_SOURCES = tests/inject.js
-DIST = dist
+
+# Transpile destination directory
+DIST = ./dist
 DISTS = $(patsubst %,$(DIST)/%,$(SOURCES))
 
-.PHONY: all lint twitch-api babel dist echo-srcs echo-dists
+.PHONY: all lint babel
 
-all: twitch-api lint dist
+$(shell test -d $(DIST) || mkdir $(DIST))
+
+all: twitch-api lint babel
 
 twitch-api:
 	cd twitch-api && git pull
@@ -14,25 +21,17 @@ twitch-api:
 lint:
 	npx eslint $(SOURCES) $(EXTRA_SOURCES)
 
-babel: dist
+babel: $(DIST)
 
-dist: $(DISTS) dist/polyfill.js
+$(DIST)/%.js: %.js
+	test -d $(DIST) || mkdir $(DIST)
+	npx babel --presets babel-preset-env $< -d $(DIST)/
 
-dist/%.js: %.js
-	test -d dist || mkdir dist
-	npx babel --presets babel-preset-env $< -d dist/
+$(DIST)/plugins/%.js: plugins/%.js
+	test -d test/plugins || mkdir -p $(DIST)/plugins
+	npx babel --presets babel-preset-env $< -d $(DIST)/plugins/
 
-dist/plugins/%.js: plugins/%.js
-	test -d test/plugins || mkdir -p dist/plugins
-	npx babel --presets babel-preset-env $< -d dist/plugins/
-
-dist/polyfill.js: 
-	test -f node_modules/babel-polyfill/dist/polyfill.js && cp node_modules/babel-polyfill/dist/polyfill.js dist/polyfill.js
-
-echo-srcs:
-	echo $(SOURCES)
-
-echo-dists:
-	echo $(DISTS)
+$(DIST)/polyfill.js:
+	test -f node_modules/babel-polyfill/dist/polyfill.js && cp node_modules/babel-polyfill/dist/polyfill.js $(DIST)/polyfill.js
 
 # vim: sw=4 ts=4 sts=4 noet
