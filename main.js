@@ -9,7 +9,8 @@ const MOD_TWAPI = "twitch-api";
 /* Obtain information based on window.location and navigator.userAgent */
 const URI = `${window.location}`;
 const IS_TESLA = Boolean(navigator.userAgent.match(/\bTesla\b/));
-const USE_DIST = Boolean(window.location.search.match(/\busedist\b/)) || IS_TESLA;
+const ASK_DIST = Boolean(window.location.search.match(/\busedist\b/));
+const USE_DIST = ASK_DIST || IS_TESLA;
 const BASE_URI = URI.substr(0, URI.indexOf(MOD_TFC)).replace(/\/$/, "");
 const SELF_URI = URI.replace(/\/index.html(\?.*)?$/, "");
 
@@ -112,7 +113,8 @@ function AddAsset(src, tree=null, loadcb=null, errcb=null) {
 
   /* Prevent double-loading */
   if (ASSETS[path]) {
-    throw new Error(`Asset ${path} already added: ${JSON.stringify(ASSETS[path])}`);
+    let astr = JSON.stringify(ASSETS[path]);
+    throw new Error(`Asset ${path} already added: ${astr}`);
   }
 
   /* Construct and load the asset */
@@ -226,12 +228,15 @@ function Main(global) { /* exported Main */
       } catch(e) {
         _console_error(e);
         if (e.name === "ReferenceError") {
-          if ((e.message || "").match(/\bclient_main\b.*(?:not |un)defined\b/)) {
-            alert("FATAL: filtered-chat.js failed to load; client_main is undefined");
+          let m = e.message || "";
+          if (m.match(/\bclient_main\b.*(?:not |un)defined\b/)) {
+            alert("FATAL: filtered-chat.js failed to load");
           }
         } else {
           let msg = "client_main error: " + e.toString();
-          if (e.stack) msg += ";\nstack: " + e.stack.toString();
+          if (e.stack) {
+            msg += ";\nstack: " + e.stack.toString();
+          }
           alert(msg);
         }
         throw e;

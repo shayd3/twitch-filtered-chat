@@ -206,7 +206,7 @@ function parseQueryString(config, qs=null) {
       } else if (v === "dark") {
         val = "dark";
       } else {
-        Util.WarnOnly(`Invalid colorscheme value ${v}, defaulting to dark`);
+        Util.WarnOnly(`Invalid scheme value ${v}, defaulting to dark`);
         val = "dark";
       }
     }
@@ -373,7 +373,7 @@ function getConfigObject(inclSensitive=true) {
     window.location.search = new_qs;
   }
 
-  /* Finally, ensure certain values are present */
+  /* Finally, ensure certain defaults */
 
   /* Default max messages */
   if (!config.hasOwnProperty("MaxMessages")) {
