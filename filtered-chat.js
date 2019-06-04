@@ -1590,11 +1590,6 @@ function client_main(layout) { /* exported client_main */
     }
   });
 
-  /* Received reconnect command from Twitch */
-  client.bind("twitch-reconnect", function _on_twitch_reconnect(e) {
-    client.Connect();
-  });
-
   /* User joined (any user) */
   client.bind("twitch-join", function _on_twitch_join(e) {
     if (!Util.Browser.IsOBS && !layout.Slim) {
@@ -1790,6 +1785,9 @@ function client_main(layout) { /* exported client_main */
   });
 
   /* Bind to the rest of the events */
+  client.bind("twitch-reconnect", function _on_twitch_reconnect(e) {
+    /* Client will auto-reconnect */
+  });
   client.bind("twitch-hosttarget", function _on_twitch_hosttarget(e) {
     Util.StorageAppend("debug-msg-log", e);
   });
