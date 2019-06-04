@@ -9,7 +9,7 @@ EXTRA_SOURCES = tests/inject.js
 DIST = ./dist
 DISTS = $(patsubst %,$(DIST)/%,$(SOURCES))
 
-.PHONY: all lint babel
+.PHONY: all twitch-api lint babel
 
 $(shell test -d $(DIST) || mkdir $(DIST))
 
@@ -21,7 +21,7 @@ twitch-api:
 lint:
 	npx eslint $(SOURCES) $(EXTRA_SOURCES)
 
-babel: $(DIST)
+babel: $(DIST) $(DISTS)
 
 $(DIST)/%.js: %.js
 	test -d $(DIST) || mkdir $(DIST)
