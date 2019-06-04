@@ -2,6 +2,7 @@
 # Ignore files not meant for distribution
 plugins/dwangoAC.js
 dist/plugins/dwangoAC.js
+make-readme.sh
 
 # Ignore assets not included in project
 assets/3rdparty/
@@ -21,3 +22,4 @@ notes/
 .swp
 .swo
 .checkin-status
+README.html
