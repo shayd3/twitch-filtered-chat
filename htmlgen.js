@@ -41,7 +41,8 @@ class HTMLGenerator {
   getColorFor(username) {
     let name = `${username}`;
     if (typeof(username) !== "string") {
-      Util.Error("Expected string, got", typeof(username), JSON.stringify(username));
+      let arg_msg = `${typeof(username)}, ${JSON.stringify(username)}`;
+      Util.Error(`Expected string, got ${arg_msg}`);
     }
     if (!this._user_colors.hasOwnProperty(name)) {
       /* Taken from Twitch vendor javascript */
@@ -125,14 +126,15 @@ class HTMLGenerator {
 
   _genCheer(cheer, bits) {
     /* Use the highest tier image that doesn't exceed the cheered bits */
-    let t = cheer.tiers.filter((n) => bits >= n.min_bits).max((n) => n.min_bits);
+    let possible_cheers = cheer.tiers.filter((n) => bits >= n.min_bits);
+    let best_cheer = possible_cheers.max((n) => n.min_bits);
     /* Use the smallest scale available */
-    let url = t.images.dark.animated[cheer.scales.min((s) => +s)];
+    let url = best_cheer.images.dark.animated[cheer.scales.min((s) => +s)];
     let $img = $(`<img class="cheer-image" />`);
     let $w = $(`<span class="cheer cheermote"></span>`);
     $img.attr("alt", cheer.prefix).attr("title", cheer.prefix);
     $img.attr("src", url);
-    $w.css("color", t.color);
+    $w.css("color", best_cheer.color);
     $w.append($img);
     $w.append(bits);
     return $w[0].outerHTML;
@@ -195,28 +197,30 @@ class HTMLGenerator {
     $bc.css("max-width", `${total_width}px`);
     /* Add Twitch-native badges */
     if (event.flags.badges) {
-      for (let [badge_name, badge_num] of event.flags.badges) {
+      for (let [bname, bnum] of event.flags.badges) {
         let $b = $(`<img class="badge" width="18px" height="18px" />`);
-        $b.attr("data-badge-name", badge_name);
-        $b.attr("data-badge-num", badge_num);
-        $b.attr("data-badge-cause", JSON.stringify([badge_name, badge_num]));
+        $b.addClass("twitch-badge");
+        $b.attr("data-badge-name", bname);
+        $b.attr("data-badge-num", bnum);
+        $b.attr("data-badge-cause", JSON.stringify([bname, bnum]));
         $b.attr("data-badge", "1");
-        $b.attr("title", `${badge_name}/${badge_num}`);
-        $b.attr("alt", `${badge_name}/${badge_num}`);
-        if (this._client.IsChannelBadge(event.channel, badge_name)) {
-          let badge_info = this._client.GetChannelBadge(event.channel, badge_name);
+        $b.attr("title", `${bname}/${bnum}`);
+        $b.attr("alt", `${bname}/${bnum}`);
+        if (this._client.IsChannelBadge(event.channel, bname)) {
+          let badge_info = this._client.GetChannelBadge(event.channel, bname);
           let badge_src = badge_info.alpha || badge_info.image;
+          let channel = event.channel.channel.replace(/^#/, "");
           $b.attr("src", badge_src);
           $b.attr("data-badge", JSON.stringify(badge_info));
           $b.attr("data-badge-scope", "channel");
-          $b.attr("data-badge-channel", event.channel.channel.replace(/^#/, ""));
-        } else if (this._client.IsGlobalBadge(badge_name, badge_num)) {
-          let badge_info = this._client.GetGlobalBadge(badge_name, badge_num);
+          $b.attr("data-badge-channel", channel);
+        } else if (this._client.IsGlobalBadge(bname, bnum)) {
+          let badge_info = this._client.GetGlobalBadge(bname, bnum);
           $b.attr("src", badge_info.image_url_1x);
           $b.attr("data-badge-scope", "global");
           $b.attr("data-badge", JSON.stringify(badge_info));
         } else {
-          Util.Warn("Unknown badge", badge_name, badge_num, "for", event);
+          Util.Warn("Unknown badge", bname, bnum, "for", event);
           continue;
         }
         $bc.append(this._wrapBadge($b));
@@ -225,7 +229,8 @@ class HTMLGenerator {
     /* Add FFZ badges */
     if (event.flags["ffz-badges"]) {
       for (let badge of Object.values(event.flags["ffz-badges"])) {
-        let $b = $(`<img class="badge ffz-badge" width="18px" height="18px" />`);
+        let $b = $(`<img class="badge" width="18px" height="18px" />`);
+        $b.addClass("ffz-badge");
         $b.attr("data-badge", "1");
         $b.attr("data-ffz-badge", "1");
         $b.attr("data-badge-scope", "ffz");
@@ -238,7 +243,8 @@ class HTMLGenerator {
     /* For if BTTV ever adds badges
     if (event.flags["bttv-badges"]) {
       for (let badge of Object.values(event.flags["bttv-badges"])) {
-        let $b = $(`<img class="badge bttv-badge" width="18px" height="18px" />`);
+        let $b = $(`<img class="badge" width="18px" height="18px" />`);
+        $b.addClass("bttv-badge");
         $b.attr("data-badge", "1");
         $b.attr("data-ffz-badge", "1");
         $b.attr("data-badge-scope", "bttv");
@@ -342,9 +348,10 @@ class HTMLGenerator {
       emotes.sort((a, b) => map[a.start] - map[b.start]);
       while (emotes.length > 0) {
         let emote = emotes.pop();
+        let emote_src = this._client.GetEmote(emote.id);
         let msg_start = message.substr(0, map[emote.start]);
         let msg_end = message.substr(map[emote.end]+1);
-        let emote_str = this._emote("twitch", this._client.GetEmote(emote.id), emote);
+        let emote_str = this._emote("twitch", emote_src, emote);
         message = `${msg_start}${emote_str}${msg_end}`;
         /* Adjust the map */
         this._remap(map, emote.start, emote.end, emote_str.length - 1);
@@ -366,7 +373,12 @@ class HTMLGenerator {
         let emote = results.pop();
         let edef = emote.id;
         let url = edef.urls[Object.keys(edef.urls).min()];
-        let emote_opts = {id: edef.id, w: edef.width, h: edef.height, def: edef};
+        let emote_opts = {
+          id: edef.id,
+          w: edef.width,
+          h: edef.height,
+          def: edef
+        };
         let emote_str = this._emote("ffz", url, emote_opts);
         let msg_start = message.substr(0, map[emote.start]);
         let msg_end = message.substr(map[emote.end+1]);
@@ -493,7 +505,7 @@ class HTMLGenerator {
         message = msgprefix + message.substr(wordlen);
         event.flags.bits = 1000;
         event.flags.force = true;
-        /* The map doesn't need updating because the message lengths don't change */
+        /* No change in message length -> no need to update map */
       }
     }
 
@@ -610,7 +622,10 @@ class HTMLGenerator {
         if (effect.html_post) html_post.unshift(effect.html_post);
       }
     }
-    $e.append($(html_pre.join("") + msg_def.e[0].outerHTML + html_post.join("")));
+    let pre_html = html_pre.join("");
+    let msg_html = msg_def.e[0].outerHTML;
+    let post_html = html_post.join("");
+    $e.append(pre_html + msg_html + post_html);
     return $e;
   }
 
@@ -714,18 +729,22 @@ class HTMLGenerator {
 
   genClip(slug, clip_data, game_data) {
     /* TODO: Polish, CSS */
-    Util.Log("genClip", slug, clip_data, game_data);
+    Util.Debug("genClip", slug, clip_data, game_data);
     let $w = $("<div class=\"clip-preview\"></div>");
     let streamer = clip_data.broadcaster_name;
     let game = game_data.name;
     let clipper = clip_data.creator_name;
     let title = clip_data.title;
     let image = clip_data.thumbnail_url;
+    let $thumbnail = $("<img class=\"clip-thumbnail\" height=\"48px\"/>");
+    let $title = $("<div class=\"clip-title\"></div>");
+    let $desc = $("<div class=\"clip-desc\"></div>");
+    let $creator = $("<div class=\"clip-creator\"></div>");
     $w.attr("data-slug", slug);
-    $w.append($("<img class=\"clip-thumbnail\" height=\"48px\"/>").attr("src", image));
-    $w.append($("<div class=\"clip-title\"></div>").text(title));
-    $w.append($("<div class=\"clip-desc\"></div>").text(`${streamer} playing ${game}`));
-    $w.append($("<div class=\"clip-creator\"></div>").text(`Clipped by ${clipper}`));
+    $w.append($thumbnail.attr("src", image));
+    $w.append($title.text(title));
+    $w.append($desc.text(`${streamer} playing ${game}`));
+    $w.append($creator.text(`Clipped by ${clipper}`));
     return $w;
   }
 

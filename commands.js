@@ -73,8 +73,11 @@ class ChatCommandManager {
     /* Gather completions */
     if (this.isCommandStr(text)) {
       let word = this._trim(text.substr(0, pos));
-      let prefix = word.length === 0 ? text : text.substr(0, text.indexOf(word));
+      let prefix = text;
       let matches = [];
+      if (word.length > 0) {
+        prefix = text.substr(0, text.indexOf(word));
+      }
       for (let k of Object.keys(this._commands).sort()) {
         if (word.length === 0 || k.startsWith(word)) {
           matches.push(k);
@@ -233,6 +236,7 @@ class ChatCommandManager {
 function command_log(cmd, tokens, client) {
   let t0 = tokens.length > 0 ? tokens[0] : "";
   let logs = Util.GetWebStorage("debug-msg-log") || [];
+  let plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
   Content.addHelp(`Debug message log length: ${logs.length}`);
   if (tokens.length > 0) {
     if (t0 === "help") {
@@ -293,14 +297,15 @@ function command_log(cmd, tokens, client) {
             unmatched.push([i, l]);
           }
         }
-        let pl = `${matched.length} item` + (matched.length === 1 ? "" : "s");
+        let pl = plural(matched.length, "item");
         Content.addHelp(`Found ${pl} containing "${needle}"`.escape());
         if (t0 === "search") {
           for (let [i, l] of matched) {
-            Content.addHelp(`${i}: ${l._cmd || JSON.stringify(l).substr(0, 10)}`);
+            let desc = l._cmd || JSON.stringify(l).substr(0, 10);
+            Content.addHelp(`${i}: ${desc}`);
           }
         } else {
-          Content.addHelp(`Removing ${unmatched.length} of ${logs.length} items`);
+          Content.addHelp(`Removing ${unmatched.length}/${logs.length} items`);
           Content.addHelp(`New logs length: ${matched.length}`);
           Util.SetWebStorage("debug-msg-log", matched.map((i) => i[1]));
         }
@@ -312,7 +317,7 @@ function command_log(cmd, tokens, client) {
         .map((e) => Number.parseInt(e))
         .filter((e) => !Number.isNaN(e));
       if (n.length > 0) {
-        Content.addHelp(`Removing ${n.length} item` + (n.length === 1 ? "" : "s"));
+        Content.addHelp(`Removing ${plural(n.length, "item")}`);
         let result = [];
         for (let i = 0; i < logs.length; ++i) {
           if (n.indexOf(i) === -1) {
@@ -403,10 +408,10 @@ function command_badges(cmd, tokens, client) {
   /* Obtain channel badges */
   for (let ch of client.GetJoinedChannels()) {
     badges = [];
-    for (let [bname, badge] of Object.entries(client.GetChannelBadges(ch))) {
-      let url = badge.image || badge.svg || badge.alpha;
+    for (let [bn, b] of Object.entries(client.GetChannelBadges(ch))) {
+      let url = b.image || b.svg || b.alpha;
       let size = "width=\"36\" height=\"36\"";
-      badges.push(`<img src="${url}" ${size} title="${bname}" alt="${bname}" />`);
+      badges.push(`<img src="${url}" ${size} title="${bn}" alt="${bn}" />`);
     }
     /* Print channel badges */
     Content.addNotice(Twitch.FormatChannel(ch) + ": " + badges.join(""));
@@ -436,7 +441,8 @@ function command_emotes(cmd, tokens, client) {
     let bttv_emotes = client.GetGlobalBTTVEmotes();
     let bttv_imgs = [];
     for (let [k, v] of Object.entries(bttv_emotes)) {
-      bttv_imgs.push(`<img src="${v.url}" title="${k.escape()}" alt="${k.escape()}" />`);
+      let kstr = k.escape();
+      bttv_imgs.push(`<img src="${v.url}" title="${kstr}" alt="${kstr}" />`);
     }
     to_display.push(`BTTV: ${bttv_imgs.join("")}`);
   }
@@ -455,7 +461,8 @@ function command_plugins(cmd, tokens, client) {
     for (let [n, p] of Object.entries(Plugins.plugins)) {
       let msg = `${n}: ${p.file} @ ${p.order}`.escape();
       if (p._error) {
-        Content.addError(`${msg}: Failed: ${JSON.stringify(p._error_obj).escape()}`);
+        let estr = JSON.stringify(p._error_obj).escape();
+        Content.addError(`${msg}: Failed: ${estr}`);
       } else if (p._loaded) {
         msg = `${msg}: Loaded`;
         if (p.commands) {
@@ -499,8 +506,12 @@ function command_client(cmd, tokens, client) {
         Content.addHelpLine("&nbsp;", `Active users: ${nusers}`);
         Content.addHelpLine("&nbsp;", `Rooms: ${Object.keys(rooms)}`);
         Content.addHelp("User information for " + c + ":");
-        if (ui.color) { Content.addHelpLine("Color", ui.color); }
-        if (ui.badges) { Content.addHelpLine("Badges", JSON.stringify(ui.badges)); }
+        if (ui.color) {
+          Content.addHelpLine("Color", ui.color);
+        }
+        if (ui.badges) {
+          Content.addHelpLine("Badges", JSON.stringify(ui.badges));
+        }
         Content.addHelpLine("Name", `${ui["display-name"]}`);
       }
     }

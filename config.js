@@ -69,6 +69,18 @@ const Strings = { /* exported Strings */
   CFG_STARTS: "Starts with: ",
   CFG_CHANNEL: "Channel: ",
 
+  CFG_CMD: "Show global and module configuration",
+  CFG_CMD_PURGE: "Clear local storage (cannot be undone!)",
+  CFG_CMD_CLIENTID: "Display ClientID",
+  CFG_CMD_PASS: "Display OAuth token (if present)",
+  CFG_CMD_URL: "Generate a URL from the current configuration",
+  CFG_CMD_URLARGS: "//config url parameters (can be used in any order):",
+  CFG_CMD_URL_GIT: "Generate link targeting github.io",
+  CFG_CMD_URL_TEXT: "Don't base64-encode the URL",
+  CFG_CMD_URL_AUTH: "Include both ClientID and OAuth information",
+  CFG_CMD_SET: "//config set <key> <value>: Change <key> to <value> (dangerous!)",
+  CFG_CMD_SETOBJ: "//config setobj <key> <value>: Change <key> to JSON-encoded <value> (dangerous!)",
+
   Active: (ch) => `${ch} is streaming`,
   InActive: (ch) => `${ch} is not currently streaming`,
   Sub: (plan) => `just subscribed with a ${plan} subscription!`,

@@ -13,12 +13,13 @@
  *     See getConfigObject below txtPass
  */
 
-/* TODO:
+/* TODO (in approximate decreasing priority):
  * Add to #settings help link and #settings config link
  * Finish clip information generation
  * Add emote information on hover
  * Allow plugins to define custom filtering
  * Create a README.md file for the plugins directory
+ * Merge twapi into tfc; unify the modules
  * Detect getConfigObject() caller for omitting ClientID, Pass
  * Auto-complete commands (wip), command arguments, and @user names
  */
@@ -29,11 +30,8 @@
  * Add re-include (post-exclude) filtering options for Mods, Bits, Subs, etc?
  */
 
-/* NOTES:
- * Filter function returning true -> message is hidden
- * Filtering JOIN and PART messages
+/* Filtering out JOIN/PART or PRIVMSG logged messages
  *   Util.Logger.add_filter(/^ws recv.*\b(JOIN|PART)\b/)
- * Filtering PRIVMSG messages
  *   Util.Logger.add_filter(/^ws recv.*\bPRIVMSG\b/)
  */
 
@@ -45,16 +43,17 @@ const CUR_URL = ((l) => `${l.protocol}//${l.hostname}${l.pathname}`)(window.loca
 
 class Content { /* exported Content */
   static addHTML(content, container=null, callbacks=null) {
-    let $Container = container ? $(container) : $(".module .content");
-    let $Content = $(content);
+    let $container = container ? $(container) : $(".module .content");
+    let $content = $(content);
     if (callbacks) {
       for (let cb of callbacks) {
-        cb($Content);
+        cb($content);
       }
     }
-    $Container.append($(`<div class="line line-wrapper"></div>`).append($Content));
-    if (!$Container.attr("data-no-scroll")) {
-      $Container.scrollTop(Math.pow(2, 31) - 1);
+    let $line = $(`<div class="line line-wrapper"></div>`).append($content);
+    $container.append($line);
+    if (!$container.attr("data-no-scroll")) {
+      $container.scrollTop(Math.pow(2, 31) - 1);
     }
   }
   static addPre(content) { /* does not escape */
@@ -89,14 +88,16 @@ class Content { /* exported Content */
 
 /* Merge the query string into the config object given and return removals */
 function parseQueryString(config, qs=null) {
-  let qs_data;
-  let qs_obj = qs === null ? window.location.search : qs;
+  let qs_data = {};
+  /* Figure out what was passed */
+  let qs_obj = qs || window.location.search;
   if (typeof(qs_obj) === "string") {
     qs_data = Util.ParseQueryString(qs_obj);
   } else if (typeof(qs_obj) === "object") {
     qs_data = qs_obj;
   } else {
     Util.Error("Refusing to parse strange query string object", qs_obj);
+    /* Fall-through will generate a sane default configuration */
   }
 
   let query_remove = [];
@@ -372,6 +373,18 @@ function getConfigObject(inclSensitive=true) {
     window.location.search = new_qs;
   }
 
+  /* Finally, ensure certain values are present */
+
+  /* Default max messages */
+  if (!config.hasOwnProperty("MaxMessages")) {
+    config.MaxMessages = TwitchClient.DEFAULT_MAX_MESSAGES;
+  }
+
+  /* Default sent-message history */
+  if (!config.hasOwnProperty("HistorySize")) {
+    config.HistorySize = TwitchClient.DEFAULT_HISTORY_SIZE;
+  }
+
   /* Default ClientID */
   config.ClientID = [
      19, 86, 67,115, 22, 38,198,  3, 55,118, 67, 35,150,230, 71,
@@ -524,7 +537,8 @@ function parseModuleConfig(value) {
 /* Format the module configuration object into a query string component */
 function formatModuleConfig(cfg) {
   let Encode = (vals) => vals.map((v) => encodeURIComponent(v));
-  let bits = [cfg.Pleb, cfg.Sub, cfg.VIP, cfg.Mod, cfg.Event, cfg.Bits, cfg.Me];
+  let bits = [cfg.Pleb, cfg.Sub, cfg.VIP, cfg.Mod,
+              cfg.Event, cfg.Bits, cfg.Me];
   let values = [
     cfg.Name,
     Util.EncodeFlags(bits, false),
@@ -909,7 +923,9 @@ function client_main(layout) { /* exported client_main */
           Content.addHelp(`<em>Window Configuration Values:</em>`);
           for (let [k, v] of mcfgs) {
             let quote = (e) => `&quot;${e}&quot`;
-            Content.addHelp(`Module <span class="arg">${k}</span>: ${quote(v.Name)}`);
+            let kstr = `<span class="arg">${k}</span>`;
+            let vstr = `&quot;${v.Name}&quot;`;
+            Content.addHelp(`Module ${kstr}: ${vstr}`);
             for (let [ck, cv] of Object.entries(v)) {
               if (ck !== "Name") {
                 Content.addHelpLine(ck, quote(cv));
@@ -917,18 +933,18 @@ function client_main(layout) { /* exported client_main */
             }
           }
         } else if (t0 === "help") {
-          Content.addHelpLine("//config", "Show global and module configurations");
+          Content.addHelpLine("//config", Strings.CFG_CMD);
           Content.addHelp("//config parameters:");
-          Content.addHelpLine("purge", "Clear local storage (cannot be undone!)");
-          Content.addHelpLine("clientid", "Displays ClientID");
-          Content.addHelpLine("pass", "Displays OAuth token (if specified)");
-          Content.addHelpLine("url", "Generate a URL from the current config");
-          Content.addHelp("//config url parameters (can be used in any order):");
-          Content.addHelpLine("git", "Generate link using github.io");
-          Content.addHelpLine("text", "Don't base64-encode the URL");
-          Content.addHelpLine("auth", "Include ClientID and OAuth information");
-          Content.addHelp("//config set <key> <value>: change <key> to <value> (dangerous)".escape());
-          Content.addHelp("//config setobj <key> <value>: change <key> to JSON <value> (dangerous)".escape());
+          Content.addHelpLine("purge", Strings.CFG_CMD_PURGE);
+          Content.addHelpLine("clientid", Strings.CFG_CMD_CLIENTID);
+          Content.addHelpLine("pass", Strings.CFG_CMD_PASS);
+          Content.addHelpLine("url", Strings.CFG_CMD_URL);
+          Content.addHelp(Strings.CFG_CMD_URLARGS);
+          Content.addHelpLine("git", Strings.CFG_CMD_URL_GIT);
+          Content.addHelpLine("text", Strings.CFG_CMD_URL_TEXT);
+          Content.addHelpLine("auth", Strings.CFG_CMD_URL_AUTH);
+          Content.addHelp(Strings.CFG_CMD_SET.escape());
+          Content.addHelp(Strings.CFG_CMD_SETOBJ.escape());
         } else if (t0 === "purge") {
           Util.SetWebStorage({});
           window.liveStorage = {};
@@ -1061,7 +1077,8 @@ function client_main(layout) { /* exported client_main */
         } else if (Util.ObjectHas(cfg, t0)) {
           Content.addHelpLine(t0, JSON.stringify(Util.ObjectGet(cfg, t0)));
         } else {
-          Content.addError(`Unknown config command or key &quot;${t0.escape()}&quot;`, true);
+          let tok = `&quot;${t0.escape()}&quot;`;
+          Content.addError(`Unknown config command or key ${tok}`, true);
         }
       }), "Obtain and modify configuration information");
 
@@ -1070,11 +1087,6 @@ function client_main(layout) { /* exported client_main */
     delete config["Pass"];
     delete config["ClientID"];
     config.Plugins = Boolean(configObj.Plugins);
-    if (configObj.MaxMessages) {
-      config.MaxMessages = configObj.MaxMessages;
-    } else {
-      config.MaxMessages = TwitchClient.DEFAULT_MAX_MESSAGES;
-    }
   })();
 
   /* Disable configured events */
@@ -1139,7 +1151,7 @@ function client_main(layout) { /* exported client_main */
     setLightScheme();
   }
 
-  /* Construct the HTML Generator and tell it and the client about each other */
+  /* Construct the HTML Generator and tell it and sync it with the client */
   client.set("HTMLGen", new HTMLGenerator(client, config));
 
   /* Call to sync configuration to HTMLGen */
@@ -1414,9 +1426,7 @@ function client_main(layout) { /* exported client_main */
       closeModuleSettings($m);
     } else if (e.key === "Escape") {
       /* Revert name change */
-      let $in = $m.find("input.name");
-      let $ln = $m.find("label.name");
-      $in.val($ln.html());
+      $m.find("input.name").val($m.find("label.name").html());
       closeModuleSettings($m);
     }
   });
@@ -1531,7 +1541,9 @@ function client_main(layout) { /* exported client_main */
     } else if ($t.attr("data-username") === "1") {
       /* Clicked on a username; show context window */
       let $l = $t.parent();
-      if ($cw.is(":visible") && $cw.attr("data-user-id") === $l.attr("data-user-id")) {
+      let cuid = $cw.attr("data-user-id");
+      let luid = $l.attr("data-user-id");
+      if ($cw.is(":visible") && cuid === luid) {
         $cw.fadeOut();
       } else {
         showContextWindow(client, $cw, $l);
@@ -1630,7 +1642,7 @@ function client_main(layout) { /* exported client_main */
       }
     }
     /* Avoid flooding the DOM with stale chat messages */
-    let max = getConfigObject().MaxMessages || TwitchClient.DEFAULT_MAX_MESSAGES;
+    let max = getConfigObject().MaxMessages;
     /* FIXME: Causes flickering for some reason */
     for (let c of $(".content")) {
       while ($(c).find(".line-wrapper").length > max) {
