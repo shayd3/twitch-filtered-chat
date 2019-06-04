@@ -247,7 +247,6 @@ function Main(global) { /* exported Main */
   /* Add TWAPI assets, then TFC assets, and then call index_main */
   Promise.all([
     AddAsset("utility.js", MOD_TWAPI, null, null),
-    AddAsset("twitch-utility.js", MOD_TWAPI, null, null),
     AddAsset("client.js", MOD_TWAPI, null, null)])
   .then(() => AddAsset("config.js", MOD_TFC, null, null))
   .then(() => Promise.all([
