@@ -150,7 +150,7 @@ function AddAsset(src, tree=null, loadcb=null, errcb=null) {
 /* Called by body.onload */
 function Main(global) { /* exported Main */
   /* Populate templates and load the client */
-  function index_main() {
+  function indexMain() {
     Util.LogOnly("Assets loaded; initializing page...");
 
     /* Remove the top-level "Loading" message */
@@ -262,7 +262,7 @@ function Main(global) { /* exported Main */
     };
   })(jQuery);
 
-  /* Add TWAPI assets, then TFC assets, and then call index_main */
+  /* Add TWAPI assets, then TFC assets, and then call indexMain */
   Promise.all([
     AddAsset("utility.js", MOD_TWAPI, null, null),
     AddAsset("client.js", MOD_TWAPI, null, null)])
@@ -272,7 +272,7 @@ function Main(global) { /* exported Main */
     AddAsset("commands.js", MOD_TFC, null, null),
     AddAsset("filtered-chat.js", MOD_TFC, null, null),
     AddAsset("plugins/plugins.js", MOD_TFC, null, null)]))
-  .then(index_main)
+  .then(indexMain)
   .catch((e) => {
     let msg = "TWAPI/TFC Failure: ";
     let t = e.target || e.srcElement || e.originalTarget;

@@ -6,7 +6,7 @@ class ChatCommandManager {
     this._commands = {};
     this._aliases = {};
     this._help_text = [];
-    this.add("help", this.command_help.bind(this),
+    this.add("help", this.onCommandHelp.bind(this),
              "Show help for a specific command or all commands");
     this.addAlias("?", "help");
     this.addAlias("", "help");
@@ -211,7 +211,7 @@ class ChatCommandManager {
     Content.addHelp(this.formatHelp(cmdobj));
   }
 
-  command_help(cmd, tokens, client) {
+  onCommandHelp(cmd, tokens, client) {
     if (tokens.length === 0) {
       Content.addHelp("Commands:");
       for (let c of Object.values(this._command_list)) {
@@ -233,7 +233,7 @@ class ChatCommandManager {
   }
 }
 
-function command_log(cmd, tokens, client) {
+function onCommandLog(cmd, tokens, client) {
   let t0 = tokens.length > 0 ? tokens[0] : "";
   let logs = Util.GetWebStorage("debug-msg-log") || [];
   let plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
@@ -354,7 +354,7 @@ function command_log(cmd, tokens, client) {
   }
 }
 
-function command_clear(cmd, tokens, client) {
+function onCommandClear(cmd, tokens, client) {
   if (tokens.length === 0) {
     $(".content").find(".line-wrapper").remove();
   } else if (tokens[0].match(/module[\d]+/)) {
@@ -369,7 +369,7 @@ function command_clear(cmd, tokens, client) {
   }
 }
 
-function command_join(cmd, tokens, client) {
+function onCommandJoin(cmd, tokens, client) {
   if (tokens.length > 0) {
     client.JoinChannel(tokens[0]);
   } else {
@@ -377,7 +377,7 @@ function command_join(cmd, tokens, client) {
   }
 }
 
-function command_part(cmd, tokens, client) {
+function onCommandPart(cmd, tokens, client) {
   if (tokens.length > 0) {
     client.LeaveChannel(tokens[0]);
   } else {
@@ -385,7 +385,7 @@ function command_part(cmd, tokens, client) {
   }
 }
 
-function command_badges(cmd, tokens, client) {
+function onCommandBadges(cmd, tokens, client) {
   let badges = [];
   /* Obtain global badges */
   for (let [bname, badge] of Object.entries(client.GetGlobalBadges())) {
@@ -418,7 +418,7 @@ function command_badges(cmd, tokens, client) {
   }
 }
 
-function command_emotes(cmd, tokens, client) {
+function onCommandEmotes(cmd, tokens, client) {
   let client_emotes = client.GetEmotes();
   let g_emotes = [];
   let ch_emotes = [];
@@ -456,7 +456,7 @@ function command_emotes(cmd, tokens, client) {
   }
 }
 
-function command_plugins(cmd, tokens, client) {
+function onCommandPlugins(cmd, tokens, client) {
   try {
     for (let [n, p] of Object.entries(Plugins.plugins)) {
       let msg = `${n}: ${p.file} @ ${p.order}`.escape();
@@ -481,7 +481,7 @@ function command_plugins(cmd, tokens, client) {
   }
 }
 
-function command_client(cmd, tokens, client) {
+function onCommandClient(cmd, tokens, client) {
   if (tokens.length === 0 || tokens[0] === "status") {
     let cstatus = client.ConnectionStatus();
     let channels = client.GetJoinedChannels();
@@ -521,11 +521,11 @@ function command_client(cmd, tokens, client) {
   }
 }
 
-function command_raw(cmd, tokens, client) {
+function onCommandRaw(cmd, tokens, client) {
   client.SendRaw(tokens.join(" "));
 }
 
-function command_to(cmd, tokens, client) {
+function onCommandTo(cmd, tokens, client) {
   if (tokens.length >= 2) {
     let ch = Twitch.ParseChannel(tokens[0]);
     let msg = tokens.slice(2).join(" ");
@@ -549,7 +549,7 @@ function command_to(cmd, tokens, client) {
  */
 const DefaultCommands = {
   "log": {
-    func: command_log,
+    func: onCommandLog,
     desc: "Display or manipulate logged messages",
     alias: ["logs"],
     usage: [
@@ -569,7 +569,7 @@ const DefaultCommands = {
     ]
   },
   "clear": {
-    func: command_clear,
+    func: onCommandClear,
     desc: "Clears all text from either all modules or the specified module",
     alias: ["nuke"],
     usage: [
@@ -578,7 +578,7 @@ const DefaultCommands = {
     ]
   },
   "join": {
-    func: command_join,
+    func: onCommandJoin,
     desc: "Join a channel",
     alias: ["j"],
     usage: [
@@ -586,7 +586,7 @@ const DefaultCommands = {
     ]
   },
   "part": {
-    func: command_part,
+    func: onCommandPart,
     desc: "Leave a channel",
     alias: ["p", "leave"],
     usage: [
@@ -594,22 +594,22 @@ const DefaultCommands = {
     ]
   },
   "badges": {
-    func: command_badges,
+    func: onCommandBadges,
     desc: "Display all known badges"
   },
   "emotes": {
-    func: command_emotes,
+    func: onCommandEmotes,
     desc: "Display the requested emotes",
     usage: [
       ["<kinds>", "Display emotes; <kinds> can be one or more of: global, channel, bttv"]
     ],
   },
   "plugins": {
-    func: command_plugins,
+    func: onCommandPlugins,
     desc: "Display plugin information, if plugins are enabled"
   },
   "client": {
-    func: command_client,
+    func: onCommandClient,
     desc: "Display numerous things about the client",
     usage: [
       [null, "Show general information about the client"],
@@ -617,14 +617,14 @@ const DefaultCommands = {
     ]
   },
   "raw": {
-    func: command_raw,
+    func: onCommandRaw,
     desc: "Send a raw message to Twitch (for advanced users only!)",
     usage: [
       ["<message>", "Send <message> to Twitch servers (for advanced users only!)"]
     ]
   },
   "to": {
-    func: command_to,
+    func: onCommandTo,
     desc: "Send a command to a specific joined channel",
     usage: [
       ["<channel> <message>", "Send <message> to <channel>"]
