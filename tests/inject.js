@@ -133,29 +133,27 @@ TEST_MESSAGES.NEW_CHATTER = BuildMessage({
 }, "USERNOTICE");
 
 TEST_MESSAGES.SUBMYSTERYGIFT = BuildMessage({
-/*
-{"_cmd":"OTHERUSERNOTICE","_raw":"@badge-info=subscriber/1;badges=subscriber/0,premium/1;color=;display-name=jbwags;emotes=;flags=;id=2cf8bc95-6ea0-4a25-a285-a79e8843205c;login=jbwags;mod=0;msg-id=submysterygift;msg-param-mass-gift-count=1;msg-param-origin-id=3d\\sd8\\s9d\\s7c\\sac\\scb\\s84\\se3\\sa4\\s93\\sc9\\s6b\\sc4\\s17\\s5f\\sc5\\s8f\\s0d\\sea\\s3a;msg-param-sender-count=1;msg-param-sub-plan=1000;room-id=20702886;subscriber=1;system-msg=jbwags\\sis\\sgifting\\s1\\sTier\\s1\\sSubs\\sto\\sCarlSagan42's\\scommunity!\\sThey've\\sgifted\\sa\\stotal\\sof\\s1\\sin\\sthe\\schannel!;tmi-sent-ts=1558753095621;user-id=73171363;user-type= :tmi.twitch.tv USERNOTICE #carlsagan42","_parsed":{"cmd":"USERNOTICE","flags":{"badge-info":[["subscriber","1"]],"badges":[["subscriber","0"],["premium","1"]],"color":null,"display-name":"jbwags","emotes":null,"flags":null,"id":"2cf8bc95-6ea0-4a25-a285-a79e8843205c","login":"jbwags","mod":0,"msg-id":"submysterygift","msg-param-mass-gift-count":1,"msg-param-origin-id":"3d d8 9d 7c ac cb 84 e3 a4 93 c9 6b c4 17 5f c5 8f 0d ea 3a","msg-param-sender-count":1,"msg-param-sub-plan":1000,"room-id":20702886,"subscriber":1,"system-msg":"jbwags is gifting 1 Tier 1 Subs to CarlSagan42's community! They've gifted a total of 1 in the channel!","tmi-sent-ts":1558753095621,"user-id":73171363,"user-type":null},"server":"tmi.twitch.tv","channel":{"channel":"#carlsagan42","room":null,"roomuid":null},"message":"","sub_kind":null,"issub":false,"israid":false,"isritual":false,"user":"undefined"},"_stacktrace":[{"text":"_TwitchClient__onWebsocketMessage@file:///home/kaedenn/Programming/twitch-api/client.js:1498:11","name":"???","file":"/home/kaedenn/Programming/twitch-filtered-chat/index.html","line":0,"column":0},{"text":"_ws_onmessage@file:///home/kaedenn/Programming/twitch-api/client.js:381:9","name":"???","file":"/home/kaedenn/Programming/twitch-filtered-chat/index.html","line":0,"column":0}]}
- */
-  "badge-info": "subscriber/1",
-  "badges": "subscriber/0,premium/1",
-  "color": "",
-  "display-name": "jbwags",
-  "emotes": "",
-  "flags": "",
-  "id": "2cf8bc95-6ea0-4a25-a285-a79e8843205c",
-  "login": "jbwags",
-  "mod": "0",
+  /* "@badge-info=subscriber/1;badges=subscriber/0,premium/1;color=;display-name=jbwags;emotes=;flags=;id=2cf8bc95-6ea0-4a25-a285-a79e8843205c;login=jbwags;mod=0;msg-id=submysterygift;msg-param-mass-gift-count=1;msg-param-origin-id=3d\\sd8\\s9d\\s7c\\sac\\scb\\s84\\se3\\sa4\\s93\\sc9\\s6b\\sc4\\s17\\s5f\\sc5\\s8f\\s0d\\sea\\s3a;msg-param-sender-count=1;msg-param-sub-plan=1000;room-id=20702886;subscriber=1;system-msg=jbwags\\sis\\sgifting\\s1\\sTier\\s1\\sSubs\\sto\\sCarlSagan42's\\scommunity!\\sThey've\\sgifted\\sa\\stotal\\sof\\s1\\sin\\sthe\\schannel!;tmi-sent-ts=1558753095621;user-id=73171363;user-type= :tmi.twitch.tv USERNOTICE #carlsagan42" */
   "msg-id": "submysterygift",
   "msg-param-mass-gift-count": "1",
   "msg-param-origin-id": "3d d8 9d 7c ac cb 84 e3 a4 93 c9 6b c4 17 5f c5 8f 0d ea 3a",
   "msg-param-sender-count": "1",
   "msg-param-sub-plan": "1000",
-  "room-id": "20702886",
-  "subscriber": "1",
-  "system-msg": "jbwags is gifting 1 Tier 1 Subs to CarlSagan42's community! They've gifted a total of 1 in the channel!",
-  "tmi-sent-ts": "1558753095621",
-  "user-id": "73171363",
-  "user-type": ""
+  "system-msg": "jbwags is gifting 1 Tier 1 Subs to CarlSagan42's community! They've gifted a total of 1 in the channel!"
+}, "USERNOTICE");
+
+TEST_MESSAGES.REWARD_GIFT = BuildMessage({
+  /* "@badge-info=;badges=bits/100;color=;display-name=parkourgardevoir;emotes=;flags=;id=bff6b896-cbfc-47ef-a08e-be4f053ad904;login=parkourgardevoir;mod=0;msg-id=rewardgift;msg-param-bits-amount=200;msg-param-domain=seasonal-pride;msg-param-min-cheer-amount=200;msg-param-selected-count=3;room-id=20702886;subscriber=0;system-msg=reward;tmi-sent-ts=1559694167528;user-id=58076057;user-type= :tmi.twitch.tv USERNOTICE #carlsagan42 :A Cheer shared Rewards to 3 others in Chat!" */
+  "msg-id": "rewardgift",
+  "msg-param-bits-amount": "200",
+  "msg-param-domain": "seasonal-pride",
+  "msg-param-min-cheer-amount": "200",
+  "msg-param-selected-count": "3",
+  "system-msg": "reward"
+}, "USERNOTICE", "A Cheer shared Rewards to 3 others in Chat!");
+
+TEST_MESSAGES.SUB_CONVERT = BuildMessage({
+/* WARNING: "Unknown USERNOTICE type" "@badge-info=subscriber/2;badges=subscriber/0,premium/1;color=#FF00F7;display-name=HarleyDeWayne;emotes=;flags=;id=7cdca6fc-f47b-43fd-a629-cea399b46843;login=harleydewayne;mod=0;msg-id=primepaidupgrade;msg-param-sub-plan=1000;room-id=20702886;subscriber=1;system-msg=HarleyDeWayne\\sconverted\\sfrom\\sa\\sTwitch\\sPrime\\ssub\\sto\\sa\\sTier\\s1\\ssub!;tmi-sent-ts=1559696263639;user-id=196783661;user-type= :tmi.twitch.tv USERNOTICE #carlsagan42" {"cmd":"USERNOTICE","flags":{"badge-info":[["subscriber","2"]],"badges":[["subscriber","0"],["premium","1"]],"color":"#FF00F7","display-name":"HarleyDeWayne","emotes":"","flags":"","id":"7cdca6fc-f47b-43fd-a629-cea399b46843","login":"harleydewayne","mod":0,"msg-id":"primepaidupgrade","msg-param-sub-plan":1000,"room-id":20702886,"subscriber":1,"system-msg":"HarleyDeWayne converted from a Twitch Prime sub to a Tier 1 sub!","tmi-sent-ts":1559696263639,"user-id":196783661,"user-type":""},"server":"tmi.twitch.tv","channel":{"channel":"#carlsagan42","room":null,"roomuid":null},"sub_kind":null,"issub":false,"israid":false,"isritual":false,"ismysterygift":false,"message":"","user":null} */
 }, "USERNOTICE");
 
 function inject_message(msg) { /* exported inject_message */
