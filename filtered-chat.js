@@ -3,6 +3,10 @@
 "use strict";
 
 /* FIXME:
+ * (client.js) Channel sub badges only display first month badge
+ *   1) Use Twitch.API.ChannelBadges over Twitch.API.Badges
+ *   2) Remove Twitch.API.Badges
+ *   3) Rename Twitch.API.ChannelBadges to Twitch.API.Badges
  * dwangoAC's Caster badge doesn't show
  * Configuration problems:
  *   cbTransparent is still selected after refresh
@@ -321,6 +325,10 @@ function getConfigObject(inclSensitive=true) {
     config.ShowClips = $("#cbClips").is(":checked");
   }
 
+  if (typeof(config.Plugins) !== "boolean") {
+    config.Plugins = false;
+  }
+
   function toArray(val) { return Util.IsArray(val) ? val : []; }
 
   /* Populate configs from each module */
@@ -434,15 +442,13 @@ function setModuleSettings(module, config) {
     $(module).find("label.name").html(config.Name);
     $(module).find("input.name").val(config.Name);
   }
-  function check(sel) { $(module).find(sel).attr("checked", "checked"); }
-  function uncheck(sel) { $(module).find(sel).removeAttr("checked"); }
-  if (config.Pleb) { check("input.pleb"); } else { uncheck("input.pleb"); }
-  if (config.Sub) { check("input.sub"); } else { uncheck("input.sub"); }
-  if (config.VIP) { check("input.vip"); } else { uncheck("input.vip"); }
-  if (config.Mod) { check("input.mod"); } else { uncheck("input.mod"); }
-  if (config.Event) { check("input.event"); } else { uncheck("input.event"); }
-  if (config.Bits) { check("input.bits"); } else { uncheck("input.bits"); }
-  if (config.Me) { check("input.me"); } else { uncheck("input.me"); }
+  if (config.Pleb) { $("input.pleb").check(); } else { $("input.pleb").uncheck(); }
+  if (config.Sub) { $("input.sub").check(); } else { $("input.sub").uncheck(); }
+  if (config.VIP) { $("input.vip").check(); } else { $("input.vip").uncheck(); }
+  if (config.Mod) { $("input.mod").check(); } else { $("input.mod").uncheck(); }
+  if (config.Event) { $("input.event").check(); } else { $("input.event").uncheck(); }
+  if (config.Bits) { $("input.bits").check(); } else { $("input.bits").uncheck(); }
+  if (config.Me) { $("input.me").check(); } else { $("input.me").uncheck(); }
   function addInput(cls, label, values) {
     if (values && values.length > 0) {
       for (let val of values) {
@@ -837,7 +843,7 @@ function setNotify(notify=true) { /* exported setNotify */
 }
 
 /* Called once when the document loads */
-function client_main(layout) { /* exported client_main */
+function client_main() { /* exported client_main */
   let client;
   let config = {};
 
@@ -1084,9 +1090,9 @@ function client_main(layout) { /* exported client_main */
 
     /* Set values we'll want to use later */
     config = Util.JSONClone(configObj);
+    config.Plugins = Boolean(configObj.Plugins);
     delete config["Pass"];
     delete config["ClientID"];
-    config.Plugins = Boolean(configObj.Plugins);
   })();
 
   /* Disable configured events */
@@ -1110,9 +1116,9 @@ function client_main(layout) { /* exported client_main */
   /* Simulate clicking cbTransparent if config.Transparent is set */
   if (config.Transparent) {
     updateTransparency(true);
-    $("cbTransparent").attr("checked", "checked");
+    $("cbTransparent").check();
   } else {
-    $("cbTransparent").removeAttr("checked");
+    $("cbTransparent").uncheck();
   }
 
   /* Set the text size if given */
@@ -1128,9 +1134,9 @@ function client_main(layout) { /* exported client_main */
   /* If scrollbars are configured, enable them */
   if (config.Scroll) {
     $(".module .content").css("overflow-y", "scroll");
-    $("#cbScroll").attr("checked", "checked");
+    $("#cbScroll").check();
   } else {
-    $("#cbScroll").removeAttr("checked");
+    $("#cbScroll").uncheck();
   }
 
   /* If no channels are configured, show the settings panel */
@@ -1140,9 +1146,9 @@ function client_main(layout) { /* exported client_main */
 
   /* Apply the show-clips config to the settings div */
   if (config.ShowClips) {
-    $("#cbClips").attr("checked", "checked");
+    $("#cbClips").check();
   } else {
-    $("#cbClips").removeAttr("checked");
+    $("#cbClips").uncheck();
   }
 
   if (config.ColorScheme === "dark") {
@@ -1156,11 +1162,7 @@ function client_main(layout) { /* exported client_main */
 
   /* Call to sync configuration to HTMLGen */
   function updateHTMLGenConfig() {
-    let configObj = Util.JSONClone(getConfigObject());
-    delete configObj["Pass"];
-    delete configObj["ClientID"];
-    configObj.Plugins = Boolean(configObj.Plugins);
-    for (let [k, v] of Object.entries(configObj)) {
+    for (let [k, v] of Object.entries(getConfigObject())) {
       client.get("HTMLGen").setValue(k, v);
     }
   }
@@ -1592,6 +1594,7 @@ function client_main(layout) { /* exported client_main */
 
   /* User joined (any user) */
   client.bind("twitch-join", function _on_twitch_join(e) {
+    let layout = getConfigObject().Layout;
     if (!Util.Browser.IsOBS && !layout.Slim) {
       if (e.user === client.GetName().toLowerCase()) {
         Content.addInfo(`Joined ${e.channel.channel}`);
@@ -1601,6 +1604,7 @@ function client_main(layout) { /* exported client_main */
 
   /* User left (any user) */
   client.bind("twitch-part", function _on_twitch_part(e) {
+    let layout = getConfigObject().Layout;
     if (!Util.Browser.IsOBS && !layout.Slim) {
       if (e.user === client.GetName().toLowerCase()) {
         Content.addInfo(`Left ${e.channel.channel}`);
@@ -1648,8 +1652,9 @@ function client_main(layout) { /* exported client_main */
 
   /* Received streamer info */
   client.bind("twitch-streaminfo", function _on_twitch_streaminfo(e) {
+    let layout = getConfigObject().Layout;
     let cinfo = client.GetChannelInfo(e.channel.channel);
-    if (config.Layout && !config.Layout.Slim) {
+    if (layout && !layout.Slim) {
       if (cinfo.online) {
         Content.addNotice(Strings.Active(e.channel.channel));
       } else {

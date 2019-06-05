@@ -752,28 +752,26 @@ class HTMLGenerator {
 
   url(href=null, text=null, classes=null, id=null) {
     let $l = $(`<a></a>`);
-    if (href !== null) {
+    if (href) {
       $l.attr("href", href);
     } else {
       $l.attr("href", "javascript:void(0)");
     }
-    if (text !== null) {
+    if (text) {
       $l.text(text);
-    } else if (href !== null) {
+    } else if (href) {
       $l.text(href);
     } else {
       $l.val("undefined");
     }
-    if (classes !== null) {
-      if (typeof(classes) === "string") {
-        $l.addClass(classes);
-      } else {
-        for (let c of classes) {
-          $l.addClass(c);
-        }
+    if (Util.IsArray(classes)) {
+      for (let c of classes) {
+        $l.addClass(c);
       }
+    } else if (classes) {
+      $l.addClass(classes);
     }
-    if (id !== null) {
+    if (id) {
       $l.attr("id", id);
     }
     return $l;
@@ -782,18 +780,18 @@ class HTMLGenerator {
   checkbox(value, id=null, classes=null, checked=false) {
     let $e = $(`<input type="checkbox" />`);
     $e.attr("value", value);
-    if (id !== null) {
+    if (id) {
       $e.attr("id", id);
     }
-    if (typeof(classes) === "string") {
-      $e.addClass(classes);
-    } else {
+    if (Util.IsArray(classes)) {
       for (let c of classes) {
         $e.addClass(c);
       }
+    } else {
+      $e.addClass(classes);
     }
-    if (checked !== null) {
-      $e.attr("checked", "checked");
+    if (checked) {
+      $e.check();
     }
     return $e[0].outerHTML;
   }

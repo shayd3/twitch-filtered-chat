@@ -224,7 +224,7 @@ function Main(global) { /* exported Main */
       /* Call client_main to construct the filtered chat */
       Util.LogOnly("Document rendered; setting up TFC...");
       try {
-        client_main(layout);
+        client_main();
       } catch(e) {
         _console_error(e);
         if (e.name === "ReferenceError") {
@@ -243,6 +243,24 @@ function Main(global) { /* exported Main */
       }
     });
   }
+
+  /* Extend jQuery with some useful methods */
+  (function($jQuery) {
+    /* Check a checkbox */
+    $jQuery.fn.check = function() {
+      this.each((i, n) => {
+        $(n).attr("checked", "checked");
+        n.dispatchEvent(new Event("change"));
+      });
+    };
+    /* Uncheck a checkbox */
+    $jQuery.fn.uncheck = function() {
+      this.each((i, n) => {
+        $(n).removeAttr("checked");
+        n.dispatchEvent(new Event("change"));
+      });
+    };
+  })(jQuery);
 
   /* Add TWAPI assets, then TFC assets, and then call index_main */
   Promise.all([
