@@ -1,4 +1,4 @@
-/* Twitch Filtered Chat Driver Script */
+/* Twitch Filtered Chat Loader */
 
 "use strict";
 
@@ -13,6 +13,8 @@ const ASK_DIST = Boolean(window.location.search.match(/\busedist\b/));
 const USE_DIST = ASK_DIST || IS_TESLA;
 const BASE_URI = URI.substr(0, URI.indexOf(MOD_TFC)).replace(/\/$/, "");
 const SELF_URI = URI.replace(/\/index.html(\?.*)?$/, "");
+const GIT_URL = "https://kaedenn.github.io/twitch-filtered-chat/index.html";
+const CUR_URL = ((l) => `${l.protocol}//${l.hostname}${l.pathname}`)(window.location);
 
 /* Paths to modules */
 const PATH_TFC = SELF_URI + (USE_DIST ? "/dist" : "");
@@ -33,6 +35,12 @@ function _console_warn(...args) { return _console("warn", ...args); }
 function _console_log(...args) { return _console("log", ...args); }
 function _console_info(...args) { return _console("info", ...args); }
 function _console_debug(...args) { return _console("debug", ...args); }
+
+/* Obtain the layout to use */
+function GetLayout() { /* exported GetLayout */
+  let layout_raw = Util.ParseQueryString().layout || "double:chat";
+  return ParseLayout(layout_raw);
+}
 
 /* Parse layout= query string value */
 function ParseLayout(str) { /* exported ParseLayout */
@@ -157,14 +165,11 @@ function Main(global) { /* exported Main */
     $("#wrapper #wrapper-loading").remove();
 
     /* Obtain a layout to use */
-    let layout_raw = Util.ParseQueryString().layout || "double:chat";
-    let layout = ParseLayout(layout_raw);
+    let layout = GetLayout();
 
     /* Create the chat input elements */
-    let $ChatBox = $(`<textarea id="txtChat"></textarea>`);
-    $ChatBox.attr("placeholder", "Send a message")
-            .attr("hist-index", "-1");
-    let $Chat = $(`<div id="chat"></div>`).append($ChatBox);
+    let $Chat = $(`<div id="chat"></div>`)
+      .append($(`<textarea id="txtChat" placeholder="Send a message"></textarea>`));
 
     /* Apply default settings and formatting */
     let $Columns = $(".column");
@@ -249,14 +254,14 @@ function Main(global) { /* exported Main */
     /* Check a checkbox */
     $jQuery.fn.check = function() {
       this.each((i, n) => {
-        $(n).attr("checked", "checked");
+        n.checked = true;
         n.dispatchEvent(new Event("change"));
       });
     };
     /* Uncheck a checkbox */
     $jQuery.fn.uncheck = function() {
       this.each((i, n) => {
-        $(n).removeAttr("checked");
+        n.checked = false;
         n.dispatchEvent(new Event("change"));
       });
     };
@@ -292,5 +297,9 @@ function Main(global) { /* exported Main */
     alert(msg);
   });
 }
+
+/* eslintrc config: */
+/* exported MOD_TFC MOD_TWAPI IS_TESLA ASK_DIST USE_DIST */
+/* exported URI BASE_URI SELF_URI GIT_URL CUR_URL PATH_TFC PATH_TWAPI */
 
 /* vim: set ts=2 sts=2 sw=2 et: */

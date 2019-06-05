@@ -40,8 +40,6 @@
  */
 
 const CFGKEY_DEFAULT = "tfc-config";
-const GIT_URL = "https://kaedenn.github.io/twitch-filtered-chat/index.html";
-const CUR_URL = ((l) => `${l.protocol}//${l.hostname}${l.pathname}`)(window.location);
 
 /* Document writing functions {{{0 */
 
@@ -219,16 +217,6 @@ function parseQueryString(config, qs=null) {
       config[key] = val;
     }
   }
-  /* Ensure there's a layout property present */
-  if (!config.hasOwnProperty("Debug")) {
-    config.Debug = false;
-  }
-  if (!config.hasOwnProperty("Channels")) {
-    config.Channels = [];
-  }
-  if (!config.hasOwnProperty("Layout")) {
-    config.Layout = ParseLayout("double:chat");
-  }
   return query_remove;
 }
 
@@ -271,78 +259,62 @@ function getConfigObject(inclSensitive=true) {
     config.key = config_key;
   }
 
-  /* Items to remove from the query string */
-  let query_remove = [];
-
   /* Certain unwanted items may be preserved in localStorage */
-  const purge_props = ["NoAssets", "Debug", "AutoReconnect", "Layout",
-                       "Transparent", "Plugins", "nols", "EnableEffects",
-                       "DisableEffects", "PluginConfig", "ColorScheme"];
+  const purge_props = [
+    "NoAssets", "Debug", "AutoReconnect", "Layout", "Transparent", "Plugins",
+    "nols", "EnableEffects", "DisableEffects", "PluginConfig", "ColorScheme"];
   for (let prop of purge_props) {
     if (config.hasOwnProperty(prop)) {
       delete config[prop];
     }
   }
 
-  /* Ensure certain keys are present and have expected values */
-  if (!config.hasOwnProperty("MaxMessages")) {
-    config.MaxMessages = TwitchClient.DEFAULT_MAX_MESSAGES;
-  }
-  if (!config.hasOwnProperty("Channels") || !Util.IsArray(config.Channels)) {
+  /* Parse the query string, storing items to remove */
+  let query_remove = parseQueryString(config, qs);
+
+  /* Ensure config.Channels is present for #settings configuration below */
+  if (!Util.IsArray(config.Channels)) {
     config.Channels = [];
   }
-  if (typeof(config.Name) !== "string") config.Name = "";
-  if (typeof(config.ClientID) !== "string") config.ClientID = "";
-  if (typeof(config.Pass) !== "string") config.Pass = "";
 
-  /* Parse the query string */
-  query_remove = parseQueryString(config, qs);
-
-  /* Parse div#settings config */
-  let txtChannel = $("input#txtChannel")[0];
-  let txtNick = $("input#txtNick")[0];
-  let txtPass = $("input#txtPass")[0];
-  if (txtChannel.value) {
-    for (let ch of txtChannel.value.split(",")) {
+  /* Obtain global settings config */
+  let txtChannel = $("input#txtChannel");
+  let txtNick = $("input#txtNick");
+  let txtPass = $("input#txtPass");
+  if (txtChannel.val()) {
+    for (let ch of txtChannel.val().split(",")) {
       let channel = Twitch.FormatChannel(ch.toLowerCase());
       if (config.Channels.indexOf(channel) === -1) {
         config.Channels.push(channel);
       }
     }
   }
-  if (txtNick.value && txtNick.value !== Strings.AUTOGEN) {
-    config.Name = txtNick.value;
+  if (txtNick.val() && txtNick.val() !== Strings.AUTOGEN) {
+    config.Name = txtNick.val();
   }
-  if (txtPass.value && txtPass.value !== Strings.CACHED) {
-    config.Pass = txtPass.value;
+  if (txtPass.val() && txtPass.val() !== Strings.CACHED) {
+    config.Pass = txtPass.val();
   }
 
-  if (typeof(config.Scroll) !== "boolean") {
+  if (!config.hasOwnProperty("Scroll")) {
     config.Scroll = $("#cbScroll").is(":checked");
   }
 
-  if (typeof(config.ShowClips) !== "boolean") {
+  if (!config.hasOwnProperty("ShowClips")) {
     config.ShowClips = $("#cbClips").is(":checked");
   }
-
-  if (typeof(config.Plugins) !== "boolean") {
-    config.Plugins = false;
-  }
-
-  function toArray(val) { return Util.IsArray(val) ? val : []; }
 
   /* Populate configs from each module */
   $(".module").each(function() {
     let id = $(this).attr("id");
+    let toArray = (val) => (Util.IsArray(val) ? val : []);
     if (!config[id]) {
       config[id] = getModuleSettings($(this));
     }
     /* Populate module configuration from liveStorage (if present) */
-    if (window.liveStorage) {
-      if (window.liveStorage[id]) {
-        for (let [k, v] of Object.entries(window.liveStorage[id])) {
-          config[id][k] = v;
-        }
+    if (window.liveStorage && window.liveStorage[id]) {
+      for (let [k, v] of Object.entries(window.liveStorage[id])) {
+        config[id][k] = v;
       }
     }
     config[id].Pleb = Boolean(config[id].Pleb);
@@ -359,29 +331,61 @@ function getConfigObject(inclSensitive=true) {
     config[id].FromChannel = toArray(config[id].FromChannel);
   });
 
-  /* See if there's anything we need to remove */
+  /* See if there's any sensitive information we need to remove */
   if (query_remove.length > 0) {
-    /* The query string contains sensitive information; remove it */
+    /* Store the configuration, including sensitive information */
     Util.SetWebStorage(config);
-    let old_qs = window.location.search;
-    let old_query = Util.ParseQueryString(old_qs.substr(1));
+    /* Obtain the current query string */
+    let old_query = Util.ParseQueryString(window.location.search.substr(1));
     let is_base64 = false;
     if (old_query.base64 && old_query.base64.length > 0) {
       is_base64 = true;
       old_query = Util.ParseQueryString(atob(old_query.base64));
     }
+    /* Remove the sensitive items */
     for (let e of query_remove) {
       delete old_query[e];
     }
+    /* Create and apply a new query string */
     let new_qs = Util.FormatQueryString(old_query);
     if (is_base64) {
       new_qs = "?base64=" + encodeURIComponent(btoa(new_qs));
     }
-    /* Reloads the page */
+    /* This also reloads the page */
     window.location.search = new_qs;
   }
 
   /* Finally, ensure certain defaults */
+
+  /* Default name: */
+  if (typeof(config.Name) !== "string") {
+    config.Name = "";
+  }
+
+  /* Default password is no password */
+  if (typeof(config.Pass) !== "string") {
+    config.Pass = "";
+  }
+
+  /* Plugins are an opt-in feature */
+  if (!config.hasOwnProperty("Plugins")) {
+    config.Plugins = false;
+  }
+
+  /* Debugging is disabled by default */
+  if (!config.hasOwnProperty("Debug")) {
+    config.Debug = false;
+  }
+
+  /* Default channels are no channels */
+  if (!config.hasOwnProperty("Channels")) {
+    config.Channels = [];
+  }
+
+  /* Ensure there's a layout property present */
+  if (!config.hasOwnProperty("Layout")) {
+    config.Layout = GetLayout();
+  }
 
   /* Default max messages */
   if (!config.hasOwnProperty("MaxMessages")) {
@@ -394,12 +398,14 @@ function getConfigObject(inclSensitive=true) {
   }
 
   /* Default ClientID */
-  config.ClientID = [
-     19, 86, 67,115, 22, 38,198,  3, 55,118, 67, 35,150,230, 71,
-    134, 83,  3,119,166, 86, 39, 38,167,135,134,147,214, 38, 55
-  ].map((i) => Util.ASCII[((i&15)*16+(i&240)/16)]).join("");
+  if (!config.ClientID) {
+    /* Protect against source code sniffing */
+    config.ClientID = [
+       19, 86, 67,115, 22, 38,198,  3, 55,118, 67, 35,150,230, 71,
+      134, 83,  3,119,166, 86, 39, 38,167,135,134,147,214, 38, 55
+    ].map((i) => Util.ASCII[((i&15)*16+(i&240)/16)]).join("");
+  }
 
-  /* TODO: Detect caller and omit these for unauthorized callers */
   if (!inclSensitive) {
     delete config["ClientID"];
     delete config["Pass"];
@@ -1116,9 +1122,9 @@ function client_main() { /* exported client_main */
   /* Simulate clicking cbTransparent if config.Transparent is set */
   if (config.Transparent) {
     updateTransparency(true);
-    $("cbTransparent").check();
+    $("#cbTransparent").check();
   } else {
-    $("cbTransparent").uncheck();
+    $("#cbTransparent").uncheck();
   }
 
   /* Set the text size if given */
@@ -1151,6 +1157,7 @@ function client_main() { /* exported client_main */
     $("#cbClips").uncheck();
   }
 
+  /* Apply the selected color scheme; if any */
   if (config.ColorScheme === "dark") {
     setDarkScheme();
   } else if (config.ColorScheme === "light") {
@@ -1160,7 +1167,7 @@ function client_main() { /* exported client_main */
   /* Construct the HTML Generator and tell it and sync it with the client */
   client.set("HTMLGen", new HTMLGenerator(client, config));
 
-  /* Call to sync configuration to HTMLGen */
+  /* Function for syncing configuration with HTMLGen */
   function updateHTMLGenConfig() {
     for (let [k, v] of Object.entries(getConfigObject())) {
       client.get("HTMLGen").setValue(k, v);

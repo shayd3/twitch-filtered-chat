@@ -19,13 +19,15 @@ module.exports = {
         "Content": "readonly",
         "ChatCommands": "readwrite",
         "InitChatCommands": "readonly",
+        "GIT_URL": "readonly",
+        "CUR_URL": "readonly",
+        "GetLayout": "readonly",
         "ParseLayout": "readonly",
         "FormatLayout": "readonly",
         "CSSCheerStyles": "readonly",
         "GetCheerStyle": "readonly",
         "Strings": "readonly",
         "AssetPaths": "readonly",
-        "setNotify": "readonly",
         "client_main": "readonly"
     },
     "parserOptions": {
