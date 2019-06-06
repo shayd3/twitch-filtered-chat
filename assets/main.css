@@ -18,6 +18,15 @@
   --chat-color-default: #0e0e0e;
   --textarea-color-default: #1a1a1a;
 
+  --body-color-light-default: #0E0E0E;
+  --header-color-light-default: #191919;
+  --menudiv-color-light-default: #f0f0f0;
+  --module-color-light-default: #0e0e0e;
+  --odd-line-color-light-default: #303030;
+  --sub-color-light-default: #404040;
+  --chat-color-light-default: #0e0e0e;
+  --textarea-color-light-default: #1a1a1a;
+
   /* The following colors are affected by ?trans=1 (because "-color") */
   --body-color: var(--body-color-default);
   --header-color: var(--header-color-default);
@@ -386,15 +395,17 @@ body.light .module .content .line .message {
 }
 
 .module .content .line .message {
-  text-shadow: -1px -1px 1px black,
-               -1px  1px 1px black,
-                2px  2px 1px black;
+  text-shadow: -1px -1px 0px black,
+               -1px  1px 0px black,
+                1px  1px 0px black,
+                1px -1px 0px black;
 }
 
 body.light .module .content .line .message {
-  text-shadow: -1px -1px 1px white,
-               -1px  1px 1px white,
-                2px  2px 1px white;
+  text-shadow: -1px -1px 0px white,
+               -1px  1px 0px white,
+                1px  1px 0px white,
+                1px -1px 0px white;
 }
 
 /* Specific effect overrides {{{1 */
@@ -575,32 +586,47 @@ body.light #chat textarea {
   border-bottom: solid 1px #aaaaaa;
 }
 
-#settings header .builder {
+#settings #btnSettingsHelp {
+  font-size: 0.9em;
+  font-family: monospace;
+  vertical-align: text-top;
+  text-decoration: none;
+  font-size: 0.6em;
+  content: "?";
+  cursor: pointer;
+}
+
+#settings #btnSettingsHelp:hover {
+  text-decoration: underline;
+}
+
+#settings #btnSettingsBuilder {
   line-height: 30px;
   padding-top: 0.2em;
   padding-right: calc(24px + 0.5em);
   cursor: pointer;
+  text-decoration: none;
 }
 
-#settings header .builder:hover {
+#settings #btnSettingsBuilder:hover {
   text-decoration: underline;
 }
 
-#settings footer #btnClose {
+#settings #btnClose {
   text-decoration: none;
   cursor: pointer;
 }
 
-#settings footer #btnClose:hover {
+#settings #btnClose:hover {
   text-decoration: underline;
 }
 
-#settings footer #btnReconnect {
+#settings #btnReconnect {
   text-decoration: none;
   cursor: pointer;
 }
 
-#settings footer #btnReconnect:hover {
+#settings #btnReconnect:hover {
   text-decoration: underline;
 }
 
@@ -626,18 +652,6 @@ body.light #chat textarea {
 
 #settings #txtPassDummy {
   display: none;
-}
-
-#settings a.help {
-  vertical-align: text-top;
-  text-decoration: none;
-  font-size: 0.6em;
-  content: "?";
-  cursor: pointer;
-}
-
-#settings a.help:hover {
-  text-decoration: underline;
 }
 
 #settings footer {
