@@ -5,8 +5,15 @@
 /* TODO:
  * Add more badge information on hover
  * Add emote information on hover
- * Add clip information
- * Implement "new user" ritual
+ * Format clip information
+ * Implement the following:
+ *  USERNOTICE rewardgift
+ *  USERNOTICE submysterygift
+ *  USERNOTICE giftpaidupgrade (unimplemented)
+ *  USERNOTICE primepaidupgrade (unimplemented)
+ *  USERNOTICE anongiftpaidupgrade (unimplemented)
+ *  USERNOTICE unraid (unimplemented)
+ *  USERNOTICE bitsbadgetier (unimplemented)
  * Implement "light" and "dark" colorschemes
  */
 
@@ -734,6 +741,21 @@ class HTMLGenerator {
     $e.html($e.html() + ":&nbsp;");
     $e.append($msg);
     return $e;
+  }
+
+  rewardGift(event) {
+    let message = `${event.command} TODO`;
+    return $(`<div class="message">${message}</div>`);
+  }
+
+  mysteryGift(event) {
+    let message = `${event.command} TODO`;
+    return $(`<div class="message">${message}</div>`);
+  }
+
+  giftUpgrade(event) {
+    let message = `${event.command} TODO`;
+    return $(`<div class="message">${message}</div>`);
   }
 
   genClip(slug, clip_data, game_data) {

@@ -7,10 +7,7 @@
  *   1) Use Twitch.API.ChannelBadges over Twitch.API.Badges
  *   2) Remove Twitch.API.Badges
  *   3) Rename Twitch.API.ChannelBadges to Twitch.API.Badges
- * dwangoAC's Caster badge doesn't show
  * Configuration problems:
- *   cbTransparent is still selected after refresh
- *     Select -> refresh -> still selected
  *   Should config.Scroll set cbScroll or the other way around?
  *     See getConfigObject below txtPass
  *   Should config.ShowClips set cbClips or the other way around?
@@ -19,12 +16,9 @@
 
 /* TODO (in approximate decreasing priority):
  * Add to #settings help link and #settings config link
- * Finish clip information generation
- * Add emote information on hover
+ * HTMLGenerator items (see htmlgen.js)
  * Allow plugins to define custom filtering
  * Create a README.md file for the plugins directory
- * Merge twapi into tfc; unify the modules
- * Detect getConfigObject() caller for omitting ClientID, Pass
  * Auto-complete commands (wip), command arguments, and @user names
  */
 
@@ -1791,20 +1785,38 @@ function client_main() { /* exported client_main */
   /* User gifting rewards to the community */
   client.bind("twitch-rewardgift", function _on_twitch_rewardgift(e) {
     Util.StorageAppend("debug-msg-log", e);
-    /* TODO: HTMLGen */
+    Content.addHTML(client.get("HTMLGen").rewardGift(e));
   });
 
   /* User gifting a subscription to the community */
   client.bind("twitch-mysterygift", function _on_twitch_mysterygift(e) {
     Util.StorageAppend("debug-msg-log", e);
-    /* TODO: HTMLGen */
+    Content.addHTML(client.get("HTMLGen").mysteryGift(e));
+  });
+
+  /* User continuing their gifted subscription */
+  client.bind("twitch-giftupgrade", function _on_twitch_giftupgrade(e) {
+    Util.StorageAppend("debug-msg-log", e);
+    Content.addHTML(client.get("HTMLGen").giftUpgrade(e));
+  });
+
+  /* User continuing their gifted subscription via Twitch Prime */
+  client.bind("twitch-primeupgrade", function _on_twitch_primegiftupgrade(e) {
+    Util.StorageAppend("debug-msg-log", e);
+    Content.addHTML(client.get("HTMLGen").giftUpgrade(e));
+  });
+
+  /* User continuing their anonymously-gifted subscription */
+  client.bind("twitch-anongiftupgrade", function _on_twitch_anongiftupgrade(e) {
+    Util.StorageAppend("debug-msg-log", e);
+    Content.addHTML(client.get("HTMLGen").giftUpgrade(e));
   });
 
   /* Received some other kind of usernotice */
   client.bind("twitch-otherusernotice", function _on_twitch_otherusernotice(e) {
     Util.StorageAppend("debug-msg-log", e);
-    /* TODO: giftpaidupgrade, anongiftpaidupgrade, unraid, bitsbadgetier,
-     * primepaidupgrade */
+    Util.Warn("Unknown USERNOTICE", e);
+    /* TODO: unraid, bitsbadgetier */
   });
 
   /* Received a reconnect request from Twitch */
