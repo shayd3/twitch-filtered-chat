@@ -238,13 +238,31 @@ function onCommandLog(cmd, tokens, client) {
   let logs = Util.GetWebStorage("debug-msg-log") || [];
   let plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
   Content.addHelp(`Debug message log length: ${logs.length}`);
+  /* Format a log message for printing */
+  function formatLogEntry(log, escape=true) {
+    let result = JSON.stringify(log);
+    if (log && log._cmd && log._raw && log._parsed) {
+      /* Smells like a TwitchEvent */
+      let lines = [
+        "TwitchEvent",
+        log._cmd,
+        JSON.stringify(log._raw),
+        JSON.stringify(log._parsed)
+      ];
+      if (log._stacktrace) {
+        lines.push(JSON.stringify(logs._stacktrace));
+      }
+      result = lines.join(" ");
+    }
+    return escape ? result.escape() : result;
+  }
   if (tokens.length > 0) {
     if (t0 === "help") {
       this.printHelp();
       this.printUsage();
     } else if (t0 === "show") {
       for (let [i, l] of Object.entries(logs)) {
-        Content.addHelp(`${i}: ${JSON.stringify(l).escape()}`);
+        Content.addHelp(`${i}: ${formatLogEntry(l)}`);
       }
     } else if (t0 === "export") {
       let width = window.innerWidth * 0.75;
@@ -278,7 +296,7 @@ function onCommandLog(cmd, tokens, client) {
       let lnum = 0;
       for (let lidx = 0; lidx < lines.length; ++lidx) {
         let l = lines[lidx];
-        Content.addHelp(`${lnum}-${lnum+l.length-1}: ${JSON.stringify(l)}`);
+        Content.addHelp(`${lnum}-${lnum+l.length-1}: ${formatLogEntry(l, false)}`);
         lnum += l.length;
       }
     } else if (["search", "filter", "filter-out"].indexOf(t0) > -1) {
@@ -314,7 +332,7 @@ function onCommandLog(cmd, tokens, client) {
       }
     } else if (t0 === "remove") {
       let n = tokens.slice(1)
-        .map((e) => Number.parseInt(e))
+        .map((e) => Util.ParseNumber(e))
         .filter((e) => !Number.isNaN(e));
       if (n.length > 0) {
         Content.addHelp(`Removing ${plural(n.length, "item")}`);
@@ -330,11 +348,23 @@ function onCommandLog(cmd, tokens, client) {
         Content.addHelp("No items to remove");
       }
     } else if (t0 === "shift") {
-      logs.shift();
+      let num = 1;
+      if (tokens.length > 1 && Util.IsNumber(tokens[1])) {
+        num = Util.ParseNumber(tokens[1]);
+      }
+      for (let i = 0; i < num && logs.length > 0; ++i) {
+        logs.shift();
+      }
       Content.addHelp(`New logs length: ${logs.length}`);
       Util.SetWebStorage("debug-msg-log", logs);
     } else if (t0 === "pop") {
-      logs.pop();
+      let num = 1;
+      if (tokens.length > 1 && Util.IsNumber(tokens[1])) {
+        num = Util.ParseNumber(tokens[1]);
+      }
+      for (let i = 0; i < num && logs.length > 0; ++i) {
+        logs.pop();
+      }
       Content.addHelp(`New logs length: ${logs.length}`);
       Util.SetWebStorage("debug-msg-log", logs);
     } else if (t0 === "size") {
@@ -371,9 +401,9 @@ function onCommandLog(cmd, tokens, client) {
       } else {
         Content.addHelp(`Usage: //log ${t0} &lt;number&gt;`);
       }
-    } else if (!Number.isNaN(Util.ParseNumber(t0))) {
+    } else if (Util.IsNumber(t0)) {
       let idx = Util.ParseNumber(t0);
-      Content.addHelp(JSON.stringify(logs[idx]).escape());
+      Content.addHelp(formatLogEntry(logs[idx]));
     } else {
       Content.addHelp(`Unknown argument ${t0.escape()}`);
     }
