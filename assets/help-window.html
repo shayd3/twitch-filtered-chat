@@ -5,14 +5,24 @@
   <meta charset="utf-8" />
   <link href="../assets/main.css" rel="stylesheet" type="text/css" />
   <script type="text/javascript" src="../assets/jquery-3.4.0.js"></script>
+  <script type="text/javascript" src="../twitch-api/utility.js"></script>
   <script type="text/javascript">
-function addEntry(text) { $(".content").append($("<pre></pre>").text(text)); }
+function addEntry(text) {
+  $(".content").append($("<pre></pre>").text(text));
+}
 function setConfig(config) {
+  addEntry(`Obtained configuration: ${JSON.stringify(config).length} characters`);
   console.log("Obtained configuration:", config);
+  console.log(window.hostFunc);
+}
+function setOpener(w) {
+  window.opener = w;
+  console.log(w);
 }
   </script>
 </head>
 <body>
+<span class="debug" id="debug" style="display: none">Debug active</span>
 <div class="content">
 <!--
 IDEAS:
