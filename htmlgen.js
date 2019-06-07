@@ -723,8 +723,17 @@ class HTMLGenerator {
     return $w;
   }
 
-  newUser(event) { /* TODO */
-    /* Strings.NewUser(event.user) */
+  newUser(event) {
+    let $e = $(`<div></div>`);
+    this._addChatAttrs($e, event);
+    $e.addClass("chat-line").addClass("new-user").addClass("notice");
+    $e.append(this._genBadges(event));
+    $e.append(this._genName(event));
+    let $msg = $(`<span class="message" data-message="1"></span>`);
+    $msg.text(event.flags["system-msg"] + " Say hello!");
+    $e.html($e.html() + ":&nbsp;");
+    $e.append($msg);
+    return $e;
   }
 
   genClip(slug, clip_data, game_data) {

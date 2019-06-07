@@ -52,7 +52,6 @@ function onLoad() {
     doLoadMain();
   }
 }
-
   </script>
 </head>
 <body onload="onLoad()" class="dark">
@@ -63,7 +62,7 @@ function onLoad() {
     <div id="wrapper-loading" class="loading">Loading Panels...</div>
     <!-- Module 1 -->
     <div class="column left" id="column1" style="display: none">
-      <div class="module left no-chat" id="module1">
+      <div class="module no-chat" id="module1">
         <div class="header">
           <!-- Menu button (formatted via CSS) -->
           <div class="menu"><div></div><div></div><div></div></div>
@@ -128,7 +127,7 @@ function onLoad() {
     </div>
     <!-- Module 2 -->
     <div class="column right" id="column2" style="display: none">
-      <div class="module right no-chat" id="module2">
+      <div class="module no-chat" id="module2">
         <div class="header">
           <!-- Menu button (formatted via CSS) -->
           <div class="menu"><div></div><div></div><div></div></div>
@@ -195,8 +194,8 @@ function onLoad() {
   <!-- Global settings -->
   <div id="settings">
     <header style="display: inline-block; width: 100%">
-      <span class="fl">Settings<a class="help" id="btnSettingsHelp">?</a></span>
-      <span class="fr"><a class="builder" id="btnSettingsBuilder">Builder</a></span>
+      <span class="fl">Settings<span id="btnSettingsHelp">?</span></span>
+      <span class="fr"><span id="btnSettingsBuilder">Builder</span></span>
     </header>
     <ul>
       <!-- Global settings (formatted to remove unwanted Text elements) -->

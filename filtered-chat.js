@@ -835,11 +835,13 @@ function updateTransparency(transparent) {
 /* Set the colorscheme to dark */
 function setDarkScheme() { /* exported setDarkScheme */
   $("body").removeClass("light").addClass("dark");
+  $("#btnSettings").attr("src", "assets/settings_white.png");
 }
 
 /* Set the colorscheme to light */
 function setLightScheme() { /* exported setLightScheme */
   $("body").removeClass("dark").addClass("light");
+  $("#btnSettings").attr("src", "assets/settings.png");
 }
 
 /* Set or clear window notification badge */
@@ -1754,7 +1756,6 @@ function client_main() { /* exported client_main */
       $msg.addClass("message");
       $msg.addClass("sub-message");
       $msg.addClass("sub-user-message");
-      $msg.addClass("rainbow").addClass("disco");
       Content.addHTML($msg);
     }
   });
@@ -1780,7 +1781,17 @@ function client_main() { /* exported client_main */
   /* New user's YoHiYo */
   client.bind("twitch-newuser", function _on_twitch_newuser(e) {
     Util.StorageAppend("debug-msg-log", e);
-    /* TODO: HTMLGen.newUser */
+    let H = client.get("HTMLGen");
+    let $msg = H.newUser(e);
+    $msg.find(".message").addClass("effect-rainbow").addClass("effect-disco");
+    Content.addHTML($msg);
+    Content.addHTML(H.gen(e));
+  });
+
+  /* User gifting rewards to the community */
+  client.bind("twitch-rewardgift", function _on_twitch_rewardgift(e) {
+    Util.StorageAppend("debug-msg-log", e);
+    /* TODO: HTMLGen */
   });
 
   /* User gifting a subscription to the community */
@@ -1792,17 +1803,17 @@ function client_main() { /* exported client_main */
   /* Received some other kind of usernotice */
   client.bind("twitch-otherusernotice", function _on_twitch_otherusernotice(e) {
     Util.StorageAppend("debug-msg-log", e);
-    /* TODO: submysterygift, rewardgift, giftpaidupgrade, anongiftpaidupgrade,
-     * unraid, bitsbadgetier */
+    /* TODO: giftpaidupgrade, anongiftpaidupgrade, unraid, bitsbadgetier,
+     * primepaidupgrade */
   });
 
-  /* Bind to the rest of the events */
+  /* Received a reconnect request from Twitch */
   client.bind("twitch-reconnect", function _on_twitch_reconnect(e) {
     /* Client will auto-reconnect */
   });
-  client.bind("twitch-hosttarget", function _on_twitch_hosttarget(e) {
-    Util.StorageAppend("debug-msg-log", e);
-  });
+
+  /* Bind to the rest of the events */
+  client.bind("twitch-hosttarget", function _on_twitch_hosttarget(e) {});
   client.bind("twitch-userstate", function _on_twitch_userstate(e) {});
   client.bind("twitch-roomstate", function _on_twitch_roomstate(e) {});
   client.bind("twitch-globaluserstate", function _on_twitch_globaluserstate(e) {});

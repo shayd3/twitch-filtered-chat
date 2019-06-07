@@ -343,8 +343,36 @@ function onCommandLog(cmd, tokens, client) {
     } else if (t0 === "clear") {
       Util.SetWebStorage("debug-msg-log", []);
       Content.addHelp("Log cleared");
-    } else if (!Number.isNaN(Number.parseInt(t0))) {
-      let idx = Number(t0);
+    } else if (t0 === "replay") {
+      if (tokens.length > 1) {
+        let replay = [];
+        let idx = Util.ParseNumber(tokens[1]);
+        if (tokens[1] === "all") {
+          for (let line of logs) {
+            if (line && line._cmd && line._raw) {
+              replay.push(line._raw);
+            }
+          }
+        } else if (idx >= 0 && idx < logs.length) {
+          let line = logs[idx];
+          if (line && line._cmd && line._raw) {
+            replay.push(line._raw);
+          } else {
+            let l = `${line}`.escape();
+            Content.addError(`Item ${l} doesn't seem to be a chat message`);
+          }
+        } else {
+          Content.addError(`Index ${idx} not between 0 and ${logs.length}`);
+        }
+        for (let line of replay) {
+          Content.addHelp(`Replaying ${line.escape()}`);
+          client._onWebsocketMessage({data: line});
+        }
+      } else {
+        Content.addHelp(`Usage: //log ${t0} &lt;number&gt;`);
+      }
+    } else if (!Number.isNaN(Util.ParseNumber(t0))) {
+      let idx = Util.ParseNumber(t0);
       Content.addHelp(JSON.stringify(logs[idx]).escape());
     } else {
       Content.addHelp(`Unknown argument ${t0.escape()}`);
@@ -565,7 +593,8 @@ const DefaultCommands = {
       ["pop", "Remove the last logged message"],
       ["export", "Open a new window with all the logged items"],
       ["size", "Display the number of bytes used by the log"],
-      ["clear", "Clears the entire log (cannot be undone!)"]
+      ["clear", "Clears the entire log (cannot be undone!)"],
+      ["replay <index>", "Re-inject logged message <index>"]
     ]
   },
   "clear": {

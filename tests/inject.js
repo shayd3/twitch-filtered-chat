@@ -20,14 +20,14 @@ function BuildMessage(flag_obj, cmd=null, msg=null) {
   flags["tmi-sent-ts"] = Number(new Date());
   flags["__injected"] = 1;
   for (let [k, v] of Object.entries(flag_obj)) {
-    flags[k] = Twitch.EncodeFlag(v);
+    flags[k] = v;
   }
   let user = "kaedenn_!kaedenn_@kaedenn_.tmi.twitch.tv";
   let ch = "#dwangoac";
 
   let command = cmd || "PRIVMSG";
 
-  let fstr = Object.entries(flags).map(([k,v]) => (`${k}=${v}`)).join(";");
+  let fstr = Object.entries(flags).map(([k,v]) => (`${k}=${Twitch.EncodeFlag(String(v))}`)).join(";");
   let message = `@${fstr} :${user} ${command} ${ch}`;
   if (msg !== null) { message = `${message} :${msg}`; }
   if (!message.endsWith("\r\n")) message += "\r\n";
