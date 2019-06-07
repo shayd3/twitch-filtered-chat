@@ -6,14 +6,18 @@
  * Add more badge information on hover
  * Add emote information on hover
  * Format clip information
- * Implement the following:
- *  USERNOTICE rewardgift
- *  USERNOTICE submysterygift
- *  USERNOTICE giftpaidupgrade (unimplemented)
- *  USERNOTICE primepaidupgrade (unimplemented)
- *  USERNOTICE anongiftpaidupgrade (unimplemented)
- *  USERNOTICE unraid (unimplemented)
- *  USERNOTICE bitsbadgetier (unimplemented)
+ * USERNOTICEs:
+ *   rewardgift
+ *   submysterygift
+ *   giftpaidupgrade
+ *     msg-param-promo-gift-total
+ *     msg-param-promo-name
+ *   primepaidupgrade
+ *   anongiftpaidupgrade
+ *     msg-param-promo-gift-total
+ *     msg-param-promo-name
+ *   unraid
+ *   bitsbadgetier
  * Implement "light" and "dark" colorschemes
  */
 
