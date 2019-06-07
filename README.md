@@ -129,6 +129,16 @@ Connect to `#dwangoAC` and `#pangaeapanga`, showing `#dwangoAC` chat in the left
 
   `?channels=%23dwangoac%2C%23pangaeapanga&module1=dwangoAC's%2520Chat%2C1111111%2C%2C%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=pangaeapanga's%2520Chat%2C1111111%2C%2C%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Anochat`
 
+### Hotkeys
+
+The following hotkeys are available:
+
+| Key Name | Action |
+| -------- | ------ |
+| `ScrollLock` | Toggles automatic scrolling when new messages are received |
+| `Escape` | Closes all visible settings windows |
+| `F1` | Open the configuration help window |
+
 ## Testing
 
 Please test the filtered chat in your own browser. Load it up and ensure you can change settings and that things work as you'd expect.

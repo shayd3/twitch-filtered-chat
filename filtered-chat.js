@@ -1249,6 +1249,34 @@ function client_main() { /* exported client_main */
     }
   }
 
+  /* Reset chat auto-completion variables */
+  function resetChatComplete() {
+    let $c = $("#txtChat");
+    $c.attr("data-complete-text", "");
+    $c.attr("data-complete-pos", "-1");
+    $c.attr("data-complete-index", "0");
+  }
+
+  /* Reset chat history recall */
+  function resetChatHistory() {
+    $("#txtChat").attr("data-hist-index", "-1");
+  }
+
+  /* Open the configuration help popup window */
+  function openHelpWindow() {
+    let w = Util.Open("assets/help-window.html", "_blank", {});
+    let opener = window;
+    if (w) {
+      w.onload = function() {
+        this.setOpener(opener);
+        this.addEntry("Help text and settings builder are coming soon!");
+        this.setConfig(getConfigObject(false));
+      };
+    } else {
+      Util.Error("Failed to open help window");
+    }
+  }
+
   /* Bind DOM events {{{0 */
 
   /* Pressing a key on the chat box */
@@ -1262,11 +1290,9 @@ function client_main() { /* exported client_main */
           client.SendMessageToAll(t.value);
         }
         client.AddHistory(t.value);
-        t.setAttribute("data-hist-index", "-1");
-        t.setAttribute("data-complete-text", "");
-        t.setAttribute("data-complete-pos", "-1");
-        t.setAttribute("data-complete-index", "0");
         t.value = "";
+        resetChatComplete();
+        resetChatHistory();
       }
       /* Prevent bubbling */
       e.preventDefault();
@@ -1299,28 +1325,26 @@ function client_main() { /* exported client_main */
         t.selectionStart = compl_obj.curr_pos;
         t.selectionEnd = compl_obj.curr_pos;
       });
+      resetChatHistory();
       e.preventDefault();
       return false;
     } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
       /* Handle traversing message history */
       let i = Number.parseInt($(t).attr("data-hist-index"));
-      let l = client.GetHistoryLength();
-      /* Restrict i to [-1, l-1] */
-      i = Math.clamp(i + (e.key === "ArrowUp" ? 1 : -1), -1, l - 1);
-      t.value = (i > -1 ? client.GetHistoryItem(i).trim() : "");
+      let d = (e.key === "ArrowUp" ? 1 : -1);
+      /* Restrict i to [-1, length-1] */
+      i = Math.clamp(i + d, -1, client.GetHistoryLength() - 1);
+      t.value = (i === -1 ? "" : client.GetHistoryItem(i).trim());
       t.setAttribute("data-hist-index", `${i}`);
-      t.setAttribute("data-complete-text", "");
-      t.setAttribute("data-complete-pos", "-1");
-      t.setAttribute("data-complete-index", "0");
       /* Delay moving the cursor until after the text is updated */
       requestAnimationFrame(() => {
         t.selectionStart = t.value.length;
         t.selectionEnd = t.value.length;
       });
+      resetChatComplete();
     } else {
-      t.setAttribute("data-complete-text", "");
-      t.setAttribute("data-complete-pos", "-1");
-      t.setAttribute("data-complete-index", "0");
+      resetChatComplete();
+      resetChatHistory();
     }
   });
 
@@ -1338,19 +1362,7 @@ function client_main() { /* exported client_main */
 
   /* Clicking on the `?` in the settings box header */
   $("#btnSettingsHelp").click(function(e) {
-    let w = Util.Open("assets/help-window.html",
-                      "TFCHelpWindow",
-                      {"menubar": "yes",
-                       "location": "yes",
-                       "resizable": "yes",
-                       "scrollbars": "yes",
-                       "status": "yes"});
-    if (w) {
-      w.onload = function() {
-        this.addEntry("Help text and settings builder are coming soon!");
-        this.setConfig(getConfigObject(false));
-      };
-    }
+    openHelpWindow();
   });
 
   /* Clicking on the "Builder" link in the settings box header */
@@ -1487,7 +1499,15 @@ function client_main() { /* exported client_main */
           closeModuleSettings($(m));
         }
       }
-    }
+    } else if (e.key === "F1") {
+      /* F1: open configuration help window */
+      openHelpWindow();
+    }/* else if (!e.key.match(/^[A-Za-z0-9_]$/)) {
+      if (["Shift", "Control", "Alt", "Tab"].indexOf(e.key) === -1) {
+        Util.LogOnly(e.key);
+        Util.DebugOnly(e);
+      }
+    }*/
   });
 
   /* Clicking elsewhere on the document: reconnect, username context window */
