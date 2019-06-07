@@ -28,7 +28,7 @@ $(DIST)/%.js: %.js
 	npx babel --presets babel-preset-env $< -d $(DIST)/
 
 $(DIST)/plugins/%.js: plugins/%.js
-	test -d test/plugins || mkdir -p $(DIST)/plugins
+	test -d $(DIST)/plugins || mkdir -p $(DIST)/plugins
 	npx babel --presets babel-preset-env $< -d $(DIST)/plugins/
 
 $(DIST)/polyfill.js:
