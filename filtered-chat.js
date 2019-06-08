@@ -1264,17 +1264,7 @@ function client_main() { /* exported client_main */
 
   /* Open the configuration help popup window */
   function openHelpWindow() {
-    let w = Util.Open("assets/help-window.html", "_blank", {});
-    let opener = window;
-    if (w) {
-      w.onload = function() {
-        this.setOpener(opener);
-        this.addEntry("Help text and settings builder are coming soon!");
-        this.setConfig(getConfigObject(false));
-      };
-    } else {
-      Util.Error("Failed to open help window");
-    }
+    Util.Open("builder.html", "_blank", {});
   }
 
   /* Bind DOM events {{{0 */
