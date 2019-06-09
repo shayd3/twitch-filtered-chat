@@ -40,6 +40,9 @@ const CFGKEY_DEFAULT = "tfc-config";
 /* Document writing functions {{{0 */
 
 class Content { /* exported Content */
+  static add(text) { /* escapes */
+    Content.addHTML($(`<span class="message"></span>`).text(text));
+  }
   static addHTML(content, container=null, callbacks=null) {
     let $container = container ? $(container) : $(".module .content");
     let $content = $(content);
@@ -258,7 +261,8 @@ function getConfigObject(inclSensitive=true) {
   /* Certain unwanted items may be preserved in localStorage */
   const purge_props = [
     "NoAssets", "Debug", "AutoReconnect", "Layout", "Transparent", "Plugins",
-    "nols", "EnableEffects", "DisableEffects", "PluginConfig", "ColorScheme"];
+    "EnableEffects", "DisableEffects", "PluginConfig", "ColorScheme",
+    "nols", "tag"];
   for (let prop of purge_props) {
     if (config.hasOwnProperty(prop)) {
       delete config[prop];

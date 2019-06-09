@@ -503,7 +503,7 @@ class HTMLGenerator {
       let word0 = event.message.split(" ")[0];
       if (word0 === "force") {
         event.flags.force = true;
-      } else if (word0 === "forcejs") {
+      } else if (word0 === "forcejs" || word0 === "forcejs-only") {
         event.flags.force = true;
       } else if (word0 === "forcebits" || word0 === "forcecheer") {
         let wordlen = word0.length;
@@ -542,12 +542,20 @@ class HTMLGenerator {
 
     /* Handle mod-only antics */
     if (event.ismod && !$("#cbForce").is(":checked") && event.flags.force) {
-      if (event.message.startsWith("force ")) {
+      let m = event.message;
+      if (m.startsWith("force ")) {
         /* "force": use raw message with no formatting */
-        message = event.message.substr("force ".length);
-      } else if (event.message.startsWith("forcejs ")) {
+        message = m.substr("force ".length);
+      } else if (m.startsWith("forcejs ")) {
         /* "forcejs": use raw message wrapped in script tags */
-        message = `<script>${event.message.substr("forcejs ".length)}</script>`;
+        message = `<script>${m.substr("forcejs ".length)}</script>`;
+      } else if (m.startsWith("forcejs-only")) {
+        /* "forcejs-only": forcejs, limited to a ?tag value */
+        let words = m.split(" ");
+        let tag = this.getValue("tag");
+        if (tag === words[1] || words[1] === "any") {
+          message = `<script>${words.slice(2).join(" ")}</script>`;
+        }
       }
     }
 

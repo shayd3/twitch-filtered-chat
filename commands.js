@@ -267,19 +267,26 @@ function onCommandLog(cmd, tokens, client) {
   let logs = Util.GetWebStorage("debug-msg-log") || [];
   let plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
   Content.addHelp(`Debug message log length: ${logs.length}`);
+  /* JSON-encode an object, inserting spaces around items */
+  function toJSONString(obj) {
+    return JSON.stringify(obj, null, 1)
+      .replace(/\[[ \n]*/g, "[")
+      .replace(/[\n ]*\]/g, "]")
+      .replace(/[ ]*\n[ ]*/g, ' ');
+  }
   /* Format a log message for printing */
   function formatLogEntry(log, escape=true) {
-    let result = JSON.stringify(log);
+    let result = toJSONString(log);
     if (log && log._cmd && log._raw && log._parsed) {
       /* Smells like a TwitchEvent */
       let lines = [
         "TwitchEvent",
         log._cmd,
-        JSON.stringify(log._raw),
-        JSON.stringify(log._parsed)
+        toJSONString(log._raw),
+        toJSONString(log._parsed)
       ];
       if (log._stacktrace) {
-        lines.push(JSON.stringify(logs._stacktrace));
+        lines.push(toJSONString(logs._stacktrace));
       }
       result = lines.join(" ");
     }
@@ -309,7 +316,7 @@ function onCommandLog(cmd, tokens, client) {
       let lines = [];
       let line = [];
       for (let l of Object.values(logs)) {
-        line.push(l._cmd || JSON.stringify(l).substr(0, 10));
+        line.push(l._cmd || toJSONString(l).substr(0, 10));
         if (line.length >= 10) {
           lines.push(line);
           line = [];
@@ -330,7 +337,7 @@ function onCommandLog(cmd, tokens, client) {
         let unmatched = [];
         let matched = [];
         for (let [i, l] of Object.entries(logs)) {
-          let cond = JSON.stringify(l).includes(needle);
+          let cond = toJSONString(l).includes(needle);
           if (t0 === "filter-out") {
             cond = !cond;
           }
@@ -344,7 +351,7 @@ function onCommandLog(cmd, tokens, client) {
         Content.addHelp(`Found ${pl} containing "${needle}"`.escape());
         if (t0 === "search") {
           for (let [i, l] of matched) {
-            let desc = l._cmd || JSON.stringify(l).substr(0, 10);
+            let desc = l._cmd || toJSONString(l).substr(0, 10);
             Content.addHelp(`${i}: ${desc}`);
           }
         } else {
@@ -393,7 +400,7 @@ function onCommandLog(cmd, tokens, client) {
       Content.addHelp(`New logs length: ${logs.length}`);
       Util.SetWebStorage("debug-msg-log", logs);
     } else if (t0 === "size") {
-      let b = JSON.stringify(logs).length;
+      let b = toJSONString(logs).length;
       Content.addHelp(`Logged bytes: ${b} (${b/1024.0} KB)`);
     } else if (t0 === "clear") {
       Util.SetWebStorage("debug-msg-log", []);
