@@ -492,9 +492,12 @@ function onCommandBadges(cmd, tokens, client) {
   for (let ch of client.GetJoinedChannels()) {
     badges = [];
     for (let [bn, b] of Object.entries(client.GetChannelBadges(ch))) {
-      let url = b.image || b.svg || b.alpha;
-      let size = "width=\"36\" height=\"36\"";
-      badges.push(`<img src="${url}" ${size} title="${bn}" alt="${bn}" />`);
+      for (let [months, bdef] of Object.entries(b)) {
+        let url = bdef.image_url_4x || bdef.image_url_2x || bdef.image_url_1x;
+        let size = "width=\"36\" height=\"36\"";
+        let text = `${bn} ${months} ${bdef.description} ${bdef.title}`;
+        badges.push(`<img src="${url}" ${size} title="${text}" alt="${text}" />`);
+      }
     }
     /* Print channel badges */
     Content.addNotice(Twitch.FormatChannel(ch) + ": " + badges.join(""));

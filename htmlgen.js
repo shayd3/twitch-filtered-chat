@@ -217,9 +217,9 @@ class HTMLGenerator {
         $b.attr("data-badge", "1");
         $b.attr("title", `${bname}/${bnum}`);
         $b.attr("alt", `${bname}/${bnum}`);
-        if (this._client.IsChannelBadge(event.channel, bname)) {
-          let badge_info = this._client.GetChannelBadge(event.channel, bname);
-          let badge_src = badge_info.alpha || badge_info.image;
+        if (this._client.IsChannelBadge(event.channel, bname, bnum)) {
+          let badge_info = this._client.GetChannelBadge(event.channel, bname, bnum);
+          let badge_src = badge_info.image_url_1x;
           let channel = event.channel.channel.replace(/^#/, "");
           $b.attr("src", badge_src);
           $b.attr("data-badge", JSON.stringify(badge_info));

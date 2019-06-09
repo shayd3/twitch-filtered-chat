@@ -3,11 +3,12 @@
 "use strict";
 
 /* FIXME:
+ * FFZ badges show as "undefined"
  * (client.js) Channel sub badges only display first month badge
- *   1) Use Twitch.API.ChannelBadges over Twitch.API.Badges
- *   2) Remove Twitch.API.Badges
- *   3) Rename Twitch.API.ChannelBadges to Twitch.API.Badges
+ *   1) Use Twitch.URL.ChannelBadges over Twitch.URL.Badges
+ *   2) Remove Twitch.URL.Badges
  * Configuration problems:
+ *   Should config.AutoReconnect be enabled by default?
  *   Should config.Scroll set cbScroll or the other way around?
  *     See getConfigObject below txtPass
  *   Should config.ShowClips set cbClips or the other way around?
