@@ -137,17 +137,6 @@ The following hotkeys are available:
 | -------- | ------ |
 | `ScrollLock` | Toggles automatic scrolling when new messages are received |
 | `Escape` | Closes all visible settings windows |
-| `F1` | Open the configuration help window |
-
-## Testing
-
-Please test the filtered chat in your own browser. Load it up and ensure you can change settings and that things work as you'd expect.
-
-`https://kaedenn.github.io/twitch-filtered-chat/index.html?debug=1&channels=%23dwangoac&module1=DwangoAC%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=Main%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Achat`
-
-If you have errors loading that, try the following link:
-
-`https://kaedenn.github.io/twitch-filtered-chat/index.html?debug=1&channels=%23dwangoac&module1=DwangoAC%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=Main%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Achat&usedist=1`
 
 ## Development
 
@@ -157,10 +146,29 @@ mkdir tfc && cd tfc # optional
 checkout https://github.com/Kaedenn/twitch-filtered-chat
 checkout https://github.com/Kaedenn/twitch-api
 cd twitch-filtered-chat
+firefox index.html # or chrome, or whatever browser you fancy
 ```
 and have fun!
 
-### Vim Support
+### Plugins
+
+Plugin documentation is coming relatively soon.
+
+### Commands
+
+Chat command documentation is coming relatively soon.
+
+## Testing
+
+Please test the filtered chat in your own browser. Load it up and ensure you can change settings and that things work as you'd expect.
+
+`https://kaedenn.github.io/twitch-filtered-chat/index.html?debug=1&channels=%23dwangoac&module1=DwangoAC%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=Main%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Achat`
+
+If you have errors loading that, try the following link which forces ES5:
+
+`https://kaedenn.github.io/twitch-filtered-chat/index.html?debug=1&channels=%23dwangoac&module1=DwangoAC%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=Main%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Achat&usedist=1`
+
+## Vim Support
 
 These files use vim section labels to assist code folding. You may use the following if `foldmethod=section` doesn't work for you.
 
