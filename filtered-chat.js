@@ -20,6 +20,7 @@
  * Allow plugins to define custom filtering
  * Create a README.md file for the plugins directory
  * Auto-complete commands (wip), command arguments, and @user names
+ * Remove F1 hotkey binding
  */
 
 /* IDEAS:
@@ -299,7 +300,7 @@ function getConfigObject(inclSensitive=true) {
   }
 
   /* Populate configs from each module */
-  $(".module").each(function() {
+  $(".module").each(function _config_get_module_settings() {
     let id = $(this).attr("id");
     let toArray = (val) => (Util.IsArray(val) ? val : []);
     if (!config[id]) {
@@ -494,19 +495,19 @@ function getModuleSettings(module) {
     FromChannel: []
   };
 
-  $module.find("input.include_user:checked").each(function() {
+  $module.find("input.include_user:checked").each(function _get_incuser() {
     s.IncludeUser.push($(this).val());
   });
-  $module.find("input.include_keyword:checked").each(function() {
+  $module.find("input.include_keyword:checked").each(function _get_inckey() {
     s.IncludeKeyword.push($(this).val());
   });
-  $module.find("input.exclude_user:checked").each(function() {
+  $module.find("input.exclude_user:checked").each(function _get_exuser() {
     s.ExcludeUser.push($(this).val());
   });
-  $module.find("input.exclude_startswith:checked").each(function() {
+  $module.find("input.exclude_startswith:checked").each(function _get_es() {
     s.ExcludeStartsWith.push($(this).val());
   });
-  $module.find("input.from_channel:checked").each(function() {
+  $module.find("input.from_channel:checked").each(function _get_from() {
     s.FromChannel.push($(this).val());
   });
 
@@ -560,7 +561,7 @@ function formatModuleConfig(cfg) {
 /* Store the modules' settings in both localStorage and liveStorage */
 function updateModuleConfig() {
   let config = {};
-  $(".module").each(function() {
+  $(".module").each(function _update_module() {
     let id = $(this).attr("id");
     config[id] = getModuleSettings($(this));
     if (!window.liveStorage) {
@@ -713,7 +714,7 @@ function showContextWindow(client, cw, line) {
       $ta.attr("data-channel", channel);
       $ta.attr("data-user", user);
       $ta.attr("data-duration", dur);
-      $ta.click(function() {
+      $ta.click(function _ucw_timeout_click() {
         let ch = $(this).attr("data-channel");
         let u = $(this).attr("data-user");
         let d = $(this).attr("data-duration");
@@ -731,7 +732,7 @@ function showContextWindow(client, cw, line) {
     let $ba = $Link(`cw-ban-${user}`, "Ban");
     $ba.attr("data-channel", channel);
     $ba.attr("data-user", user);
-    $ba.click(function() {
+    $ba.click(function _ucw_ban_click() {
       $("#txtChat").val(`/ban ${$(this).attr("data-user")}`);
     });
     $cw.append($ba);
@@ -1262,10 +1263,15 @@ function client_main() { /* exported client_main */
     $("#txtChat").attr("data-hist-index", "-1");
   }
 
-  /* Open the configuration help popup window */
-  function openHelpWindow() {
+  /* Open the settings builder page */
+  function openSettingsTab() {
     Util.Open("builder.html", "_blank", {});
   }
+
+  /* Add command to open the settings builder page */
+  ChatCommands.add("builder", function _on_cmd_builder(cmd, tokens, client_) {
+    openSettingsTab();
+  }, "Open the configuration builder wizard");
 
   /* Bind DOM events {{{0 */
 
@@ -1352,7 +1358,7 @@ function client_main() { /* exported client_main */
 
   /* Clicking on the `?` in the settings box header */
   $("#btnSettingsHelp").click(function(e) {
-    openHelpWindow();
+    openSettingsTab();
   });
 
   /* Clicking on the "Builder" link in the settings box header */
@@ -1491,7 +1497,7 @@ function client_main() { /* exported client_main */
       }
     } else if (e.key === "F1") {
       /* F1: open configuration help window */
-      openHelpWindow();
+      openSettingsTab();
     }/* else if (!e.key.match(/^[A-Za-z0-9_]$/)) {
       if (["Shift", "Control", "Alt", "Tab"].indexOf(e.key) === -1) {
         Util.LogOnly(e.key);
@@ -1596,12 +1602,15 @@ function client_main() { /* exported client_main */
   client.bind("twitch-close", function _on_twitch_close(e) {
     let code = e.raw_line.code;
     let reason = e.raw_line.reason;
-    let msg = reason ? `(code ${code}: ${reason})` : `(code ${code})`;
+    let msg = `(code ${code} ${Util.WSStatus[code]})`;
+    if (reason) {
+      msg = `(code ${code} ${Util.WSStatus[code]}: ${reason})`;
+    }
     if (getConfigObject().AutoReconnect) {
-      Content.addError(Strings.CONN_CLOSED + msg);
+      Content.addError(Strings.CONN_CLOSED + " " + msg);
       client.Connect();
     } else {
-      Content.addError(Strings.CONN_CLOSED + msg + Strings.RECONNECT);
+      Content.addError(Strings.CONN_CLOSED + " " + msg + Strings.RECONNECT);
     }
   });
 
@@ -1669,9 +1678,18 @@ function client_main() { /* exported client_main */
     let cinfo = client.GetChannelInfo(e.channel.channel);
     if (layout && !layout.Slim) {
       if (cinfo.online) {
-        Content.addNotice(Strings.Active(e.channel.channel));
+        try {
+          let name = cinfo.stream.channel.display_name;
+          let game = cinfo.stream.game;
+          let viewers = cinfo.stream.viewers;
+          Content.addNotice(Strings.StreamInfo(name, game, viewers));
+        }
+        catch (err) {
+          Util.Error(err);
+          Content.addNotice(Strings.StreamOnline(e.channel.channel));
+        }
       } else {
-        Content.addNotice(Strings.InActive(e.channel.channel));
+        Content.addNotice(Strings.StreamOffline(e.channel.channel));
       }
     }
   });
