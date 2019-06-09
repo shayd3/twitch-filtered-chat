@@ -1,5 +1,31 @@
 /* Twitch Filtered Chat Commands */
 
+"use strict";
+
+/** Chat Commands
+ *
+ ** Adding a chat command:
+ *
+ * ChatCommands.add(command, function, description, args...)
+ *   command      (string) chat command to add, executed via //command
+ *   function     a function taking the following arguments
+ *     cmd        the command being executed (value of command parameter)
+ *     tokens     the arguments passed to the command when ran
+ *     client     a reference to the TwitchClient object
+ *     args...    extra arguments passed to ChatCommands.add, as-is
+ *   description  (string) a description of the command to be printed in //help
+ *   args         (optional) extra arguments to pass to the function
+ *
+ ** Example:
+ *
+ * Run the following JavaScript:
+ *   ChatCommands.add("mycommand", mycommandfunc, "My new command", 1, 2)
+ * Type the following into chat:
+ *   "//mycommand value1 value2"
+ * This results in the following call:
+ *   mycommandfunc("mycommand", ["value1", "value2"], client, 1, 2)
+ */
+
 class ChatCommandManager {
   constructor() {
     this._command_list = [];
@@ -9,7 +35,6 @@ class ChatCommandManager {
     this.add("help", this.onCommandHelp.bind(this),
              "Show help for a specific command or all commands");
     this.addAlias("?", "help");
-    this.addAlias("", "help");
     this.addUsage("help", null, "Show help for all commands");
     this.addUsage("help", "command", "Show usage information for <command>");
   }
@@ -118,8 +143,12 @@ class ChatCommandManager {
   execute(msg, client) {
     if (this.isCommandStr(msg)) {
       let cmd = this._trim(msg.split(" ")[0]);
+      let tokens = msg.replace(/[\s]*$/, "").split(" ").slice(1);
+      if (this._trim(msg).length === 0) {
+        cmd = "help";
+        tokens = [];
+      }
       if (this.hasCommand(cmd)) {
-        let tokens = msg.replace(/[\s]*$/, "").split(" ").slice(1);
         try {
           let c = this.getCommand(cmd);
           let obj = Object.create(this);
@@ -214,7 +243,7 @@ class ChatCommandManager {
   onCommandHelp(cmd, tokens, client) {
     if (tokens.length === 0) {
       Content.addHelp("Commands:");
-      for (let c of Object.values(this._command_list)) {
+      for (let c of this._command_list) {
         Content.addHelp(this.formatHelp(this._commands[c]));
       }
       Content.addHelp(this.formatArgs("Enter //help <command> for help on <command>"));
@@ -275,11 +304,7 @@ function onCommandLog(cmd, tokens, client) {
                          "scrollbars": "yes",
                          "dependent": "yes",
                          "width": `${Math.floor(width)}`});
-      if (w) {
-        w.onload = function() {
-          this.addEntries(logs);
-        };
-      }
+      if (w) { w.onload = function() { this.addEntries(logs); }; }
     } else if (t0 === "summary") {
       let lines = [];
       let line = [];
