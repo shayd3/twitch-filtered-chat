@@ -6,29 +6,15 @@ module.exports = {
     },
     "extends": "eslint:recommended",
     "globals": {
-        "Atomics": "readonly",
-        "SharedArrayBuffer": "readonly",
         "Util": "readonly",
         "Twitch": "readonly",
         "TwitchClient": "readonly",
         "TwitchEvent": "readonly",
         "TwitchChatEvent": "readonly",
         "TwitchSubEvent": "readonly",
-        "HTMLGenerator": "readonly",
         "Plugins": "readonly",
         "Content": "readonly",
-        "ChatCommands": "readwrite",
-        "InitChatCommands": "readonly",
-        "GIT_URL": "readonly",
-        "CUR_URL": "readonly",
-        "GetLayout": "readonly",
-        "ParseLayout": "readonly",
-        "FormatLayout": "readonly",
-        "CSSCheerStyles": "readonly",
-        "GetCheerStyle": "readonly",
-        "Strings": "readonly",
-        "AssetPaths": "readonly",
-        "client_main": "readonly"
+        "ChatCommands": "readwrite"
     },
     "parserOptions": {
         "ecmaVersion": 2018
@@ -43,9 +29,9 @@ module.exports = {
         }],
         "no-implied-eval": "warn",
         "no-self-compare": "warn",
-        "no-throw-literal": "warn",
+        "no-throw-literal": "error",
         "no-unused-expressions": "warn",
-        "semi": "warn",
+        "semi": "error",
         "no-self-compare": "warn",
         "no-param-reassign": "warn",
         "no-lonely-if": "warn",
@@ -56,12 +42,6 @@ module.exports = {
             "files": ["main.js"],
             "rules": {
                 "no-console": "off"
-            }
-        },
-        {
-            "files": ["htmlgen.js"],
-            "rules": {
-                "no-param-reassign": "off"
             }
         }
     ]
