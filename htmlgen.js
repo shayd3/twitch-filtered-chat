@@ -49,6 +49,20 @@ class HTMLGenerator {
     return this._config[k];
   }
 
+  get enableAntics() {
+    return !this.getValue("NoForce") && !$("#cbForce").is(":checked");
+  }
+
+  set enableAntics(val) {
+    if (val) {
+      this.setValue("NoForce", true);
+      $("#cbForce").check();
+    } else {
+      this.setValue("NoForce", false);
+      $("#cbForce").uncheck();
+    }
+  }
+
   getColorFor(username) {
     let name = `${username}`;
     if (typeof(username) !== "string") {
@@ -192,7 +206,6 @@ class HTMLGenerator {
 
   _genBadges(event) {
     let $bc = $(`<span class="badges" data-badges="1"></span>`);
-    $bc.addClass("badges");
     let total_width = 0;
     if (event.flags["badges"]) {
       total_width += 18 * event.flags["badges"].length;
@@ -206,11 +219,14 @@ class HTMLGenerator {
     $bc.css("overflow", "hidden");
     $bc.css("width", `${total_width}px`);
     $bc.css("max-width", `${total_width}px`);
+    function makeBadge(classes) {
+      return $(`<img class="badge" width="18px" height="18px" />`)
+        .addClass(classes);
+    }
     /* Add Twitch-native badges */
     if (event.flags.badges) {
       for (let [bname, bnum] of event.flags.badges) {
-        let $b = $(`<img class="badge" width="18px" height="18px" />`);
-        $b.addClass("twitch-badge");
+        let $b = makeBadge("twitch-badge");
         $b.attr("data-badge-name", bname);
         $b.attr("data-badge-num", bnum);
         $b.attr("data-badge-cause", JSON.stringify([bname, bnum]));
@@ -240,8 +256,7 @@ class HTMLGenerator {
     /* Add FFZ badges */
     if (event.flags["ffz-badges"]) {
       for (let badge of Object.values(event.flags["ffz-badges"])) {
-        let $b = $(`<img class="badge" width="18px" height="18px" />`);
-        $b.addClass("ffz-badge");
+        let $b = makeBadge("ffz-badge");
         $b.attr("data-badge", "1");
         $b.attr("data-ffz-badge", "1");
         $b.attr("data-badge-scope", "ffz");
@@ -254,8 +269,7 @@ class HTMLGenerator {
     /* For if BTTV ever adds badges
     if (event.flags["bttv-badges"]) {
       for (let badge of Object.values(event.flags["bttv-badges"])) {
-        let $b = $(`<img class="badge" width="18px" height="18px" />`);
-        $b.addClass("bttv-badge");
+        let $b = makeBadge("bttv-badge");
         $b.attr("data-badge", "1");
         $b.attr("data-ffz-badge", "1");
         $b.attr("data-badge-scope", "bttv");
@@ -302,6 +316,7 @@ class HTMLGenerator {
   }
 
   _msgCheersTransform(event, message, map, $msg, $effects) {
+    let result = message;
     if (event.flags.bits && event.flags.bits > 0) {
       let bits_left = event.flags.bits;
       let matches = this._client.FindCheers(event.channel, event.message);
@@ -313,20 +328,20 @@ class HTMLGenerator {
         let cheer_html = this._genCheer(match.cheer, match.bits);
         let pos = start + cheer_html.length;
         /* Insert the cheer HTML and adjust the map */
-        message = message.substr(0, start) + cheer_html + message.substr(end);
+        result = result.substr(0, start) + cheer_html + result.substr(end);
         this._remap(map, match.start, match.end, cheer_html.length);
         /* Scan for cheer effects */
         start = end = pos;
-        while (pos < message.length) {
+        while (pos < result.length) {
           let word = "";
-          if (message[pos].match(/\s/)) {
+          if (result[pos].match(/\s/)) {
             pos += 1;
           } else {
             /* NOTE: This would be cleaner with some kind of "search starting
-             * from" function: message.matchFrom(/\s/, pos) */
-            end = message.substr(pos).search(/\s/);
-            end = end === -1 ? message.length : pos + end;
-            word = message.substring(pos, end);
+             * from" function: result.matchFrom(/\s/, pos) */
+            end = result.substr(pos).search(/\s/);
+            end = end === -1 ? result.length : pos + end;
+            word = result.substring(pos, end);
             let s = GetCheerStyle(word.toLowerCase());
             if (s && !s._disabled && bits_left >= s.cost) {
               /* Continue scanning for disabled effects and effects using more
@@ -342,16 +357,17 @@ class HTMLGenerator {
           }
         }
         if (start !== end) {
-          /* Remove [start:end] from the message and adjust the map */
-          message = message.substr(0, start) + " " + message.substr(end);
+          /* Remove [start:end] from the result and adjust the map */
+          result = result.substr(0, start) + " " + result.substr(end);
           this._remap(map, start, end, 0);
         }
       }
     }
-    return message;
+    return result;
   }
 
   _msgEmotesTransform(event, message, map, $msg, $effects) {
+    let result = message;
     if (event.flags.emotes) {
       let emotes = event.flags.emotes.map(function(e) {
         return {id: e.id, name: e.name, start: e.start, end: e.end, def: e};
@@ -360,18 +376,19 @@ class HTMLGenerator {
       while (emotes.length > 0) {
         let emote = emotes.pop();
         let emote_src = this._client.GetEmote(emote.id);
-        let msg_start = message.substr(0, map[emote.start]);
-        let msg_end = message.substr(map[emote.end]+1);
+        let msg_start = result.substr(0, map[emote.start]);
+        let msg_end = result.substr(map[emote.end]+1);
         let emote_str = this._emote("twitch", emote_src, emote);
-        message = `${msg_start}${emote_str}${msg_end}`;
+        result = `${msg_start}${emote_str}${msg_end}`;
         /* Adjust the map */
         this._remap(map, emote.start, emote.end, emote_str.length - 1);
       }
     }
-    return message;
+    return result;
   }
 
   _msgFFZEmotesTransform(event, message, map, $msg, $effects) {
+    let result = message;
     let ffz_emotes = this._client.GetFFZEmotes(event.channel);
     if (ffz_emotes && ffz_emotes.emotes) {
       let ffz_emote_arr = [];
@@ -391,16 +408,17 @@ class HTMLGenerator {
           def: edef
         };
         let emote_str = this._emote("ffz", url, emote_opts);
-        let msg_start = message.substr(0, map[emote.start]);
-        let msg_end = message.substr(map[emote.end+1]);
-        message = `${msg_start}${emote_str}${msg_end}`;
+        let msg_start = result.substr(0, map[emote.start]);
+        let msg_end = result.substr(map[emote.end+1]);
+        result = `${msg_start}${emote_str}${msg_end}`;
         this._remap(map, emote.start, emote.end+1, emote_str.length);
       }
     }
-    return message;
+    return result;
   }
 
   _msgBTTVEmotesTransform(event, message, map, $msg, $effects) {
+    let result = message;
     let all_emotes = this._client.GetGlobalBTTVEmotes();
     let ch_emotes = this._client.GetBTTVEmotes(event.channel);
     let emotes = {};
@@ -422,15 +440,16 @@ class HTMLGenerator {
       let edef = emotes[emote.id];
       let emote_opts = {id: edef.id, name: edef.code, def: edef};
       let emote_str = this._emote("bttv", edef.url, emote_opts);
-      let msg_start = message.substr(0, map[emote.start]);
-      let msg_end = message.substr(map[emote.end+1]);
-      message = `${msg_start}${emote_str}${msg_end}`;
+      let msg_start = result.substr(0, map[emote.start]);
+      let msg_end = result.substr(map[emote.end+1]);
+      result = `${msg_start}${emote_str}${msg_end}`;
       this._remap(map, emote.start, emote.end+1, emote_str.length);
     }
-    return message;
+    return result;
   }
 
   _msgAtUserTransform(event, message, map, $msg, $effects) {
+    let result = message;
     let pat = /(?:^|\b\s*)(@\w+)(?:\s*\b|$)/g;
     let locations = [];
     let arr = null;
@@ -447,16 +466,17 @@ class HTMLGenerator {
       if (location.part.substr(1).equalsLowerCase(this._client.GetName())) {
         node.addClass("at-self");
       }
-      let msg_start = message.substr(0, map[location.start]);
+      let msg_start = result.substr(0, map[location.start]);
       let msg_part = node[0].outerHTML;
-      let msg_end = message.substr(map[location.end]);
-      message = msg_start + msg_part + msg_end;
+      let msg_end = result.substr(map[location.end]);
+      result = msg_start + msg_part + msg_end;
       this._remap(map, location.start, location.end, msg_part.length);
     }
-    return message;
+    return result;
   }
 
   _msgURLTransform(event, message, map, $msg, $effects) {
+    let result = message;
     let locations = [];
     let arr = null;
     while ((arr = Util.URL_REGEX.exec(event.message)) !== null) {
@@ -481,16 +501,24 @@ class HTMLGenerator {
         $msg.attr("data-clip", url.pathname.strip("/"));
       }
       let new_node = Util.CreateNode(url);
-      let msg_start = message.substr(0, map[location.start]);
+      let msg_start = result.substr(0, map[location.start]);
       let msg_part = new_node.outerHTML;
-      let msg_end = message.substr(map[location.end]);
-      message = msg_start + msg_part + msg_end;
+      let msg_end = result.substr(map[location.end]);
+      result = msg_start + msg_part + msg_end;
       this._remap(map, location.start, location.end, msg_part.length);
     }
-    return message;
+    return result;
   }
 
   _genMsgInfo(event) {
+    const anticsWords = [
+      "force",        /* Message is raw HTML */
+      "force-eval",   /* Message is a JavaScript expression */
+      "forcejs",      /* Message is a JavaScript function */
+      "forcejs-only", /* As above, for the matched tag(s) */
+      "forcebits",    /* Prepend "cheer1000" to message */
+      "forcecheer"    /* Prepend "cheer1000" to message */
+    ];
     let $msg = $(`<span class="message" data-message="1"></span>`);
     let $effects = [];
 
@@ -499,13 +527,13 @@ class HTMLGenerator {
     map.push(message.length); /* Prevent off-the-end mistakes */
 
     /* Handle early mod-only antics */
-    if (!$("#cbForce").is(":checked") && event.ismod) {
+    if (this.enableAntics && event.ismod) {
       let word0 = event.message.split(" ")[0];
-      if (word0 === "force") {
+      if (anticsWords.indexOf(word0) > -1) {
         event.flags.force = true;
-      } else if (word0 === "forcejs" || word0 === "forcejs-only") {
-        event.flags.force = true;
-      } else if (word0 === "forcebits" || word0 === "forcecheer") {
+      }
+      if (word0 === "forcebits" || word0 === "forcecheer") {
+        /* Message length unchanged; no need to update the map */
         let wordlen = word0.length;
         let msgprefix = "cheer1000";
         while (msgprefix.length < word0.length) {
@@ -515,16 +543,17 @@ class HTMLGenerator {
         event.values.message = msgprefix + event.message.substr(wordlen);
         message = msgprefix + message.substr(wordlen);
         event.flags.bits = 1000;
-        event.flags.force = true;
-        /* No change in message length -> no need to update map */
       }
+    } else {
+      /* Prevent unauthorized access */
+      event.flags.force = false;
     }
 
     let logMessage = () => {};
-    /* Un-comment to log transformations in detail
-    let idx = 1;
-    logMessage = (...args) => { Util.LogOnly(idx, message, ...args); idx += 1; }
-     */
+    if (Util.DebugLevel === Util.LEVEL_TRACE) {
+      let idx = 1;
+      logMessage = (...args) => { Util.LogOnly(idx++, message, ...args); };
+    }
     /* Apply message transformations */
     logMessage(event);
     message = this._msgEmotesTransform(event, message, map, $msg, $effects);
@@ -541,20 +570,31 @@ class HTMLGenerator {
     logMessage();
 
     /* Handle mod-only antics */
-    if (event.ismod && !$("#cbForce").is(":checked") && event.flags.force) {
+    if (event.ismod && this.enableAntics && event.flags.force) {
+      /* NOTE: These will run twice for layout=double */
       let m = event.message;
-      if (m.startsWith("force ")) {
-        /* "force": use raw message with no formatting */
-        message = m.substr("force ".length);
-      } else if (m.startsWith("forcejs ")) {
-        /* "forcejs": use raw message wrapped in script tags */
-        message = `<script>${m.substr("forcejs ".length)}</script>`;
-      } else if (m.startsWith("forcejs-only")) {
-        /* "forcejs-only": forcejs, limited to a ?tag value */
-        let words = m.split(" ");
-        let tag = this.getValue("tag");
-        if (tag === words[1] || words[1] === "any") {
-          message = `<script>${words.slice(2).join(" ")}</script>`;
+      let t0 = m.split(" ")[0];
+      let ts = m.split(" ").slice(1).join(" ");
+      if (t0 === "force") {
+        /* force: use raw message with no formatting */
+        message = ts;
+      } else if (t0 === "force-eval") {
+        /* force-eval: evaluate ts as a function */
+        message = (new Function(`return String(${ts})`))();
+      } else if (t0 === "forcejs") {
+        /* forcejs: use raw message wrapped in script tags */
+        message = `<script>${ts}</script>`;
+      } else if (t0 === "forcejs-only" && ts.length > 0) {
+        /* forcejs-only: forcejs, limited to a ?tag value:
+         *  <tag>: execute if ?tag value === <tag>
+         *  ?<tag>: execute if ?tag value contains <tag> */
+        let t1 = ts.split(" ")[0];
+        let tag = this.getValue("tag") || "";
+        let matches = false;
+        if (t1 === tag) matches = true;
+        if (t1.startsWith("?") && tag.indexOf(t1.substr(1)) > -1) matches = true;
+        if (matches) {
+          message = `<script>${ts.split(" ").slice(1).join(" ")}</script>`;
         }
       }
     }
@@ -569,13 +609,13 @@ class HTMLGenerator {
     $e.attr("data-user", event.user);
     $e.attr("data-user-id", event.flags["user-id"]);
     $e.attr("data-channel", event.channel.channel.replace(/^#/, ""));
+    $e.attr("data-channel-id", event.flags["room-id"]);
     if (event.channel.room) {
       $e.attr("data-room", event.channel.room);
     }
     if (event.channel.roomuid) {
       $e.attr("data-roomuid", event.channel.roomuid);
     }
-    $e.attr("data-channel-id", event.flags["room-id"]);
     if (event.issub) {
       $e.attr("data-subscriber", "1");
     }
@@ -593,9 +633,8 @@ class HTMLGenerator {
   }
 
   _genSubWrapper(event) {
-    let $e = $(`<div></div>`);
+    let $e = $(`<div class="chat-line sub notice"></div>`);
     this._addChatAttrs($e, event);
-    $e.addClass("chat-line").addClass("sub").addClass("notice");
     $e.append(this._genBadges(event));
     $e.append(this._genName(event));
     $e.html($e.html() + "&nbsp;");
@@ -671,6 +710,7 @@ class HTMLGenerator {
     let months = event.months || event.total_months;
     let streak = event.streak_months;
     let plan = event.plan || TwitchSubEvent.PlanName(`${event.plan_id}`);
+    $m.addClass("effect-rainbow").addClass("effect-disco");
     if (event.flags["system-msg"]) {
       $m.text(event.flags["system-msg"]);
     } else if (event.share_streak) {
@@ -678,7 +718,6 @@ class HTMLGenerator {
     } else {
       $m.text(Strings.Resub(months, plan));
     }
-    $m.addClass("effect-rainbow").addClass("effect-disco");
     $m.html($m.html() + "&nbsp;" + e);
     $w.append($m);
     this._checkUndefined(event, $w);
@@ -688,6 +727,8 @@ class HTMLGenerator {
   giftsub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
+    let e = this.twitchEmote("HolidayPresent");
+    $m.addClass("effect-rainbow").addClass("effect-disco");
     if (event.flags["system-msg"]) {
       $m.text(event.flags["system-msg"]);
     } else {
@@ -696,8 +737,6 @@ class HTMLGenerator {
       let plan = TwitchSubEvent.PlanName(`${event.plan_id}`);
       $m.text(Strings.GiftSub(gifter, plan, user));
     }
-    let e = this.twitchEmote("HolidayPresent");
-    $m.addClass("effect-rainbow").addClass("effect-disco");
     $m.html($m.html() + e + "&nbsp;");
     $w.append($m);
     this._checkUndefined(event, $w);
@@ -707,6 +746,8 @@ class HTMLGenerator {
   anongiftsub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
+    let e = this.twitchEmote("HolidayPresent");
+    $m.addClass("effect-rainbow").addClass("effect-disco");
     if (event.flags["system-msg"]) {
       $m.text(event.flags["system-msg"]);
     } else {
@@ -714,8 +755,6 @@ class HTMLGenerator {
       let plan = TwitchSubEvent.PlanName(`${event.plan_id}`);
       $m.text(Strings.AnonGiftSub(plan, user));
     }
-    let e = this.twitchEmote("HolidayPresent");
-    $m.addClass("effect-rainbow").addClass("effect-disco");
     $m.html($m.html() + e + "&nbsp;");
     $w.append($m);
     this._checkUndefined(event, $w);
@@ -725,6 +764,8 @@ class HTMLGenerator {
   raid(event) {
     let $w = $(`<div class="chat-line raid"></div>`);
     let $m = $(`<span class="message raid-message"></span>`);
+    let e = this.twitchEmote("TombRaid");
+    $m.addClass("effect-rainbow").addClass("effect-disco");
     if (event.flags["system-msg"]) {
       $m.text(event.flags["system-msg"]);
     } else {
@@ -734,8 +775,6 @@ class HTMLGenerator {
       let count = event.flags["msg-param-viewerCount"];
       $m.html(Strings.Raid(raider, count));
     }
-    let e = this.twitchEmote("TombRaid");
-    $m.addClass("effect-rainbow").addClass("effect-disco");
     $w.append($m);
     $w.html(e + "&nbsp;" + $w.html());
     this._checkUndefined(event, $w);
@@ -743,12 +782,11 @@ class HTMLGenerator {
   }
 
   newUser(event) {
-    let $e = $(`<div></div>`);
+    let $e = $(`<div class="chat-line new-user notice"></div>`);
+    let $msg = $(`<span class="message" data-message="1"></span>`);
     this._addChatAttrs($e, event);
-    $e.addClass("chat-line").addClass("new-user").addClass("notice");
     $e.append(this._genBadges(event));
     $e.append(this._genName(event));
-    let $msg = $(`<span class="message" data-message="1"></span>`);
     $msg.text(event.flags["system-msg"] + " Say hello!");
     $e.html($e.html() + ":&nbsp;");
     $e.append($msg);
@@ -839,5 +877,7 @@ class HTMLGenerator {
     return $e[0].outerHTML;
   }
 }
+
+/* globals Strings GetCheerStyle */
 
 /* vim: set ts=2 sts=2 sw=2 et: */

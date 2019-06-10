@@ -301,5 +301,6 @@ function Main(global) { /* exported Main */
 /* eslintrc config: */
 /* exported MOD_TFC MOD_TWAPI IS_TESLA ASK_DIST USE_DIST */
 /* exported URI BASE_URI SELF_URI GIT_URL CUR_URL PATH_TFC PATH_TWAPI */
+/* globals InitChatCommands client_main */
 
 /* vim: set ts=2 sts=2 sw=2 et: */

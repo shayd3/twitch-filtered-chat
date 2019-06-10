@@ -45,21 +45,28 @@
  *  ${text_shadow}: Username shadow CSS, calculated and populated by HTMLGen
  */
 
+/* URLs to various assets */
+const AssetURLs = { /* exported AssetURLs */
+  SETTINGS: "assets/settings_white.png",
+  SETTINGS_LIGHT: "assets/settings.png"
+};
+
 /* Strings intended for some kind of i18n support */
 const Strings = { /* exported Strings */
-  CACHED: "Cached",
-  AUTOGEN: "Auto-Generated",
   USE_HELP: "Use //help to see Twitch Filtered Chat commands",
   PLEASE_AUTH: "Authentication needed to send messages",
   PLEASE_JOIN: "No channels configured; type //join &lt;channel&gt; to join one!",
-  AUTH: "Connected (authenticated)",
-  UNAUTH: "Connected (unauthenticated)",
-  OMIT_CID: "Omitted for security; use //config clientid to show",
-  OMIT_PASS: "Omitted for security; use //config pass to show",
   RECONNECT: "<span class=\"reconnect\" data-reconnect=\"1\">Reconnect</span>",
   RECONNECTING: "Reconnecting...",
+
+  CONN_AUTHED: "Connected (authenticated)",
+  CONN_UNAUTHED: "Connected (unauthenticated)",
   CONN_CLOSED: "Connection closed",
 
+  NAME_AUTOGEN: "Auto-Generated",
+  PASS_CACHED: "Cached",
+  CFG_OMIT_CID: "Omitted for security; use //config clientid to show",
+  CFG_OMIT_PASS: "Omitted for security; use //config pass to show",
   CFG_FROM: "From user: ",
   CFG_CONTAINS: "Contains: ",
   CFG_STARTS: "Starts with: ",
@@ -84,8 +91,9 @@ const Strings = { /* exported Strings */
   TFC_UNUKE: "!tfc nuke <user>: Remove all messages sent by <user>",
 
   StreamOnline: (ch) => `${ch} is streaming`,
-  StreamInfo: (name, game, viewers) => `${name} is streaming ${game} for ${viewers} viewers`,
+  StreamInfo: (url, name, game, viewers) => `${name} is streaming <a href="${url}">${game}</a> for ${viewers} viewer${viewers === 1 ? "" : "s"}`,
   StreamOffline: (ch) => `${ch} is not currently streaming`,
+
   Sub: (plan) => `just subscribed with a ${plan} subscription!`,
   ResubStreak: (months, plan, streak) => `resubscribed for ${months} months with a ${plan} subscription! They're on a streak of ${streak} months!`,
   Resub: (months, plan) => `resubscribed for ${months} months with a ${plan} subscription!`,

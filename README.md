@@ -2,11 +2,29 @@
 
 It's Twitch Chat, but Filtered!
 
+# Table of Contents
+
+1) [Usage](#usage)
+  1. [Query String Options](#query-string-options)
+  2. [Layout](#layout)
+  3. [Module configuration](#module-configuration)
+  4. [Cheer Effects](#cheer-effects)
+  5. [Examples](#examples)
+  6. [Hotkeys](#hotkeys)
+2) [Development](#development)
+  1. [Plugins](#plugins)
+  2. [Commands](#commands)
+3) [Antics](#antics)
+  1. [Examples](#examples)
+4) [Testing](#testing)
+5) [Vim Support](#vim-support)
+6) [Credits](#credits)
+
 ## Usage
 
 URL: `https://kaedenn.github.io/twitch-filtered-chat/index.html?<OPTIONS>`
 
-### Query String Options:
+### Query String Options
 
 | Option Key     | Option Value |
 |----------------|--------------|
@@ -17,7 +35,7 @@ URL: `https://kaedenn.github.io/twitch-filtered-chat/index.html?<OPTIONS>`
 |  `clientid`    | ClientID override to use for Twitch asset loading |
 |  `user`        | Username to use (requires `pass`) |
 |  `pass`        | OAuth token to use (requires `user`; removed once parsed) |
-|  `debug`       | Either a number or one of `false` (0), `true` or `debug` (1), or `trace` (2) (default: 0) |
+|  `debug`       | Either a number or one of `false` (0), `true` (1), `debug` (1), or `trace` (2) (default: 0) |
 |  `channels`    | Channels to join (with or without #), separated by commas |
 |  `noffz`       | Disable FFZ support (badges and emotes) entirely |
 |  `nobttv`      | Disable BTTV support (emotes) entirely |
@@ -26,7 +44,7 @@ URL: `https://kaedenn.github.io/twitch-filtered-chat/index.html?<OPTIONS>`
 |  `trans`       | Makes the backgrounds completely transparent |
 |  `module1`     | The encoded module configuration for module 1 (explained below) |
 |  `module2`     | The encoded module configuration for module 2 (explained below) |
-|  `reconnect`   | If present, automatically reconnect if connection is lost |
+|  `norec`       | If present, don't automatically reconnect if connection is lost |
 |  `size`        | Overrides the body font size (in pt) (default: 18) |
 |  `plugins`     | If present, enables use of plugins (see plugins directory) |
 |  `disable`     | Disable specific cheer effects, separated by commas |
@@ -38,9 +56,11 @@ URL: `https://kaedenn.github.io/twitch-filtered-chat/index.html?<OPTIONS>`
 |  `nols`        | Forcibly disable `localStorage` support. Note that this disables `pass` support entirely, as `localStorage` is needed to store passwords |
 |  `scheme`      | Color scheme to use. Valid values: `light` and `dark`. Default: `dark` |
 
+Note that `user` and `pass` must be supplied together: if a username is given, then a password must be given via either `pass` or stored in `localStorage`.
+
 All option values must be URL-encoded.
 
-### Layout:
+### Layout
 
 | Layout | Description |
 | ------ | ----------- |
@@ -56,7 +76,7 @@ All option values must be URL-encoded.
 
 For a `single` column, the module is `module1`. For `double` columns, the left module is `module1` and the right module is `module2`.
 
-### Module configuration:
+### Module configuration
 
 `module1=<name>,<flags>,<kw-include>,<user-include>,<user-exclude>,<start-exclude>,<channel-exclude>`
 
@@ -80,7 +100,7 @@ If `layout` is `single`, `module1` is shown. Otherwise, `module1` is the left mo
 
 Default: `module1=Chat,1111111,,,,,&module2=Chat,1111111,,,,,`
 
-### Cheer Effects:
+### Cheer Effects
 
 The following cheer effects are available and cost one bit each.
 
@@ -111,7 +131,7 @@ To use them, add them to the message after the cheer:
 
   `cheer1 big blue bold Greetings`: The message is big, bold, and blue.
 
-### Examples:
+### Examples
 
 Connect to `#dwangoAC` with default configuration:
 
@@ -158,6 +178,33 @@ Plugin documentation is coming relatively soon.
 
 Chat command documentation is coming relatively soon.
 
+## Antics
+
+If enabled (`&noforce=1` not present in the query string, `No Force` checkbox in the upper-right settings window is unchecked), moderators are able to take control of the chat in various ways.
+
+By starting their message with one of the following words, moderators can do the following:
+
+| Word | Action |
+| -------- | -------- |
+| force | Interpret the rest of the message as literal HTML |
+| force-eval | Interpret the rest of the message as a JavaScript expression, displaying the result in the chat |
+| forcejs | Interpret the rest of the message as a JavaScript function |
+| forcejs-only | If the next word matches the value of `&tag` in the query string, or if the word is `"any"`, or if the word is `"match-`_expression_`"` and the value of `&tag` starts with _expression_, then interpret the rest of the message as a JavaScript function |
+| forcebits | Prepend `"cheer1000"` to the message, for demonstrating cheer effects |
+| forcecheer | As above; prepend `"cheer1000"` to the message |
+
+### Examples
+
+`force <span class="effect-rainbow effect-disco">This shows up as a rainbow disco party</span>`.
+
+`force-eval 1+2` results in the message being `3`.
+
+`forcejs Content.add($("<img src=\"www.example.com/my/image.png\" />"))` results in the specified image appearing in chat.
+
+`forcejs-only tfc alert("Hello there")` displays an alert window if the streamer's `&tag` value is `tfc`.
+
+Be sure to disable antics if you don't quite trust your moderators.
+
 ## Testing
 
 Please test the filtered chat in your own browser. Load it up and ensure you can change settings and that things work as you'd expect.
@@ -168,9 +215,34 @@ If you have errors loading that, try the following link which forces ES5:
 
 `https://kaedenn.github.io/twitch-filtered-chat/index.html?debug=1&channels=%23dwangoac&module1=DwangoAC%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=Main%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Achat&usedist=1`
 
+The test URLs above have the following configuration:
+
+<ol>
+<li>Enable debugging (<code>debug=1</code>)</li>
+<li>Connect to <code>#dwangoAC</code> (<code>channels=%23dwangoac</code>)</li>
+<li>There are two modules, side-by-side, with a visible chat window (<code>layout=double%3achat</code>)</li>
+<li>Module 1 (left module)</li>
+<ol>
+<li>Module is named <code>DwangoAC Chat</code> (<code>DwangoAC%2520Chat</code>)</li>
+<li>Module does not filter specific message types (<code>1111111</code>)</li>
+<li>Module shows all messages from <code>Kaedenn_</code></li>
+<li>Module hides all messages from <code>TAS9000</code>, <code>Nightbot</code>, and <code>Stay_Hydrated_Bot</code> (<code>TASBot%252CNightbot%252CStay_Hydrated_Bot</code>)</li>
+</ol>
+<ol>
+<li>Module hides all messages starting with a <code>!</code></li>
+<li>Module only shows messages originating from <code>#dwangoAC</code> (<code>%2523dwangoAC</code>)</li>
+</ol>
+<li>Module 2 (right module)</li>
+<ol>
+<li>Module is named <code>Main Chat</code> (<code>Main%2520Chat</code>)</li>
+<li>Module shows messages from all channels</li>
+<li>Module is otherwise identical to module 1</li>
+</ol>
+</ol>
+
 ## Vim Support
 
-These files use vim section labels to assist code folding. You may use the following if `foldmethod=section` doesn't work for you.
+These files use vim section labels to assist code folding. If `foldmethod=section` doesn't work for you, then the following should be useful:
 
 ```vim
 function! <SID>FoldAllSections(...)

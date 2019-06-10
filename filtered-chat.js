@@ -45,13 +45,17 @@ class Content { /* exported Content */
   }
   static addHTML(content, container=null, callbacks=null) {
     let $container = container ? $(container) : $(".module .content");
-    let $content = $(content);
+    let $line = $(`<div class="line line-wrapper"></div>`);
     if (callbacks) {
       for (let cb of callbacks) {
-        cb($content);
+        cb(content);
       }
     }
-    let $line = $(`<div class="line line-wrapper"></div>`).append($content);
+    if (typeof(content) === "string") {
+      $line.html(content);
+    } else {
+      $line.append(content);
+    }
     $container.append($line);
     if (!$container.attr("data-no-scroll")) {
       $container.scrollTop(Math.pow(2, 31) - 1);
@@ -159,8 +163,8 @@ function parseQueryString(config, qs=null) {
     } else if (k === "layout") {
       key = "Layout";
       val = ParseLayout(v);
-    } else if (k === "reconnect") {
-      key = "AutoReconnect";
+    } else if (k === "norec") {
+      key = "NoAutoReconnect";
       val = true;
     } else if (k === "size") {
       key = "Size";
@@ -210,6 +214,9 @@ function parseQueryString(config, qs=null) {
         Util.WarnOnly(`Invalid scheme value ${v}, defaulting to dark`);
         val = "dark";
       }
+    } else if (key === "noforce") {
+      key = "NoForce";
+      val = true;
     }
     /* Skip items with a falsy key */
     if (key) {
@@ -245,24 +252,39 @@ function getConfigObject(inclSensitive=true) {
 
   /* Query String object, parsed */
   let qs = Util.ParseQueryString();
+
+  /* Obtain configuration from local storage */
   if (qs.nols) {
     Util.DisableLocalStorage();
     config = {};
   } else {
+    /* Determine configuration key */
     config_key = getConfigKey();
     Util.SetWebStorageKey(config_key);
     if (config_key !== CFGKEY_DEFAULT) {
       Util.LogOnlyOnce(`Using custom config key "${Util.GetWebStorageKey()}"`);
     }
+
+    /* Obtain local storage configuration object */
     config = Util.GetWebStorage() || {};
     config.key = config_key;
+
+    /* Purge obsolete configuration items */
+    let shouldStore = false;
+    if (config.hasOwnProperty("AutoReconnect")) {
+      delete config["AutoReconnect"];
+      shouldStore = true;
+    }
+    if (shouldStore) {
+      Util.SetWebStorage(config);
+    }
   }
 
   /* Certain unwanted items may be preserved in localStorage */
   const purge_props = [
-    "NoAssets", "Debug", "AutoReconnect", "Layout", "Transparent", "Plugins",
-    "EnableEffects", "DisableEffects", "PluginConfig", "ColorScheme",
-    "nols", "tag"];
+    "NoAssets", "Debug", "NoAutoReconnect", "Layout", "Transparent", "Plugins",
+    "EnableEffects", "DisableEffects", "PluginConfig", "ColorScheme", "nols",
+    "tag", "NoForce"];
   for (let prop of purge_props) {
     if (config.hasOwnProperty(prop)) {
       delete config[prop];
@@ -289,10 +311,10 @@ function getConfigObject(inclSensitive=true) {
       }
     }
   }
-  if (txtNick.val() && txtNick.val() !== Strings.AUTOGEN) {
+  if (txtNick.val() && txtNick.val() !== Strings.NAME_AUTOGEN) {
     config.Name = txtNick.val();
   }
-  if (txtPass.val() && txtPass.val() !== Strings.CACHED) {
+  if (txtPass.val() && txtPass.val() !== Strings.PASS_CACHED) {
     config.Pass = txtPass.val();
   }
 
@@ -302,6 +324,10 @@ function getConfigObject(inclSensitive=true) {
 
   if (!config.hasOwnProperty("ShowClips")) {
     config.ShowClips = $("#cbClips").is(":checked");
+  }
+
+  if (!config.hasOwnProperty("NoForce")) {
+    config.NoForce = $("#cbForce").is(":checked");
   }
 
   /* Populate configs from each module */
@@ -613,7 +639,7 @@ function shouldFilter(module, event) {
     }
   }
   if (event instanceof TwitchChatEvent) {
-    let user = event.user ? event.user.toLowerCase() : "";
+    let user = event.user || "";
     let message = event.message ? event.message.toLowerCase() : "";
     /* NOTE: pleb < sub < vip < mod */
     let role = "pleb";
@@ -621,7 +647,7 @@ function shouldFilter(module, event) {
     if (event.isvip) role = "vip";
     if (event.ismod) role = "mod";
     /* Includes take priority over excludes */
-    if (rules.IncludeUser.any((u) => u.toLowerCase() === user)) return false;
+    if (rules.IncludeUser.any((u) => u.equalsLowerCase(user))) return false;
     if (rules.IncludeKeyword.any((k) => message.indexOf(k) > -1)) return false;
     /* Role filtering */
     if (!rules.Pleb && role === "pleb") return true;
@@ -632,14 +658,14 @@ function shouldFilter(module, event) {
     if (!rules.Bits && event.flags.bits) return true;
     if (!rules.Me && event.flags.action) return true;
     /* Exclude filtering */
-    if (rules.ExcludeUser.any((u) => u.toLowerCase() === user)) return true;
+    if (rules.ExcludeUser.any((u) => u.equalsLowerCase(user))) return true;
     if (rules.ExcludeStartsWith.any((m) => message.startsWith(m))) return true;
     /* Filtering to permitted channels (default: permit all) */
     if (rules.FromChannel.length > 0) {
       for (let s of rules.FromChannel) {
         let c = s.indexOf("#") === -1 ? "#" + s : s;
         if (event.channel && event.channel.channel) {
-          if (event.channel.channel.toLowerCase() !== c.toLowerCase()) {
+          if (!event.channel.channel.equalsLowerCase(c)) {
             return true;
           }
         }
@@ -835,13 +861,13 @@ function updateTransparency(transparent) {
 /* Set the colorscheme to dark */
 function setDarkScheme() { /* exported setDarkScheme */
   $("body").removeClass("light").addClass("dark");
-  $("#btnSettings").attr("src", "assets/settings_white.png");
+  $("#btnSettings").attr("src", AssetURLs.SETTINGS);
 }
 
 /* Set the colorscheme to light */
 function setLightScheme() { /* exported setLightScheme */
   $("body").removeClass("dark").addClass("light");
-  $("#btnSettings").attr("src", "assets/settings.png");
+  $("#btnSettings").attr("src", AssetURLs.SETTINGS_LIGHT);
 }
 
 /* Set or clear window notification badge */
@@ -922,9 +948,9 @@ function client_main() { /* exported client_main */
             if (k === "Layout") {
               val = FormatLayout(v);
             } else if (k === "ClientID") {
-              val = Strings.OMIT_CID;
+              val = Strings.CFG_OMIT_CID;
             } else if (k === "Pass") {
-              val = Strings.OMIT_PASS;
+              val = Strings.CFG_OMIT_PASS;
             } else if (typeof(v) === "object" && v.Name && v.Name.length > 0) {
               key = null;
               val = null;
@@ -1003,8 +1029,8 @@ function client_main() { /* exported client_main */
           if (cfg.Transparent) {
             qsAdd("trans", "1");
           }
-          if (cfg.AutoReconnect) {
-            qsAdd("reconnect", "1");
+          if (cfg.NoAutoReconnect) {
+            qsAdd("norec", "1");
           }
           let font_curr = Util.CSS.GetProperty("--body-font-size");
           let font_dflt = Util.CSS.GetProperty("--body-font-size-default");
@@ -1044,6 +1070,12 @@ function client_main() { /* exported client_main */
           } else if (cfg.ColorScheme === "light") {
             qsAdd("scheme", "light");
           }
+          if (cfg.tag) {
+            qsAdd("tag", cfg.tag);
+          }
+          if (cfg.NoForce) {
+            qsAdd("noforce", "1");
+          }
 
           /* Append query string to the URL */
           if (tokens[tokens.length - 1] === "text") {
@@ -1051,7 +1083,7 @@ function client_main() { /* exported client_main */
           } else {
             url += "?base64=" + encodeURIComponent(btoa(qs.join("&")));
           }
-          Content.addHelp(client.get("HTMLGen").url(url));
+          Content.addHelp(client.get("HTMLGen").url(url)[0].outerHTML);
         } else if ((t0 === "set" || t0 === "setobj") && tokens.length > 2) {
           /* Allow changing configuration by command (dangerous) */
           let key = tokens[1];
@@ -1159,6 +1191,13 @@ function client_main() { /* exported client_main */
     $("#cbClips").uncheck();
   }
 
+  /* Apply the no-force config to the settings div */
+  if (config.NoForce) {
+    $("#cbForce").check();
+  } else {
+    $("#cbForce").uncheck();
+  }
+
   /* Apply the selected color scheme; if any */
   if (config.ColorScheme === "dark") {
     setDarkScheme();
@@ -1205,7 +1244,7 @@ function client_main() { /* exported client_main */
   function openSettings() {
     let cfg = getConfigObject();
     $("#txtChannel").val(cfg.Channels.join(","));
-    $("#txtNick").val(cfg.Name || Strings.AUTOGEN);
+    $("#txtNick").val(cfg.Name || Strings.NAME_AUTOGEN);
     if (cfg.Pass && cfg.Pass.length > 0) {
       $("#txtPass").attr("disabled", "disabled").hide();
       $("#txtPassDummy").show();
@@ -1425,6 +1464,12 @@ function client_main() { /* exported client_main */
     updateHTMLGenConfig();
   });
 
+  /* Clicking on the "No Force" checkbox */
+  $("#cbForce").change(function(e) {
+    mergeConfigObject({"NoForce": $(this).is(":checked")});
+    updateHTMLGenConfig();
+  });
+
   /* Changing the debug level */
   $("#selDebug").change(function(e) {
     let v = parseInt($(this).val());
@@ -1596,7 +1641,11 @@ function client_main() { /* exported client_main */
     $(".loading").remove();
     $("#debug").hide();
     if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
-      Content.addInfo(client.IsAuthed() ? Strings.AUTH : Strings.UNAUTH);
+      if (client.IsAuthed()) {
+        Content.addInfo(Strings.CONN_AUTHED);
+      } else {
+        Content.addInfo(Strings.CONN_UNAUTHED);
+      }
     }
     if (getConfigObject().Channels.length === 0) {
       Content.addInfo(Strings.PLEASE_JOIN);
@@ -1611,11 +1660,11 @@ function client_main() { /* exported client_main */
     if (reason) {
       msg = `(code ${code} ${Util.WSStatus[code]}: ${reason})`;
     }
-    if (getConfigObject().AutoReconnect) {
+    if (getConfigObject().NoAutoReconnect) {
+      Content.addError(Strings.CONN_CLOSED + " " + msg + Strings.RECONNECT);
+    } else {
       Content.addError(Strings.CONN_CLOSED + " " + msg);
       client.Connect();
-    } else {
-      Content.addError(Strings.CONN_CLOSED + " " + msg + Strings.RECONNECT);
     }
   });
 
@@ -1623,7 +1672,7 @@ function client_main() { /* exported client_main */
   client.bind("twitch-join", function _on_twitch_join(e) {
     let layout = getConfigObject().Layout;
     if (!Util.Browser.IsOBS && !layout.Slim) {
-      if (e.user === client.GetName().toLowerCase()) {
+      if (client.GetName().equalsLowerCase(e.user)) {
         Content.addInfo(`Joined ${e.channel.channel}`);
       }
     }
@@ -1633,7 +1682,7 @@ function client_main() { /* exported client_main */
   client.bind("twitch-part", function _on_twitch_part(e) {
     let layout = getConfigObject().Layout;
     if (!Util.Browser.IsOBS && !layout.Slim) {
-      if (e.user === client.GetName().toLowerCase()) {
+      if (client.GetName().equalsLowerCase(e.user)) {
         Content.addInfo(`Left ${e.channel.channel}`);
       }
     }
@@ -1680,16 +1729,21 @@ function client_main() { /* exported client_main */
   /* Received streamer info */
   client.bind("twitch-streaminfo", function _on_twitch_streaminfo(e) {
     let layout = getConfigObject().Layout;
-    let cinfo = client.GetChannelInfo(e.channel.channel);
+    let cinfo = client.GetChannelInfo(e.channel.channel) || {};
     if (layout && !layout.Slim) {
       if (cinfo.online) {
         try {
+          let url = cinfo.stream.channel.url;
           let name = cinfo.stream.channel.display_name;
           let game = cinfo.stream.game;
           let viewers = cinfo.stream.viewers;
-          Content.addNotice(Strings.StreamInfo(name, game, viewers));
+          Content.addNotice(Strings.StreamInfo(url, name, game, viewers));
+          if (cinfo.stream.channel.status) {
+            Content.addNotice(cinfo.stream.channel.status);
+          }
         }
         catch (err) {
+          Util.ErrorOnly("Failed to obtain stream information:", cinfo);
           Util.Error(err);
           Content.addNotice(Strings.StreamOnline(e.channel.channel));
         }
@@ -1883,5 +1937,8 @@ function client_main() { /* exported client_main */
   /* Finally, connect */
   client.Connect();
 }
+
+/* globals AssetPaths CSSCheerStyles AssetURLs Strings GIT_URL CUR_URL */
+/* globals HTMLGenerator GetLayout ParseLayout FormatLayout */
 
 /* vim: set ts=2 sts=2 sw=2 et: */
