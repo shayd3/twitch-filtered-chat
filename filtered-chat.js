@@ -341,6 +341,7 @@ function getConfigObject(inclSensitive=true) {
         config[id][k] = v;
       }
     }
+    /* Ensure all the settings have the proper types */
     config[id].Pleb = Boolean(config[id].Pleb);
     config[id].Sub = Boolean(config[id].Sub);
     config[id].VIP = Boolean(config[id].VIP);
@@ -472,13 +473,13 @@ function setModuleSettings(module, config) {
     $(module).find("label.name").html(config.Name);
     $(module).find("input.name").val(config.Name);
   }
-  if (config.Pleb) { $("input.pleb").check(); } else { $("input.pleb").uncheck(); }
-  if (config.Sub) { $("input.sub").check(); } else { $("input.sub").uncheck(); }
-  if (config.VIP) { $("input.vip").check(); } else { $("input.vip").uncheck(); }
-  if (config.Mod) { $("input.mod").check(); } else { $("input.mod").uncheck(); }
-  if (config.Event) { $("input.event").check(); } else { $("input.event").uncheck(); }
-  if (config.Bits) { $("input.bits").check(); } else { $("input.bits").uncheck(); }
-  if (config.Me) { $("input.me").check(); } else { $("input.me").uncheck(); }
+  $("input.pleb").check(config.Pleb);
+  $("input.sub").check(config.Sub);
+  $("input.vip").check(config.VIP);
+  $("input.mod").check(config.Mod);
+  $("input.event").check(config.Event);
+  $("input.bits").check(config.Bits);
+  $("input.me").check(config.Me);
   function addInput(cls, label, values) {
     if (values && values.length > 0) {
       for (let val of values) {
@@ -573,8 +574,7 @@ function parseModuleConfig(value) {
 /* Format the module configuration object into a query string component */
 function formatModuleConfig(cfg) {
   let Encode = (vals) => vals.map((v) => encodeURIComponent(v));
-  let bits = [cfg.Pleb, cfg.Sub, cfg.VIP, cfg.Mod,
-              cfg.Event, cfg.Bits, cfg.Me];
+  let bits = [cfg.Pleb, cfg.Sub, cfg.VIP, cfg.Mod, cfg.Event, cfg.Bits, cfg.Me];
   let values = [
     cfg.Name,
     Util.EncodeFlags(bits, false),
@@ -1405,20 +1405,8 @@ function client_main() { /* exported client_main */
 
   /* Clicking on the "Builder" link in the settings box header */
   $("#btnSettingsBuilder").click(function(e) {
-    /* TODO: Make a separate page for the settings builder */
-    let w = Util.Open("assets/help-window.html",
-                      "TFCBuilderWindow",
-                      {"menubar": "yes",
-                       "location": "yes",
-                       "resizable": "yes",
-                       "scrollbars": "yes",
-                       "status": "yes"});
-    if (w) {
-      w.onload = function() {
-        this.addEntry("Help text and settings builder are coming soon!");
-        this.setConfig(getConfigObject(false));
-      };
-    }
+    /* TODO */
+    Util.Open("assets/help-window.html", "_blank", {});
   });
 
   /* Pressing enter on the "Channels" text box */
