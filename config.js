@@ -45,6 +45,10 @@
  *  ${text_shadow}: Username shadow CSS, calculated and populated by HTMLGen
  */
 
+/* Configuration keys */
+const CFG_KEY = "tfc-config"; /* exported CFG_KEY */
+const LOG_KEY = "debug-msg-log"; /* exported LOG_KEY */
+
 /* URLs to various assets */
 const AssetURLs = { /* exported AssetURLs */
   SETTINGS: "assets/settings_white.png",

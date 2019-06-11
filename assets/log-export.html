@@ -16,9 +16,10 @@ div.content {
 }
   </style>
   <script type="text/javascript" src="../assets/jquery-3.4.0.js"></script>
+  <script type="text/javascript" src="../config.js"></script>
   <script type="text/javascript">
 $(document).ready(function() {
-  $(".content").text(localStorage["debug-msg-log"]);
+  $(".content").text(localStorage[LOG_KEY]);
 });
   </script>
 </head>

@@ -264,7 +264,7 @@ class ChatCommandManager {
 
 function onCommandLog(cmd, tokens, client) {
   let t0 = tokens.length > 0 ? tokens[0] : "";
-  let logs = Util.GetWebStorage("debug-msg-log") || [];
+  let logs = Util.GetWebStorage(LOG_KEY) || [];
   let plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
   Content.addHelp(`Debug message log length: ${logs.length}`);
   /* JSON-encode an object, inserting spaces around items */
@@ -301,7 +301,7 @@ function onCommandLog(cmd, tokens, client) {
         Content.addHelp(`${i}: ${formatLogEntry(l)}`);
       }
     } else if (t0 === "export") {
-      Util.Open("assets/log-export.html", "_blank");
+      Util.Open("assets/log-export.html", "_blank", {});
     } else if (t0 === "summary") {
       let lines = [];
       let line = [];
@@ -347,7 +347,7 @@ function onCommandLog(cmd, tokens, client) {
         } else {
           Content.addHelp(`Removing ${unmatched.length}/${logs.length} items`);
           Content.addHelp(`New logs length: ${matched.length}`);
-          Util.SetWebStorage("debug-msg-log", matched.map((i) => i[1]));
+          Util.SetWebStorage(LOG_KEY, matched.map((i) => i[1]));
         }
       } else {
         Content.addHelp(`Usage: //log ${t0} &lt;string&gt;`);
@@ -365,7 +365,7 @@ function onCommandLog(cmd, tokens, client) {
           }
         }
         Content.addHelp(`New logs length: ${result.length}`);
-        Util.SetWebStorage("debug-msg-log", result);
+        Util.SetWebStorage(LOG_KEY, result);
       } else {
         Content.addHelp("No items to remove");
       }
@@ -378,7 +378,7 @@ function onCommandLog(cmd, tokens, client) {
         logs.shift();
       }
       Content.addHelp(`New logs length: ${logs.length}`);
-      Util.SetWebStorage("debug-msg-log", logs);
+      Util.SetWebStorage(LOG_KEY, logs);
     } else if (t0 === "pop") {
       let num = 1;
       if (tokens.length > 1 && Util.IsNumber(tokens[1])) {
@@ -388,12 +388,12 @@ function onCommandLog(cmd, tokens, client) {
         logs.pop();
       }
       Content.addHelp(`New logs length: ${logs.length}`);
-      Util.SetWebStorage("debug-msg-log", logs);
+      Util.SetWebStorage(LOG_KEY, logs);
     } else if (t0 === "size") {
       let b = toJSONString(logs).length;
       Content.addHelp(`Logged bytes: ${b} (${b/1024.0} KB)`);
     } else if (t0 === "clear") {
-      Util.SetWebStorage("debug-msg-log", []);
+      Util.SetWebStorage(LOG_KEY, []);
       Content.addHelp("Log cleared");
     } else if (t0 === "replay") {
       if (tokens.length > 1) {
@@ -734,5 +734,7 @@ function InitChatCommands() { /* exported InitChatCommands */
     }
   }
 }
+
+/* globals LOG_KEY */
 
 /* vim: set ts=2 sts=2 sw=2 et: */

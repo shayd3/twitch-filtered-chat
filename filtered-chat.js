@@ -35,8 +35,6 @@
  *   Util.Logger.add_filter(/^ws recv.*\bPRIVMSG\b/)
  */
 
-const CFGKEY_DEFAULT = "tfc-config";
-
 /* Document writing functions {{{0 */
 
 class Content { /* exported Content */
@@ -228,7 +226,7 @@ function parseQueryString(config, qs=null) {
 
 /* Obtain configuration key */
 function getConfigKey() {
-  let config_key = CFGKEY_DEFAULT;
+  let config_key = CFG_KEY;
   let qs = Util.ParseQueryString();
   let val = qs.config_key || qs.key || qs["config-key"];
   if (val) {
@@ -261,7 +259,7 @@ function getConfigObject(inclSensitive=true) {
     /* Determine configuration key */
     config_key = getConfigKey();
     Util.SetWebStorageKey(config_key);
-    if (config_key !== CFGKEY_DEFAULT) {
+    if (config_key !== CFG_KEY) {
       Util.LogOnlyOnce(`Using custom config key "${Util.GetWebStorageKey()}"`);
     }
 
@@ -1817,19 +1815,19 @@ function client_main() { /* exported client_main */
 
   /* Received CLEARMSG event */
   client.bind("twitch-clearmsg", function _on_twitch_clearmsg(e) {
-    Util.StorageAppend("debug-msg-log", e);
+    Util.StorageAppend(LOG_KEY, e);
     Util.Warn("Unhandled CLEARMSG:", e);
   });
 
   /* User subscribed */
   client.bind("twitch-sub", function _on_twitch_sub(e) {
-    Util.StorageAppend("debug-msg-log", e);
+    Util.StorageAppend(LOG_KEY, e);
     Content.addHTML(client.get("HTMLGen").sub(e));
   });
 
   /* User resubscribed */
   client.bind("twitch-resub", function _on_twitch_resub(e) {
-    Util.StorageAppend("debug-msg-log", e);
+    Util.StorageAppend(LOG_KEY, e);
     Content.addHTML(client.get("HTMLGen").resub(e));
     /* Display the resub message, if one is present */
     if (e.message) {
@@ -1843,25 +1841,25 @@ function client_main() { /* exported client_main */
 
   /* User gifted a subscription */
   client.bind("twitch-giftsub", function _on_twitch_giftsub(e) {
-    Util.StorageAppend("debug-msg-log", e);
+    Util.StorageAppend(LOG_KEY, e);
     Content.addHTML(client.get("HTMLGen").giftsub(e));
   });
 
   /* Anonymous user gifted a subscription */
   client.bind("twitch-anongiftsub", function _on_twitch_anongiftsub(e) {
-    Util.StorageAppend("debug-msg-log", e);
+    Util.StorageAppend(LOG_KEY, e);
     Content.addHTML(client.get("HTMLGen").anongiftsub(e));
   });
 
   /* Channel was raided */
   client.bind("twitch-raid", function _on_twitch_raid(e) {
-    Util.StorageAppend("debug-msg-log", e);
+    Util.StorageAppend(LOG_KEY, e);
     Content.addHTML(client.get("HTMLGen").raid(e));
   });
 
   /* New user's YoHiYo */
   client.bind("twitch-newuser", function _on_twitch_newuser(e) {
-    Util.StorageAppend("debug-msg-log", e);
+    Util.StorageAppend(LOG_KEY, e);
     let H = client.get("HTMLGen");
     let $msg = H.newUser(e);
     $msg.find(".message").addClass("effect-rainbow").addClass("effect-disco");
@@ -1871,44 +1869,44 @@ function client_main() { /* exported client_main */
 
   /* User gifting rewards to the community */
   client.bind("twitch-rewardgift", function _on_twitch_rewardgift(e) {
-    Util.StorageAppend("debug-msg-log", e);
+    Util.StorageAppend(LOG_KEY, e);
     Content.addHTML(client.get("HTMLGen").rewardGift(e));
   });
 
   /* User gifting a subscription to the community */
   client.bind("twitch-mysterygift", function _on_twitch_mysterygift(e) {
-    Util.StorageAppend("debug-msg-log", e);
+    Util.StorageAppend(LOG_KEY, e);
     Content.addHTML(client.get("HTMLGen").mysteryGift(e));
   });
 
   /* User continuing their gifted subscription */
   client.bind("twitch-giftupgrade", function _on_twitch_giftupgrade(e) {
-    Util.StorageAppend("debug-msg-log", e);
+    Util.StorageAppend(LOG_KEY, e);
     Content.addHTML(client.get("HTMLGen").giftUpgrade(e));
   });
 
   /* User continuing their gifted subscription via Twitch Prime */
   client.bind("twitch-primeupgrade", function _on_twitch_primegiftupgrade(e) {
-    Util.StorageAppend("debug-msg-log", e);
+    Util.StorageAppend(LOG_KEY, e);
     Content.addHTML(client.get("HTMLGen").giftUpgrade(e));
   });
 
   /* User continuing their anonymously-gifted subscription */
   client.bind("twitch-anongiftupgrade", function _on_twitch_anongiftupgrade(e) {
-    Util.StorageAppend("debug-msg-log", e);
+    Util.StorageAppend(LOG_KEY, e);
     Content.addHTML(client.get("HTMLGen").giftUpgrade(e));
   });
 
   /* Received some other kind of usernotice */
   client.bind("twitch-otherusernotice", function _on_twitch_otherusernotice(e) {
-    Util.StorageAppend("debug-msg-log", e);
+    Util.StorageAppend(LOG_KEY, e);
     Util.Warn("Unknown USERNOTICE", e);
     /* TODO: unraid, bitsbadgetier */
   });
 
   /* Received a reconnect request from Twitch */
   client.bind("twitch-reconnect", function _on_twitch_reconnect(e) {
-    /* Client will auto-reconnect */
+    /* Client will reconnect automatically */
   });
 
   /* Bind to the rest of the events */
@@ -1929,7 +1927,7 @@ function client_main() { /* exported client_main */
   /* Warn about unbound events */
   client.bindDefault(function _on_default(e) {
     Util.Warn("Unbound event:", e);
-    Util.StorageAppend("debug-msg-log", e);
+    Util.StorageAppend(LOG_KEY, e);
   });
 
   /* End of all of the binding 0}}} */
@@ -1939,6 +1937,6 @@ function client_main() { /* exported client_main */
 }
 
 /* globals AssetPaths CSSCheerStyles AssetURLs Strings GIT_URL CUR_URL */
-/* globals HTMLGenerator GetLayout ParseLayout FormatLayout */
+/* globals HTMLGenerator GetLayout ParseLayout FormatLayout LOG_KEY CFG_KEY */
 
 /* vim: set ts=2 sts=2 sw=2 et: */
