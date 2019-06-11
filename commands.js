@@ -26,6 +26,8 @@
  *   mycommandfunc("mycommand", ["value1", "value2"], client, 1, 2)
  */
 
+var ChatCommands = null; /* exported ChatCommands */
+
 class ChatCommandManager {
   constructor() {
     this._command_list = [];
@@ -715,8 +717,6 @@ const DefaultCommands = {
     ]
   }
 };
-
-var ChatCommands = null;
 
 function InitChatCommands() { /* exported InitChatCommands */
   ChatCommands = new ChatCommandManager();
