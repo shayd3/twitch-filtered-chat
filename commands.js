@@ -84,6 +84,7 @@ class ChatCommandManager {
     let t = text;
     if (o.indent) t = "&nbsp;&nbsp;" + t;
     if (o.literal) t = t.escape();
+    if (o.args) t = this.formatArgs(t);
     if (o.command) {
       let cmd = t.substr(0, t.indexOf(":"));
       let msg = t.substr(t.indexOf(":")+1);
@@ -93,7 +94,7 @@ class ChatCommandManager {
   }
 
   complete(complete_args) {
-    /* TODO: Complete command arguments, fix //<tab> */
+    /* TODO: Complete command arguments, @user*/
     let text = complete_args.orig_text;
     let pos = complete_args.orig_pos;
     let idx = complete_args.index;
@@ -620,105 +621,105 @@ function onCommandTo(cmd, tokens, client) {
   }
 }
 
-/* Default command definition
- * Structure:
- *  <name>: {
- *    func: <function>,
- *    desc: description of the command (used by //help)
- *    alias: array of command aliases (optional)
- *    usage: array of usage objects:
- *      [0]: string, array, or null: parameter name(s)
- *      [1]: description
- *      [2]: formatting options (optional)
- *  }
- */
-const DefaultCommands = {
-  "log": {
-    func: onCommandLog,
-    desc: "Display or manipulate logged messages",
-    alias: ["logs"],
-    usage: [
-      [null, "Display log command usage"],
-      ["<number>", "Display the message numbered <number>"],
-      ["show", "Display all logged messages (can be a lot of text!)"],
-      ["summary", "Display a summary of the logged messages"],
-      ["search <string>", "Show logs containing <string>"],
-      ["remove <index...>", "Remove items with the given indexes"],
-      ["filter <string>", "Remove items that don't contain <string>"],
-      ["filter-out <string>", "Remove items containing <string>"],
-      ["shift", "Remove the first logged message"],
-      ["pop", "Remove the last logged message"],
-      ["export", "Open a new window with all the logged items"],
-      ["size", "Display the number of bytes used by the log"],
-      ["clear", "Clears the entire log (cannot be undone!)"],
-      ["replay <index>", "Re-inject logged message <index>"]
-    ]
-  },
-  "clear": {
-    func: onCommandClear,
-    desc: "Clears all text from either all modules or the specified module",
-    alias: ["nuke"],
-    usage: [
-      [null, "Clears all text from all visible modules"],
-      ["<module>", "Clears all text from <module> (module1, module2)"]
-    ]
-  },
-  "join": {
-    func: onCommandJoin,
-    desc: "Join a channel",
-    alias: ["j"],
-    usage: [
-      ["<channel>", "Connect to <channel>; leading # is optional"]
-    ]
-  },
-  "part": {
-    func: onCommandPart,
-    desc: "Leave a channel",
-    alias: ["p", "leave"],
-    usage: [
-      ["<channel>", "Disconnect from <channel>; leading # is optional"]
-    ]
-  },
-  "badges": {
-    func: onCommandBadges,
-    desc: "Display all known badges"
-  },
-  "emotes": {
-    func: onCommandEmotes,
-    desc: "Display the requested emotes",
-    usage: [
-      ["<kinds>", "Display emotes; <kinds> can be one or more of: global, channel, bttv"]
-    ],
-  },
-  "plugins": {
-    func: onCommandPlugins,
-    desc: "Display plugin information, if plugins are enabled"
-  },
-  "client": {
-    func: onCommandClient,
-    desc: "Display numerous things about the client",
-    usage: [
-      [null, "Show general information about the client"],
-      ["status", "Show current connection information"]
-    ]
-  },
-  "raw": {
-    func: onCommandRaw,
-    desc: "Send a raw message to Twitch (for advanced users only!)",
-    usage: [
-      ["<message>", "Send <message> to Twitch servers (for advanced users only!)"]
-    ]
-  },
-  "to": {
-    func: onCommandTo,
-    desc: "Send a command to a specific joined channel",
-    usage: [
-      ["<channel> <message>", "Send <message> to <channel>"]
-    ]
-  }
-};
-
 function InitChatCommands() { /* exported InitChatCommands */
+  /* Default command definition
+   * Structure:
+   *  <name>: {
+   *    func: <function>,
+   *    desc: description of the command (used by //help)
+   *    alias: array of command aliases (optional)
+   *    usage: array of usage objects:
+   *      [0]: string, array, or null: parameter name(s)
+   *      [1]: description
+   *      [2]: formatting options (optional)
+   *  }
+   */
+  const DefaultCommands = {
+    "log": {
+      func: onCommandLog,
+      desc: "Display or manipulate logged messages",
+      alias: ["logs"],
+      usage: [
+        [null, "Display log command usage"],
+        ["<number>", "Display the message numbered <number>"],
+        ["show", "Display all logged messages (can be a lot of text!)"],
+        ["summary", "Display a summary of the logged messages"],
+        ["search <string>", "Show logs containing <string>"],
+        ["remove <index...>", "Remove items with the given indexes"],
+        ["filter <string>", "Remove items that don't contain <string>"],
+        ["filter-out <string>", "Remove items containing <string>"],
+        ["shift", "Remove the first logged message"],
+        ["pop", "Remove the last logged message"],
+        ["export", "Open a new window with all the logged items"],
+        ["size", "Display the number of bytes used by the log"],
+        ["clear", "Clears the entire log (cannot be undone!)"],
+        ["replay <index>", "Re-inject logged message <index>"]
+      ]
+    },
+    "clear": {
+      func: onCommandClear,
+      desc: "Clears all text from either all modules or the specified module",
+      alias: ["nuke"],
+      usage: [
+        [null, "Clears all text from all visible modules"],
+        ["<module>", "Clears all text from <module> (module1, module2)"]
+      ]
+    },
+    "join": {
+      func: onCommandJoin,
+      desc: "Join a channel",
+      alias: ["j"],
+      usage: [
+        ["<channel>", "Connect to <channel>; leading # is optional"]
+      ]
+    },
+    "part": {
+      func: onCommandPart,
+      desc: "Leave a channel",
+      alias: ["p", "leave"],
+      usage: [
+        ["<channel>", "Disconnect from <channel>; leading # is optional"]
+      ]
+    },
+    "badges": {
+      func: onCommandBadges,
+      desc: "Display all known badges"
+    },
+    "emotes": {
+      func: onCommandEmotes,
+      desc: "Display the requested emotes",
+      usage: [
+        ["<kinds>", "Display emotes; <kinds> can be one or more of: global, channel, bttv"]
+      ],
+    },
+    "plugins": {
+      func: onCommandPlugins,
+      desc: "Display plugin information, if plugins are enabled"
+    },
+    "client": {
+      func: onCommandClient,
+      desc: "Display numerous things about the client",
+      usage: [
+        [null, "Show general information about the client"],
+        ["status", "Show current connection information"]
+      ]
+    },
+    "raw": {
+      func: onCommandRaw,
+      desc: "Send a raw message to Twitch (for advanced users only!)",
+      usage: [
+        ["<message>", "Send <message> to Twitch servers (for advanced users only!)"]
+      ]
+    },
+    "to": {
+      func: onCommandTo,
+      desc: "Send a command to a specific joined channel",
+      usage: [
+        ["<channel> <message>", "Send <message> to <channel>"]
+      ]
+    }
+  };
+
   ChatCommands = new ChatCommandManager();
   for (let [cname, cobj] of Object.entries(DefaultCommands)) {
     ChatCommands.add(cname, cobj.func, cobj.desc);
