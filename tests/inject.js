@@ -165,6 +165,7 @@ function inject_message(msg) { /* exported inject_message */
     Util.ErrorOnly("Can't inject messages; client object isn't global");
   }
 }
+
 if (Util.Defined("client")) {
   let clientObj = (new Function("return client"))();
   TEST_MESSAGES.COLORS = {};
