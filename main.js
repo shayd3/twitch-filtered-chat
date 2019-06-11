@@ -251,10 +251,11 @@ function Main(global) { /* exported Main */
 
   /* Extend jQuery with some useful methods */
   (function($jQuery) {
-    /* Check a checkbox */
-    $jQuery.fn.check = function() {
+    /* Check or uncheck a checkbox (e.check(), e.check(false)) */
+    $jQuery.fn.check = function(...args) {
+      let cond = args.length > 0 ? Boolean(args[0]) : true;
       this.each((i, n) => {
-        n.checked = true;
+        n.checked = cond;
         n.dispatchEvent(new Event("change"));
       });
     };
