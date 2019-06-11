@@ -301,17 +301,7 @@ function onCommandLog(cmd, tokens, client) {
         Content.addHelp(`${i}: ${formatLogEntry(l)}`);
       }
     } else if (t0 === "export") {
-      let width = window.innerWidth * 0.75;
-      let w = Util.Open("assets/log-export.html",
-                        "TFCLogExportWindow",
-                        {"menubar": "no",
-                         "location": "no",
-                         "resizable": "no",
-                         "status": "no",
-                         "scrollbars": "yes",
-                         "dependent": "yes",
-                         "width": `${Math.floor(width)}`});
-      if (w) { w.onload = function() { this.addEntries(logs); }; }
+      Util.Open("assets/log-export.html", "_blank");
     } else if (t0 === "summary") {
       let lines = [];
       let line = [];

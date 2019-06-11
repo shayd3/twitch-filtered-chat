@@ -3,52 +3,27 @@
 <head>
   <title>Debug Logger Export</title>
   <meta charset="utf-8" />
-  <link href="../assets/main.css" rel="stylesheet" type="text/css" />
   <style type="text/css">
-.content {
-  counter-reset: line;
-}
-.line {
-}
-.line:before {
-  counter-increment: line;
-  content: counter(line);
-  border-right: 1px solid lightgray;
-  padding: 0 0.5em;
-  margin-right: 0.5em;
-  min-width: 16px;
-  text-align: right;
+body {
   font-size: 10pt;
-}
-.pre {
   font-family: monospace;
-  font-size: 10pt;
+}
+div.content {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  -ms-word-break: break-all;
+  word-break: break-word;
 }
   </style>
   <script type="text/javascript" src="../assets/jquery-3.4.0.js"></script>
   <script type="text/javascript">
-function addEntry(obj) {
-  let l = $("<div class=\"line line-wrapper\"></div>");
-  let e = $("<div class=\"pre\"></div>").text(JSON.stringify(obj));
-  $(".content").append(l.html(e));
-  $(".content")[0].innerHTML += "\n";
-}
-function addEntries(obj) {
-  for (let item of obj) {
-    addEntry(item);
-  }
-}
+$(document).ready(function() {
+  $(".content").text(localStorage["debug-msg-log"]);
+});
   </script>
 </head>
 <body>
-
-<div class="column full" id="column1">
-<div class="module full">
-<div class="content" style="overflow-y: scroll">
-
+<div class="content">
 </div>
-</div>
-</div>
-
 </body>
 </html> 
