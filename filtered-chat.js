@@ -626,8 +626,8 @@ function setChannels(client, channels) {
 
 /* Return whether or not the event should be filtered */
 function shouldFilter(module, event) {
-  let plugin_results = Plugins.invoke("shouldFilter", module, event);
   let rules = getModuleSettings(module);
+  let plugin_results = Plugins.invoke("shouldFilter", module, event);
   if (plugin_results && plugin_results.length > 0) {
     for (let i of plugin_results) {
       if (typeof(i) === "boolean") {
@@ -1230,7 +1230,7 @@ function client_main() { /* exported client_main */
   ChatCommands.addHelp(Strings.TFC_RELOAD, {literal: true, command: true});
   ChatCommands.addHelp(Strings.TFC_FRELOAD, {literal: true, command: true});
   ChatCommands.addHelp(Strings.TFC_NUKE, {literal: true, command: true});
-  ChatCommands.addHelp(Strings.TFC_UNUKE, {command: true});
+  ChatCommands.addHelp(Strings.TFC_UNUKE, {command: true, args: true});
 
   /* Close the main settings window */
   function closeSettings() {
