@@ -3,10 +3,9 @@
 "use strict";
 
 /* FIXME:
+ * Support joining specific rooms (requires significant TwitchClient changes)
+ *   //join #dwangoac:pbn
  * FFZ badges show as "undefined"
- * (client.js) Channel sub badges only display first month badge
- *   1) Use Twitch.URL.ChannelBadges over Twitch.URL.Badges
- *   2) Remove Twitch.URL.Badges
  * Configuration problems:
  *   Should config.AutoReconnect be enabled by default?
  *   Should config.Scroll set cbScroll or the other way around?
@@ -1305,6 +1304,10 @@ function client_main() { /* exported client_main */
     $("#txtChat").attr("data-hist-index", "-1");
   }
 
+  /* Initialize chat auto-completion and history */
+  resetChatComplete();
+  resetChatHistory();
+
   /* Open the settings builder page */
   function openSettingsTab() {
     Util.Open("builder.html", "_blank", {});
@@ -1336,8 +1339,7 @@ function client_main() { /* exported client_main */
       e.preventDefault();
       return false;
     } else if (e.key === "Tab") {
-      /* FIXME: Doesn't quite work with "//<tab>"
-       * TODO: Complete command arguments and @user names */
+      /* TODO: Complete command arguments and @user names */
       let orig_text = t.getAttribute("data-complete-text") || t.value;
       let orig_pos = Number.parseInt(t.getAttribute("data-complete-pos"));
       let compl_index = Number.parseInt(t.getAttribute("data-complete-index"));
@@ -1368,11 +1370,14 @@ function client_main() { /* exported client_main */
       return false;
     } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
       /* Handle traversing message history */
-      let i = Number.parseInt($(t).attr("data-hist-index"));
+      let i = Number.parseInt($(this).attr("data-hist-index"));
       let d = (e.key === "ArrowUp" ? 1 : -1);
       /* Restrict i to [-1, length-1] */
       i = Math.clamp(i + d, -1, client.GetHistoryLength() - 1);
-      t.value = (i === -1 ? "" : client.GetHistoryItem(i).trim());
+      let val = client.GetHistoryItem(i);
+      if (val !== null) {
+        t.value = val.trim();
+      }
       t.setAttribute("data-hist-index", `${i}`);
       /* Delay moving the cursor until after the text is updated */
       requestAnimationFrame(() => {
