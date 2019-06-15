@@ -280,9 +280,12 @@ function Main(global) { /* exported Main */
     AddAsset("plugins/plugins.js", MOD_TFC, null, null)]))
   .then(indexMain)
   .catch((e) => {
-    let msg = "TWAPI/TFC Failure: ";
+    console.error(e);
+    let msg = "TWAPI/TFC Failure ";
     let t = e.target || e.srcElement || e.originalTarget;
-    if (t.attributes && t.attributes.src && t.attributes.src.value) {
+    if (t === null || !t) {
+      msg += "while loading unknown target";
+    } else if (t.attributes && t.attributes.src && t.attributes.src.value) {
       msg += "while loading " + t.attributes.src.value;
     } else if (t.outerHTML) {
       msg += "while loading " + t.outerHTML;
@@ -291,10 +294,8 @@ function Main(global) { /* exported Main */
     } else {
       msg += "while loading " + t;
     }
+    msg += `:\n${e}` + (e.stack ? `;\nstack: ${e.stack}` : ``);
     _console_error(msg, e);
-    if (e.stack) {
-      msg += ": stack: " + e.stack;
-    }
     alert(msg);
   });
 }
