@@ -77,9 +77,9 @@ class Content { /* exported Content */
     Content.addHTML(e);
   }
   static addHelp(s) { /* does not escape */
-    Content.addPre($(`<div class="help pre">${s}</div>`));
+    Content.addPre(`<div class="help">${s}</div>`);
   }
-  static addHelpLine(c, s) { /* escapes */
+  static addHelpLine(c, s) { /* does not escape */
     Content.addPre(ChatCommands.helpLine(c, s));
   }
 }
@@ -1645,8 +1645,8 @@ function client_main() { /* exported client_main */
 
   /* WebSocket closed */
   client.bind("twitch-close", function _on_twitch_close(e) {
-    let code = e.raw_line.code;
-    let reason = e.raw_line.reason;
+    let code = e.object.event.code;
+    let reason = e.object.event.reason;
     let msg = `(code ${code} ${Util.WSStatus[code]})`;
     if (reason) {
       msg = `(code ${code} ${Util.WSStatus[code]}: ${reason})`;
@@ -1659,36 +1659,20 @@ function client_main() { /* exported client_main */
     }
   });
 
-  /* User joined (any user) */
-  client.bind("twitch-join", function _on_twitch_join(e) {
-    let layout = getConfigObject().Layout;
-    if (!Util.Browser.IsOBS && !layout.Slim) {
-      if (client.GetName().equalsLowerCase(e.user)) {
-        Content.addInfo(`Joined ${e.channel.channel}`);
-      }
-    }
-  });
-
-  /* User left (any user) */
-  client.bind("twitch-part", function _on_twitch_part(e) {
-    let layout = getConfigObject().Layout;
-    if (!Util.Browser.IsOBS && !layout.Slim) {
-      if (client.GetName().equalsLowerCase(e.user)) {
-        Content.addInfo(`Left ${e.channel.channel}`);
-      }
-    }
-  });
-
   /* Client joined a channel */
   client.bind("twitch-joined", function _on_twitch_joined(e) {
-    let msg = `Joined ${Twitch.FormatChannel(e.channel)}`;
-    Content.addInfo(msg);
+    let layout = getConfigObject().Layout;
+    if (!layout.Slim) {
+      Content.addInfo(`Joined ${Twitch.FormatChannel(e.channel)}`);
+    }
   });
 
   /* Client left a channel */
   client.bind("twitch-parted", function _on_twitch_parted(e) {
-    let msg = `Left ${Twitch.FormatChannel(e.channel)}`;
-    Content.addInfo(msg);
+    let layout = getConfigObject().Layout;
+    if (!layout.Slim) {
+      Content.addInfo(`Left ${Twitch.FormatChannel(e.channel)}`);
+    }
   });
 
   /* Notice (or warning) from Twitch */
@@ -1915,6 +1899,8 @@ function client_main() { /* exported client_main */
   });
 
   /* Bind to the rest of the events */
+  client.bind("twitch-join", function _on_twitch_join(e) {});
+  client.bind("twitch-part", function _on_twitch_part(e) {});
   client.bind("twitch-hosttarget", function _on_twitch_hosttarget(e) {});
   client.bind("twitch-userstate", function _on_twitch_userstate(e) {});
   client.bind("twitch-roomstate", function _on_twitch_roomstate(e) {});

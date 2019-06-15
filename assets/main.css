@@ -53,6 +53,12 @@
   --z-index-line: 10;
   --z-index-chat: 12;
   --z-index-settings: 20;
+
+  /* Unicode prefix characters */
+  --prefix-help: "\02370";
+  --prefix-info: "\025ba";
+  --prefix-warning: "\026a0";
+  --prefix-error: "\026d4";
 }
 
 /* Top-level rules {{{0 */
@@ -436,14 +442,47 @@ body.light .module .content .line .message {
   font-weight: bold;
 }
 
+.module .content .line .info:before {
+  content: var(--prefix-info);
+  display: inline-block;
+  border-right: 1px solid gray;
+  padding: 0 0.5em;
+  margin-right: 0.5em;
+  font-family: monospace;
+  width: 2em;
+  text-align: right;
+}
+
 .module .content .line .notice {
   border: 2px solid yellow;
   font-weight: bold;
 }
 
+.module .content .line .notice:before {
+  content: var(--prefix-warning);
+  display: inline-block;
+  border-right: 1px solid gray;
+  padding: 0 0.5em;
+  margin-right: 0.5em;
+  font-family: monospace;
+  width: 2em;
+  text-align: right;
+}
+
 .module .content .line .error {
   border: 2px solid red;
   font-weight: bold;
+}
+
+.module .content .line .error:before {
+  content: var(--prefix-error);
+  display: inline-block;
+  border-right: 1px solid gray;
+  padding: 0 0.5em;
+  margin-right: 0.5em;
+  font-family: monospace;
+  width: 2em;
+  text-align: right;
 }
 
 .module .content .line .reconnect {
