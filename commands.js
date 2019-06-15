@@ -454,7 +454,27 @@ function onCommandClear(cmd, tokens, client) {
 
 function onCommandJoin(cmd, tokens, client) {
   if (tokens.length > 0) {
-    client.JoinChannel(tokens[0]);
+    let cdef = Twitch.ParseChannel(tokens[0]);
+    let cinfo = client.GetChannelInfo(cdef.channel);
+    if (Twitch.IsRoom(cdef)) {
+      /* It's a well-formed room specification; join it */
+      client.JoinChannel(tokens[0]);
+    } else if (!cdef.room && !cdef.roomuid) {
+      /* Normal channel; join it */
+      client.JoinChannel(tokens[0]);
+    } else {
+      /* Join cdef.channel, room named cdef.room */
+      let cname = cdef.channel;
+      let rname = cdef.room;
+      if (cinfo.rooms && cinfo.rooms[rname]) {
+        let cid = cinfo.rooms[rname].owner_id;
+        let rid = cinfo.rooms[rname]._id;
+        client.JoinChannel(Twitch.FormatRoom(cid, rid));
+      } else {
+        Content.addError(`No such room ${cname} ${rname}`);
+        Util.LogOnlyOnce(cname, rname, cdef, cinfo);
+      }
+    }
   } else {
     this.printUsage();
   }
@@ -462,7 +482,27 @@ function onCommandJoin(cmd, tokens, client) {
 
 function onCommandPart(cmd, tokens, client) {
   if (tokens.length > 0) {
-    client.LeaveChannel(tokens[0]);
+    let cdef = Twitch.ParseChannel(tokens[0]);
+    let cinfo = client.GetChannelInfo(cdef.channel);
+    if (Twitch.IsRoom(cdef)) {
+      /* It's a well-formed room specification; part it */
+      client.LeaveChannel(tokens[0]);
+    } else if (!cdef.room && !cdef.roomuid) {
+      /* Normal channel; part it */
+      client.LeaveChannel(tokens[0]);
+    } else {
+      /* Leave cdef.channel, room named cdef.room */
+      let cname = cdef.channel;
+      let rname = cdef.room;
+      if (cinfo.rooms && cinfo.rooms[rname]) {
+        let cid = cinfo.rooms[rname].owner_id;
+        let rid = cinfo.rooms[rname]._id;
+        client.LeaveChannel(Twitch.FormatRoom(cid, rid));
+      } else {
+        Content.addError(`No such room ${cname} ${rname}`);
+        Util.LogOnlyOnce(cname, rname, cdef, cinfo);
+      }
+    }
   } else {
     this.printUsage();
   }
@@ -621,6 +661,40 @@ function onCommandTo(cmd, tokens, client) {
   }
 }
 
+function onCommandChannels(cmd, tokens, client) {
+  Content.addHelp("Active channels:");
+  for (let channel of client.GetJoinedChannels()) {
+    let cinfo = client.GetChannelInfo(channel);
+    if (channel.startsWith("#chatrooms:")) {
+      let cobj = Twitch.ParseChannel(channel);
+      cinfo = client.GetChannelById(Util.ParseNumber(cobj.room));
+      Util.Log(cobj, cinfo);
+      for (let [room_name, room_def] of Object.entries(cinfo.rooms)) {
+        if (cobj.roomuid === room_def._id) {
+          Content.addHelp(`${cinfo.cname} ${room_name} ${room_def._id}`);
+        }
+      }
+    } else {
+      Content.addHelp(`${channel} ${cinfo.id}`);
+    }
+  }
+}
+
+function onCommandRooms(cmd, tokens, client) {
+  for (let channel of client.GetJoinedChannels()) {
+    let cinfo = client.GetChannelInfo(channel);
+    if (cinfo.rooms) {
+      for (let [room_name, room_info] of Object.entries(cinfo.rooms)) {
+        let cid = room_info.owner_id;
+        let rid = room_info._id;
+        let join_cmd = `//join ${Twitch.FormatRoom(cid, rid)}`;
+        Content.addHelp(`${channel}: ${cid}: ${room_name}: ${rid}`);
+        Content.addHelp(`To join, enter: ${join_cmd}`);
+      }
+    }
+  }
+}
+
 function InitChatCommands() { /* exported InitChatCommands */
   /* Default command definition
    * Structure:
@@ -717,6 +791,15 @@ function InitChatCommands() { /* exported InitChatCommands */
       usage: [
         ["<channel> <message>", "Send <message> to <channel>"]
       ]
+    },
+    "channels": {
+      func: onCommandChannels,
+      desc: "List connected channels",
+      alias: ["channels", "ch", "joined"]
+    },
+    "rooms": {
+      func: onCommandRooms,
+      desc: "List available rooms"
     }
   };
 
