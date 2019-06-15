@@ -1679,6 +1679,18 @@ function client_main() { /* exported client_main */
     }
   });
 
+  /* Client joined a channel */
+  client.bind("twitch-joined", function _on_twitch_joined(e) {
+    let msg = `Joined ${Twitch.FormatChannel(e.channel)}`;
+    Content.addInfo(msg);
+  });
+
+  /* Client left a channel */
+  client.bind("twitch-parted", function _on_twitch_parted(e) {
+    let msg = `Left ${Twitch.FormatChannel(e.channel)}`;
+    Content.addInfo(msg);
+  });
+
   /* Notice (or warning) from Twitch */
   client.bind("twitch-notice", function _on_twitch_notice(e) {
     let channel = Twitch.FormatChannel(e.channel);

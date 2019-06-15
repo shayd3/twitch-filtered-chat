@@ -456,12 +456,13 @@ function onCommandJoin(cmd, tokens, client) {
   if (tokens.length > 0) {
     let cdef = Twitch.ParseChannel(tokens[0]);
     let cinfo = client.GetChannelInfo(cdef.channel);
+    let toJoin = null;
     if (Twitch.IsRoom(cdef)) {
       /* It's a well-formed room specification; join it */
-      client.JoinChannel(tokens[0]);
+      toJoin = tokens[0];
     } else if (!cdef.room && !cdef.roomuid) {
       /* Normal channel; join it */
-      client.JoinChannel(tokens[0]);
+      toJoin = tokens[0];
     } else {
       /* Join cdef.channel, room named cdef.room */
       let cname = cdef.channel;
@@ -469,10 +470,18 @@ function onCommandJoin(cmd, tokens, client) {
       if (cinfo.rooms && cinfo.rooms[rname]) {
         let cid = cinfo.rooms[rname].owner_id;
         let rid = cinfo.rooms[rname]._id;
-        client.JoinChannel(Twitch.FormatRoom(cid, rid));
+        toJoin = Twitch.FormatRoom(cid, rid);
       } else {
         Content.addError(`No such room ${cname} ${rname}`);
         Util.LogOnlyOnce(cname, rname, cdef, cinfo);
+      }
+    }
+    if (!toJoin.match(/^#/)) { toJoin = `#${toJoin}`; }
+    if (toJoin !== null) {
+      if (!client.IsInChannel(toJoin)) {
+        client.JoinChannel(toJoin);
+      } else {
+        Content.addNotice(`Failed joining ${toJoin}: already in channel`);
       }
     }
   } else {
@@ -484,12 +493,13 @@ function onCommandPart(cmd, tokens, client) {
   if (tokens.length > 0) {
     let cdef = Twitch.ParseChannel(tokens[0]);
     let cinfo = client.GetChannelInfo(cdef.channel);
+    let toPart = null;
     if (Twitch.IsRoom(cdef)) {
       /* It's a well-formed room specification; part it */
-      client.LeaveChannel(tokens[0]);
+      toPart = tokens[0];
     } else if (!cdef.room && !cdef.roomuid) {
       /* Normal channel; part it */
-      client.LeaveChannel(tokens[0]);
+      toPart = tokens[0];
     } else {
       /* Leave cdef.channel, room named cdef.room */
       let cname = cdef.channel;
@@ -497,10 +507,18 @@ function onCommandPart(cmd, tokens, client) {
       if (cinfo.rooms && cinfo.rooms[rname]) {
         let cid = cinfo.rooms[rname].owner_id;
         let rid = cinfo.rooms[rname]._id;
-        client.LeaveChannel(Twitch.FormatRoom(cid, rid));
+        toPart = Twitch.FormatRoom(cid, rid);
       } else {
         Content.addError(`No such room ${cname} ${rname}`);
         Util.LogOnlyOnce(cname, rname, cdef, cinfo);
+      }
+    }
+    if (!toPart.match(/^#/)) { toPart = `#${toPart}`; }
+    if (toPart !== null) {
+      if (client.IsInChannel(toPart)) {
+        client.LeaveChannel(toPart);
+      } else {
+        Content.addNotice(`Failed leaving ${toPart}: not in channel`);
       }
     }
   } else {
@@ -668,7 +686,6 @@ function onCommandChannels(cmd, tokens, client) {
     if (channel.startsWith("#chatrooms:")) {
       let cobj = Twitch.ParseChannel(channel);
       cinfo = client.GetChannelById(Util.ParseNumber(cobj.room));
-      Util.Log(cobj, cinfo);
       for (let [room_name, room_def] of Object.entries(cinfo.rooms)) {
         if (cobj.roomuid === room_def._id) {
           Content.addHelp(`${cinfo.cname} ${room_name} ${room_def._id}`);
