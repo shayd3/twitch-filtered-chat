@@ -184,7 +184,10 @@ class HTMLGenerator {
         $s.attr("data-icon-large-src", info.image_url_2x);
       }
     }
-    let badge_desc = `${getData("badge-name")} (${getData("badge-num")})`;
+    let badge_desc = `${getData("badge-name")}`;
+    if (getData("badge-num")) {
+      badge_desc += ` (${getData("badge-num")}`;
+    }
     badge_desc = badge_desc.replace(/^[a-z]/, (e) => e.toUpperCase());
     lines.push(badge_desc);
     let scope = getData("badge-scope");
@@ -260,6 +263,7 @@ class HTMLGenerator {
         $b.attr("data-badge", "1");
         $b.attr("data-ffz-badge", "1");
         $b.attr("data-badge-scope", "ffz");
+        $b.attr("data-badge-name", badge.title);
         $b.attr("src", Util.URL(badge.image));
         $b.attr("alt", badge.name);
         $b.attr("title", badge.title);
@@ -273,6 +277,7 @@ class HTMLGenerator {
         $b.attr("data-badge", "1");
         $b.attr("data-ffz-badge", "1");
         $b.attr("data-badge-scope", "bttv");
+        $b.attr("data-badge-name", "Unknown BTTV Badge");
         $b.attr("src", Util.URL(badge.image));
         $b.attr("alt", "Unknown BTTV Badge");
         $b.attr("title", "Unknown BTTV Badge");

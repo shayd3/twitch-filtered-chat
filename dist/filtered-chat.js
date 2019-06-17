@@ -1,6 +1,4 @@
 /* Twitch Filtered Chat Main Module */"use strict";/* FIXME:
- * Support joining specific rooms (requires significant TwitchClient changes)
- *   //join #dwangoac:pbn
  * FFZ badges show as "undefined"
  * Configuration problems:
  *   Should config.AutoReconnect be enabled by default?
