@@ -1405,13 +1405,13 @@ function client_main() { /* exported client_main */
 
   /* Clicking on the `?` in the settings box header */
   $("#btnSettingsHelp").click(function(e) {
-    openSettingsTab();
+    /* TODO */
+    Util.Open("assets/help-window.html", "_blank", {});
   });
 
   /* Clicking on the "Builder" link in the settings box header */
   $("#btnSettingsBuilder").click(function(e) {
-    /* TODO */
-    Util.Open("assets/help-window.html", "_blank", {});
+    openSettingsTab();
   });
 
   /* Pressing enter on the "Channels" text box */
