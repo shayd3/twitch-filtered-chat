@@ -4,8 +4,7 @@
 
 /** Chat Commands
  *
- ** Adding a chat command:
- *
+ * Adding a chat command:
  * ChatCommands.add(command, function, description, args...)
  *   command      (string) chat command to add, executed via //command
  *   function     a function taking the following arguments
@@ -16,8 +15,7 @@
  *   description  (string) a description of the command to be printed in //help
  *   args         (optional) extra arguments to pass to the function
  *
- ** Example:
- *
+ * Example:
  * Run the following JavaScript:
  *   ChatCommands.add("mycommand", mycommandfunc, "My new command", 1, 2)
  * Type the following into chat:
@@ -497,7 +495,7 @@ function onCommandJoin(cmd, tokens, client) {
       let rname = cdef.room;
       if (cinfo.rooms && cinfo.rooms[rname]) {
         let cid = cinfo.rooms[rname].owner_id;
-        let rid = cinfo.rooms[rname]._id;
+        let rid = cinfo.rooms[rname].uid;
         toJoin = Twitch.FormatRoom(cid, rid);
       } else {
         Content.addError(`No such room ${cname} ${rname}`);
@@ -534,7 +532,7 @@ function onCommandPart(cmd, tokens, client) {
       let rname = cdef.room;
       if (cinfo.rooms && cinfo.rooms[rname]) {
         let cid = cinfo.rooms[rname].owner_id;
-        let rid = cinfo.rooms[rname]._id;
+        let rid = cinfo.rooms[rname].uid;
         toPart = Twitch.FormatRoom(cid, rid);
       } else {
         Content.addError(`No such room ${cname} ${rname}`);
@@ -699,7 +697,7 @@ function onCommandRaw(cmd, tokens, client) {
 
 function onCommandTo(cmd, tokens, client) {
   if (tokens.length >= 2) {
-    let ch = Twitch.ParseChannel(tokens[0]);
+    let ch = client.ParseChannel(tokens[0]);
     let msg = tokens.slice(2).join(" ");
     client.SendMessge(ch, msg);
   } else {
@@ -715,8 +713,8 @@ function onCommandChannels(cmd, tokens, client) {
       let cobj = Twitch.ParseChannel(channel);
       cinfo = client.GetChannelById(Util.ParseNumber(cobj.room));
       for (let [room_name, room_def] of Object.entries(cinfo.rooms)) {
-        if (cobj.roomuid === room_def._id) {
-          Content.addHelp(`${cinfo.cname} ${room_name} ${room_def._id}`);
+        if (cobj.roomuid === room_def.uid) {
+          Content.addHelp(`${cinfo.cname} ${room_name} ${room_def.uid}`);
         }
       }
     } else {
@@ -729,12 +727,14 @@ function onCommandRooms(cmd, tokens, client) {
   for (let channel of client.GetJoinedChannels()) {
     let cinfo = client.GetChannelInfo(channel);
     if (cinfo.rooms) {
+      Content.addHelp(`Available rooms for ${channel}:`);
       for (let [room_name, room_info] of Object.entries(cinfo.rooms)) {
         let cid = room_info.owner_id;
-        let rid = room_info._id;
-        let join_cmd = `//join ${Twitch.FormatRoom(cid, rid)}`;
-        Content.addHelp(`${channel}: ${cid}: ${room_name}: ${rid}`);
-        Content.addHelp(`To join, enter: ${join_cmd}`);
+        let rid = room_info.uid;
+        let rdef = Twitch.FormatRoom(cid, rid);
+        let click = `$('#txtChat').val('//join ${rdef.escape()}')`;
+        let text = `${room_name} ${rid}`;
+        Content.addHelp(`${channel} <a onclick="${click}">${text}</a>`);
       }
     }
   }

@@ -88,6 +88,10 @@ body.light {
   color: #0a0a0a;
 }
 
+a {
+  cursor: pointer;
+}
+
 .fl {
   float: left;
 }
