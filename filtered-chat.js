@@ -3,21 +3,17 @@
 "use strict";
 
 /* FIXME:
- * FFZ badges show as "undefined"
- * Configuration problems:
- *   Should config.AutoReconnect be enabled by default?
- *   Should config.Scroll set cbScroll or the other way around?
- *     See getConfigObject below txtPass
- *   Should config.ShowClips set cbClips or the other way around?
- *     See getConfigObject below txtPass
+ * Should config.Scroll set cbScroll or the other way around?
+ *   See getConfigObject below txtPass
+ * Should config.ShowClips set cbClips or the other way around?
+ *   See getConfigObject below txtPass
  */
 
 /* TODO (in approximate decreasing priority):
  * Add to #settings help link and #settings config link
  * HTMLGenerator items (see htmlgen.js)
- * Allow plugins to define custom filtering
  * Create a README.md file for the plugins directory
- * Auto-complete commands (wip), command arguments, and @user names
+ * Auto-complete command arguments
  * Remove F1 hotkey binding
  */
 
@@ -669,9 +665,7 @@ function shouldFilter(module, event) {
   } else if (event instanceof TwitchEvent) {
     /* Filter out events and notices */
     if (!rules.Event) {
-      if (event.command === "USERNOTICE") {
-        return true;
-      } else if (event.command === "NOTICE") {
+      if (event.command === "USERNOTICE" || event.command === "NOTICE") {
         return true;
       }
     }
@@ -1354,7 +1348,7 @@ function client_main() { /* exported client_main */
         curr_pos: t.selectionStart,
         index: compl_index
       };
-      compl_obj = ChatCommands.complete(compl_obj);
+      compl_obj = ChatCommands.complete(client, compl_obj);
       t.setAttribute("data-complete-text", compl_obj.orig_text);
       t.setAttribute("data-complete-pos", compl_obj.orig_pos);
       t.setAttribute("data-complete-index", compl_obj.index);

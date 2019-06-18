@@ -93,13 +93,41 @@ class ChatCommandManager {
     this._help_text.push(t);
   }
 
-  complete(complete_args) {
-    /* TODO: Complete command arguments, @user*/
+  complete(client, complete_args) {
     let text = complete_args.orig_text;
     let pos = complete_args.orig_pos;
     let idx = complete_args.index;
-    /* Gather completions */
-    if (this.isCommandStr(text)) {
+    /* "test te<tab>" -> "test te" */
+    let text_before = text.substr(0, pos);
+    /* "test te<tab>" -> "te" */
+    let curr_word = text_before;
+    let word_pos = text_before.search(/\W[\w]*$/);
+    if (word_pos > -1) {
+      curr_word = text_before.substr(word_pos).trimStart();
+    }
+    if (curr_word.startsWith("@")) {
+      /* Complete @<user> sequences */
+      let prefix = curr_word.substr(1);
+      let matches = [];
+      for (let c of client.GetJoinedChannels()) {
+        let cinfo = client.GetChannelInfo(c);
+        if (cinfo.users) {
+          for (let user of cinfo.users) {
+            if (prefix.length === 0 || user.startsWith(prefix)) {
+              matches.push(user);
+            }
+          }
+        }
+      }
+      if (idx < matches.length) {
+        text = text.substr(0, word_pos) + "@" + matches[idx];
+      }
+      idx += 1;
+      if (idx >= matches.length) {
+        idx = 0;
+      }
+    } else if (this.isCommandStr(text)) {
+      /* Complete commands */
       let word = this._trim(text.substr(0, pos));
       let prefix = text;
       let matches = [];
