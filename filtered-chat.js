@@ -17,6 +17,7 @@
  *   Commands
  *   Filtering
  *   Plugin configuration (?plugincfg)
+ * Add configurable message highlighting
  * Auto-complete command arguments
  * Remove F1 hotkey binding
  */
@@ -85,9 +86,11 @@ class Content { /* exported Content */
 
 /* Merge the query string into the config object given and return removals */
 function parseQueryString(config, qs=null) {
-  let qs_data = {};
-  /* Figure out what was passed */
+  let qs_data = {}; /* Generated configuration */
+  let qs_remove = []; /* List of keys to remove from window.location */
   let qs_obj = qs || window.location.search;
+
+  /* Figure out what was passed */
   if (typeof(qs_obj) === "string") {
     qs_data = Util.ParseQueryString(qs_obj);
   } else if (typeof(qs_obj) === "object") {
@@ -97,32 +100,35 @@ function parseQueryString(config, qs=null) {
     /* Fall-through will generate a sane default configuration */
   }
 
-  let query_remove = [];
   for (let [k, v] of Object.entries(qs_data)) {
     let key = k; /* config key */
     let val = v; /* config val */
     if (k === "clientid") {
       key = "ClientID";
       config.__clientid_override = true;
-      query_remove.push(k);
+      qs_remove.push(k);
     } else if (k === "user" || k === "name" || k === "nick") {
       key = "Name";
-    } else if (k === "pass") {
+    } else if (k === "pass" || k === "oauth") {
       key = "Pass";
-      query_remove.push(k);
+      qs_remove.push(k);
     } else if (k === "channel" || k === "channels") {
       key = "Channels";
       val = v.split(",").map((c) => Twitch.FormatChannel(c));
     } else if (k === "debug") {
       key = "Debug";
-      if (v === "debug") {
+      if (typeof(v) === "boolean") {
+        val = v;
+      } else if (typeof(v) === "number") {
+        val = Math.clamp(v, Util.LEVEL_MIN, Util.LEVEL_MAX);
+      } else if (v === "debug") {
         val = Util.LEVEL_DEBUG;
       } else if (v === "trace") {
         val = Util.LEVEL_TRACE;
-      } else if (typeof(v) === "number") {
-        val = Math.clamp(v, Util.LEVEL_MIN, Util.LEVEL_MAX);
+      } else if (v) {
+        val = true;
       } else {
-        val = Number(Boolean(v));
+        val = false;
       }
     } else if (k === "noassets") {
       key = "NoAssets";
@@ -140,6 +146,7 @@ function parseQueryString(config, qs=null) {
       } else if (typeof(v) === "number") {
         val = v;
       } else {
+        Util.WarnOnly(`Invalid hmax value ${v}; defaulting`);
         val = TwitchClient.DEFAULT_HISTORY_SIZE;
       }
     } else if (k.match(/^module[\d]*?$/)) {
@@ -177,6 +184,7 @@ function parseQueryString(config, qs=null) {
       } else if (typeof(v) === "number") {
         val = v;
       } else {
+        Util.WarnOnly(`Invalid max value ${v}; defaulting`);
         val = TwitchClient.DEFAULT_MAX_MESSAGES;
       }
     } else if (k === "font") {
@@ -215,7 +223,7 @@ function parseQueryString(config, qs=null) {
       config[key] = val;
     }
   }
-  return query_remove;
+  return qs_remove;
 }
 
 /* Obtain configuration key */
@@ -1656,7 +1664,9 @@ function client_main() { /* exported client_main */
       Content.addError(Strings.CONN_CLOSED + " " + msg + Strings.RECONNECT);
     } else {
       Content.addError(Strings.CONN_CLOSED + " " + msg);
-      client.Connect();
+      if (!client.connecting) {
+        client.Connect();
+      }
     }
   });
 
