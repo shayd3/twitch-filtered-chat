@@ -9,10 +9,10 @@
  * USERNOTICEs:
  *   rewardgift
  *   submysterygift
+ *   primepaidupgrade
  *   giftpaidupgrade
  *     msg-param-promo-gift-total
  *     msg-param-promo-name
- *   primepaidupgrade
  *   anongiftpaidupgrade
  *     msg-param-promo-gift-total
  *     msg-param-promo-name
@@ -82,6 +82,7 @@ class HTMLGenerator {
     return this._user_colors[name];
   }
 
+  /* Returns array of [css attr, css value] */
   genBorderCSS(color) {
     let border = Util.GetMaxContrast(color, this._bg_colors);
     return [
@@ -91,6 +92,7 @@ class HTMLGenerator {
     ];
   }
 
+  /* Returns jquery node */
   genName(name, color) {
     let $e = $(`<span class="username"></span>`);
     $e.css("color", color || this.getColorFor(name) || "#ffffff");
@@ -103,6 +105,7 @@ class HTMLGenerator {
     return $e;
   }
 
+  /* Returns string */
   twitchEmote(id) {
     return this._emote("twitch", this._client.GetEmote(id), {id: id});
   }
@@ -115,6 +118,7 @@ class HTMLGenerator {
     }
   }
 
+  /* Returns string */
   _emote(source, url, opts=null) {
     let cls = `${source.replace(/[^a-z0-9_]/g, "")}-emote`;
     let $w = $(`<span class="emote-wrapper ${cls}"></span>`);
@@ -149,6 +153,7 @@ class HTMLGenerator {
     return $w[0].outerHTML;
   }
 
+  /* Returns string */
   _genCheer(cheer, bits) {
     /* Use the highest tier image that doesn't exceed the cheered bits */
     let possible_cheers = cheer.tiers.filter((n) => bits >= n.min_bits);
@@ -165,6 +170,7 @@ class HTMLGenerator {
     return $w[0].outerHTML;
   }
 
+  /* Returns jquery node */
   _wrapBadge(elem) {
     let $s = $(`<span class="badge"></span>`);
     /* Copy all data attributes from elem to $s */
@@ -207,6 +213,7 @@ class HTMLGenerator {
     return $s.append(elem);
   }
 
+  /* Returns jquery node */
   _genBadges(event) {
     let $bc = $(`<span class="badges" data-badges="1"></span>`);
     let total_width = 0;
@@ -287,6 +294,7 @@ class HTMLGenerator {
     return $bc;
   }
 
+  /* Returns jquery node */
   _genName(event) {
     /* Display upper-case name, assign color to lower-case name */
     let user = event.name || event.user;
@@ -515,6 +523,7 @@ class HTMLGenerator {
     return result;
   }
 
+  /* Returns msginfo object */
   _genMsgInfo(event) {
     const anticsWords = [
       "force",        /* Message is raw HTML */
@@ -637,6 +646,7 @@ class HTMLGenerator {
     $e.attr("data-recv-ts", Date.now());
   }
 
+  /* Returns jquery node */
   _genSubWrapper(event) {
     let $e = $(`<div class="chat-line sub notice"></div>`);
     this._addChatAttrs($e, event);
@@ -646,6 +656,7 @@ class HTMLGenerator {
     return $e;
   }
 
+  /* Returns jquery node */
   gen(event) {
     let $e = $(`<div class="chat-line"></div>`);
     let color = event.flags.color || this.getColorFor(event.user);
@@ -692,6 +703,7 @@ class HTMLGenerator {
     return $e;
   }
 
+  /* Returns DOM HTMLDivElement */
   sub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
@@ -708,6 +720,7 @@ class HTMLGenerator {
     return $w[0];
   }
 
+  /* Returns jquery node */
   resub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
@@ -729,6 +742,7 @@ class HTMLGenerator {
     return $w;
   }
 
+  /* Returns jquery node */
   giftsub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
@@ -748,6 +762,7 @@ class HTMLGenerator {
     return $w;
   }
 
+  /* Returns jquery node */
   anongiftsub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
@@ -766,6 +781,7 @@ class HTMLGenerator {
     return $w;
   }
 
+  /* Returns jquery node */
   raid(event) {
     let $w = $(`<div class="chat-line raid"></div>`);
     let $m = $(`<span class="message raid-message"></span>`);
@@ -786,6 +802,7 @@ class HTMLGenerator {
     return $w;
   }
 
+  /* Returns jquery node */
   newUser(event) {
     let $e = $(`<div class="chat-line new-user notice"></div>`);
     let $msg = $(`<span class="message" data-message="1"></span>`);
@@ -798,21 +815,25 @@ class HTMLGenerator {
     return $e;
   }
 
+  /* Returns jquery node */
   rewardGift(event) {
     let message = `${event.command} TODO`;
     return $(`<div class="message">${message}</div>`);
   }
 
+  /* Returns jquery node */
   mysteryGift(event) {
     let message = `${event.command} TODO`;
     return $(`<div class="message">${message}</div>`);
   }
 
+  /* Returns jquery node */
   giftUpgrade(event) {
     let message = `${event.command} TODO`;
     return $(`<div class="message">${message}</div>`);
   }
 
+  /* Returns jquery node */
   genClip(slug, clip_data, game_data) {
     /* TODO: Polish, CSS */
     Util.Debug("genClip", slug, clip_data, game_data);
@@ -836,6 +857,7 @@ class HTMLGenerator {
 
   /* General-use functions below */
 
+  /* Returns jquery node */
   url(href=null, text=null, classes=null, id=null) {
     let $l = $(`<a></a>`);
     if (href) {
@@ -863,6 +885,7 @@ class HTMLGenerator {
     return $l;
   }
 
+  /* Returns string */
   checkbox(value, id=null, classes=null, checked=false) {
     let $e = $(`<input type="checkbox" />`);
     $e.attr("value", value);

@@ -180,10 +180,12 @@ class PluginStorageClass {
 
   /* Disable plugin support entirely */
   disable() {
+    Util.Log("Disabling plugin support");
     PluginStorageClass.disabled = true;
     this.disabled = true;
     if (window.Plugins) window.Plugins = null;
     if (window.PluginStorageClass) window.PluginStorageClass = null;
+    window.PluginsAreDisabled = true;
   }
 }
 

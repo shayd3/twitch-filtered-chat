@@ -621,7 +621,7 @@ function setChannels(client, channels) {
 /* Return whether or not the event should be filtered */
 function shouldFilter(module, event) {
   let rules = getModuleSettings(module);
-  if (Util.Defined("Plugins")) {
+  if (window.Plugins && !window.PluginsAreDisabled) {
     let plugin_results = Plugins.invoke("shouldFilter", module, event);
     if (plugin_results && plugin_results.length > 0) {
       for (let i of plugin_results) {

@@ -4,21 +4,27 @@ It's Twitch Chat, but Filtered!
 
 # Table of Contents
 
-1) [Usage](#usage)
-  1. [Query String Options](#query-string-options)
-  2. [Layout](#layout)
-  3. [Module configuration](#module-configuration)
-  4. [Cheer Effects](#cheer-effects)
-  5. [Examples](#examples)
-  6. [Hotkeys](#hotkeys)
-2) [Development](#development)
-  1. [Plugins](#plugins)
-  2. [Commands](#commands)
-3) [Antics](#antics)
-  1. [Examples](#examples)
-4) [Testing](#testing)
-5) [Vim Support](#vim-support)
-6) [Credits](#credits)
+<!-- GFM has problems with naive list formatting -->
+<ol>
+<li><a href="#usage">Usage</a></li>
+<ol>
+<li><a href="#query-string-options">Query String Options</a></li>
+<li><a href="#layout">Layout</a></li>
+<li><a href="#module-configuration">Module Configuration</a></li>
+<li><a href="#cheer-effects">Cheer Effects</a></li>
+<li><a href="#examples">Examples</a></li>
+<li><a href="#hotkeys">Hotkeys</a></li>
+</ol>
+<li><a href="#development">Development</a></li>
+<ol>
+<li><a href="#plugins">Plugins</a></li>
+<li><a href="#commands">Commands</a></li>
+</ol>
+<li><a href="#antics">Antics</a></li>
+<li><a href="#testing">Testing</a></li>
+<li><a href="#vim-support">VIM Support</a></li>
+<li><a href="#credits">Credits</a></li>
+</ol>
 
 ## Usage
 
@@ -180,7 +186,7 @@ Chat command documentation is coming relatively soon.
 
 ## Antics
 
-If enabled (`&noforce=1` not present in the query string, `No Force` checkbox in the upper-right settings window is unchecked), moderators are able to take control of the chat in various ways.
+Unless enabled (either `&noforce=1` present in the query string or `No Force` checkbox in the upper-right settings window is checked), moderators are able to take control of the chat in various ways.
 
 By starting their message with one of the following words, moderators can do the following:
 
@@ -193,7 +199,7 @@ By starting their message with one of the following words, moderators can do the
 | forcebits | Prepend `"cheer1000"` to the message, for demonstrating cheer effects |
 | forcecheer | As above; prepend `"cheer1000"` to the message |
 
-### Examples
+### Antics Examples
 
 `force <span class="effect-rainbow effect-disco">This shows up as a rainbow disco party</span>`.
 
@@ -209,11 +215,11 @@ Be sure to disable antics if you don't quite trust your moderators.
 
 Please test the filtered chat in your own browser. Load it up and ensure you can change settings and that things work as you'd expect.
 
-`https://kaedenn.github.io/twitch-filtered-chat/index.html?debug=1&channels=%23dwangoac&module1=DwangoAC%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=Main%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Achat`
+[https://kaedenn.github.io/twitch-filtered-chat/index.html?debug=1&channels=%23dwangoac&module1=DwangoAC%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=Main%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Achat](https://kaedenn.github.io/twitch-filtered-chat/index.html?debug=1&channels=%23dwangoac&module1=DwangoAC%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=Main%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Achat)
 
-If you have errors loading that, try the following link which forces ES5:
+If you have errors loading that, try the following link which forces ES5 via `usedist=1`:
 
-`https://kaedenn.github.io/twitch-filtered-chat/index.html?debug=1&channels=%23dwangoac&module1=DwangoAC%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=Main%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Achat&usedist=1`
+[https://kaedenn.github.io/twitch-filtered-chat/index.html?debug=1&channels=%23dwangoac&module1=DwangoAC%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=Main%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Achat&usedist=1](https://kaedenn.github.io/twitch-filtered-chat/index.html?debug=1&channels=%23dwangoac&module1=DwangoAC%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=Main%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Achat&usedist=1)
 
 The test URLs above have the following configuration:
 
@@ -268,10 +274,8 @@ Note that `^M` refers to a literal `^M` character: `^V^M` on Linux. This can be 
 
 ## Credits
 
-YoshiRulz - Improving rainbow effect
-
-Inverted - Improving username contrast, helping with disco effect
-
-SighnWave - Creating the disco effect
-
-Feeve - Assisting with debugging resub bugs
+> Shayd3 - Creating the settings builder
+> YoshiRulz - Improving rainbow effect
+> Inverted - Improving username contrast, helping with disco effect
+> SighnWave - Creating the disco effect
+> Feeve - Assisting with resub debugging
