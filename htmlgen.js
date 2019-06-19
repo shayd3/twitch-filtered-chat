@@ -35,6 +35,7 @@ class HTMLGenerator {
       "crimson"];
     this._user_colors = {};
     this._bg_colors = ["#1d1d1d", "#0a0a0a", "#d1d1d1"];
+    this._highlights = [];
 
     /* Ensure config has certain values */
     if (!this._config.Layout) this._config.Layout = {};
@@ -61,6 +62,19 @@ class HTMLGenerator {
       this.setValue("NoForce", false);
       $("#cbForce").uncheck();
     }
+  }
+
+  /* Group 1 must match exactly the text to wrap */
+  addHighlightMatch(pat) {
+    this._highlights.push(pat);
+  }
+
+  get highlightMatches() {
+    return this._highlights;
+  }
+
+  set highlightMatches(v) {
+    this._highlights = v;
   }
 
   getColorFor(username) {
@@ -477,6 +491,7 @@ class HTMLGenerator {
       let location = locations.pop();
       let node = $(`<em class="at-user"></em>`).text(location.part);
       if (location.part.substr(1).equalsLowerCase(this._client.GetName())) {
+        $msg.addClass("at-self");
         node.addClass("at-self");
       }
       let msg_start = result.substr(0, map[location.start]);
@@ -484,6 +499,32 @@ class HTMLGenerator {
       let msg_end = result.substr(map[location.end]);
       result = msg_start + msg_part + msg_end;
       this._remap(map, location.start, location.end, msg_part.length);
+    }
+    return result;
+  }
+
+  _msgHighlightTransform(event, message, map, $msg, $effects) {
+    let result = message;
+    for (let pat of this._highlights) {
+      let locations = [];
+      let arr = null;
+      while ((arr = pat.exec(event.message)) !== null) {
+        let start = arr.index + arr[0].indexOf(arr[1]);
+        let end = start + arr[1].length;
+        locations.push({part: arr[1], start: start, end: end});
+      }
+      /* Ensure the locations array is indeed sorted */
+      locations.sort((a, b) => (a.start - b.start));
+      while (locations.length > 0) {
+        let location = locations.pop();
+        let node = $(`<em class="highlight"></em>`).text(location.part);
+        let msg_start = result.substr(0, map[location.start]);
+        let msg_part = node[0].outerHTML;
+        let msg_end = result.substr(map[location.end]);
+        $msg.addClass("highlight");
+        result = msg_start + msg_part + msg_end;
+        this._remap(map, location.start, location.end, msg_part.length);
+      }
     }
     return result;
   }
@@ -581,6 +622,8 @@ class HTMLGenerator {
     message = this._msgURLTransform(event, message, map, $msg, $effects);
     logMessage();
     message = this._msgAtUserTransform(event, message, map, $msg, $effects);
+    logMessage();
+    message = this._msgHighlightTransform(event, message, map, $msg, $effects);
     logMessage();
 
     /* Handle mod-only antics */

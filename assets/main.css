@@ -125,6 +125,15 @@ em {
   font-weight: bold;
 }
 
+.btn {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:hover {
+  text-decoration: underline;
+}
+
 /* End top-level rules 0}}} */
 
 /* Column and module CSS {{{0 */
@@ -384,6 +393,10 @@ body.light .module .content .line .message {
   color: #0a0a0a;
 }
 
+.module .content .line .message.at-self {
+  font-weight: bold;
+}
+
 .module .content .line .chat-line.chat-vip:not(.chat-sub) {
   border: 2px inset darkorchid;
 }
@@ -435,7 +448,14 @@ body.light .module .content .line .message {
   font-style: italic;
 }
 
-.module .content .line .message.highlight { }
+.module .content .line .message.highlight {
+  font-weight: bold;
+  font-style: italic;
+}
+
+.module .content .line .message.highlight em.highlight {
+  text-decoration: underline;
+}
 
 .module .content .line .message .cheer {
   font-weight: bold;
@@ -633,44 +653,14 @@ body.light #chat textarea {
   font-size: 0.9em;
   font-family: monospace;
   vertical-align: text-top;
-  text-decoration: none;
   font-size: 0.6em;
   content: "?";
-  cursor: pointer;
-}
-
-#settings #btnSettingsHelp:hover {
-  text-decoration: underline;
 }
 
 #settings #btnSettingsBuilder {
   line-height: 30px;
   padding-top: 0.2em;
   padding-right: calc(24px + 0.5em);
-  cursor: pointer;
-  text-decoration: none;
-}
-
-#settings #btnSettingsBuilder:hover {
-  text-decoration: underline;
-}
-
-#settings #btnClose {
-  text-decoration: none;
-  cursor: pointer;
-}
-
-#settings #btnClose:hover {
-  text-decoration: underline;
-}
-
-#settings #btnReconnect {
-  text-decoration: none;
-  cursor: pointer;
-}
-
-#settings #btnReconnect:hover {
-  text-decoration: underline;
 }
 
 #settings ul {
