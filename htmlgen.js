@@ -192,7 +192,7 @@ class HTMLGenerator {
     }
     let badge_desc = `${getData("badge-name")}`;
     if (getData("badge-num")) {
-      badge_desc += ` (${getData("badge-num")}`;
+      badge_desc += ` (${getData("badge-num")})`;
     }
     badge_desc = badge_desc.replace(/^[a-z]/, (e) => e.toUpperCase());
     lines.push(badge_desc);
