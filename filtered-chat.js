@@ -7,12 +7,16 @@
  *   See getConfigObject below txtPass
  * Should config.ShowClips set cbClips or the other way around?
  *   See getConfigObject below txtPass
+ * Username context window should slide rather than teleport to new names
  */
 
 /* TODO (in approximate decreasing priority):
- * Add to #settings help link and #settings config link
- * HTMLGenerator items (see htmlgen.js)
- * Create a README.md file for the plugins directory
+ * Add to content to both #settings help and builder links
+ *   shayd3 is working on the builder
+ * Create a README.md file for the plugins directory. Include documentation on:
+ *   Commands
+ *   Filtering
+ *   Plugin configuration (?plugincfg)
  * Auto-complete command arguments
  * Remove F1 hotkey binding
  */
@@ -34,16 +38,13 @@ class Content { /* exported Content */
   static add(text) { /* escapes */
     Content.addHTML($(`<span class="message"></span>`).text(text));
   }
-  static addHTML(content, container=null, callbacks=null) {
+  static addHTML(content, container=null) {
     let $container = container ? $(container) : $(".module .content");
     let $line = $(`<div class="line line-wrapper"></div>`);
-    if (callbacks) {
-      for (let cb of callbacks) {
-        cb(content);
-      }
-    }
     if (typeof(content) === "string") {
       $line.html(content);
+    } else if (content instanceof Node) {
+      $line.append($(content));
     } else {
       $line.append(content);
     }
@@ -620,13 +621,15 @@ function setChannels(client, channels) {
 /* Return whether or not the event should be filtered */
 function shouldFilter(module, event) {
   let rules = getModuleSettings(module);
-  let plugin_results = Plugins.invoke("shouldFilter", module, event);
-  if (plugin_results && plugin_results.length > 0) {
-    for (let i of plugin_results) {
-      if (typeof(i) === "boolean") {
-        return i;
+  if (Util.Defined("Plugins")) {
+    let plugin_results = Plugins.invoke("shouldFilter", module, event);
+    if (plugin_results && plugin_results.length > 0) {
+      for (let i of plugin_results) {
+        if (typeof(i) === "boolean") {
+          return i;
+        }
+        /* Other values: continue the filtering logic */
       }
-      /* Other values: continue the filtering logic */
     }
   }
   if (event instanceof TwitchChatEvent) {
@@ -674,7 +677,7 @@ function shouldFilter(module, event) {
 }
 
 /* Populate and show the username context window */
-function showContextWindow(client, cw, line) {
+function showUserContextWindow(client, cw, line) {
   let $cw = $(cw);
   let $l = $(line);
   $(cw).html(""); /* Clear everything from the last time */
@@ -1562,32 +1565,32 @@ function client_main() { /* exported client_main */
     /* Clicking off the main settings window */
     let $sw = $("#settings");
     if ($sw.is(":visible")) {
-      if (!Util.PointIsOn(e.clientX, e.clientY, $sw[0])) {
+      if (!Util.PointIsOn(e.clientX, e.clientY, $sw)) {
         closeSettings();
       }
     }
 
     /* Clicking on the username context window */
-    if (Util.PointIsOn(e.clientX, e.clientY, $cw[0])) {
+    if (Util.PointIsOn(e.clientX, e.clientY, $cw)) {
       let ch = $cw.attr("data-channel");
       let user = $cw.attr("data-user");
       let userid = $cw.attr("data-user-id");
       if (!client.IsUIDSelf(userid)) {
         if ($t.attr("id") === "cw-unmod") {
           /* Clicked on the "unmod" link */
-          Util.Log("Unmodding", user, "in", ch);
+          Util.Log(`Unmodding ${user} in ${ch}`);
           client.SendMessage(ch, `/unmod ${user}`);
         } else if ($t.attr("id") === "cw-unvip") {
           /* Clicked on the "unvip" link */
-          Util.Log("Removing VIP for", user, "in", ch);
+          Util.Log(`Removing VIP for ${user} in ${ch}`);
           client.SendMessage(ch, `/unvip ${user}`);
         } else if ($t.attr("id") === "cw-make-mod") {
           /* Clicked on the "mod" link */
-          Util.Log("Modding", user, "in", ch);
+          Util.Log(`Modding ${user} in ${ch}`);
           client.SendMessage(ch, `/mod ${user}`);
         } else if ($t.attr("id") === "cw-make-vip") {
           /* Clicked on the "vip" link */
-          Util.Log("VIPing", user, "in", ch);
+          Util.Log(`VIPing ${user} in ${ch}`);
           client.SendMessage(ch, `/vip ${user}`);
         }
       }
@@ -1596,10 +1599,17 @@ function client_main() { /* exported client_main */
       let $l = $t.parent();
       let cuid = $cw.attr("data-user-id");
       let luid = $l.attr("data-user-id");
-      if ($cw.is(":visible") && cuid === luid) {
-        $cw.fadeOut();
+      if ($cw.is(":visible")) {
+        if (cuid === luid) {
+          /* Clicked on the same name: fade out */
+          $cw.fadeOut();
+        } else {
+          /* Clicked on a different name */
+          /* FIXME: Slide to new user rather than teleport */
+          showUserContextWindow(client, $cw, $l);
+        }
       } else {
-        showContextWindow(client, $cw, $l);
+        showUserContextWindow(client, $cw, $l);
       }
     } else if ($cw.is(":visible")) {
       /* Clicked somewhere else: close context window */
