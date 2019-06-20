@@ -3,7 +3,6 @@
 "use strict";
 
 /* TODO:
- * Add more badge information on hover
  * Add emote information on hover
  * Format clip information
  * USERNOTICEs:
@@ -108,20 +107,22 @@ class HTMLGenerator {
 
   /* Returns jquery node */
   genName(name, color) {
-    let $e = $(`<span class="username"></span>`);
+    let $e = $(`<span class="username" data-username="1"></span>`);
     $e.css("color", color || this.getColorFor(name) || "#ffffff");
     /* Determine the best border color to use */
     let [attr, val] = this.genBorderCSS($e.css("color"));
     $e.css(attr, val);
-    /* Clicking on the name will open the context window */
-    $e.attr("data-username", "1");
     $e.text(name);
     return $e;
   }
 
   /* Returns string */
-  twitchEmote(id) {
-    return this._emote("twitch", this._client.GetEmote(id), {id: id});
+  twitchEmote(id, name=null) {
+    let opts = {id: id};
+    if (name) {
+      opts.name = name;
+    }
+    return this._emote("twitch", this._client.GetEmote(id), opts);
   }
 
   _checkUndefined(ev, $w) {
@@ -142,8 +143,8 @@ class HTMLGenerator {
     if (opts) {
       if (opts.id) {
         $i.attr("data-emote-id", opts.id);
-        $i.attr("alt", opts.name);
-        $i.attr("title", opts.name);
+        $i.attr("alt", opts.id);
+        $i.attr("title", opts.id);
         $w.attr("data-emote-name", opts.id);
       }
       /* opts.name overrides opts.id for all but $i[data-emote-id] */
@@ -167,18 +168,28 @@ class HTMLGenerator {
     return $w[0].outerHTML;
   }
 
+  _getCheerImage(cheerdef, scale) {
+    let scheme = $("body").hasClass("light") ? "light" : "dark";
+    let imagesets = cheerdef.images[scheme] || cheerdef.images.dark;
+    let images = this._config.NoAnim ? imagesets.static : imagesets.animated;
+    return images[scale];
+  }
+
   /* Returns string */
   _genCheer(cheer, bits) {
+    let $img = $(`<img class="cheer-image" />`);
+    let $w = $(`<span class="cheer cheermote"></span>`);
     /* Use the highest tier image that doesn't exceed the cheered bits */
     let possible_cheers = cheer.tiers.filter((n) => bits >= n.min_bits);
     let best_cheer = possible_cheers.max((n) => n.min_bits);
     /* Use the smallest scale available */
-    let url = best_cheer.images.dark.animated[cheer.scales.min((s) => +s)];
-    let $img = $(`<img class="cheer-image" />`);
-    let $w = $(`<span class="cheer cheermote"></span>`);
-    $img.attr("alt", cheer.prefix).attr("title", cheer.prefix);
+    let url = this._getCheerImage(best_cheer, cheer.scales.min((s) => +s));
+    $img.attr("alt", `${cheer.prefix} ${bits} bits`);
+    $img.attr("title", `${cheer.prefix} ${bits} bits`);
     $img.attr("src", url);
     $w.css("color", best_cheer.color);
+    $w.attr("data-cheer-def", JSON.stringify(best_cheer));
+    $w.attr("data-cheer", JSON.stringify(cheer));
     $w.append($img);
     $w.append(bits);
     return $w[0].outerHTML;
@@ -186,16 +197,24 @@ class HTMLGenerator {
 
   /* Returns jquery node */
   _wrapBadge(elem) {
+    let $e = $(elem);
     let $s = $(`<span class="badge"></span>`);
-    /* Copy all data attributes from elem to $s */
-    for (let attr of elem.get()[0].getAttributeNames()) {
-      if (attr.match(/^data-/)) {
-        $s.attr(attr, elem.attr(attr));
-      }
-    }
-    let getData = (aname) => elem.attr("data-" + aname);
+    let getData = (aname) => elem.attr(`data-${aname}`);
     let lines = [];
     let info_str = getData("badge");
+    let badge_desc = `${getData("badge-name")}`;
+    let badge_num = `${getData("badge-num")}`;
+    let submonths = `${getData("badge-submonths")}`;
+    let scope = getData("badge-scope");
+    /* Copy all data attributes from elem to $s */
+    for (let e of $e) {
+      for (let attr of e.getAttributeNames()) {
+        if (attr.startsWith("data-")) {
+          $s.attr(attr, e.getAttribute(attr));
+        }
+      }
+    }
+    /* Store image information */
     if (info_str.length > 0) {
       let info = JSON.parse(info_str);
       if (info.image_url_4x) {
@@ -204,24 +223,29 @@ class HTMLGenerator {
         $s.attr("data-icon-large-src", info.image_url_2x);
       }
     }
-    let badge_desc = `${getData("badge-name")}`;
-    if (getData("badge-num")) {
-      badge_desc += ` (${getData("badge-num")})`;
+    /* Append badge number */
+    if (badge_num) {
+      /* Appending (1) is redundant */
+      if (badge_num !== "1") {
+        badge_desc += ` (${badge_num})`;
+      }
     }
-    badge_desc = badge_desc.replace(/^[a-z]/, (e) => e.toUpperCase());
-    lines.push(badge_desc);
-    let scope = getData("badge-scope");
+    lines.push(badge_desc.toTitleCase());
+    /* Append number of months subscribed */
+    if (submonths) {
+      lines.push(`${submonths} month${submonths === "1" ? "" : "s"}`);
+    }
+    /* Append badge source */
     if (scope === "global") {
-      lines.push("Global");
+      lines.push("Global Badge");
     } else if (scope === "channel") {
       lines.push("Channel Badge");
       lines.push("#" + getData("badge-channel"));
     } else if (scope === "ffz") {
-      lines.push("FFZ");
+      lines.push("FFZ Badge");
     } else if (scope === "bttv") {
-      lines.push("BTTV");
+      lines.push("BTTV Badge");
     }
-    /* TODO: Add more to $s.attr("data-text") */
     /* Replace spaces in each line with &nbsp; (\xa0, 160) */
     $s.attr("data-text", lines.map((l) => l.replace(/ /g, "\xa0")).join("\n"));
     return $s.append(elem);
@@ -258,7 +282,9 @@ class HTMLGenerator {
         $b.attr("title", `${bname}/${bnum}`);
         $b.attr("alt", `${bname}/${bnum}`);
         if (this._client.IsChannelBadge(event.channel, bname, bnum)) {
-          let badge_info = this._client.GetChannelBadge(event.channel, bname, bnum);
+          /* Format a channel-specific badge */
+          let ch = event.channel;
+          let badge_info = this._client.GetChannelBadge(ch, bname, bnum);
           let badge_src = badge_info.image_url_1x;
           let channel = event.channel.channel.replace(/^#/, "");
           $b.attr("src", badge_src);
@@ -266,13 +292,21 @@ class HTMLGenerator {
           $b.attr("data-badge-scope", "channel");
           $b.attr("data-badge-channel", channel);
         } else if (this._client.IsGlobalBadge(bname, bnum)) {
+          /* Format a global badge */
           let badge_info = this._client.GetGlobalBadge(bname, bnum);
           $b.attr("src", badge_info.image_url_1x);
           $b.attr("data-badge-scope", "global");
           $b.attr("data-badge", JSON.stringify(badge_info));
         } else {
+          /* Twitch native badges are either channel or global */
           Util.Warn("Unknown badge", bname, bnum, "for", event);
           continue;
+        }
+        /* Store the precise number of months subscribed */
+        if (bname === "subscriber") {
+          if (event.sub_months) {
+            $b.attr("data-badge-submonths", event.sub_months);
+          }
         }
         $bc.append(this._wrapBadge($b));
       }
@@ -397,7 +431,13 @@ class HTMLGenerator {
     let result = message;
     if (event.flags.emotes) {
       let emotes = event.flags.emotes.map(function(e) {
-        return {id: e.id, name: e.name, start: e.start, end: e.end, def: e};
+        return {
+          id: e.id,
+          name: e.name || event.message.substring(e.start, e.end+1),
+          start: e.start,
+          end: e.end,
+          def: e
+        };
       });
       emotes.sort((a, b) => map[a.start] - map[b.start]);
       while (emotes.length > 0) {
