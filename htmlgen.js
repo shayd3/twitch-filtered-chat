@@ -746,7 +746,7 @@ class HTMLGenerator {
     return $e;
   }
 
-  /* Returns DOM HTMLDivElement */
+  /* Returns jquery node */
   sub(event) {
     let $w = this._genSubWrapper(event);
     let $m = $(`<span class="message sub-message"></span>`);
@@ -760,7 +760,7 @@ class HTMLGenerator {
     $m.html($m.html() + e + "&nbsp;");
     $w.append($m);
     this._checkUndefined(event, $w);
-    return $w[0];
+    return $w;
   }
 
   /* Returns jquery node */
