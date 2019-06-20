@@ -198,7 +198,7 @@ function onLoad() {
       <span class="fr"><span class="btn" id="btnSettingsBuilder">Builder</span></span>
     </header>
     <ul>
-      <!-- Global settings (formatted to remove unwanted Text elements) -->
+      <!-- General settings (formatted to remove unwanted Text elements) -->
       <li><label for="txtChannel">Channels:</label><input type="text" id="txtChannel" /></li>
       <li><label for="txtNick">Nick:</label><input type="text" id="txtNick" /></li>
       <li><label for="txtPass">OAuth:</label><input type="password" id="txtPass" /><input type="text" id="txtPassDummy" value="Cached" disabled /></li>
@@ -215,6 +215,7 @@ function onLoad() {
       </header>
       <ul>
         <!-- Advanced settings (formatted to remove unwanted Text elements) -->
+        <li><label for="cbAnimCheers" style="width: 10em">Animated Cheers:</label><input type="checkbox" id="cbAnimCheers" class="middle" /></label></li>
         <li><label for="txtBGStyle">BG Image:</label><input type="text" id="txtBGStyle" /></li>
         <li><label for="txtFont">Font:</label><input type="text" id="txtFont" /></li>
         <li><label for="txtFontSize">Font Size:</label><input type="text" id="txtFontSize" /></li>
@@ -231,7 +232,7 @@ function onLoad() {
     </footer>
   </div>
   <!-- Button to show/hide settings panel -->
-  <img id="btnSettings" src="assets/settings_white.png" alt="Settings" />
+  <img id="btnSettings" src="assets/settings_white.png" alt="Settings" title="Settings" />
   <!-- Username context window -->
   <div id="userContext" class="userContext" style="display: none"></div>
   <!-- Hover context window -->

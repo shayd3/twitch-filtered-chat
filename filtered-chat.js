@@ -1244,6 +1244,14 @@ function client_main() { /* exported client_main */
     setLightScheme();
   }
 
+  if (config.NoAnim) {
+    $("#cbAnimCheers").uncheck();
+  } else {
+    $("#cbAnimCheers").check();
+  }
+
+  $("#txtBGStyle").val("");
+
   if (config.Font) {
     $("#txtFont").val(config.Font);
   } else {
@@ -1518,6 +1526,12 @@ function client_main() { /* exported client_main */
     $("#advSettings").slideToggle();
   });
 
+  /* Changing the "Animated Cheers" checkbox */
+  $("#cbAnimCheers").change(function(e) {
+    mergeConfigObject({NoAnim: !$(this).is(":checked")});
+    updateHTMLGenConfig();
+  });
+
   /* Changing the "Background Image" text box */
   onChange($("#txtBGStyle"), function(e) {
     $(".module").css("background-image", $(this).val());
@@ -1629,7 +1643,7 @@ function client_main() { /* exported client_main */
   /* Clicking elsewhere on the document: reconnect, username context window */
   $(document).click(function(e) {
     let $t = $(e.target);
-    let $cw = $("#userContext");
+
     /* Clicking on or off of the module settings button or box */
     for (let module of Object.values(getModules())) {
       let $m = $(module);
@@ -1656,6 +1670,7 @@ function client_main() { /* exported client_main */
     }
 
     /* Clicking on the username context window */
+    let $cw = $("#userContext");
     if (Util.PointIsOn(e.clientX, e.clientY, $cw)) {
       let ch = $cw.attr("data-channel");
       let user = $cw.attr("data-user");
@@ -1682,10 +1697,8 @@ function client_main() { /* exported client_main */
     } else if ($t.attr("data-username") === "1") {
       /* Clicked on a username; show context window */
       let $l = $t.parent();
-      let cuid = $cw.attr("data-user-id");
-      let luid = $l.attr("data-user-id");
       if ($cw.is(":visible")) {
-        if (cuid === luid) {
+        if ($cw.attr("data-user-id") === $l.attr("data-user-id")) {
           /* Clicked on the same name: fade out */
           $cw.fadeOut();
         } else {
@@ -1703,10 +1716,15 @@ function client_main() { /* exported client_main */
 
     /* Clicking on a "Reconnect" link */
     if ($t.attr("data-reconnect") === "1") {
-      /* Clicked on a reconnect link */
       Content.addNotice(Strings.RECONNECTING);
       client.Connect();
     }
+
+    /* Clicking on an emote
+    if ($t.attr("data-is-emote") === "1") {
+      Util.LogOnly(`Clicked on an emote: ${$t.parent().html()}`);
+    }
+    */
   });
 
   /* WebSocket opened */

@@ -135,9 +135,12 @@ class HTMLGenerator {
 
   /* Returns string */
   _emote(source, url, opts=null) {
-    let cls = `${source.replace(/[^a-z0-9_]/g, "")}-emote`;
-    let $w = $(`<span class="emote-wrapper ${cls}"></span>`);
-    let $i = $(`<img class="emote ${cls}" />`);
+    let $w = $(`<span class="emote-wrapper"></span>`);
+    let $i = $(`<img class="emote" />`);
+    $w.addClass(`${source}-emote`);
+    $w.attr("data-is-emote-wrapper", "1");
+    $i.addClass(`${source}-emote`);
+    $i.attr("data-is-emote", "1");
     $i.attr("src", url);
     $i.attr("data-emote-src", source);
     if (opts) {
@@ -168,6 +171,7 @@ class HTMLGenerator {
     return $w[0].outerHTML;
   }
 
+  /* Returns string */
   _getCheerImage(cheerdef, scale) {
     let scheme = $("body").hasClass("light") ? "light" : "dark";
     let imagesets = cheerdef.images[scheme] || cheerdef.images.dark;
@@ -199,12 +203,12 @@ class HTMLGenerator {
   _wrapBadge(elem) {
     let $e = $(elem);
     let $s = $(`<span class="badge"></span>`);
-    let getData = (aname) => elem.attr(`data-${aname}`);
+    let getData = (aname) => elem.attr(`data-${aname}`) || "";
     let lines = [];
     let info_str = getData("badge");
     let badge_desc = `${getData("badge-name")}`;
-    let badge_num = `${getData("badge-num")}`;
-    let submonths = `${getData("badge-submonths")}`;
+    let badge_num = Util.ParseNumber(`${getData("badge-num")}`);
+    let submonths = Util.ParseNumber(`${getData("badge-submonths")}`);
     let scope = getData("badge-scope");
     /* Copy all data attributes from elem to $s */
     for (let e of $e) {
@@ -226,14 +230,14 @@ class HTMLGenerator {
     /* Append badge number */
     if (badge_num) {
       /* Appending (1) is redundant */
-      if (badge_num !== "1") {
+      if (badge_num !== 1) {
         badge_desc += ` (${badge_num})`;
       }
     }
     lines.push(badge_desc.toTitleCase());
     /* Append number of months subscribed */
     if (submonths) {
-      lines.push(`${submonths} month${submonths === "1" ? "" : "s"}`);
+      lines.push(`${submonths} month${submonths === 1 ? "" : "s"}`);
     }
     /* Append badge source */
     if (scope === "global") {
@@ -707,6 +711,7 @@ class HTMLGenerator {
     $e.attr("data-user-id", event.flags["user-id"]);
     $e.attr("data-channel", event.channel.channel.replace(/^#/, ""));
     $e.attr("data-channel-id", event.flags["room-id"]);
+    $e.attr("data-channel-full", Twitch.FormatChannel(event.channel));
     if (event.channel.room) {
       $e.attr("data-room", event.channel.room);
     }
