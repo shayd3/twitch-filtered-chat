@@ -16,7 +16,7 @@ $(shell test -d $(DIST) || mkdir $(DIST))
 all: twitch-api lint babel
 
 twitch-api:
-	cd twitch-api && git pull
+	-cd twitch-api && git pull
 
 lint:
 	npx eslint $(SOURCES) $(EXTRA_SOURCES)
@@ -31,7 +31,7 @@ $(DIST)/plugins/%.js: plugins/%.js
 	test -d $(DIST)/plugins || mkdir -p $(DIST)/plugins
 	npx babel --presets babel-preset-env $< -d $(DIST)/plugins/
 
-$(DIST)/polyfill.js:
-	test -f node_modules/babel-polyfill/dist/polyfill.js && cp node_modules/babel-polyfill/dist/polyfill.js $(DIST)/polyfill.js
+$(DIST)/polyfill.js: node_modules/babel-polyfill/dist/polyfill.js
+	test -f "$<" && echo cp "$<" "$@"
 
 # vim: sw=4 ts=4 sts=4 noet
