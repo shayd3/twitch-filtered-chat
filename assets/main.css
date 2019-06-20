@@ -633,7 +633,7 @@ body.light #chat textarea {
   position: fixed;
   top: 0;
   right: 0;
-  width: 100%;
+  width: 100%; /* max 350px via @screen */
   display: none;
   background: #555555;
   padding: 10px;

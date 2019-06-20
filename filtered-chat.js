@@ -33,6 +33,34 @@
  *   Util.Logger.add_filter(/^ws recv.*\bPRIVMSG\b/)
  */
 
+/* Utility functions {{{0 */
+
+/* Call func when the input element is changed */
+function onChange(elem, func) {
+  for (let e of $(elem)) {
+    let $e = $(e);
+    if ($e.is("input")) {
+      let type = $e.attr("type");
+      if (type === "text") {
+        $e.keyup(function(event) {
+          if (event.key === "Enter") {
+            return func.bind(this)(event);
+          }
+        });
+        $e.blur(function(event) { func.bind(this)(event); });
+      } else if (type === "checkbox") {
+        $e.change(function(event) { func.bind(this)(event); });
+      } else {
+        $e.change(function(event) { func.bind(this)(event); });
+      }
+    } else {
+      $e.change(function(event) { func.bind(this)(event); });
+    }
+  }
+}
+
+/* End utility functions 0}}} */
+
 /* Document writing functions {{{0 */
 
 class Content { /* exported Content */
@@ -284,7 +312,7 @@ function getConfigObject(inclSensitive=true) {
   const purge_props = [
     "NoAssets", "Debug", "NoAutoReconnect", "Layout", "Transparent", "Plugins",
     "EnableEffects", "DisableEffects", "PluginConfig", "ColorScheme", "nols",
-    "tag", "NoForce"];
+    "NoForce"];
   for (let prop of purge_props) {
     if (config.hasOwnProperty(prop)) {
       delete config[prop];
@@ -380,6 +408,17 @@ function getConfigObject(inclSensitive=true) {
     }
     /* This also reloads the page */
     window.location.search = new_qs;
+  }
+
+  /* Merge in top-level liveStorage items */
+  if (window.liveStorage) {
+    for (let key of Object.keys(window.liveStorage)) {
+      if (!key.match(/^module[0-9]*$/)) {
+        if (config[key] !== window.liveStorage[key]) {
+          config[key] = window.liveStorage[key];
+        }
+      }
+    }
   }
 
   /* Finally, ensure certain defaults */
@@ -1205,6 +1244,22 @@ function client_main() { /* exported client_main */
     setLightScheme();
   }
 
+  if (config.Font) {
+    $("#txtFont").val(config.Font);
+  } else {
+    $("#txtFont").val(Util.CSS.GetProperty("--body-font"));
+  }
+
+  if (config.Size) {
+    $("#txtFontSize").val(config.Size);
+  } else {
+    $("#txtFontSize").val(Util.CSS.GetProperty("--body-font-size"));
+  }
+
+  if (config.tag) {
+    $("#txtTag").val(config.tag);
+  }
+
   /* Construct the HTML Generator and tell it and sync it with the client */
   client.set("HTMLGen", new HTMLGenerator(client, config));
 
@@ -1321,8 +1376,6 @@ function client_main() { /* exported client_main */
     openSettingsTab();
   }, "Open the configuration builder wizard");
 
-  /* Bind DOM events {{{0 */
-
   /* Pressing a key on the chat box */
   $("#txtChat").keydown(function(e) {
     let t = event.target;
@@ -1416,25 +1469,10 @@ function client_main() { /* exported client_main */
     openSettingsTab();
   });
 
-  /* Pressing enter on the "Channels" text box */
-  $("#txtChannel").keyup(function(e) {
-    if (e.key === "Enter") {
-      setChannels(client, $(this).val().split(","));
-      mergeConfigObject({"Channels": client.GetJoinedChannels()});
-    }
-  });
-
-  /* Leaving the "Channels" text box */
-  $("#txtChannel").blur(function(e) {
+  /* Changing the "Channels" text box */
+  onChange($("#txtChannel"), function(e) {
     setChannels(client, $(this).val().split(","));
     mergeConfigObject({"Channels": client.GetJoinedChannels()});
-  });
-
-  /* Changing the value for "background image" */
-  $("#txtBGStyle").keyup(function(e) {
-    if (e.key === "Enter") {
-      $(".module").css("background-image", $(this).val());
-    }
   });
 
   /* Changing the "Scrollbars" checkbox */
@@ -1473,6 +1511,45 @@ function client_main() { /* exported client_main */
   /* Clicking on the reconnect link in the settings box */
   $("#btnReconnect").click(function(e) {
     client.Connect();
+  });
+
+  /* Clicking on the "Advanced Settings" or "Hide Advanced Settings" links */
+  $("#btnAdvanced, #btnAdvHide").click(function(e) {
+    $("#advSettings").slideToggle();
+  });
+
+  /* Changing the "Background Image" text box */
+  onChange($("#txtBGStyle"), function(e) {
+    $(".module").css("background-image", $(this).val());
+  });
+
+  /* Changing the font text box */
+  onChange($("#txtFont"), function(e) {
+    let v = $(this).val();
+    if (v) {
+      if (v === "default") {
+        Util.CSS.SetProperty("--body-font", "var(--body-font-default)");
+      } else {
+        Util.CSS.SetProperty("--body-font", v);
+      }
+    }
+  });
+
+  /* Changing the font size text box */
+  onChange($("#txtFontSize"), function(e) {
+    let v = $(this).val();
+    if (v) {
+      if (v === "default") {
+        Util.CSS.SetProperty("--body-font-size", "var(--body-font-size-default)");
+      } else {
+        Util.CSS.SetProperty("--body-font-size", v);
+      }
+    }
+  });
+
+  /* Changing the tag */
+  onChange($("#txtTag"), function(e) {
+    mergeConfigObject({tag: $(this).val()});
   });
 
   /* Pressing enter or escape on the module's name text box */
@@ -1631,10 +1708,6 @@ function client_main() { /* exported client_main */
       client.Connect();
     }
   });
-
-  /* End of the DOM event binding 0}}} */
-
-  /* Bind TwitchEvent events {{{0 */
 
   /* WebSocket opened */
   client.bind("twitch-open", function _on_twitch_open(e) {
@@ -1931,8 +2004,6 @@ function client_main() { /* exported client_main */
     Util.Warn("Unbound event:", e);
     Util.StorageAppend(LOG_KEY, e);
   });
-
-  /* End of all of the binding 0}}} */
 
   /* Finally, connect */
   client.Connect();

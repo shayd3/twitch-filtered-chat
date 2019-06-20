@@ -202,16 +202,32 @@ function onLoad() {
       <li><label for="txtChannel">Channels:</label><input type="text" id="txtChannel" /></li>
       <li><label for="txtNick">Nick:</label><input type="text" id="txtNick" /></li>
       <li><label for="txtPass">OAuth:</label><input type="password" id="txtPass" /><input type="text" id="txtPassDummy" value="Cached" disabled /></li>
-      <li><label for="txtBGStyle">BG CSS:</label><input type="text" id="txtBGStyle" /></li>
       <li><label for="cbScroll">Scrollbars:</label><input type="checkbox" id="cbScroll" class="middle" /></li>
       <li><label for="cbTransparent">Transparent:</label><input type="checkbox" id="cbTransparent" class="middle" /></li>
       <li><label for="cbClips">Show Clips:</label><input type="checkbox" id="cbClips" class="middle" /></li>
       <li><label for="cbForce">No Force:</label><input type="checkbox" id="cbForce" class="middle" /></li>
       <li><label for="selDebug">Debugging:</label><select id="selDebug"><option value="0" selected>Disabled</option><option value="1">Debug</option><option value="2">Trace</option></select></li>
     </ul>
+    <section id="advSettings" style="display: none">
+      <header style="display: inline-block; width: 100%">
+        <span class="fl">Advanced Settings</span>
+        <span class="fr btn" id="btnAdvHide">Hide</span>
+      </header>
+      <ul>
+        <!-- Advanced settings (formatted to remove unwanted Text elements) -->
+        <li><label for="txtBGStyle">BG Image:</label><input type="text" id="txtBGStyle" /></li>
+        <li><label for="txtFont">Font:</label><input type="text" id="txtFont" /></li>
+        <li><label for="txtFontSize">Font Size:</label><input type="text" id="txtFontSize" /></li>
+        <!-- TODO
+        <li><label for="txtHighlights">Highlighting:</label><input type="text" id="txtHighlights" /></li>
+        <li><label for="txtPluginCfg">Plugin Cfg:</label><input type="text" id="txtPluginCfg" /></li>
+        -->
+        <li><label for="txtTag">Tag:</label><input type="text" id="txtTag" disabled /></li>
+      </ul>
+    </section>
     <footer>
       <span class="fl btn" id="btnReconnect">Reconnect</span>
-      <!--TODO <span class="fr btn" id="btnAdvanced">Advanced...</span>-->
+      <span class="fr btn" id="btnAdvanced">Advanced Settings</span>
     </footer>
   </div>
   <!-- Button to show/hide settings panel -->
