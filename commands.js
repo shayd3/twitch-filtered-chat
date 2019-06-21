@@ -740,6 +740,58 @@ function onCommandRooms(cmd, tokens, client) {
   }
 }
 
+function onCommandHighlight(cmd, tokens, client) {
+  let H = client.get("HTMLGen");
+  if (tokens.length === 0 || tokens[0] === "show") {
+    Content.addHelp("Current highlight patterns:");
+    for (let idx = 0; idx < H.highlightMatches.length; ++idx) {
+      let pat = H.highlightMatches[idx];
+      Content.addHelpLine(`Index ${idx+1}`, `${pat}`);
+    }
+  } else if (tokens[0] === "add") {
+    let patstr = tokens.slice(1).join(" ");
+    if (patstr.length > 0) {
+      let pat = null;
+      let m = patstr.match(/^\/(.*)\/(\w*)$/);
+      if (m) {
+        pat = new RegExp(m[1], m[2]);
+      } else {
+        pat = new RegExp("\\b" + RegExp.escape(patstr) + "\\b", "g");
+      }
+      H.addHighlightMatch(pat);
+      Content.addHelp(`Added pattern ${pat}`);
+    } else {
+      Content.addError(`"//highlight add" requires argument`);
+      this.printUsage();
+    }
+  } else if (tokens[0] === "remove") {
+    if (tokens.length > 1) {
+      let idx = Util.ParseNumber(tokens[1]);
+      let matches = H.highlightMatches;
+      let max = H.highlightMatches.length;
+      if (idx > 0 && idx <= max) {
+        if (idx === 1) {
+          matches.shift();
+        } else if (idx === matches.length) {
+          matches.pop();
+        } else {
+          let before = matches.slice(0, idx-1);
+          let after = matches.slice(idx);
+          H.highlightMatches = before.concat(after);
+        }
+        Content.addHelp(`Now storing ${H.highlightMatches.length} patterns`);
+      } else {
+        Content.addError(`Invalid index ${idx}; must be between 1 and ${max}`);
+      }
+    } else {
+      Content.addError(`"//highlight remove" requires argument`);
+      this.printUsage();
+    }
+  } else {
+    this.printUsage();
+  }
+}
+
 function InitChatCommands() { /* exported InitChatCommands */
   /* Default command definition
    * Structure:
@@ -845,6 +897,17 @@ function InitChatCommands() { /* exported InitChatCommands */
     "rooms": {
       func: onCommandRooms,
       desc: "List available rooms"
+    },
+    "highlight": {
+      func: onCommandHighlight,
+      desc: "Add, show, or remove highlight patterns",
+      alias: ["hl"],
+      usage: [
+        [null, "List highlight patterns"],
+        ["show", "List highlight patterns"],
+        ["add <pattern>", "Highlight messages containing <pattern>"],
+        ["remove <index>", "Remove the pattern numbered <index>"]
+      ]
     }
   };
 

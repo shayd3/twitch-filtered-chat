@@ -3,7 +3,6 @@
 "use strict";
 
 /* TODO:
- * Add emote information on hover
  * Format clip information
  * USERNOTICEs:
  *   rewardgift
@@ -17,7 +16,6 @@
  *     msg-param-promo-name
  *   unraid
  *   bitsbadgetier
- * Implement "light" and "dark" colorschemes
  */
 
 /* exported HTMLGenerator */
@@ -63,7 +61,6 @@ class HTMLGenerator {
     }
   }
 
-  /* Group 1 must match exactly the text to wrap */
   addHighlightMatch(pat) {
     this._highlights.push(pat);
   }
@@ -167,6 +164,20 @@ class HTMLGenerator {
         $i.attr("data-emote-def", JSON.stringify(opts.def));
       }
     }
+    let lines = [];
+    if ($i.attr("data-emote-name")) {
+      lines.push($i.attr("data-emote-name"));
+    }
+    if (source === "twitch") {
+      lines.push("Twitch");
+    } else if (source === "ffz") {
+      lines.push("FFZ");
+    } else if (source === "bttv") {
+      lines.push("BTTV");
+    } else {
+      lines.push(source);
+    }
+    $w.attr("data-text", lines.map((l) => l.replace(/ /g, "\xa0")).join("\n"));
     $w.append($i);
     return $w[0].outerHTML;
   }
@@ -550,12 +561,19 @@ class HTMLGenerator {
   _msgHighlightTransform(event, message, map, $msg, $effects) {
     let result = message;
     for (let pat of this._highlights) {
+      let pattern = pat;
       let locations = [];
       let arr = null;
-      while ((arr = pat.exec(event.message)) !== null) {
-        let start = arr.index + arr[0].indexOf(arr[1]);
-        let end = start + arr[1].length;
-        locations.push({part: arr[1], start: start, end: end});
+      /* Ensure pattern has "g" flag */
+      if (pat.flags.indexOf("g") === -1) {
+        pattern = new RegExp(pat, pat.flags + "g");
+      }
+      while ((arr = pattern.exec(event.message)) !== null) {
+        let whole = arr[0];
+        let part = arr.length > 1 ? arr[1] : arr[0];
+        let start = arr.index + whole.indexOf(part);
+        let end = start + part.length;
+        locations.push({part: part, start: start, end: end});
       }
       /* Ensure the locations array is indeed sorted */
       locations.sort((a, b) => (a.start - b.start));
