@@ -537,11 +537,11 @@ function setModuleSettings(module, config) {
       }
     }
   }
-  addInput("include_user", "From", config.IncludeUser);
-  addInput("include_keyword", "Contains:", config.IncludeKeyword);
-  addInput("exclude_user", "From", config.ExcludeUser);
-  addInput("exclude_startswith", "Starts with:", config.ExcludeStartsWith);
-  addInput("from_channel", "Channel:", config.FromChannel);
+  addInput("include_user", "From: ", config.IncludeUser);
+  addInput("include_keyword", "Contains: ", config.IncludeKeyword);
+  addInput("exclude_user", "From: ", config.ExcludeUser);
+  addInput("exclude_startswith", "Starts with: ", config.ExcludeStartsWith);
+  addInput("from_channel", "Channel: ", config.FromChannel);
 }
 
 /* Obtain the settings from the module's settings HTML */
