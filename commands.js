@@ -255,7 +255,15 @@ class ChatCommandManager {
   }
 
   formatArgs(s) {
-    return s.replace(/<([^>]+)>/g, (m, g) => "&lt;" + this.arg(g) + "&gt;");
+    let result = s;
+    let repl = [
+      [/<(\w+)>/g, (m, g) => `&lt;${this.arg(g)}&gt;`],
+      [/\*(\w+)\*/g, (m, g) => `<span class="b">${g.escape()}</span>`]
+    ];
+    for (let [pat, func] of repl) {
+      result = result.replace(pat, func);
+    }
+    return result;
   }
 
   printUsage(cmdobj) {

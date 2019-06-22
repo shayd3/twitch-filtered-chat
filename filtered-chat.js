@@ -1014,6 +1014,7 @@ function client_main() { /* exported client_main */
         } else if (t0 === "help") {
           Content.addHelpLine("//config", Strings.CFG_CMD);
           Content.addHelp("//config parameters:");
+          Content.addHelpLine("export", Strings.CFG_CMD_EXPORT);
           Content.addHelpLine("purge", Strings.CFG_CMD_PURGE);
           Content.addHelpLine("clientid", Strings.CFG_CMD_CLIENTID);
           Content.addHelpLine("pass", Strings.CFG_CMD_PASS);
@@ -1024,6 +1025,8 @@ function client_main() { /* exported client_main */
           Content.addHelpLine("auth", Strings.CFG_CMD_URL_AUTH);
           Content.addHelp(Strings.CFG_CMD_SET.escape());
           Content.addHelp(Strings.CFG_CMD_SETOBJ.escape());
+        } else if (t0 === "export") {
+          Util.Open("assets/config-export.html", "_blank", {});
         } else if (t0 === "purge") {
           Util.SetWebStorage({});
           window.liveStorage = {};
@@ -1782,7 +1785,7 @@ function client_main() { /* exported client_main */
     let channel = Twitch.FormatChannel(e.channel);
     let message = e.message.escape();
     Content.addNotice(`${channel}: ${message}`);
-    if (e.notice_msgid === "cmds_available") {
+    if (e.noticeMsgId === "cmds_available") {
       Content.addInfo(Strings.USE_HELP);
     }
   });

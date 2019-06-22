@@ -319,8 +319,8 @@ class HTMLGenerator {
         }
         /* Store the precise number of months subscribed */
         if (bname === "subscriber") {
-          if (event.sub_months) {
-            $b.attr("data-badge-submonths", event.sub_months);
+          if (event.subMonths) {
+            $b.attr("data-badge-submonths", event.subMonths);
           }
         }
         $bc.append(this._wrapBadge($b));

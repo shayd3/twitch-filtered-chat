@@ -1,0 +1,97 @@
+<!DOCTYPE xhtml>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>Configuration Export</title>
+  <meta charset="utf-8" />
+  <style type="text/css">
+body {
+  font-size: 10pt;
+  font-family: monospace;
+  counter-reset: line;
+}
+.settings {
+  background: linear-gradient(to right, lightgray, white);
+}
+.content {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  -ms-word-break: break-all;
+  word-break: break-word;
+}
+.content.format::before {
+  counter-increment: line;
+  content: counter(line);
+  display: inline-block;
+  border-right: 1px solid gray;
+  padding: 0 0.5em;
+  margin-right: 0.5em;
+  font-family: monospace;
+  min-width: 16px;
+  text-align: right;
+}
+input[type=checkbox] {
+  vertical-align: middle;
+}
+  </style>
+  <script type="text/javascript" src="../assets/jquery-3.4.0.js"></script>
+  <script type="text/javascript" src="../config.js"></script>
+  <script type="text/javascript">
+
+function getStorage(key) {
+  let val = localStorage[key];
+  if (val === null) {
+    return "null";
+  } else if (typeof(val) === "undefined") {
+    return "undefined";
+  } else {
+    return JSON.stringify(val);
+  }
+}
+
+function showStorage() {
+  let format = $("#format").is(":checked");
+  $(".content-pre").text("");
+  $(".content").html("");
+  $(".content-post").text("");
+  if (format) {
+    $(".content-pre").text("localStorage = {");
+    for (let key of Object.keys(localStorage)) {
+      let ks = `localStorage[${JSON.stringify(key)}]`;
+      let vs = getStorage(key);
+      let ke = $(`<span class="key"></span>`).text(ks);
+      let eq = $(`<span class="eq">&nbsp;=&nbsp;</span>`);
+      let ve = $(`<span class="val"></span>`).text(vs);
+      let line = $(`<div class="line"></div>`);
+      line = line.append(ke).append(eq).append(ve);
+      $(".content").append(line);
+    }
+    $(".content-post").text("};");
+  } else {
+    $(".content").text(JSON.stringify(localStorage));
+  }
+}
+
+$(document).ready(function() {
+  $("#format").change(function(e) {
+    if ($(this).is(":checked")) {
+      $(".content").addClass("format");
+    } else {
+      $(".content").removeClass("format");
+    }
+    showStorage();
+  });
+  showStorage();
+});
+  </script>
+</head>
+<body>
+<div class="settings">
+  <span class="setting">
+    <label for="format">Indent JSON?</label><input id="format" type="checkbox" value="Format?" />
+  </span>
+</div>
+<div class="content-pre"></div>
+<div class="content"></div>
+<div class="content-post"></div>
+</body>
+</html> 

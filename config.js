@@ -77,6 +77,7 @@ const Strings = { /* exported Strings */
   CFG_CHANNEL: "Channel: ",
 
   CFG_CMD: "Show global and module configuration",
+  CFG_CMD_EXPORT: "Export *all* of localStorage to a new tab (contains oauth!)",
   CFG_CMD_PURGE: "Clear local storage (cannot be undone!)",
   CFG_CMD_CLIENTID: "Display ClientID",
   CFG_CMD_PASS: "Display OAuth token (if present)",
