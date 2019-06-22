@@ -17,7 +17,7 @@
  *   Commands
  *   Filtering
  *   Plugin configuration (?plugincfg)
- * Add configurable message highlighting
+ * Add configurable message highlighting (//highlight)
  * Auto-complete command arguments
  * Remove F1 hotkey binding
  */
@@ -423,7 +423,7 @@ function getConfigObject(inclSensitive=true) {
 
   /* Finally, ensure certain defaults */
 
-  /* Default name: */
+  /* Default name is no name */
   if (typeof(config.Name) !== "string") {
     config.Name = "";
   }
@@ -500,7 +500,7 @@ function mergeConfigObject(to_merge=null) {
 /* Module configuration {{{1 */
 
 /* Enumerate the active modules */
-function getModules() {
+function getModules() { /* exported getModules */
   let m = {};
   for (let elem of $(".module")) {
     m[$(elem).attr("id")] = elem;
@@ -540,11 +540,11 @@ function setModuleSettings(module, config) {
       }
     }
   }
-  addInput("include_user", Strings.CFG_FROM, config.IncludeUser);
-  addInput("include_keyword", Strings.CFG_CONTAINS, config.IncludeKeyword);
-  addInput("exclude_user", Strings.CFG_FROM, config.ExcludeUser);
-  addInput("exclude_startswith", Strings.CFG_STARTS, config.ExcludeStartsWith);
-  addInput("from_channel", Strings.CFG_CHANNEL, config.FromChannel);
+  addInput("include_user", "From", config.IncludeUser);
+  addInput("include_keyword", "Contains:", config.IncludeKeyword);
+  addInput("exclude_user", "From", config.ExcludeUser);
+  addInput("exclude_startswith", "Starts with:", config.ExcludeStartsWith);
+  addInput("from_channel", "Channel:", config.FromChannel);
 }
 
 /* Obtain the settings from the module's settings HTML */
@@ -851,7 +851,7 @@ function showUserContextWindow(client, cw, line) {
 }
 
 /* Set or unset transparency */
-function updateTransparency(transparent) {
+function updateTransparency(transparent) { /* exported updateTransparency */
   let props = [];
   try {
     let ss = Util.CSS.GetSheet("main.css");
@@ -895,13 +895,13 @@ function updateTransparency(transparent) {
 /* Set the colorscheme to dark */
 function setDarkScheme() { /* exported setDarkScheme */
   $("body").removeClass("light").addClass("dark");
-  $("#btnSettings").attr("src", AssetURLs.SETTINGS);
+  $("#btnSettings").attr("src", AssetPaths.SETTINGS);
 }
 
 /* Set the colorscheme to light */
 function setLightScheme() { /* exported setLightScheme */
   $("body").removeClass("dark").addClass("light");
-  $("#btnSettings").attr("src", AssetURLs.SETTINGS_LIGHT);
+  $("#btnSettings").attr("src", AssetPaths.SETTINGS_LIGHT);
 }
 
 /* Set or clear window notification badge */
@@ -911,7 +911,7 @@ function setNotify(notify=true) { /* exported setNotify */
 }
 
 /* Called once when the document loads */
-function client_main() { /* exported client_main */
+function doLoadClient() { /* exported doLoadClient */
   let client;
   let config = {};
 
@@ -970,200 +970,199 @@ function client_main() { /* exported client_main */
     });
 
     /* Add the //config command */
-    ChatCommands.add("config",
-      (function _config_command(cmd, tokens, clientObj) {
-        let cfg = getConfigObject();
-        let t0 = tokens.length > 0 ? tokens[0] : "";
-        if (tokens.length === 0) {
-          let mcfgs = [];
-          Content.addHelp(`<em>Global Configuration Values:</em>`);
-          for (let [k, v] of Object.entries(cfg)) {
-            let [key, val] = [k, `${v}`];
-            if (k === "Layout") {
-              val = FormatLayout(v);
-            } else if (k === "ClientID") {
-              val = Strings.CFG_OMIT_CID;
-            } else if (k === "Pass") {
-              val = Strings.CFG_OMIT_PASS;
-            } else if (typeof(v) === "object" && v.Name && v.Name.length > 0) {
-              key = null;
-              val = null;
-              mcfgs.push([k, v]);
-            }
-            if (key !== null) {
-              Content.addHelpLine(key, val);
-            }
+    ChatCommands.add("config", (function(cmd, tokens, clientObj) {
+      let cfg = getConfigObject();
+      let t0 = tokens.length > 0 ? tokens[0] : "";
+      if (tokens.length === 0) {
+        let mcfgs = [];
+        Content.addHelp(`<em>Global Configuration Values:</em>`);
+        for (let [k, v] of Object.entries(cfg)) {
+          let [key, val] = [k, `${v}`];
+          if (k === "Layout") {
+            val = FormatLayout(v);
+          } else if (k === "ClientID") {
+            val = Strings.CFG_OMIT_CID;
+          } else if (k === "Pass") {
+            val = Strings.CFG_OMIT_PASS;
+          } else if (typeof(v) === "object" && v.Name && v.Name.length > 0) {
+            key = null;
+            val = null;
+            mcfgs.push([k, v]);
           }
-          Content.addHelp(`<em>Window Configuration Values:</em>`);
-          for (let [k, v] of mcfgs) {
-            let quote = (e) => `&quot;${e}&quot`;
-            let kstr = `<span class="arg">${k}</span>`;
-            let vstr = `&quot;${v.Name}&quot;`;
-            Content.addHelp(`Module ${kstr}: ${vstr}`);
-            for (let [ck, cv] of Object.entries(v)) {
-              if (ck !== "Name") {
-                Content.addHelpLine(ck, quote(cv));
-              }
-            }
+          if (key !== null) {
+            Content.addHelpLine(key, val);
           }
-        } else if (t0 === "help") {
-          Content.addHelpLine("//config", Strings.CFG_CMD);
-          Content.addHelp("//config parameters:");
-          Content.addHelpLine("export", Strings.CFG_CMD_EXPORT);
-          Content.addHelpLine("purge", Strings.CFG_CMD_PURGE);
-          Content.addHelpLine("clientid", Strings.CFG_CMD_CLIENTID);
-          Content.addHelpLine("pass", Strings.CFG_CMD_PASS);
-          Content.addHelpLine("url", Strings.CFG_CMD_URL);
-          Content.addHelp(Strings.CFG_CMD_URLARGS);
-          Content.addHelpLine("git", Strings.CFG_CMD_URL_GIT);
-          Content.addHelpLine("text", Strings.CFG_CMD_URL_TEXT);
-          Content.addHelpLine("auth", Strings.CFG_CMD_URL_AUTH);
-          Content.addHelp(Strings.CFG_CMD_SET.escape());
-          Content.addHelp(Strings.CFG_CMD_SETOBJ.escape());
-        } else if (t0 === "export") {
-          Util.Open("assets/config-export.html", "_blank", {});
-        } else if (t0 === "purge") {
-          Util.SetWebStorage({});
-          window.liveStorage = {};
-          Content.addNotice(`Purged storage "${Util.GetWebStorageKey()}"`);
-        } else if (t0 === "clientid") {
-          Content.addHelpLine("ClientID", cfg.ClientID);
-        } else if (t0 === "pass") {
-          Content.addHelpLine("Pass", cfg.Pass);
-        } else if (t0 === "url") {
-          /* Generate a URL with the current configuration, omitting items
-           * left at default values */
-
-          /* Base URL, query string array, and function to add items */
-          let url = tokens.indexOf("git") > -1 ? GIT_URL : CUR_URL;
-          let qs = [];
-          let qsAdd = (k, v) => qs.push(`${k}=${encodeURIComponent(v)}`);
-
-          /* Generate and append query string items */
-          if (cfg.Debug > 0) {
-            qsAdd("debug", cfg.Debug);
-          }
-          if (cfg.__clientid_override) {
-            qsAdd("clientid", cfg.ClientID);
-          }
-          qsAdd("channels", cfg.Channels.join(","));
-          if (cfg.NoAssets) {
-            qsAdd("noassets", cfg.NoAssets);
-          }
-          if (cfg.NoFFZ) {
-            qsAdd("noffz", cfg.NoFFZ);
-          }
-          if (cfg.NoBTTV) {
-            qsAdd("nobttv", cfg.NoBTTV);
-          }
-          if (cfg.HistorySize) {
-            qsAdd("hmax", cfg.HistorySize);
-          }
-          for (let module of Object.keys(getModules())) {
-            qsAdd(module, formatModuleConfig(cfg[module]));
-          }
-          qsAdd("layout", FormatLayout(cfg.Layout));
-          if (cfg.Transparent) {
-            qsAdd("trans", "1");
-          }
-          if (cfg.NoAutoReconnect) {
-            qsAdd("norec", "1");
-          }
-          let font_curr = Util.CSS.GetProperty("--body-font-size");
-          let font_dflt = Util.CSS.GetProperty("--body-font-size-default");
-          if (font_curr !== font_dflt) {
-            qsAdd("size", font_curr.replace(/[^0-9]/g, ""));
-          }
-          if (cfg.Plugins) {
-            qsAdd("plugins", "1");
-          }
-          if (cfg.MaxMessages !== TwitchClient.DEFAULT_MAX_MESSAGES) {
-            qsAdd("max", `${cfg.MaxMessages}`);
-          }
-          if (cfg.Font) {
-            qsAdd("font", cfg.Font);
-          }
-          if (cfg.Scroll) {
-            qsAdd("scroll", "1");
-          }
-          if (cfg.ShowClips) {
-            qsAdd("clips", "1");
-          }
-          if (tokens.indexOf("auth") > -1) {
-            qsAdd("user", cfg.Name);
-            qsAdd("pass", cfg.Pass);
-          }
-          if (cfg.DisableEffects) {
-            qsAdd("disable", cfg.DisableEffects.join(","));
-          }
-          if (cfg.EnableEffects) {
-            qsAdd("enable", cfg.EnableEffects.join(","));
-          }
-          if (cfg.PluginConfig) {
-            qsAdd("plugincfg", JSON.stringify(cfg.PluginConfig));
-          }
-          if (cfg.ColorScheme === "dark") {
-            qsAdd("scheme", "dark");
-          } else if (cfg.ColorScheme === "light") {
-            qsAdd("scheme", "light");
-          }
-          if (cfg.tag) {
-            qsAdd("tag", cfg.tag);
-          }
-          if (cfg.NoForce) {
-            qsAdd("noforce", "1");
-          }
-
-          /* Append query string to the URL */
-          if (tokens[tokens.length - 1] === "text") {
-            url += "?" + qs.join("&");
-          } else {
-            url += "?base64=" + encodeURIComponent(btoa(qs.join("&")));
-          }
-          Content.addHelp(client.get("HTMLGen").url(url)[0].outerHTML);
-        } else if ((t0 === "set" || t0 === "setobj") && tokens.length > 2) {
-          /* Allow changing configuration by command (dangerous) */
-          let key = tokens[1];
-          if (Util.ObjectHas(cfg, key)) {
-            let val = tokens.slice(2).join(" ");
-            let oldval = Util.ObjectGet(cfg, key);
-            let newval = null;
-            if (t0 === "setobj") {
-              newval = JSON.parse(val);
-            } else if (val === "true") {
-              newval = true;
-            } else if (val === "false") {
-              newval = false;
-            } else if (val === "Infinity") {
-              newval = Infinity;
-            } else if (val === "-Infinity") {
-              newval = -Infinity;
-            } else if (val === "NaN") {
-              newval = NaN;
-            } else if (val.match(/^[+-]?(?:\d|[1-9]\d*)$/)) {
-              newval = Number.parseInt(val);
-            } else if (val.match(/^[-+]?(?:\d*\.\d+|\d+)$/)) {
-              newval = Number.parseFloat(val);
-            } else {
-              newval = val;
-            }
-            let oldstr = JSON.stringify(oldval);
-            let newstr = JSON.stringify(newval);
-            Util.Log(`Changing ${key} from "${oldstr}" to "${newstr}"`);
-            Content.addHelpLine(key, JSON.stringify(oldval));
-            Content.addHelpLine(key, JSON.stringify(newval));
-            Util.ObjectSet(cfg, key, newval);
-            mergeConfigObject(cfg);
-          } else {
-            Content.addError(`Config item ${key.escape()} does not exist`);
-          }
-        } else if (Util.ObjectHas(cfg, t0)) {
-          Content.addHelpLine(t0, JSON.stringify(Util.ObjectGet(cfg, t0)));
-        } else {
-          let tok = `&quot;${t0.escape()}&quot;`;
-          Content.addError(`Unknown config command or key ${tok}`, true);
         }
-      }), "Obtain and modify configuration information");
+        Content.addHelp(`<em>Window Configuration Values:</em>`);
+        for (let [k, v] of mcfgs) {
+          let quote = (e) => `&quot;${e}&quot`;
+          let kstr = `<span class="arg">${k}</span>`;
+          let vstr = `&quot;${v.Name}&quot;`;
+          Content.addHelp(`Module ${kstr}: ${vstr}`);
+          for (let [ck, cv] of Object.entries(v)) {
+            if (ck !== "Name") {
+              Content.addHelpLine(ck, quote(cv));
+            }
+          }
+        }
+      } else if (t0 === "help") {
+        Content.addHelpLine("//config", Strings.CFG_CMD);
+        Content.addHelp("//config parameters:");
+        Content.addHelpLine("export", Strings.CFG_CMD_EXPORT);
+        Content.addHelpLine("purge", Strings.CFG_CMD_PURGE);
+        Content.addHelpLine("clientid", Strings.CFG_CMD_CLIENTID);
+        Content.addHelpLine("pass", Strings.CFG_CMD_PASS);
+        Content.addHelpLine("url", Strings.CFG_CMD_URL);
+        Content.addHelp(Strings.CFG_CMD_URLARGS);
+        Content.addHelpLine("git", Strings.CFG_CMD_URL_GIT);
+        Content.addHelpLine("text", Strings.CFG_CMD_URL_TEXT);
+        Content.addHelpLine("auth", Strings.CFG_CMD_URL_AUTH);
+        Content.addHelp(Strings.CFG_CMD_SET.escape());
+        Content.addHelp(Strings.CFG_CMD_SETOBJ.escape());
+      } else if (t0 === "export") {
+        Util.Open("assets/config-export.html", "_blank", {});
+      } else if (t0 === "purge") {
+        Util.SetWebStorage({});
+        window.liveStorage = {};
+        Content.addNotice(`Purged storage "${Util.GetWebStorageKey()}"`);
+      } else if (t0 === "clientid") {
+        Content.addHelpLine("ClientID", cfg.ClientID);
+      } else if (t0 === "pass") {
+        Content.addHelpLine("Pass", cfg.Pass);
+      } else if (t0 === "url") {
+        /* Generate a URL with the current configuration, omitting items
+         * left at default values */
+
+        /* Base URL, query string array, and function to add items */
+        let url = tokens.indexOf("git") > -1 ? GIT_URL : CUR_URL;
+        let qs = [];
+        let qsAdd = (k, v) => qs.push(`${k}=${encodeURIComponent(v)}`);
+
+        /* Generate and append query string items */
+        if (cfg.Debug > 0) {
+          qsAdd("debug", cfg.Debug);
+        }
+        if (cfg.__clientid_override) {
+          qsAdd("clientid", cfg.ClientID);
+        }
+        qsAdd("channels", cfg.Channels.join(","));
+        if (cfg.NoAssets) {
+          qsAdd("noassets", cfg.NoAssets);
+        }
+        if (cfg.NoFFZ) {
+          qsAdd("noffz", cfg.NoFFZ);
+        }
+        if (cfg.NoBTTV) {
+          qsAdd("nobttv", cfg.NoBTTV);
+        }
+        if (cfg.HistorySize) {
+          qsAdd("hmax", cfg.HistorySize);
+        }
+        for (let module of Object.keys(getModules())) {
+          qsAdd(module, formatModuleConfig(cfg[module]));
+        }
+        qsAdd("layout", FormatLayout(cfg.Layout));
+        if (cfg.Transparent) {
+          qsAdd("trans", "1");
+        }
+        if (cfg.NoAutoReconnect) {
+          qsAdd("norec", "1");
+        }
+        let font_curr = Util.CSS.GetProperty("--body-font-size");
+        let font_dflt = Util.CSS.GetProperty("--body-font-size-default");
+        if (font_curr !== font_dflt) {
+          qsAdd("size", font_curr.replace(/[^0-9]/g, ""));
+        }
+        if (cfg.Plugins) {
+          qsAdd("plugins", "1");
+        }
+        if (cfg.MaxMessages !== TwitchClient.DEFAULT_MAX_MESSAGES) {
+          qsAdd("max", `${cfg.MaxMessages}`);
+        }
+        if (cfg.Font) {
+          qsAdd("font", cfg.Font);
+        }
+        if (cfg.Scroll) {
+          qsAdd("scroll", "1");
+        }
+        if (cfg.ShowClips) {
+          qsAdd("clips", "1");
+        }
+        if (tokens.indexOf("auth") > -1) {
+          qsAdd("user", cfg.Name);
+          qsAdd("pass", cfg.Pass);
+        }
+        if (cfg.DisableEffects) {
+          qsAdd("disable", cfg.DisableEffects.join(","));
+        }
+        if (cfg.EnableEffects) {
+          qsAdd("enable", cfg.EnableEffects.join(","));
+        }
+        if (cfg.PluginConfig) {
+          qsAdd("plugincfg", JSON.stringify(cfg.PluginConfig));
+        }
+        if (cfg.ColorScheme === "dark") {
+          qsAdd("scheme", "dark");
+        } else if (cfg.ColorScheme === "light") {
+          qsAdd("scheme", "light");
+        }
+        if (cfg.tag) {
+          qsAdd("tag", cfg.tag);
+        }
+        if (cfg.NoForce) {
+          qsAdd("noforce", "1");
+        }
+
+        /* Append query string to the URL */
+        if (tokens[tokens.length - 1] === "text") {
+          url += "?" + qs.join("&");
+        } else {
+          url += "?base64=" + encodeURIComponent(btoa(qs.join("&")));
+        }
+        Content.addHelp(client.get("HTMLGen").url(url)[0].outerHTML);
+      } else if ((t0 === "set" || t0 === "setobj") && tokens.length > 2) {
+        /* Allow changing configuration by command (dangerous) */
+        let key = tokens[1];
+        if (Util.ObjectHas(cfg, key)) {
+          let val = tokens.slice(2).join(" ");
+          let oldval = Util.ObjectGet(cfg, key);
+          let newval = null;
+          if (t0 === "setobj") {
+            newval = JSON.parse(val);
+          } else if (val === "true") {
+            newval = true;
+          } else if (val === "false") {
+            newval = false;
+          } else if (val === "Infinity") {
+            newval = Infinity;
+          } else if (val === "-Infinity") {
+            newval = -Infinity;
+          } else if (val === "NaN") {
+            newval = NaN;
+          } else if (val.match(/^[+-]?(?:\d|[1-9]\d*)$/)) {
+            newval = Number.parseInt(val);
+          } else if (val.match(/^[-+]?(?:\d*\.\d+|\d+)$/)) {
+            newval = Number.parseFloat(val);
+          } else {
+            newval = val;
+          }
+          let oldstr = JSON.stringify(oldval);
+          let newstr = JSON.stringify(newval);
+          Util.Log(`Changing ${key} from "${oldstr}" to "${newstr}"`);
+          Content.addHelpLine(key, JSON.stringify(oldval));
+          Content.addHelpLine(key, JSON.stringify(newval));
+          Util.ObjectSet(cfg, key, newval);
+          mergeConfigObject(cfg);
+        } else {
+          Content.addError(`Config item ${key.escape()} does not exist`);
+        }
+      } else if (Util.ObjectHas(cfg, t0)) {
+        Content.addHelpLine(t0, JSON.stringify(Util.ObjectGet(cfg, t0)));
+      } else {
+        let tok = `&quot;${t0.escape()}&quot;`;
+        Content.addError(`Unknown config command or key ${tok}`, true);
+      }
+    }), "Obtain and modify configuration information");
 
     /* Set values we'll want to use later */
     config = Util.JSONClone(configObj);
@@ -1289,11 +1288,11 @@ function client_main() { /* exported client_main */
   }
 
   /* Add documentation for the moderator chat commands */
-  ChatCommands.addHelp(Strings.TFC_HEADER, {literal: true});
+  ChatCommands.addHelp("Moderator commands:", {literal: true});
   ChatCommands.addHelp(Strings.TFC_RELOAD, {literal: true, command: true});
   ChatCommands.addHelp(Strings.TFC_FRELOAD, {literal: true, command: true});
   ChatCommands.addHelp(Strings.TFC_NUKE, {literal: true, command: true});
-  ChatCommands.addHelp(Strings.TFC_UNUKE, {command: true, args: true});
+  ChatCommands.addHelp(Strings.TFC_NUKE_USER, {command: true, args: true});
 
   /* Close the main settings window */
   function closeSettings() {
@@ -1714,7 +1713,7 @@ function client_main() { /* exported client_main */
 
     /* Clicking on a "Reconnect" link */
     if ($t.attr("data-reconnect") === "1") {
-      Content.addNotice(Strings.RECONNECTING);
+      Content.addNotice("Reconnecting...");
       client.Connect();
     }
 
@@ -1731,9 +1730,9 @@ function client_main() { /* exported client_main */
     $("#debug").hide();
     if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
       if (client.IsAuthed()) {
-        Content.addInfo(Strings.CONN_AUTHED);
+        Content.addInfo("Connected (authenticated)");
       } else {
-        Content.addInfo(Strings.CONN_UNAUTHED);
+        Content.addInfo("Connected (unauthenticated)");
       }
     }
     if (getConfigObject().Channels.length === 0) {
@@ -1750,9 +1749,9 @@ function client_main() { /* exported client_main */
       msg = `(code ${code} ${Util.WSStatus[code]}: ${reason})`;
     }
     if (getConfigObject().NoAutoReconnect) {
-      Content.addError(Strings.CONN_CLOSED + " " + msg + Strings.RECONNECT);
+      Content.addError(`Connection closed ${msg} ${Strings.RECONNECT}`);
     } else {
-      Content.addError(Strings.CONN_CLOSED + " " + msg);
+      Content.addError(`Connection closed ${msg}`);
       if (!client.connecting) {
         client.Connect();
       }
@@ -1781,7 +1780,7 @@ function client_main() { /* exported client_main */
     let message = e.message.escape();
     Content.addNotice(`${channel}: ${message}`);
     if (e.noticeMsgId === "cmds_available") {
-      Content.addInfo(Strings.USE_HELP);
+      Content.addInfo("Use //help to see Twitch Filtered Chat commands");
     }
   });
 
@@ -2025,7 +2024,7 @@ function client_main() { /* exported client_main */
   client.Connect();
 }
 
-/* globals AssetPaths CSSCheerStyles AssetURLs Strings GIT_URL CUR_URL */
-/* globals HTMLGenerator GetLayout ParseLayout FormatLayout LOG_KEY CFG_KEY */
+/* globals AssetPaths Strings CSSCheerStyles GIT_URL CUR_URL LOG_KEY CFG_KEY */
+/* globals HTMLGenerator GetLayout ParseLayout FormatLayout */
 
 /* vim: set ts=2 sts=2 sw=2 et: */

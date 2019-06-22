@@ -18,8 +18,7 @@
  *   bitsbadgetier
  */
 
-/* exported HTMLGenerator */
-class HTMLGenerator {
+class HTMLGenerator { /* exported HTMLGenerator */
   constructor(client, config=null) {
     this._client = client;
     this._config = config || {};
@@ -628,14 +627,6 @@ class HTMLGenerator {
 
   /* Returns msginfo object */
   _genMsgInfo(event) {
-    const anticsWords = [
-      "force",        /* Message is raw HTML */
-      "force-eval",   /* Message is a JavaScript expression */
-      "forcejs",      /* Message is a JavaScript function */
-      "forcejs-only", /* As above, for the matched tag(s) */
-      "forcebits",    /* Prepend "cheer1000" to message */
-      "forcecheer"    /* Prepend "cheer1000" to message */
-    ];
     let $msg = $(`<span class="message" data-message="1"></span>`);
     let $effects = [];
 
@@ -645,15 +636,48 @@ class HTMLGenerator {
 
     /* Handle early mod-only antics */
     if (this.enableAntics && event.ismod) {
-      let word0 = event.message.split(" ")[0];
-      if (anticsWords.indexOf(word0) > -1) {
-        event.flags.force = true;
+      let t0 = event.message.split(" ")[0];
+      switch (t0.replace(/-/g, "")) {
+        case "force":
+        case "!tfcforce":
+          /* Message is raw HTML */
+          event.flags.force = true;
+          event.flags.force_kind = "force";
+          break;
+        case "forceeval":
+        case "!tfceval":
+        case "!tfcforceeval":
+          /* Message is a JavaScript expression */
+          event.flags.force = true;
+          event.flags.force_kind = "forceeval";
+          break;
+        case "forcejs":
+        case "!tfcjs":
+        case "!tfcforcejs":
+          /* Message is a JavaScript function call */
+          event.flags.force = true;
+          event.flags.force_kind = "forcejs";
+          break;
+        case "forcejsonly":
+        case "!tfcjsonly":
+        case "!tfcforcejsonly":
+          /* As above, for the matched tag(s) */
+          event.flags.force = true;
+          event.flags.force_kind = "forcejsonly";
+          break;
+        case "forcebits":
+        case "forcecheer":
+          /* Prepend "cheer1000" to the message */
+          event.flags.force = true;
+          event.flags.force_kind = "bits";
+          break;
+        default:
+          event.flags.force = false;
       }
-      if (word0 === "forcebits" || word0 === "forcecheer") {
-        /* Message length unchanged; no need to update the map */
-        let wordlen = word0.length;
+      if (event.flags.force_kind === "bits") {
+        let wordlen = t0.length;
         let msgprefix = "cheer1000";
-        while (msgprefix.length < word0.length) {
+        while (msgprefix.length < t0.length) {
           msgprefix += " ";
         }
         /* Modify message and event.message, as they're both used below */
@@ -691,19 +715,23 @@ class HTMLGenerator {
     /* Handle mod-only antics */
     if (event.ismod && this.enableAntics && event.flags.force) {
       /* NOTE: These will run twice for layout=double */
-      let m = event.message;
-      let t0 = m.split(" ")[0];
-      let ts = m.split(" ").slice(1).join(" ");
-      if (t0 === "force") {
+      let ts = event.message.split(" ").slice(1).join(" ");
+      if (event.flags.force_kind === "force") {
         /* force: use raw message with no formatting */
         message = ts;
-      } else if (t0 === "force-eval") {
+      } else if (event.flags.force_kind === "forceeval") {
         /* force-eval: evaluate ts as a function */
-        message = (new Function(`return String(${ts})`))();
-      } else if (t0 === "forcejs") {
+        try {
+          let func = new Function(`return ${ts}`);
+          message = JSON.stringify(func.bind(this)());
+        }
+        catch (e) {
+          message = `Can't let you do that, ${event.user}: ${e}`.escape();
+        }
+      } else if (event.flags.force_kind === "forcejs") {
         /* forcejs: use raw message wrapped in script tags */
         message = `<script>${ts}</script>`;
-      } else if (t0 === "forcejs-only" && ts.length > 0) {
+      } else if (event.flags.force_kind === "forcejsonly" && ts.length > 0) {
         /* forcejs-only: forcejs, limited to a ?tag value:
          *  <tag>: execute if ?tag value === <tag>
          *  ?<tag>: execute if ?tag value contains <tag> */

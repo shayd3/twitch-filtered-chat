@@ -226,19 +226,19 @@ function Main(global) { /* exported Main */
       /* Focus on the chat texarea */
       let c = document.getElementById("txtChat");
       if (c && c.focus) c.focus();
-      /* Call client_main to construct the filtered chat */
+      /* Call doLoadClient to construct the filtered chat */
       Util.LogOnly("Document rendered; setting up TFC...");
       try {
-        client_main();
+        doLoadClient();
       } catch(e) {
         _console_error(e);
         if (e.name === "ReferenceError") {
           let m = e.message || "";
-          if (m.match(/\bclient_main\b.*(?:not |un)defined\b/)) {
+          if (m.match(/\bdoLoadClient\b.*(?:not |un)defined\b/)) {
             alert("FATAL: filtered-chat.js failed to load");
           }
         } else {
-          let msg = "client_main error: " + e.toString();
+          let msg = "doLoadClient error: " + e.toString();
           if (e.stack) {
             msg += ";\nstack: " + e.stack.toString();
           }
@@ -303,6 +303,6 @@ function Main(global) { /* exported Main */
 /* eslintrc config: */
 /* exported MOD_TFC MOD_TWAPI IS_TESLA ASK_DIST USE_DIST */
 /* exported URI BASE_URI SELF_URI GIT_URL CUR_URL PATH_TFC PATH_TWAPI */
-/* globals InitChatCommands client_main */
+/* globals InitChatCommands doLoadClient */
 
 /* vim: set ts=2 sts=2 sw=2 et: */

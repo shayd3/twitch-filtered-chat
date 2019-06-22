@@ -49,32 +49,24 @@
 const CFG_KEY = "tfc-config"; /* exported CFG_KEY */
 const LOG_KEY = "debug-msg-log"; /* exported LOG_KEY */
 
-/* URLs to various assets */
-const AssetURLs = { /* exported AssetURLs */
+/* Paths to specific assets */
+const AssetPaths = { /* exported AssetPaths */
   SETTINGS: "assets/settings_white.png",
-  SETTINGS_LIGHT: "assets/settings.png"
+  SETTINGS_LIGHT: "assets/settings.png",
+  FAVICON: "assets/settings_white.png",
+  FAVICON_ALERT: "assets/settings_white_alert.png"
 };
 
 /* Strings intended for some kind of i18n support */
 const Strings = { /* exported Strings */
-  USE_HELP: "Use //help to see Twitch Filtered Chat commands",
   PLEASE_AUTH: "Authentication needed to send messages",
   PLEASE_JOIN: "No channels configured; type //join &lt;channel&gt; to join one!",
   RECONNECT: "<span class=\"reconnect\" data-reconnect=\"1\">Reconnect</span>",
-  RECONNECTING: "Reconnecting...",
-
-  CONN_AUTHED: "Connected (authenticated)",
-  CONN_UNAUTHED: "Connected (unauthenticated)",
-  CONN_CLOSED: "Connection closed",
 
   NAME_AUTOGEN: "Auto-Generated",
   PASS_CACHED: "Cached",
   CFG_OMIT_CID: "Omitted for security; use //config clientid to show",
   CFG_OMIT_PASS: "Omitted for security; use //config pass to show",
-  CFG_FROM: "From user: ",
-  CFG_CONTAINS: "Contains: ",
-  CFG_STARTS: "Starts with: ",
-  CFG_CHANNEL: "Channel: ",
 
   CFG_CMD: "Show global and module configuration",
   CFG_CMD_EXPORT: "Export *all* of localStorage to a new tab (contains oauth!)",
@@ -89,11 +81,10 @@ const Strings = { /* exported Strings */
   CFG_CMD_SET: "//config set <key> <value>: Change <key> to <value> (dangerous!)",
   CFG_CMD_SETOBJ: "//config setobj <key> <value>: Change <key> to JSON-encoded <value> (dangerous!)",
 
-  TFC_HEADER: "Moderator commands:",
   TFC_RELOAD: "!tfc reload: Reload the page",
   TFC_FRELOAD: "!tfc force-reload: Reload the page, discarding cache",
   TFC_NUKE: "!tfc nuke: Clear the chat",
-  TFC_UNUKE: "!tfc nuke <user>: Remove all messages sent by <user>",
+  TFC_NUKE_USER: "!tfc nuke <user>: Remove all messages sent by <user>",
 
   StreamOnline: (ch) => `${ch} is streaming`,
   StreamInfo: (url, name, game, viewers) => `${name} is streaming <a href="${url}">${game}</a> for ${viewers} viewer${viewers === 1 ? "" : "s"}`,
@@ -183,20 +174,12 @@ var CSSCheerStyles = { /* exported CSSCheerStyles */
   }
 };
 
-/* Generate a CSSCheerStyle for the color given */
-function CSSColorStyle(colorname) { /* exported CSSColorStyle */
-  return {
-    cost: 1,
-    style: `color: ${ColorNames[colorname]}`
-  };
-}
-
-/* Obtain a style definition for the given word */
+/* Obtain a style definition for the given effect name */
 function GetCheerStyle(word) { /* exported GetCheerStyle */
   if (CSSCheerStyles.hasOwnProperty(word)) {
     return CSSCheerStyles[word];
   } else if (ColorNames.hasOwnProperty(word)) {
-    return CSSColorStyle(word);
+    return {cost: 1, style: `color: ${ColorNames[word]}`};
   }
   return null;
 }
@@ -455,12 +438,6 @@ var ColorNames = { /* exported ColorNames */
   "blue": "#0343df",
   "green": "#15b01a",
   "purple": "#7e1e9c"
-};
-
-/* Paths to specific assets */
-const AssetPaths = { /* exported AssetPaths */
-  FAVICON: "assets/settings_white.png",
-  FAVICON_ALERT: "assets/settings_white_alert.png"
 };
 
 /* vim: set ts=2 sts=2 sw=2 et: */
