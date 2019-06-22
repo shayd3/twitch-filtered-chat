@@ -702,14 +702,9 @@ function shouldFilter(module, event) {
     if (rules.ExcludeUser.any((u) => u.equalsLowerCase(user))) return true;
     if (rules.ExcludeStartsWith.any((m) => message.startsWith(m))) return true;
     /* Filtering to permitted channels (default: permit all) */
-    if (rules.FromChannel.length > 0) {
-      for (let s of rules.FromChannel) {
-        let c = s.indexOf("#") === -1 ? "#" + s : s;
-        if (event.channel && event.channel.channel) {
-          if (!event.channel.channel.equalsLowerCase(c)) {
-            return true;
-          }
-        }
+    for (let s of rules.FromChannel) {
+      if (event.channelString.equalsLowerCase(s)) {
+        return true;
       }
     }
   } else if (event instanceof TwitchEvent) {
@@ -1821,7 +1816,7 @@ function client_main() { /* exported client_main */
   /* Received streamer info */
   client.bind("twitch-streaminfo", function _on_twitch_streaminfo(e) {
     let layout = getConfigObject().Layout;
-    let cinfo = client.GetChannelInfo(e.channel.channel) || {};
+    let cinfo = client.GetChannelInfo(e.channelString) || {};
     if (layout && !layout.Slim) {
       if (cinfo.online) {
         try {
@@ -1837,10 +1832,10 @@ function client_main() { /* exported client_main */
         catch (err) {
           Util.ErrorOnly("Failed to obtain stream information:", cinfo);
           Util.Error(err);
-          Content.addNotice(Strings.StreamOnline(e.channel.channel));
+          Content.addNotice(Strings.StreamOnline(e.channelString));
         }
       } else {
-        Content.addNotice(Strings.StreamOffline(e.channel.channel));
+        Content.addNotice(Strings.StreamOffline(e.channelString));
       }
     }
   });

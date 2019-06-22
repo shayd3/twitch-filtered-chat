@@ -301,7 +301,7 @@ class HTMLGenerator {
           let ch = event.channel;
           let badge_info = this._client.GetChannelBadge(ch, bname, bnum);
           let badge_src = badge_info.image_url_1x;
-          let channel = event.channel.channel.replace(/^#/, "");
+          let channel = event.channelString.replace(/^#/, "");
           $b.attr("src", badge_src);
           $b.attr("data-badge", JSON.stringify(badge_info));
           $b.attr("data-badge-scope", "channel");
@@ -727,7 +727,7 @@ class HTMLGenerator {
     $e.attr("data-id", event.flags.id);
     $e.attr("data-user", event.user);
     $e.attr("data-user-id", event.flags["user-id"]);
-    $e.attr("data-channel", event.channel.channel.replace(/^#/, ""));
+    $e.attr("data-channel", event.channelString.replace(/^#/, ""));
     $e.attr("data-channel-id", event.flags["room-id"]);
     $e.attr("data-channel-full", Twitch.FormatChannel(event.channel));
     if (event.channel.room) {
