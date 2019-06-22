@@ -3,11 +3,8 @@
 "use strict";
 
 /* FIXME:
- * Should config.Scroll set cbScroll or the other way around?
- *   See getConfigObject below txtPass
- * Should config.ShowClips set cbClips or the other way around?
- *   See getConfigObject below txtPass
  * Username context window should slide rather than teleport to new names
+ * Chat line backgrounds flicker unpredictably between messages
  */
 
 /* TODO (in approximate decreasing priority):
@@ -702,10 +699,13 @@ function shouldFilter(module, event) {
     if (rules.ExcludeUser.any((u) => u.equalsLowerCase(user))) return true;
     if (rules.ExcludeStartsWith.any((m) => message.startsWith(m))) return true;
     /* Filtering to permitted channels (default: permit all) */
-    for (let s of rules.FromChannel) {
-      if (event.channelString.equalsLowerCase(s)) {
-        return true;
+    if (rules.FromChannel.length > 0) {
+      for (let s of rules.FromChannel) {
+        if (event.channelString.equalsLowerCase(s)) {
+          return true;
+        }
       }
+      return false;
     }
   } else if (event instanceof TwitchEvent) {
     /* Filter out events and notices */
