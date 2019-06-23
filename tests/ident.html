@@ -9,7 +9,12 @@ body {
   background-color: white;
   color: black;
 }
-.content {
+#injector {
+  width: 80%;
+  min-height: 256px;
+  max-height: 100%;
+}
+.content, .injOutput {
   counter-reset: line;
 }
 .line {
@@ -286,8 +291,10 @@ window.DFLT_WINDOW_ATTRIBS = [
   "USBInterface", "USBInTransferResult", "USBIsochronousInTransferPacket",
   "USBIsochronousInTransferResult", "USBIsochronousOutTransferPacket",
   "USBIsochronousOutTransferResult", "USBOutTransferResult",
-  "DeviceMotionEventAcceleration", "DeviceMotionEventRotationRate"
-]
+  "DeviceMotionEventAcceleration", "DeviceMotionEventRotationRate",
+  /* Items added to Firefox after initial deployment */
+  "AnonymousContent", "StyleSheetApplicableStateChangeEvent"
+];
   </script>
   <script type="text/javascript">
 
@@ -299,6 +306,19 @@ function Checks() {
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&apos;");
   }
+
+  function to_source(obj) {
+    if (typeof(obj) === "object") {
+      if (Object.prototype.toSource) {
+        return Object.prototype.toSource.call(obj).replace(/\n/g, " ");
+      } else {
+        return JSON.stringify(obj);
+      }
+    } else {
+      return JSON.stringify(obj);
+    }
+  }
+
   function add_message(s, cls, istext) {
     var $d = $(`<div class="line"></div>`);
     if (!!cls) {
@@ -348,7 +368,6 @@ function Checks() {
       if (a == "_ident_onready") continue;
       if (a == "jQuery") continue;
       if (a == "$") continue;
-      if (a.match(/^PrivateSymbol\./)) continue;
       if (a == "Checks" && typeof(window[a]) === "function") continue;
       if (typeof(navigator[a]) == "function") continue;
       if (window.DFLT_WINDOW_ATTRIBS.indexOf(a) > -1) continue;
@@ -369,7 +388,9 @@ function Checks() {
       if (k === "userAgent") continue;
       if (typeof(k) !== "string") continue;
       if (typeof(navigator[k]) == "string") {
-        add_message(`Navigator object <pre>${k}</pre>="<pre>${navigator[k]}</pre>"`);
+        let mk = `navigator.${k}`;
+        let mv = `${to_source(navigator[k])}`;
+        add_message(`<pre>${mk} = ${mv}</pre>`);
       }
     }
   }
@@ -393,7 +414,8 @@ function Checks() {
     add_message(`Stacktrace: <pre>${stack}</pre>`);
   }
 
-  return {
+  let funcs = {
+    to_source: to_source,
     add_message: add_message,
     has_reflect: has_reflect,
     check_webkit: check_webkit,
@@ -403,6 +425,7 @@ function Checks() {
     check_navigator: check_navigator,
     check_stack_format: check_stack_format
   };
+  return funcs;
 }
 
 function _ident_onready() {
@@ -424,15 +447,30 @@ function _ident_onready() {
   }
   C.check_webkit();
   C.check_obs();
-  C.add_message(`<pre>${navigator.userAgent}</pre>`);
-  C.check_navigator();
+  C.add_message(`<pre>navigator.userAgent = ${C.to_source(navigator.userAgent)}</pre>`);
   if (C.has_reflect()) { 
     C.check_reflect_window();
     C.check_reflect_navigator();
   } else {
+    C.check_navigator();
     C.add_message("Window does not have reflect object");
   }
   C.check_stack_format();
+
+  /* Allow script injection */
+  $("#inject").click(function(e) {
+    let result = "";
+    try {
+      let func = new Function("return " + $("#injector").val());
+      result = `${func()}`;
+      $("#injector").val("");
+    }
+    catch (error) {
+      result = `${error}`;
+    }
+    let $l = $(`<div class="line"></div>`).text(result);
+    $("#injOutput")[0].appendChild($l[0]);
+  });
 }
 
 $(document).ready(_ident_onready);
@@ -441,6 +479,15 @@ $(document).ready(_ident_onready);
 <body>
 <div class="content">
   <div class="line" style="display: none">Browser Identification Study</div>
+</div>
+<div class="injector">
+  <div id="injOutput" class="injOutput"></div>
+  <div class="injButton">
+    <input id="inject" type="button" value="Run" />
+  </div>
+  <div class="injText">
+    <textarea id="injector" width="100"></textarea>
+  </div>
 </div>
 </body>
 </html>
