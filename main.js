@@ -112,7 +112,7 @@ function AddAsset(src, tree=null, loadcb=null, errcb=null) {
       path = PATH_TWAPI + "/" + src;
       break;
     default:
-      if (src.startsWith('//')) {
+      if (src.startsWith("//")) {
         path = window.location.protocol + src;
       }
       break;

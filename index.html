@@ -8,6 +8,9 @@
   <script type="text/javascript" src="assets/jquery-3.4.0.js"></script>
   <!-- CSS.escape polyfill -->
   <script type="text/javascript" src="assets/css.escape.js"></script>
+  <!-- TODO: Investigate whether or not this is a better idea
+  <script crossorigin="anonymous" src="https://polyfill.io/v3/polyfill.min.js?flags=gated&features=default%2Ces6%2Ces7%2Ces5%2CElement.prototype.cloneNode%2CElement.prototype.toggleAttribute%2CFunction.prototype.name%2CObject.entries%2CObject.is%2CObject.values%2CPromise.prototype.finally%2CRegExp.prototype.flags%2Cconsole%2Cconsole.info%2Cconsole.log%2Cconsole.error%2Cconsole.debug%2Cconsole.warn%2Cconsole.trace%2Cfetch%2ClocalStorage%2Cconsole.time%2Cconsole.timeEnd%2Cconsole.timeStamp%2Cconsole.profile%2Cconsole.profileEnd%2Cconsole.profiles%2Cconsole.group%2Cconsole.groupEnd%2Cconsole.groupCollapsed%2Cconsole.exception%2CrequestAnimationFrame"></script>
+  -->
   <!-- Script injector (NOTE: All JS here must be ES5-compliant) -->
   <script type="text/javascript" id="main-inject">
 
@@ -68,7 +71,7 @@ function onLoad() {
           <div class="menu"><div></div><div></div><div></div></div>
           <!-- Button to clear chat -->
           <span class="clear-chat">
-            <a class="clear-link" data-for="module1" title="Clear" alt="Clear">
+            <a class="clear-link" title="Clear" alt="Clear">
               <img class="clear-icon" src="assets/no-entry.svg" />
             </a>
           </span>
@@ -133,7 +136,7 @@ function onLoad() {
           <div class="menu"><div></div><div></div><div></div></div>
           <!-- Button to clear chat -->
           <span class="clear-chat">
-            <a class="clear-link" data-for="module2" title="Clear" alt="Clear">
+            <a class="clear-link" title="Clear" alt="Clear">
               <img class="clear-icon" src="assets/no-entry.svg" />
             </a>
           </span>
@@ -195,7 +198,7 @@ function onLoad() {
   <div id="settings">
     <header style="display: inline-block; width: 100%">
       <span class="fl">Settings<span class="btn" id="btnSettingsHelp">?</span></span>
-      <span class="fr"><span class="btn" id="btnSettingsBuilder">Builder</span></span>
+      <span class="fr btn" id="btnSettingsBuilder">Builder</span>
     </header>
     <ul>
       <!-- General settings (formatted to remove unwanted Text elements) -->
