@@ -53,6 +53,7 @@
   --z-index-line: 10;
   --z-index-chat: 12;
   --z-index-settings: 20;
+  --z-index-hover: 20;
 
   /* Unicode prefix characters */
   --prefix-help: "\02370";
@@ -753,7 +754,7 @@ body.slim #btnSettings {
   border-style: outset;
   background-image: linear-gradient(to right, darkgray, lightgray);
   color: black;
-  z-index: var(--z-index-chat);
+  z-index: var(--z-index-hover);
 }
 
 #userContext .item {
@@ -765,6 +766,10 @@ body.slim #btnSettings {
   margin-left: 0.5em;
 }
 
+#userContext a {
+  color: blue;
+}
+
 #userContext .cw-timeout:first-child {
   margin-right: 2px;
 }
@@ -772,6 +777,12 @@ body.slim #btnSettings {
 #userContext a.cw-timeout-dur {
   margin-left: 2px;
   margin-right: 2px;
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+#userContext a.cw-ban-user {
   text-decoration: underline;
   cursor: pointer;
   font-weight: bold;
@@ -788,7 +799,7 @@ body.slim #btnSettings {
   color: #c3c3c3;
   background-color: #3c3c3c;
   text-align: center;
-  z-index: 18;
+  z-index: var(--z-index-hover);
 }
 
 /* End hover context window 0}}} */
@@ -978,31 +989,34 @@ body.slim #btnSettings {
  *  div.menu
  *   div{3}
  *  span.clear-chat
- *   a.clear-link[data-for="module1"]
+ *   a.clear-link
  *    img.clear-icon
  *  div.settings
- *   p
- *   ul.include
- *    li label input.pleb
- *    li label input.sub
- *    li label input.vip
- *    li label input.mod
- *    li label input.event
- *    li label input.bits
- *    li label input.me
- *   p
- *   ul.limit
- *    li.textbox.from_channel
- *     input
- *     label
- *   p
- *   ul.exclude
- *    li.textbox.exclude_user
- *     label
- *     input
- *    li.textbox.exclude_startswith
- *     label
- *     input
+ *   fieldset
+ *    legend
+ *    ul.include
+ *     li label input.pleb
+ *     li label input.sub
+ *     li label input.vip
+ *     li label input.mod
+ *     li label input.event
+ *     li label input.bits
+ *     li label input.me
+ *   fieldset
+ *    legend
+ *    ul.limit
+ *     li.textbox.from_channel
+ *      input
+ *      label
+ *   fieldset
+ *    legend
+ *    ul.exclude
+ *     li.textbox.exclude_user
+ *      label
+ *      input
+ *     li.textbox.exclude_startswith
+ *      label
+ *      input
  *  label.name
  *  input.name
  * div.content
