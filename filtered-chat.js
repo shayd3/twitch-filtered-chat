@@ -264,7 +264,7 @@ function getConfigKey() {
 }
 
 /* Obtain configuration */
-function getConfigObject(inclSensitive=true) {
+function getConfigObject(inclSensitive=false) {
   /* 1) Obtain configuration values
    *  a) from localStorage
    *  b) from query string (overrides (a))
@@ -478,6 +478,7 @@ function getConfigObject(inclSensitive=true) {
     config.ClientID = null;
   }
 
+  /* Should be null by this point, but delete them anyway */
   if (!inclSensitive) {
     delete config["ClientID"];
     delete config["Pass"];
@@ -516,33 +517,33 @@ function getModules() { /* exported getModules */
 
 /* Apply configuration to the module's settings HTML */
 function setModuleSettings(module, config) {
+  let $module = $(module);
   if (config.Name) {
-    $(module).find("label.name").html(config.Name);
-    $(module).find("input.name").val(config.Name);
+    $module.find("label.name").html(config.Name);
+    $module.find("input.name").val(config.Name);
   }
-  $("input.pleb").check(config.Pleb);
-  $("input.sub").check(config.Sub);
-  $("input.vip").check(config.VIP);
-  $("input.mod").check(config.Mod);
-  $("input.event").check(config.Event);
-  $("input.bits").check(config.Bits);
-  $("input.me").check(config.Me);
+  $module.find("input.pleb").check(config.Pleb);
+  $module.find("input.sub").check(config.Sub);
+  $module.find("input.vip").check(config.VIP);
+  $module.find("input.mod").check(config.Mod);
+  $module.find("input.event").check(config.Event);
+  $module.find("input.bits").check(config.Bits);
+  $module.find("input.me").check(config.Me);
   function addInput(cls, label, values) {
     if (values && values.length > 0) {
       for (let val of values) {
         let $li = $(`<li></li>`);
-        /* FIXME: Template injection via malicious config? */
-        let isel = `input.${cls}[value="${val}"]`;
-        if ($(module).find(isel).length === 0) {
-          let $l = $(`<label></label>`).val(label);
+        let isel = `input.${CSS.escape(cls)}[value="${CSS.escape(val)}"]`;
+        if ($module.find(isel).length === 0) {
+          let $la = $(`<label></label>`).val(label);
           let $cb = $(`<input type="checkbox" checked />`);
           $cb.addClass(cls);
           $cb.attr("value", val);
           $cb.click(updateModuleConfig);
-          $l.append($cb);
-          $l.html($l.html() + label + val.escape());
-          $li.append($l);
-          $(module).find(`li.${cls}`).before($li);
+          $la.append($cb);
+          $la.html($la.html() + label + val.escape());
+          $li.append($la);
+          $module.find(`li.${CSS.escape(cls)}`).before($li);
         }
       }
     }
@@ -937,8 +938,8 @@ function doLoadClient() { /* exported doLoadClient */
 
   /* Hook Logger messages */
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
-    let msg = Util.Logger.stringify(...args);
     if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
+      let msg = Util.Logger.stringify(...args);
       Content.addError("ERROR: " + msg.escape());
     }
   }, "ERROR");
@@ -953,14 +954,14 @@ function doLoadClient() { /* exported doLoadClient */
     }
   }, "WARN");
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
-    let msg = Util.Logger.stringify(...args);
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
+      let msg = Util.Logger.stringify(...args);
       Content.addHTML("DEBUG: " + msg.escape());
     }
   }, "DEBUG");
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
-    let msg = Util.Logger.stringify(...args);
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
+      let msg = Util.Logger.stringify(...args);
       Content.addHTML("TRACE: " + msg.escape());
     }
   }, "TRACE");
@@ -1181,7 +1182,7 @@ function doLoadClient() { /* exported doLoadClient */
     }
 
     /* Set values we'll want to use later */
-    config = getConfigObject(false);
+    config = getConfigObject();
     config.Plugins = Boolean(cfg.Plugins);
     /* Absolutely ensure the public config object lacks private fields */
     config.Pass = config.ClientID = null;
@@ -1293,7 +1294,7 @@ function doLoadClient() { /* exported doLoadClient */
 
   /* Function for syncing configuration with HTMLGen */
   function updateHTMLGenConfig() {
-    for (let [k, v] of Object.entries(getConfigObject(false))) {
+    for (let [k, v] of Object.entries(getConfigObject())) {
       client.get("HTMLGen").setValue(k, v);
     }
   }
@@ -1758,7 +1759,7 @@ function doLoadClient() { /* exported doLoadClient */
         Content.addInfo("Connected (unauthenticated)");
       }
     }
-    if (getConfigObject(false).Channels.length === 0) {
+    if (getConfigObject().Channels.length === 0) {
       Content.addInfo(Strings.PLEASE_JOIN);
     }
   });
@@ -1771,7 +1772,7 @@ function doLoadClient() { /* exported doLoadClient */
     if (reason) {
       msg = `(code ${code} ${Util.WSStatus[code]}: ${reason})`;
     }
-    if (getConfigObject(false).NoAutoReconnect) {
+    if (getConfigObject().NoAutoReconnect) {
       Content.addError(`Connection closed ${msg} ${Strings.RECONNECT}`);
     } else {
       Content.addError(`Connection closed ${msg}`);
@@ -1783,7 +1784,7 @@ function doLoadClient() { /* exported doLoadClient */
 
   /* Client joined a channel */
   client.bind("twitch-joined", function _on_twitch_joined(e) {
-    let layout = getConfigObject(false).Layout;
+    let layout = getConfigObject().Layout;
     if (!layout.Slim) {
       Content.addInfo(`Joined ${Twitch.FormatChannel(e.channel)}`);
     }
@@ -1791,7 +1792,7 @@ function doLoadClient() { /* exported doLoadClient */
 
   /* Client left a channel */
   client.bind("twitch-parted", function _on_twitch_parted(e) {
-    let layout = getConfigObject(false).Layout;
+    let layout = getConfigObject().Layout;
     if (!layout.Slim) {
       Content.addInfo(`Left ${Twitch.FormatChannel(e.channel)}`);
     }
@@ -1826,7 +1827,7 @@ function doLoadClient() { /* exported doLoadClient */
       }
     }
     /* Avoid flooding the DOM with stale chat messages */
-    let max = getConfigObject(false).MaxMessages;
+    let max = getConfigObject().MaxMessages;
     /* FIXME: Causes flickering for some reason */
     for (let c of $(".content")) {
       while ($(c).find(".line-wrapper").length > max) {
@@ -1837,7 +1838,7 @@ function doLoadClient() { /* exported doLoadClient */
 
   /* Received streamer info */
   client.bind("twitch-streaminfo", function _on_twitch_streaminfo(e) {
-    let layout = getConfigObject(false).Layout;
+    let layout = getConfigObject().Layout;
     let cinfo = client.GetChannelInfo(e.channelString) || {};
     if (layout && !layout.Slim) {
       if (cinfo.online) {
