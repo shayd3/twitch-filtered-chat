@@ -338,7 +338,7 @@ function onCommandLog(cmd, tokens, client) {
         Content.addHelp(`${i}: ${formatLogEntry(l)}`);
       }
     } else if (t0 === "export") {
-      Util.Open("assets/log-export.html", "_blank", {});
+      Util.Open(AssetPaths.LOG_EXPORT_WINDOW, "_blank", {});
     } else if (t0 === "summary") {
       let lines = [];
       let line = [];
@@ -935,6 +935,6 @@ function InitChatCommands() { /* exported InitChatCommands */
   }
 }
 
-/* globals LOG_KEY */
+/* globals LOG_KEY AssetPaths */
 
 /* vim: set ts=2 sts=2 sw=2 et: */

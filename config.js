@@ -54,37 +54,19 @@ const AssetPaths = { /* exported AssetPaths */
   SETTINGS: "assets/settings_white.png",
   SETTINGS_LIGHT: "assets/settings.png",
   FAVICON: "assets/settings_white.png",
-  FAVICON_ALERT: "assets/settings_white_alert.png"
+  FAVICON_ALERT: "assets/settings_white_alert.png",
+  BUILDER_WINDOW: "settings/builder.html", /* TODO */
+  HELP_WINDOW: "assets/help-window.html",
+  CONFIG_EXPORT_WINDOW: "assets/config-export.html",
+  LOG_EXPORT_WINDOW: "assets/log-export.html"
 };
 
-/* Strings intended for some kind of i18n support */
+/* Strings constants and message-building functions */
 const Strings = { /* exported Strings */
-  PLEASE_AUTH: "Authentication needed to send messages",
-  PLEASE_JOIN: "No channels configured; type //join &lt;channel&gt; to join one!",
-  RECONNECT: "<span class=\"reconnect\" data-reconnect=\"1\">Reconnect</span>",
+  RECONNECT: `<span class="reconnect" data-reconnect="1">Reconnect</span>`,
 
   NAME_AUTOGEN: "Auto-Generated",
   PASS_CACHED: "Cached",
-  CFG_OMIT_CID: "Omitted for security; use //config clientid to show",
-  CFG_OMIT_PASS: "Omitted for security; use //config pass to show",
-
-  CFG_CMD: "Show global and module configuration",
-  CFG_CMD_EXPORT: "Export *all* of localStorage to a new tab (contains oauth!)",
-  CFG_CMD_PURGE: "Clear local storage (cannot be undone!)",
-  CFG_CMD_CLIENTID: "Display ClientID",
-  CFG_CMD_PASS: "Display OAuth token (if present)",
-  CFG_CMD_URL: "Generate a URL from the current configuration",
-  CFG_CMD_URLARGS: "//config url parameters (can be used in any order):",
-  CFG_CMD_URL_GIT: "Generate link targeting github.io",
-  CFG_CMD_URL_TEXT: "Don't base64-encode the URL",
-  CFG_CMD_URL_AUTH: "Include both ClientID and OAuth information",
-  CFG_CMD_SET: "//config set <key> <value>: Change <key> to <value> (dangerous!)",
-  CFG_CMD_SETOBJ: "//config setobj <key> <value>: Change <key> to JSON-encoded <value> (dangerous!)",
-
-  TFC_RELOAD: "!tfc reload: Reload the page",
-  TFC_FRELOAD: "!tfc force-reload: Reload the page, discarding cache",
-  TFC_NUKE: "!tfc nuke: Clear the chat",
-  TFC_NUKE_USER: "!tfc nuke <user>: Remove all messages sent by <user>",
 
   StreamOnline: (ch) => `${ch} is streaming`,
   StreamInfo: (url, name, game, viewers) => `${name} is streaming <a href="${url}">${game}</a> for ${viewers} viewer${viewers === 1 ? "" : "s"}`,

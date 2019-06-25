@@ -978,9 +978,9 @@ function doLoadClient() { /* exported doLoadClient */
         if (k === "Layout") {
           val = FormatLayout(v);
         } else if (k === "ClientID") {
-          val = Strings.CFG_OMIT_CID;
+          val = "Omitted for security; use //config clientid to show";
         } else if (k === "Pass") {
-          val = Strings.CFG_OMIT_PASS;
+          val = "Omitted for security; use //config pass to show";
         } else if (typeof(v) === "object" && v.Name && v.Name.length > 0) {
           key = null;
           val = null;
@@ -1003,21 +1003,22 @@ function doLoadClient() { /* exported doLoadClient */
         }
       }
     } else if (t0 === "help") {
-      Content.addHelpLine("//config", Strings.CFG_CMD);
+      Content.addHelpLine("//config", "Show and manipulate configuration");
       Content.addHelp("//config parameters:");
-      Content.addHelpLine("export", Strings.CFG_CMD_EXPORT);
-      Content.addHelpLine("purge", Strings.CFG_CMD_PURGE);
-      Content.addHelpLine("clientid", Strings.CFG_CMD_CLIENTID);
-      Content.addHelpLine("pass", Strings.CFG_CMD_PASS);
-      Content.addHelpLine("url", Strings.CFG_CMD_URL);
-      Content.addHelp(Strings.CFG_CMD_URLARGS);
-      Content.addHelpLine("git", Strings.CFG_CMD_URL_GIT);
-      Content.addHelpLine("text", Strings.CFG_CMD_URL_TEXT);
-      Content.addHelpLine("auth", Strings.CFG_CMD_URL_AUTH);
-      Content.addHelp(Strings.CFG_CMD_SET.escape());
-      Content.addHelp(Strings.CFG_CMD_SETOBJ.escape());
+      Content.addHelpLine("export", "Export *all* of localStorage to a new tab (contains secrets!)");
+      Content.addHelpLine("purge", "Clear localStorage (cannot be undone!)");
+      Content.addHelpLine("clientid", "Display ClientID");
+      Content.addHelpLine("pass", "Dislay OAuth token (if one is present)");
+      Content.addHelpLine("url", "Generate a URL from the current configuration");
+      Content.addHelp("//config url parameters (can be used in any order):");
+      Content.addHelpLine("git", "Force URL to target github.io");
+      Content.addHelpLine("text", "Force URL to be un-encoded");
+      Content.addHelpLine("auth", "Include secrets in URL");
+      Content.addHelp("//config set <key> <value>: Change <key> to <value> (dangerous!)".escape());
+      Content.addHelp("//config setobj <key> <value>: Change <key> to JSON-encoded <value> (dangerous!)".escape());
+      Content.addHelp("//config unset <key>: Remove <key> (dangerous!)".escape());
     } else if (t0 === "export") {
-      Util.Open("assets/config-export.html", "_blank", {});
+      Util.Open(AssetPaths.CONFIG_EXPORT_WINDOW, "_blank", {});
     } else if (t0 === "purge") {
       Util.SetWebStorage({});
       window.liveStorage = {};
@@ -1154,6 +1155,10 @@ function doLoadClient() { /* exported doLoadClient */
       } else {
         Content.addError(`Config item ${key.escape()} does not exist`);
       }
+    } else if (t0 === "unset" && tokens.length > 2) {
+      delete cfg[tokens[1]];
+      Util.SetWebStorage(cfg);
+      Content.addHelp(`Removed key ${tokens[1]}`);
     } else if (Util.ObjectHas(cfg, t0)) {
       Content.addHelpLine(t0, JSON.stringify(Util.ObjectGet(cfg, t0)));
     } else {
@@ -1176,7 +1181,7 @@ function doLoadClient() { /* exported doLoadClient */
       document.title += " Read-Only";
       if (cfg.Layout.Chat) {
         /* Change the chat placeholder and border to reflect read-only */
-        $("#txtChat").attr("placeholder", Strings.PLEASE_AUTH);
+        $("#txtChat").attr("placeholder", "Authentication needed to send messages");
         Util.CSS.SetProperty("--chat-border", "#cd143c");
       }
     }
@@ -1313,10 +1318,14 @@ function doLoadClient() { /* exported doLoadClient */
 
   /* Add documentation for the moderator chat commands */
   ChatCommands.addHelp("Moderator commands:", {literal: true});
-  ChatCommands.addHelp(Strings.TFC_RELOAD, {literal: true, command: true});
-  ChatCommands.addHelp(Strings.TFC_FRELOAD, {literal: true, command: true});
-  ChatCommands.addHelp(Strings.TFC_NUKE, {literal: true, command: true});
-  ChatCommands.addHelp(Strings.TFC_NUKE_USER, {command: true, args: true});
+  ChatCommands.addHelp("!tfc reload: Reload the page",
+                       {literal: true, command: true});
+  ChatCommands.addHelp("!tfc force-reload: Reload the page, discarding cache",
+                       {literal: true, command: true});
+  ChatCommands.addHelp("!tfc nuke: Clear the chat",
+                       {literal: true, command: true});
+  ChatCommands.addHelp("!tfc nuke <user>: Clear messages sent by <user>",
+                       {command: true, args: true});
 
   /* Close the main settings window */
   function closeSettings() {
@@ -1397,12 +1406,12 @@ function doLoadClient() { /* exported doLoadClient */
 
   /* Open the settings builder page */
   function openSettingsTab() {
-    Util.Open("builder.html", "_blank", {});
+    Util.Open(AssetPaths.BUILDER_WINDOW, "_blank", {});
   }
 
   /* Add command to open the settings builder page */
   ChatCommands.add("builder", function _on_cmd_builder(cmd, tokens, client_) {
-    openSettingsTab();
+    Util.Open(AssetPaths.BUILDER_WINDOW, "_blank", {});
   }, "Open the configuration builder wizard");
 
   /* Pressing a key on the chat box */
@@ -1490,12 +1499,12 @@ function doLoadClient() { /* exported doLoadClient */
 
   /* Clicking on the `?` in the settings box header */
   $("#btnSettingsHelp").click(function(e) {
-    Util.Open("assets/help-window.html", "_blank", {});
+    Util.Open(AssetPaths.HELP_WINDOW, "_blank", {});
   });
 
   /* Clicking on the "Builder" link in the settings box header */
   $("#btnSettingsBuilder").click(function(e) {
-    openSettingsTab();
+    Util.Open(AssetPaths.BUILDER_WINDOW, "_blank", {});
   });
 
   /* Changing the "Channels" text box */
@@ -1760,7 +1769,7 @@ function doLoadClient() { /* exported doLoadClient */
       }
     }
     if (getConfigObject().Channels.length === 0) {
-      Content.addInfo(Strings.PLEASE_JOIN);
+      Content.addInfo("No channels configured; type //join <channel> to join one!".escape());
     }
   });
 
