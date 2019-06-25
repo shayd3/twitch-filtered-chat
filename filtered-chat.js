@@ -1122,43 +1122,58 @@ function doLoadClient() { /* exported doLoadClient */
     } else if ((t0 === "set" || t0 === "setobj") && tokens.length > 2) {
       /* Allow changing configuration by command (dangerous) */
       let key = tokens[1];
+      let val = tokens.slice(2).join(" ");
+      let newval = null;
+      if (t0 === "setobj") {
+        newval = JSON.parse(val);
+      } else if (val === "true") {
+        newval = true;
+      } else if (val === "false") {
+        newval = false;
+      } else if (val === "Infinity") {
+        newval = Infinity;
+      } else if (val === "-Infinity") {
+        newval = -Infinity;
+      } else if (val === "NaN") {
+        newval = NaN;
+      } else if (val.match(/^[+-]?(?:\d|[1-9]\d*)$/)) {
+        newval = Number.parseInt(val);
+      } else if (val.match(/^[-+]?(?:\d*\.\d+|\d+)$/)) {
+        newval = Number.parseFloat(val);
+      } else {
+        newval = val;
+      }
+      let newstr = JSON.stringify(newval);
       if (Util.ObjectHas(cfg, key)) {
-        let val = tokens.slice(2).join(" ");
         let oldval = Util.ObjectGet(cfg, key);
-        let newval = null;
-        if (t0 === "setobj") {
-          newval = JSON.parse(val);
-        } else if (val === "true") {
-          newval = true;
-        } else if (val === "false") {
-          newval = false;
-        } else if (val === "Infinity") {
-          newval = Infinity;
-        } else if (val === "-Infinity") {
-          newval = -Infinity;
-        } else if (val === "NaN") {
-          newval = NaN;
-        } else if (val.match(/^[+-]?(?:\d|[1-9]\d*)$/)) {
-          newval = Number.parseInt(val);
-        } else if (val.match(/^[-+]?(?:\d*\.\d+|\d+)$/)) {
-          newval = Number.parseFloat(val);
-        } else {
-          newval = val;
-        }
         let oldstr = JSON.stringify(oldval);
-        let newstr = JSON.stringify(newval);
-        Util.Log(`Changing ${key} from "${oldstr}" to "${newstr}"`);
-        Content.addHelpLine(key, JSON.stringify(oldval));
-        Content.addHelpLine(key, JSON.stringify(newval));
+        Content.addHelp(`Changing ${key} from "${oldstr}" to "${newstr}"`.escape());
+        Content.addHelpLine(key, oldstr);
+        Content.addHelpLine(key, newstr);
         Util.ObjectSet(cfg, key, newval);
         mergeConfigObject(cfg);
       } else {
-        Content.addError(`Config item ${key.escape()} does not exist`);
+        Content.addHelp(`Adding key ${key} with value "${newstr}"`.escape());
+        Content.addHelpLine(key, newstr);
+        Util.ObjectSet(cfg, key, newval);
+        mergeConfigObject(cfg);
       }
     } else if (t0 === "unset" && tokens.length > 1) {
-      delete cfg[tokens[1]];
-      Util.SetWebStorage(cfg);
-      Content.addHelp(`Removed key ${tokens[1]}`);
+      let t1 = tokens[1];
+      let t1e = tokens[1].escape();
+      if (Util.ObjectRemove(cfg, t1)) {
+        Content.addHelp(`Removed key ${t1e} from localStorage`);
+        Util.SetWebStorage(cfg);
+      } else {
+        Content.addHelp(`Failed to remove key ${t1e} from localStorage`);
+      }
+      if (window.liveStorage) {
+        if (Util.ObjectRemove(window.liveStorage, t1)) {
+          Content.addHelp(`Removed key ${t1e} from liveStorage`);
+        } else {
+          Content.addHelp(`Failed to removed key ${t1e} from liveStorage`);
+        }
+      }
     } else if (Util.ObjectHas(cfg, t0)) {
       Content.addHelpLine(t0, JSON.stringify(Util.ObjectGet(cfg, t0)));
     } else {
