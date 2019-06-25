@@ -1155,7 +1155,7 @@ function doLoadClient() { /* exported doLoadClient */
       } else {
         Content.addError(`Config item ${key.escape()} does not exist`);
       }
-    } else if (t0 === "unset" && tokens.length > 2) {
+    } else if (t0 === "unset" && tokens.length > 1) {
       delete cfg[tokens[1]];
       Util.SetWebStorage(cfg);
       Content.addHelp(`Removed key ${tokens[1]}`);
