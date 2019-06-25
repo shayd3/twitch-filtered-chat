@@ -977,7 +977,8 @@ function doLoadClient() { /* exported doLoadClient */
       let mcfgs = [];
       Content.addHelp(`<em>Global Configuration Values:</em>`);
       for (let [k, v] of Object.entries(cfg)) {
-        let [key, val] = [k, `${v}`];
+        let key = k;
+        let val = (typeof(v) === "object" ? JSON.stringify(v) : `${v}`);
         if (k === "Layout") {
           val = FormatLayout(v);
         } else if (k === "ClientID") {
@@ -985,8 +986,7 @@ function doLoadClient() { /* exported doLoadClient */
         } else if (k === "Pass") {
           val = "Omitted for security; use //config pass to show";
         } else if (typeof(v) === "object" && v.Name && v.Name.length > 0) {
-          key = null;
-          val = null;
+          key = val = null;
           mcfgs.push([k, v]);
         }
         if (key !== null) {
