@@ -24,6 +24,10 @@
  *   mycommandfunc("mycommand", ["value1", "value2"], client, 1, 2)
  */
 
+/* TODO
+ * Implement ChatCommands.addComplete(command, func)
+ */
+
 var ChatCommands = null; /* exported ChatCommands */
 
 class ChatCommandManager {
@@ -251,7 +255,7 @@ class ChatCommandManager {
   helpLine(k, v, esc=false) {
     let d1 = `<div>${esc ? k.escape() : k}</div>`;
     let d2 = `<div>${esc ? v.escape() : v}</div>`;
-    return `<div class="helpline">${d1}${d2}</div>`;
+    return `<div class="help-line">${d1}${d2}</div>`;
   }
 
   formatArgs(s) {
@@ -267,7 +271,7 @@ class ChatCommandManager {
   }
 
   printUsage(cmdobj) {
-    Content.addHelp("Usage:");
+    Content.addHelpText("Usage:");
     for (let line of this.formatUsage(cmdobj)) {
       Content.addHelp(line);
     }
@@ -279,7 +283,7 @@ class ChatCommandManager {
 
   onCommandHelp(cmd, tokens, client) {
     if (tokens.length === 0) {
-      Content.addHelp("Commands:");
+      Content.addHelpText("Commands:");
       for (let c of this._command_list) {
         Content.addHelp(this.formatHelp(this._commands[c]));
       }
@@ -288,7 +292,7 @@ class ChatCommandManager {
         Content.addHelp(line);
       }
     } else if (this.hasCommand(tokens[0])) {
-      Content.addHelp("Commands:");
+      Content.addHelpText("Commands:");
       let obj = this.getCommand(tokens[0]);
       for (let line of this.formatUsage(obj)) {
         Content.addHelp(line);
@@ -303,12 +307,14 @@ function onCommandLog(cmd, tokens, client) {
   let t0 = tokens.length > 0 ? tokens[0] : "";
   let logs = Util.GetWebStorage(LOG_KEY) || [];
   let plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
-  Content.addHelp(`Debug message log length: ${logs.length}`);
+  Content.addHelpText(`Debug message log length: ${logs.length}`);
   /* JSON-encode an object, inserting spaces around items */
   function toJSONString(obj) {
     return JSON.stringify(obj, null, 1)
       .replace(/\[[ \n]*/g, "[")
       .replace(/[\n ]*\]/g, "]")
+      .replace(/{[ \n]*/g, "{")
+      .replace(/[\n ]*}/g, "}")
       .replace(/[ ]*\n[ ]*/g, ' ');
   }
   /* Format a log message for printing */
@@ -323,7 +329,7 @@ function onCommandLog(cmd, tokens, client) {
         toJSONString(log._parsed)
       ];
       if (log._stacktrace) {
-        lines.push(toJSONString(logs._stacktrace));
+        lines.push(toJSONString(log._stacktrace));
       }
       result = lines.join(" ");
     }
@@ -375,36 +381,36 @@ function onCommandLog(cmd, tokens, client) {
           }
         }
         let pl = plural(matched.length, "item");
-        Content.addHelp(`Found ${pl} containing "${needle}"`.escape());
+        Content.addHelpText(`Found ${pl} containing "${needle}"`);
         if (t0 === "search") {
           for (let [i, l] of matched) {
             let desc = l._cmd || toJSONString(l).substr(0, 10);
-            Content.addHelp(`${i}: ${desc}`);
+            Content.addHelpText(`${i}: ${desc}`);
           }
         } else {
-          Content.addHelp(`Removing ${unmatched.length}/${logs.length} items`);
-          Content.addHelp(`New logs length: ${matched.length}`);
+          Content.addHelpText(`Removing ${unmatched.length}/${logs.length} items`);
+          Content.addHelpText(`New logs length: ${matched.length}`);
           Util.SetWebStorage(LOG_KEY, matched.map((i) => i[1]));
         }
       } else {
-        Content.addHelp(`Usage: //log ${t0} &lt;string&gt;`);
+        Content.addHelpText(`Usage: //log ${t0} <string>`);
       }
     } else if (t0 === "remove") {
       let n = tokens.slice(1)
         .map((e) => Util.ParseNumber(e))
         .filter((e) => !Number.isNaN(e));
       if (n.length > 0) {
-        Content.addHelp(`Removing ${plural(n.length, "item")}`);
+        Content.addHelpText(`Removing ${plural(n.length, "item")}`);
         let result = [];
         for (let i = 0; i < logs.length; ++i) {
           if (n.indexOf(i) === -1) {
             result.push(logs[i]);
           }
         }
-        Content.addHelp(`New logs length: ${result.length}`);
+        Content.addHelpText(`New logs length: ${result.length}`);
         Util.SetWebStorage(LOG_KEY, result);
       } else {
-        Content.addHelp("No items to remove");
+        Content.addHelpText("No items to remove");
       }
     } else if (t0 === "shift") {
       let num = 1;
@@ -414,7 +420,7 @@ function onCommandLog(cmd, tokens, client) {
       for (let i = 0; i < num && logs.length > 0; ++i) {
         logs.shift();
       }
-      Content.addHelp(`New logs length: ${logs.length}`);
+      Content.addHelpText(`New logs length: ${logs.length}`);
       Util.SetWebStorage(LOG_KEY, logs);
     } else if (t0 === "pop") {
       let num = 1;
@@ -424,14 +430,14 @@ function onCommandLog(cmd, tokens, client) {
       for (let i = 0; i < num && logs.length > 0; ++i) {
         logs.pop();
       }
-      Content.addHelp(`New logs length: ${logs.length}`);
+      Content.addHelpText(`New logs length: ${logs.length}`);
       Util.SetWebStorage(LOG_KEY, logs);
     } else if (t0 === "size") {
       let b = toJSONString(logs).length;
-      Content.addHelp(`Logged bytes: ${b} (${b/1024.0} KB)`);
+      Content.addHelpText(`Logged bytes: ${b} (${b/1024.0} KB)`);
     } else if (t0 === "clear") {
       Util.SetWebStorage(LOG_KEY, []);
-      Content.addHelp("Log cleared");
+      Content.addHelpText("Log cleared");
     } else if (t0 === "replay") {
       if (tokens.length > 1) {
         let replay = [];
@@ -454,17 +460,17 @@ function onCommandLog(cmd, tokens, client) {
           Content.addError(`Index ${idx} not between 0 and ${logs.length}`);
         }
         for (let line of replay) {
-          Content.addHelp(`Replaying ${line.escape()}`);
+          Content.addHelpText(`Replaying ${line}`);
           client._onWebsocketMessage({data: line});
         }
       } else {
-        Content.addHelp(`Usage: //log ${t0} &lt;number&gt;`);
+        Content.addHelpText(`Usage: //log ${t0} <number>`);
       }
     } else if (Util.IsNumber(t0)) {
       let idx = Util.ParseNumber(t0);
       Content.addHelp(formatLogEntry(logs[idx]));
     } else {
-      Content.addHelp(`Unknown argument ${t0.escape()}`);
+      Content.addHelpText(`Unknown argument ${t0}`);
     }
   } else {
     this.printUsage();
@@ -479,7 +485,7 @@ function onCommandClear(cmd, tokens, client) {
     if (e) {
       $(e).find(".line-wrapper").remove();
     } else {
-      Content.addHelp(`Unknown module ${tokens[0]}`);
+      Content.addHelpText(`Unknown module ${tokens[0]}`);
     }
   } else {
     this.printUsage();
@@ -664,7 +670,7 @@ function onCommandClient(cmd, tokens, client) {
     let cstatus = client.ConnectionStatus();
     let channels = client.GetJoinedChannels();
     let us = client.SelfUserState() || {};
-    Content.addHelp("Client information:");
+    Content.addHelpText("Client information:");
     Content.addHelpLine("Socket:", cstatus.open ? "Open" : "Closed");
     Content.addHelpLine("Status:", cstatus.connected ? "Connected" : "Not connected");
     Content.addHelpLine("Identified:", cstatus.identified ? "Yes" : "No");
@@ -673,7 +679,7 @@ function onCommandClient(cmd, tokens, client) {
     Content.addHelpLine("FFZ:", client.FFZEnabled() ? "Enabled" : "Disabled");
     Content.addHelpLine("BTTV:", client.BTTVEnabled() ? "Enabled" : "Disabled");
     if (channels && channels.length > 0) {
-      Content.addHelp(`&gt; Channels connected to: ${channels.length}`);
+      Content.addHelpText(`> Channels connected to: ${channels.length}`);
       for (let c of channels) {
         let ui = us[c];
         let ci = client.GetChannelInfo(c);
@@ -683,7 +689,7 @@ function onCommandClient(cmd, tokens, client) {
         Content.addHelpLine(c, `Status: ${status}; id=${ci.id}`);
         Content.addHelpLine("&nbsp;", `Active users: ${nusers}`);
         Content.addHelpLine("&nbsp;", `Rooms: ${Object.keys(rooms)}`);
-        Content.addHelp("User information for " + c + ":");
+        Content.addHelpText("User information for " + c + ":");
         if (ui.color) {
           Content.addHelpLine("Color", ui.color);
         }
@@ -714,7 +720,7 @@ function onCommandTo(cmd, tokens, client) {
 }
 
 function onCommandChannels(cmd, tokens, client) {
-  Content.addHelp("Active channels:");
+  Content.addHelpText("Active channels:");
   for (let channel of client.GetJoinedChannels()) {
     let cinfo = client.GetChannelInfo(channel);
     if (channel.startsWith("#chatrooms:")) {
@@ -722,11 +728,11 @@ function onCommandChannels(cmd, tokens, client) {
       cinfo = client.GetChannelById(Util.ParseNumber(cobj.room));
       for (let [room_name, room_def] of Object.entries(cinfo.rooms)) {
         if (cobj.roomuid === room_def.uid) {
-          Content.addHelp(`${cinfo.cname} ${room_name} ${room_def.uid}`);
+          Content.addHelpText(`${cinfo.cname} ${room_name} ${room_def.uid}`);
         }
       }
     } else {
-      Content.addHelp(`${channel} ${cinfo.id}`);
+      Content.addHelpText(`${channel} ${cinfo.id}`);
     }
   }
 }
@@ -735,7 +741,7 @@ function onCommandRooms(cmd, tokens, client) {
   for (let channel of client.GetJoinedChannels()) {
     let cinfo = client.GetChannelInfo(channel);
     if (cinfo.rooms) {
-      Content.addHelp(`Available rooms for ${channel}:`);
+      Content.addHelpText(`Available rooms for ${channel}:`);
       for (let [room_name, room_info] of Object.entries(cinfo.rooms)) {
         let cid = room_info.owner_id;
         let rid = room_info.uid;
@@ -751,7 +757,7 @@ function onCommandRooms(cmd, tokens, client) {
 function onCommandHighlight(cmd, tokens, client) {
   let H = client.get("HTMLGen");
   if (tokens.length === 0 || tokens[0] === "show") {
-    Content.addHelp("Current highlight patterns:");
+    Content.addHelpText("Current highlight patterns:");
     for (let idx = 0; idx < H.highlightMatches.length; ++idx) {
       let pat = H.highlightMatches[idx];
       Content.addHelpLine(`Index ${idx+1}`, `${pat}`);
@@ -767,7 +773,7 @@ function onCommandHighlight(cmd, tokens, client) {
         pat = new RegExp("\\b" + RegExp.escape(patstr) + "\\b", "g");
       }
       H.addHighlightMatch(pat);
-      Content.addHelp(`Added pattern ${pat}`);
+      Content.addHelpText(`Added pattern ${pat}`);
     } else {
       Content.addError(`"//highlight add" requires argument`);
       this.printUsage();
@@ -787,7 +793,7 @@ function onCommandHighlight(cmd, tokens, client) {
           let after = matches.slice(idx);
           H.highlightMatches = before.concat(after);
         }
-        Content.addHelp(`Now storing ${H.highlightMatches.length} patterns`);
+        Content.addHelpText(`Now storing ${H.highlightMatches.length} patterns`);
       } else {
         Content.addError(`Invalid index ${idx}; must be between 1 and ${max}`);
       }

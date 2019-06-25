@@ -101,6 +101,9 @@ class Content { /* exported Content */
   static addHelp(s) { /* does not escape */
     Content.addPre($(`<div class="help"></div>`).html(s));
   }
+  static addHelpText(s) { /* escapes */
+    Content.addPre($(`<div class="help"></div>`).text(s));
+  }
   static addHelpLine(c, s) { /* does not escape */
     Content.addPre(ChatCommands.helpLine(c, s));
   }
@@ -1004,19 +1007,19 @@ function doLoadClient() { /* exported doLoadClient */
       }
     } else if (t0 === "help") {
       Content.addHelpLine("//config", "Show and manipulate configuration");
-      Content.addHelp("//config parameters:");
+      Content.addHelpText("//config parameters:");
       Content.addHelpLine("export", "Export *all* of localStorage to a new tab (contains secrets!)");
       Content.addHelpLine("purge", "Clear localStorage (cannot be undone!)");
       Content.addHelpLine("clientid", "Display ClientID");
       Content.addHelpLine("pass", "Dislay OAuth token (if one is present)");
       Content.addHelpLine("url", "Generate a URL from the current configuration");
-      Content.addHelp("//config url parameters (can be used in any order):");
+      Content.addHelpText("//config url parameters (can be used in any order):");
       Content.addHelpLine("git", "Force URL to target github.io");
       Content.addHelpLine("text", "Force URL to be un-encoded");
       Content.addHelpLine("auth", "Include secrets in URL");
-      Content.addHelp("//config set <key> <value>: Change <key> to <value> (dangerous!)".escape());
-      Content.addHelp("//config setobj <key> <value>: Change <key> to JSON-encoded <value> (dangerous!)".escape());
-      Content.addHelp("//config unset <key>: Remove <key> (dangerous!)".escape());
+      Content.addHelpText("//config set <key> <value>: Change <key> to <value> (dangerous!)");
+      Content.addHelpText("//config setobj <key> <value>: Change <key> to JSON-encoded <value> (dangerous!)");
+      Content.addHelpText("//config unset <key>: Remove <key> (dangerous!)");
     } else if (t0 === "export") {
       Util.Open(AssetPaths.CONFIG_EXPORT_WINDOW, "_blank", {});
     } else if (t0 === "purge") {
@@ -1147,37 +1150,37 @@ function doLoadClient() { /* exported doLoadClient */
       if (Util.ObjectHas(cfg, key)) {
         let oldval = Util.ObjectGet(cfg, key);
         let oldstr = JSON.stringify(oldval);
-        Content.addHelp(`Changing ${key} from "${oldstr}" to "${newstr}"`.escape());
+        Content.addHelpText(`Changing ${key} from "${oldstr}" to "${newstr}"`);
         Content.addHelpLine(key, oldstr);
         Content.addHelpLine(key, newstr);
         Util.ObjectSet(cfg, key, newval);
         mergeConfigObject(cfg);
       } else {
-        Content.addHelp(`Adding key ${key} with value "${newstr}"`.escape());
+        Content.addHelpText(`Adding key ${key} with value "${newstr}"`);
         Content.addHelpLine(key, newstr);
         Util.ObjectSet(cfg, key, newval);
         mergeConfigObject(cfg);
       }
     } else if (t0 === "unset" && tokens.length > 1) {
       let t1 = tokens[1];
-      let t1e = tokens[1].escape();
       if (Util.ObjectRemove(cfg, t1)) {
-        Content.addHelp(`Removed key ${t1e} from localStorage`);
+        Content.addHelpText(`Removed key ${t1} from localStorage`);
         Util.SetWebStorage(cfg);
       } else {
-        Content.addHelp(`Failed to remove key ${t1e} from localStorage`);
+        Content.addHelpText(`Failed to remove key ${t1} from localStorage`);
       }
       if (window.liveStorage) {
         if (Util.ObjectRemove(window.liveStorage, t1)) {
-          Content.addHelp(`Removed key ${t1e} from liveStorage`);
+          Content.addHelpText(`Removed key ${t1} from liveStorage`);
         } else {
-          Content.addHelp(`Failed to removed key ${t1e} from liveStorage`);
+          Content.addHelpText(`Failed to removed key ${t1} from liveStorage`);
         }
       }
     } else if (Util.ObjectHas(cfg, t0)) {
+      Content.addHelpText("Configuration:");
       Content.addHelpLine(t0, JSON.stringify(Util.ObjectGet(cfg, t0)));
     } else {
-      let tok = `&quot;${t0.escape()}&quot;`;
+      let tok = `"${t0}"`.escape();
       Content.addError(`Unknown config command or key ${tok}`, true);
     }
   }, "Obtain and modify configuration information");
@@ -1657,12 +1660,12 @@ function doLoadClient() { /* exported doLoadClient */
         /* Enable scrolling */
         $c.removeAttr("data-no-scroll");
         Util.Log("Auto-scroll enabled");
-        Content.addHelp("Auto-scroll enabled");
+        Content.addHelpText("Auto-scroll enabled");
       } else {
         /* Disable scrolling */
         $c.attr("data-no-scroll", "1");
         Util.Log("Auto-scroll disabled");
-        Content.addHelp("Auto-scroll disabled");
+        Content.addHelpText("Auto-scroll disabled");
       }
     } else if (e.key === "Escape") {
       /* Escape: hide all open settings windows */

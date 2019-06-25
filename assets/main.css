@@ -294,13 +294,13 @@ body.light .loading {
   font-style: italic;
 }
 
-.helpline {
+.help-line {
   display: grid;
-  grid-template-columns: 15% auto;
+  grid-template-columns: 20% auto;
   margin-left: 1.5em;
 }
 
-.helpline div {
+.help-line div {
   font-size: 0.9em;
   font-family: monospace;
 }
