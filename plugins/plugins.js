@@ -2,6 +2,21 @@
 
 /* TODO: Make a README.md */
 
+/** Plugin configuration
+ *
+ * To configure plugins, pass a plugincfg= value in the query string. Value
+ * must be a URI-encoded object of the following form:
+ *   {
+ *     <plugin tag>: {
+ *       <config key>: <config value>,
+ *       ...
+ *     }
+ *   }
+ *
+ * Plugins may or may not use this configuration. See each plugin's
+ * documentation for their expected tag and configuration keys.
+ */
+
 /** Plugin registration and usage
  *
  * To add your own plugins, place them in this directory and call
@@ -81,7 +96,12 @@ class PluginStorageClass {
           let cname = ctor.replace(/[^A-Za-z0-9_]/g, "");
           /* Obtain plugin name and construct it */
           let cfunc = (new Function(`return ${cname}`))();
-          let obj = new (cfunc)(resolve, reject, client, plugin.args, config);
+          /* Ensure the configuration object is present */
+          let cfgobj = Util.JSONClone(config) || {};
+          if (!cfgobj.PluginConfig) {
+            cfgobj.PluginConfig = {};
+          }
+          let obj = new (cfunc)(resolve, reject, client, plugin.args, cfgobj);
           /* Ensure plugin defines a name attribute */
           if (typeof(obj.name) !== "string") {
             obj.name = ctor;
