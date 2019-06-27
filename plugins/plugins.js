@@ -212,8 +212,7 @@ class PluginStorageClass {
 /* Two example plugins; see plugins/<file> for their contents */
 const Plugins = new PluginStorageClass(
   {ctor: "SamplePlugin", args: ["Example", "arguments"], file: "plugin-sample.js"},
-  {ctor: "SamplePlugin2", file: "plugin-sample-2.js"},
-  {ctor: "FanfarePlugin", file: "fanfare.js", order: 1001}
+  {ctor: "SamplePlugin2", file: "plugin-sample-2.js"}
 );
 
 /* The following plugin is custom and not distributed */

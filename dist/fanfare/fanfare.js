@@ -1,0 +1,51 @@
+/** Fanfare Plugin
+ *
+ * Demonstrates an example "Fanfare" plugin that displays a FrankerZ whenever
+ * someone subscribes.
+ *
+ * Commands:
+ *   //ff on:       Enables fanfare
+ *   //ff off:      Disables fanfare
+ *   //ff:          Displays //ff usage and whether or not fanfare is enabled
+ *
+ * Configuration (plugin key: "fanfare") keys:
+ *   enabled        If present and non-falsy, enable this plugin by default
+ *   particles      Number of particles to display (default: 25)
+ *
+ * TODO:
+ * Simultaneous effects: one class per effect
+ *   Each class would have .startAnimation, .stopAnimation, etc
+ * IDEA: Move this to its own proper module, instead of a plugin?
+ */"use strict";/** Particle configuration
+ *
+ * Particles have the following attributes:
+ *  x         Horizontal offset from the left side of the canvas
+ *  y         Vertical offset from the top of the canvas
+ *  dx        Horizontal starting velocity
+ *  dy        Vertical starting velocity
+ *  xforce    Horizontal deceleration (i.e. gravity/drag) factor
+ *  yforce    Vertical deceleration (i.e. gravity/drag) factor
+ *  force     Directionless force (i.e. drag) coefficient
+ *  a         Opacity: decrements every tick and particles "die" at 0
+ *  image     Image instance (via document.createElement("img"))
+ *  width     Image width
+ *  height    Image height
+ *
+ * Every "tick", "living" particles are animated according to the following:
+ *  p.a -= 0.01
+ *  p.x += p.dx
+ *  p.y += p.dy
+ *  p.dx += p.xforce (if p.xforce is given)
+ *  p.dy += p.yforce (if p.yforce is given)
+ *  If p.force is given:
+ *    p.dx = p.force * Math.hypot(p.x, p.y) * Math.cos(Math.atan2(p.y, p.x))
+ *    p.dy = p.force * Math.hypot(p.x, p.y) * Math.sin(Math.atan2(p.y, p.x))
+ *
+ * Particles "die" if any of the following are true:
+ *  p.a <= 0
+ *  p.x + p.width < 0
+ *  p.y + p.height < 0
+ *  p.x > canvas width
+ *  p.y > canvas height
+ * Particles are "alive" if their opacity is greater than 0.
+ */var _slicedToArray=function(){function a(a,b){var c=[],d=!0,e=!1,f=void 0;try{for(var g,h=a[Symbol.iterator]();!(d=(g=h.next()).done)&&(c.push(g.value),!(b&&c.length===b));d=!0);}catch(a){e=!0,f=a}finally{try{!d&&h["return"]&&h["return"]()}finally{if(e)throw f}}return c}return function(b,c){if(Array.isArray(b))return b;if(Symbol.iterator in Object(b))return a(b,c);throw new TypeError("Invalid attempt to destructure non-iterable instance")}}(),_createClass=function(){function a(a,b){for(var c,d=0;d<b.length;d++)c=b[d],c.enumerable=c.enumerable||!1,c.configurable=!0,"value"in c&&(c.writable=!0),Object.defineProperty(a,c.key,c)}return function(b,c,d){return c&&a(b.prototype,c),d&&a(b,d),b}}();function _classCallCheck(a,b){if(!(a instanceof b))throw new TypeError("Cannot call a class as a function")}/* globals FanfareParticle FanfareCheerEffect FanfareSubEffect *//* vim: set ts=2 sts=2 sw=2 et: */var FanfareCSS="\n.ff.ff-canvas {\n  pointer-events: none;\n  position: absolute;\n  left: 0px;\n  top: 0px;\n  z-index: 100;\n}\n",FanfarePlugin=function(){function a(b,c,d,f,g){var h=this;_classCallCheck(this,a),this._args=f,this._client=d,this._config=g.PluginConfig.fanfare||{enable:!1},this._on=this._config.enable,this._n=this._config.particles||a.DEFAULT_NUM_PARTICLES,this._tick=this._config.tick||a.DEFAULT_TPS,this._particles=[],this._queue=[],this._timer=null;/* Create stylesheet */var i=this._elem("style","",{type:"text/css",id:"ff-styles"});i.innerText=FanfareCSS,document.head.appendChild(i),this._canvas=this._elem("canvas","ff-canvas",{id:"ff-canvas"}),this._cWidth=window.innerWidth,this._cHeight=window.innerHeight,this._canvas.width=this._cWidth,this._canvas.height=this._cHeight,this._context=this._canvas.getContext("2d"),document.body.appendChild(this._canvas);/* Create chat commands */var e=function(a){return"From plugin "+h.name+": "+a};ChatCommands.add("fanfare",this._onCmd,e("Enable or disable fanfare"),this),ChatCommands.addUsage("fanfare",null,e("Show fanfare status")),ChatCommands.addUsage("fanfare","on",e("Enable fanfare")),ChatCommands.addUsage("fanfare","off",e("Disable fanfare")),ChatCommands.addUsage("fanfare","demo",e("Demonstrate fanfare")),ChatCommands.addAlias("ff","fanfare"),d.bind("twitch-chat",this._onChatEvent.bind(this,d)),d.bind("twitch-sub",this._onSubEvent.bind(this,d)),d.bind("twitch-resub",this._onSubEvent.bind(this,d)),d.bind("twitch-giftsub",this._onSubEvent.bind(this,d)),d.bind("twitch-anongiftsub",this._onSubEvent.bind(this,d)),this.resetParticles(),b(this)}return _createClass(a,null,[{key:"DEFAULT_NUM_PARTICLES",/* exported FanfarePlugin */get:function a(){return 25}},{key:"DEFAULT_TPS",get:function a(){return 30}}]),_createClass(a,[{key:"pMap",/* Map func over particles */value:function b(a){this._particles.map(function(b){return a(b)})}/* Construct a particle given the configuration given (see resetParticles) */},{key:"pInit",value:function b(a){return new FanfareParticle(a)}/* Reset the particles, optionally applying a configuration */},{key:"resetParticles",value:function g(){for(var a,b=0<arguments.length&&void 0!==arguments[0]?arguments[0]:null,c=1<arguments.length&&void 0!==arguments[1]?arguments[1]:null,d=[],e=null===c?this._n:c,f=0;f<e;++f)a=new FanfareParticle(b||{}),b&&!b.image&&this._particles[f]&&this._particles[f].image&&(a.image=this._particles[f].image),d.push(a);this._particles=d}/* Clears the canvas */},{key:"clearCanvas",value:function a(){this._context.clearRect(0,0,this.width,this.height)}/* Begin animation */},{key:"startAnimation",value:function c(){if(null===this._timer){var a=this._animate.bind(this),b=1e3/this._tick;this._timer=window.setInterval(a,b),Util.Log("Fanfare: starting animation with id "+this._timer)}}/* Animation function */},{key:"_animate",value:function h(){this.clearCanvas();var a=0,b=!0,c=!1,d=void 0;try{for(var e,f,g=this._particles[Symbol.iterator]();!(b=(e=g.next()).done);b=!0)f=e.value,f.alive&&(f.draw(this._context),a+=1),f.tick()}catch(a){c=!0,d=a}finally{try{!b&&g.return&&g.return()}finally{if(c)throw d}}0==a&&this.stopAnimation()}/* Terminate animation prematurely */},{key:"stopAnimation",value:function a(){null!==this._timer&&(Util.Log("Fanfare: stopping antimation with id "+this._timer),window.clearInterval(this._timer),this._timer=null)}/* Create an element with some default attributes */},{key:"_elem",value:function z(a,b){var c=document.createElement(a),d=("ff "+b).trim();c.setAttribute("class",d),c.setAttribute("data-from","plugin"),c.setAttribute("data-from-plugin",this.name);for(var e=arguments.length,f=Array(2<e?e-2:0),g=2;g<e;g++)f[g-2]=arguments[g];var h=!0,i=!1,j=void 0;try{for(var l,m,n=f[Symbol.iterator]();!(h=(l=n.next()).done);h=!0)if(m=l.value,Util.IsArray(m)&&2===m.length){var o=_slicedToArray(m,2),p=o[0],k=o[1];c.setAttribute(p,k)}else{var q=!0,r=!1,s=void 0;try{for(var t,u=Object.entries(m)[Symbol.iterator]();!(q=(t=u.next()).done);q=!0){var v=t.value,w=_slicedToArray(v,2),x=w[0],y=w[1];c.setAttribute(x,y)}}catch(a){r=!0,s=a}finally{try{!q&&u.return&&u.return()}finally{if(r)throw s}}}}catch(a){i=!0,j=a}finally{try{!h&&n.return&&n.return()}finally{if(i)throw j}}return c}/* Construct an img element */},{key:"_image",value:function d(a){var b=1<arguments.length&&void 0!==arguments[1]?arguments[1]:null,c=b?Util.JSONClone(b):{};return c.src=a,this._elem("img","ff-image ff-emote",c)}/* Construct an img element of a Twitch emote */},{key:"_twitchEmote",value:function c(a){var b=1<arguments.length&&void 0!==arguments[1]?arguments[1]:null;return this._image(this._client.GetEmote(a),b)}/* Trigger the cheer effect */},{key:"_doFanfareCheer",value:function c(a){var b=a.bits;Util.DebugOnly("Cheer fanfare for "+b+" bits",a),this.resetParticles({xmin:0,xmax:this.width-40,ymin:this.height-100,ymax:this.height-30,xforcemin:-.1,xforcemax:.1,yforcemin:-.5,yforcemax:0,image:this._twitchEmote(this.cheerEmote)})}/* Trigger the sub event */},{key:"_doFanfareSub",value:function c(a){var b=a.kind;Util.DebugOnly("Sub fanfare for "+b,a),this.resetParticles({xmin:0,xmax:this.width-40,ymin:this.height-100,ymax:this.height-30,xforcemin:-.1,xforcemax:.1,yforcemin:-.5,yforcemax:0,image:this._twitchEmote(this.subEmote)})}/* Handle //ff command */},{key:"_onCmd",value:function f(a,b,c,d){/* Note: called as a command; `this` refers to a command object */var e=0===b.length?null:b[0];null===e?(Content.addHelpText("Fanfare is "+(d._on?"en":"dis")+"abled"),this.printUsage()):"on"===e?(d._on=!0,Content.addInfo("Fanfare is now enabled")):"off"===e?(d._on=!1,Content.addInfo("Fanfare is now disabled")):"demo"===e?d._onChatEvent(d._client,{bits:1e3},!0):(Content.addError("Fanfare: unknown argument "+e.escape()),this.printUsage())}/* Received a message from the client */},{key:"_onChatEvent",value:function d(a,b){var c=!!(2<arguments.length&&void 0!==arguments[2])&&arguments[2];(this._on||c)&&0<b.bits&&(this._doFanfareCheer(b),this.startAnimation())}/* Received a subscription event from the client */},{key:"_onSubEvent",value:function d(a,b){var c=!!(2<arguments.length&&void 0!==arguments[2])&&arguments[2];(this._on||c)&&(this._doFanfareSub(b),this.startAnimation())}},{key:"n",get:function a(){return this._n}},{key:"enable",get:function a(){return this._on}},{key:"tps",get:function a(){return this._tick}/* Canvas width and height */},{key:"width",get:function a(){return this._canvas.width}},{key:"height",get:function a(){return this._canvas.height}/* Number of particles */},{key:"pCount",get:function a(){return this._particles.length}/* Number of "alive" particles (p.a > 0) */},{key:"pLive",get:function a(){return this._particles.filter(function(a){return a.alive}).length}/* Return the emote used for the subscription fanfare */},{key:"subEmote",get:function a(){return this._config.subemote?this._config.subemote:"FrankerZ"}/* Set the emote used for the subscription fanfare */,set:function b(a){this._config.subemote=a}/* Return the emote used for the cheer fanfare */},{key:"cheerEmote",get:function a(){return this._config.cheeremote?this._config.cheeremote:"FrankerZ"}/* Set the emote used for the cheer fanfare */,set:function b(a){this._config.cheeremote=a}},{key:"name",get:function a(){return"FanfarePlugin"}}]),a}();

@@ -278,6 +278,11 @@ function Main(global) { /* exported Main */
     AddAsset("commands.js", MOD_TFC, null, null),
     AddAsset("filtered-chat.js", MOD_TFC, null, null),
     AddAsset("plugins/plugins.js", MOD_TFC, null, null)]))
+  .then(() => Promise.all([
+    AddAsset("fanfare/particle.js", MOD_TFC),
+    AddAsset("fanfare/effect.js", MOD_TFC),
+    AddAsset("fanfare/fanfare.js", MOD_TFC)
+  ]))
   .then(indexMain)
   .catch((e) => {
     console.error(e);

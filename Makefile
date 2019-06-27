@@ -1,6 +1,6 @@
 
 # Distributed sources to be transpiled
-SOURCES = $(wildcard *.js) $(wildcard plugins/*.js)
+SOURCES = $(wildcard *.js) $(wildcard plugins/*.js) $(wildcard fanfare/*.js)
 
 # Distributed sources not to be transpiled
 EXTRA_SOURCES = tests/inject.js
