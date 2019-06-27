@@ -19,8 +19,8 @@
   <link href="../assets/main.css" rel="stylesheet" type="text/css" />
   <link href="builder.css" rel="stylesheet" type="text/css" />
 
-    <!-- Fontawesome -->
-    <script src="https://kit.fontawesome.com/e9a1b1caa5.js"></script>
+  <!-- Fontawesome -->
+  <script src="https://kit.fontawesome.com/e9a1b1caa5.js"></script>
 </head>
 
 <body>
@@ -49,11 +49,11 @@
     <!-- TODO: Split into Vue component -->
     <div id="content">
       <nav id="top-nav">
-          <button type="button" id="sidebarCollapse" class="navbar-btn">
-              <span></span>
-              <span></span>
-              <span></span>
-          </button>
+        <button type="button" id="sidebarCollapse" class="navbar-btn">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
       </nav>
       <div class="container">
         <div class="row justify-content-center">
@@ -86,7 +86,8 @@
               -->
               <div class="settings-box">
                 <div class="input-group">
-                  <input type="text" class="form-control" placeholder="my-rad-config" aria-label="my-rad-config" aria-describedby="buttonSaveConfig">
+                  <input type="text" class="form-control" placeholder="my-rad-config" aria-label="my-rad-config"
+                    aria-describedby="buttonSaveConfig">
                   <div class="input-group-append">
                     <button class="btn btn-primary" type="button" id="buttonSaveConfig">Save Config</button>
                   </div>
@@ -99,9 +100,11 @@
               </div>
               <div class="settings-box">
                 <div class="input-group">
-                  <input type="text" class="form-control" placeholder="Add Channel..." aria-label="Add Channel..." aria-describedby="buttonAddChannel">
+                  <input type="text" class="form-control" placeholder="Add Channel..." aria-label="Add Channel..."
+                    aria-describedby="buttonAddChannel">
                   <div class="input-group-append">
-                    <button class="btn btn-primary" type="button" id="buttonAddChannel"><i class="fas fa-plus"></i></button>
+                    <button class="btn btn-primary" type="button" id="buttonAddChannel"><i
+                        class="fas fa-plus"></i></button>
                   </div>
                 </div>
                 <ul class="list-group list-group-flush">
@@ -112,39 +115,44 @@
               </div>
               <div class="settings-box">
                 <div class="input-group">
-                    <div class="input-group-prepend">
-                      <span class="input-group-text" id="addonUsername">Username</span>
-                    </div>
-                    <input type="text" class="form-control" id="inputUsername" aria-describedby="addonUsername">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" id="addonUsername">Username</span>
                   </div>
-              </div>
-              <div class="settings-box">
-                  <div class="input-group">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text" id="addonPassword">Password</span>
-                      </div>
-                      <input type="text" class="form-control" id="inputPassword" aria-describedby="addonPassword">
-                    </div>
+                  <input type="text" class="form-control" id="inputUsername" aria-describedby="addonUsername">
                 </div>
-            </div>
-            <div class="settings-section">
-              <div class="settings-section-header">
-                <p>Module Settings</p>
               </div>
               <div class="settings-box">
-                <p>Module 1</p>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" id="addonPassword">Password</span>
+                  </div>
+                  <input type="text" class="form-control" id="inputPassword" aria-describedby="addonPassword">
+                </div>
               </div>
               <div class="settings-box">
-                <p>Module 2</p>
-              </div>
-              <div class="settings-box">
-                <p>Module 3</p>
-              </div>
-              <div class="settings-box">
-                <p>Module 4</p>
-              </div>
-              <div class="settings-box">
-                <p>Module 5</p>
+                <div class="row align-items-center mx-auto">
+                  <div class="col-6 text-center">
+                    <span>Toggle Chat Features:</span>
+                  </div>
+                  <div class="col-6">
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="checkScrollbars">
+                      <label class="custom-control-label" for="checkScrollbars">Scrollbars</label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="checkTransparent">
+                      <label class="custom-control-label" for="checkTransparent">Transparent</label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="checkShowClips">
+                      <label class="custom-control-label" for="checkShowClips">Show Clips</label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="checkNoForce">
+                      <label class="custom-control-label" for="checkNoForce">No Force</label>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
