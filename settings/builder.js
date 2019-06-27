@@ -15,28 +15,6 @@ $(document).ready(function () {
       });
 });
 
-//   function debug(text, escape) {
-//     var msg = text;
-//     if (typeof(escape) === "undefined") escape = true;
-//     if (escape) {
-//       msg = text.replace(/&/g, "&amp;")
-//         .replace(/</g, "&lt;")
-//         .replace(/>/g, "&gt;")
-//         .replace(/"/g, "&quot;")
-//         .replace(/'/g, "&apos;");
-//     }
-//     var content = $("#debug").html();
-//     if (content) {
-//       content = content + "<br />" + msg;
-//     } else {
-//       content = msg;
-//     }
-//     $("#debug").show().html(content);
-//     try {
-//       console.log(msg);
-//     } catch (e) { }
-//   }
-
 function addEntry(text) {
     $(".content").append($("<pre></pre>").text(text));
 }
