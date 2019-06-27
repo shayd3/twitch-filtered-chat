@@ -18,7 +18,8 @@ const CUR_URL = ((l) => `${l.protocol}//${l.hostname}${l.pathname}`)(window.loca
 
 /* Paths to modules */
 const PATH_TFC = SELF_URI + (USE_DIST ? "/dist" : "");
-const PATH_TWAPI = BASE_URI + "/" + MOD_TWAPI + (USE_DIST ? "/dist" : "");
+// const PATH_TWAPI = BASE_URI + "/" + MOD_TWAPI + (USE_DIST ? "/dist" : "");
+const PATH_TWAPI = "https://kaedenn.github.io/twitch-api"
 
 /* Asset storage object */
 var ASSETS = {};
