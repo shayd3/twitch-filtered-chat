@@ -66,6 +66,7 @@
               <!-- TODO:
                 if selectLoadConfig[0], do nothing (display tooltip)
                 if no saved configs found, display default message saying so
+                When new config is saved, update dropdown with new config
               -->
               <div class="settings-box">
                 <div class="input-group">
@@ -79,6 +80,18 @@
                     <button class="btn btn-primary" type="button">Load Config</button>
                   </div>
                 </div>
+              </div>
+              <!-- TODO:
+                If config has same name, error out to change name
+                If config was successfully/failed to save, display message
+              -->
+              <div class="settings-box">
+                  <div class="input-group">
+                      <input type="text" class="form-control" placeholder="my-rad-config" aria-label="my-rad-config" aria-describedby="buttonSaveConfig">
+                      <div class="input-group-append">
+                        <button class="btn btn-primary" type="button" id="buttonSaveConfig">Save Config</button>
+                      </div>
+                    </div>
               </div>
             </div>
             <div class="settings-section">
