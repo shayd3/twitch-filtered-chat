@@ -15,13 +15,12 @@
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
     integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 
-  <!-- Fontawesome -->
-  <script src="https://kit.fontawesome.com/e9a1b1caa5.js"></script>
-
   <!-- Custom CSS -->
   <link href="../assets/main.css" rel="stylesheet" type="text/css" />
   <link href="builder.css" rel="stylesheet" type="text/css" />
 
+    <!-- Fontawesome -->
+    <script src="https://kit.fontawesome.com/e9a1b1caa5.js"></script>
 </head>
 
 <body>
@@ -86,12 +85,12 @@
                 If config was successfully/failed to save, display message
               -->
               <div class="settings-box">
-                  <div class="input-group">
-                      <input type="text" class="form-control" placeholder="my-rad-config" aria-label="my-rad-config" aria-describedby="buttonSaveConfig">
-                      <div class="input-group-append">
-                        <button class="btn btn-primary" type="button" id="buttonSaveConfig">Save Config</button>
-                      </div>
-                    </div>
+                <div class="input-group">
+                  <input type="text" class="form-control" placeholder="my-rad-config" aria-label="my-rad-config" aria-describedby="buttonSaveConfig">
+                  <div class="input-group-append">
+                    <button class="btn btn-primary" type="button" id="buttonSaveConfig">Save Config</button>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="settings-section">
@@ -99,16 +98,17 @@
                 <p>Global Settings</p>
               </div>
               <div class="settings-box">
-                <p>Add Channel:</p>
-              </div>
-              <div class="settings-box">
-                <p>Global 2</p>
-              </div>
-              <div class="settings-box">
-                <p>Global 3</p>
-              </div>
-              <div class="settings-box">
-                <p>Global 4</p>
+                <div class="input-group">
+                  <input type="text" class="form-control" placeholder="Add Channel..." aria-label="Add Channel..." aria-describedby="buttonAddChannel">
+                  <div class="input-group-append">
+                    <button class="btn btn-primary" type="button" id="buttonAddChannel"><i class="fas fa-plus"></i></button>
+                  </div>
+                </div>
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item">#gamesdonequick</li>
+                  <li class="list-group-item">#kaedenn</li>
+                  <li class="list-group-item">#shayd3tv</li>
+                </ul>
               </div>
             </div>
             <div class="settings-section">

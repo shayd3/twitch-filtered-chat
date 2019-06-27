@@ -33,6 +33,12 @@
     margin: 0;
 }
 
+.settings-box .list-group-item {
+    background: rgba(0,0,0,0);
+}
+.settings-box .list-group {
+    padding-left: 20px;
+}
 
 /* custom file wrap to let input take up remaining white space using flex-grow */
 .input-wrap {
