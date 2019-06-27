@@ -1,0 +1,180 @@
+<!DOCTYPE xhtml>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+  <title>Filtered Chat Settings Builder</title>
+  <meta charset="utf-8" />
+
+  <!-- vue: dev version -->
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+  <!-- vue: prod version, optimized for size and speed -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/vue"></script> -->
+
+  <!-- Bootstrap -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+  <!-- Fontawesome -->
+  <script src="https://kit.fontawesome.com/e9a1b1caa5.js"></script>
+
+  <!-- Custom CSS -->
+  <link href="../assets/main.css" rel="stylesheet" type="text/css" />
+  <link href="builder.css" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+  <span class="debug" id="debug" style="display: none"></span>
+  <div id="app" class="wrapper">
+    <!-- Sidebar -->
+    <!-- TODO: Split into Vue component -->
+    <!-- TODO: Create Settings container component and settings box component -->
+    <nav id="sidebar">
+      <div class="sidebar-header">
+        <h3>Filtered Chat Settings Builder</h3>
+      </div>
+      <ul class="list-unstyled components">
+        <li class="active">
+          <a href="#">Config</a>
+        </li>
+        <li>
+          <a href="#">Global Settings</a>
+        </li>
+        <li>
+          <a href="#">Module Settings</a>
+        </li>
+      </ul>
+    </nav>
+    <!-- Settings Content -->
+    <!-- TODO: Split into Vue component -->
+    <div id="content">
+      <nav id="top-nav">
+          <button type="button" id="sidebarCollapse" class="navbar-btn">
+              <span></span>
+              <span></span>
+              <span></span>
+          </button>
+      </nav>
+      <div class="container">
+        <div class="row justify-content-center">
+          <div id="settings-main" class="col-md-8 col-sm-10 align-self-center">
+            <div class="settings-section">
+              <div class="settings-section-header">
+                <p>Config</p>
+              </div>
+              <div class="settings-box">
+                <div class="input-wrap">
+                  <div class="custom-file">
+                    <input type="file" class="custom-file-input" id="loadConfigFileInput">
+                    <label class="custom-file-label" for="loadConfigFileInput"></label>
+                  </div>
+                  <button type="submit" class="btn btn-primary">Load Config</button>
+                </div>
+              </div>
+              <div class="settings-box">
+                <form class="form-inline">
+                  <div class="input-wrap">
+                    <label class="sr-only" for="configNameInput">Name</label>
+                    <input type="text" class="form-control mb-2 mr-sm-2" id="configNameInput" placeholder="My Config">
+                    <button type="submit" class="btn btn-primary">Save Config</button>
+                  </div>
+                </form>
+              </div>
+              </div>
+            <div class="settings-section">
+              <div class="settings-section-header">
+                <p>Global Settings</p>
+              </div>
+              <div class="settings-box">
+                <p>Add Channel:</p>
+              </div>
+              <div class="settings-box">
+                <p>Global 2</p>
+              </div>
+              <div class="settings-box">
+                <p>Global 3</p>
+              </div>
+              <div class="settings-box">
+                <p>Global 4</p>
+              </div>
+            </div>
+            <div class="settings-section">
+              <div class="settings-section-header">
+                <p>Module Settings</p>
+              </div>
+              <div class="settings-box">
+                <p>Module 1</p>
+              </div>
+              <div class="settings-box">
+                <p>Module 2</p>
+              </div>
+              <div class="settings-box">
+                <p>Module 3</p>
+              </div>
+              <div class="settings-box">
+                <p>Module 4</p>
+              </div>
+              <div class="settings-box">
+                <p>Module 5</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!--
+IDEAS:
+
+Selection box for saved configurations
+  Load Config
+  Save Config <input type="text" /> (for name)
+
+Global settings:
+  Channels
+  Username
+  OAuth
+  BG CSS
+  Scrollbars
+  Transparent
+  Enable Clips
+  Disable Mod Overrides
+  Debug Level
+
+Layout:
+  Radio buttons for "single", "double"
+  Radio buttons for "chat", "no chat", "slim"
+  Auto-updates module configuration section
+
+One or two columns based on layout choice:
+  Name
+  Flags
+    Pleb, Sub, VIP, Mod, Event, Bits, /me
+  Include User
+  Include Keyword
+  Exclude User
+  Exclude Starts With
+  Limit to Channel
+
+Live-updated URL at the bottom
+  Checkbox for base64?
+-->
+
+  <!-- Bootstrap related dependencies -->
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+    integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+    crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+    integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+    crossorigin="anonymous"></script>
+
+  <!-- Builder.js -->
+  <script src="builder.js"></script>
+</body>
+
+</html>
