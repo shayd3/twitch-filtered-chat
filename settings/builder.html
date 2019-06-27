@@ -15,13 +15,12 @@
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
     integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 
-  <!-- Fontawesome -->
-  <script src="https://kit.fontawesome.com/e9a1b1caa5.js"></script>
-
   <!-- Custom CSS -->
   <link href="../assets/main.css" rel="stylesheet" type="text/css" />
   <link href="builder.css" rel="stylesheet" type="text/css" />
 
+  <!-- Fontawesome -->
+  <script src="https://kit.fontawesome.com/e9a1b1caa5.js"></script>
 </head>
 
 <body>
@@ -50,11 +49,11 @@
     <!-- TODO: Split into Vue component -->
     <div id="content">
       <nav id="top-nav">
-          <button type="button" id="sidebarCollapse" class="navbar-btn">
-              <span></span>
-              <span></span>
-              <span></span>
-          </button>
+        <button type="button" id="sidebarCollapse" class="navbar-btn">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
       </nav>
       <div class="container">
         <div class="row justify-content-center">
@@ -63,60 +62,97 @@
               <div class="settings-section-header">
                 <p>Config</p>
               </div>
+              <!-- TODO:
+                if selectLoadConfig[0], do nothing (display tooltip)
+                if no saved configs found, display default message saying so
+                When new config is saved, update dropdown with new config
+              -->
               <div class="settings-box">
-                <div class="input-wrap">
-                  <div class="custom-file">
-                    <input type="file" class="custom-file-input" id="loadConfigFileInput">
-                    <label class="custom-file-label" for="loadConfigFileInput"></label>
+                <div class="input-group">
+                  <select class="custom-select" id="selectLoadConfig" aria-label="Pick previously saved config">
+                    <option selected>Pick saved config...</option>
+                    <option value="1">MyConfig1</option>
+                    <option value="2">MyConfig2</option>
+                    <option value="3">MyConfig3</option>
+                  </select>
+                  <div class="input-group-append">
+                    <button class="btn btn-primary" type="button">Load Config</button>
                   </div>
-                  <button type="submit" class="btn btn-primary">Load Config</button>
                 </div>
               </div>
+              <!-- TODO:
+                If config has same name, error out to change name
+                If config was successfully/failed to save, display message
+              -->
               <div class="settings-box">
-                <form class="form-inline">
-                  <div class="input-wrap">
-                    <label class="sr-only" for="configNameInput">Name</label>
-                    <input type="text" class="form-control mb-2 mr-sm-2" id="configNameInput" placeholder="My Config">
-                    <button type="submit" class="btn btn-primary">Save Config</button>
+                <div class="input-group">
+                  <input type="text" class="form-control" placeholder="my-rad-config" aria-label="my-rad-config"
+                    aria-describedby="buttonSaveConfig">
+                  <div class="input-group-append">
+                    <button class="btn btn-primary" type="button" id="buttonSaveConfig">Save Config</button>
                   </div>
-                </form>
+                </div>
               </div>
-              </div>
+            </div>
             <div class="settings-section">
               <div class="settings-section-header">
                 <p>Global Settings</p>
               </div>
               <div class="settings-box">
-                <p>Add Channel:</p>
+                <div class="input-group">
+                  <input type="text" class="form-control" placeholder="Add Channel..." aria-label="Add Channel..."
+                    aria-describedby="buttonAddChannel">
+                  <div class="input-group-append">
+                    <button class="btn btn-primary" type="button" id="buttonAddChannel"><i
+                        class="fas fa-plus"></i></button>
+                  </div>
+                </div>
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item">#gamesdonequick</li>
+                  <li class="list-group-item">#kaedenn</li>
+                  <li class="list-group-item">#shayd3tv</li>
+                </ul>
               </div>
               <div class="settings-box">
-                <p>Global 2</p>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" id="addonUsername">Username</span>
+                  </div>
+                  <input type="text" class="form-control" id="inputUsername" aria-describedby="addonUsername">
+                </div>
               </div>
               <div class="settings-box">
-                <p>Global 3</p>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" id="addonPassword">Password</span>
+                  </div>
+                  <input type="text" class="form-control" id="inputPassword" aria-describedby="addonPassword">
+                </div>
               </div>
               <div class="settings-box">
-                <p>Global 4</p>
-              </div>
-            </div>
-            <div class="settings-section">
-              <div class="settings-section-header">
-                <p>Module Settings</p>
-              </div>
-              <div class="settings-box">
-                <p>Module 1</p>
-              </div>
-              <div class="settings-box">
-                <p>Module 2</p>
-              </div>
-              <div class="settings-box">
-                <p>Module 3</p>
-              </div>
-              <div class="settings-box">
-                <p>Module 4</p>
-              </div>
-              <div class="settings-box">
-                <p>Module 5</p>
+                <div class="row align-items-center mx-auto">
+                  <div class="col-6 text-center">
+                    <span>Toggle Chat Features:</span>
+                  </div>
+                  <div class="col-6">
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="checkScrollbars">
+                      <label class="custom-control-label" for="checkScrollbars">Scrollbars</label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="checkTransparent">
+                      <label class="custom-control-label" for="checkTransparent">Transparent</label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="checkShowClips">
+                      <label class="custom-control-label" for="checkShowClips">Show Clips</label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="checkNoForce">
+                      <label class="custom-control-label" for="checkNoForce">No Force</label>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
