@@ -1,3 +1,7 @@
+html, body {
+    overflow: visible !important;
+}
+
 .wrapper {
     display: flex;
     align-items: stretch;
