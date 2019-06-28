@@ -31,6 +31,10 @@ $(DIST)/plugins/%.js: plugins/%.js
 	test -d $(DIST)/plugins || mkdir -p $(DIST)/plugins
 	npx babel --presets babel-preset-env $< -d $(DIST)/plugins/
 
+$(DIST)/fanfare/%.js: fanfare/%.js
+	test -d $(DIST)/fanfare || mkdir -p $(DIST)/fanfare
+	npx babel --presets babel-preset-env $< -d $(DIST)/fanfare/
+
 $(DIST)/polyfill.js: node_modules/babel-polyfill/dist/polyfill.js
 	test -f "$<" && echo cp "$<" "$@"
 

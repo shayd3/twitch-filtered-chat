@@ -64,7 +64,7 @@ class Fanfare { /* exported Fanfare */
   constructor(client, config) {
     /* Grab configuration */
     this._client = client;
-    this._config = config.fanfare || {enable: false};
+    this._config = config.Fanfare || {enable: false};
     this._on = this._config.enable;
     this._tick = this._config.tick || Fanfare.DEFAULT_TPS;
 
@@ -171,7 +171,7 @@ class Fanfare { /* exported Fanfare */
       let fn = this._animate.bind(this);
       let rate = 1000 / this._tick;
       this._timer = window.setInterval(fn, rate);
-      Util.LogOnly(`Fanfare: starting animation with id ${this._timer}`);
+      Util.LogOnly(`Fanfare: starting animations with id ${this._timer}`);
     }
   }
 
@@ -191,12 +191,13 @@ class Fanfare { /* exported Fanfare */
     }
   }
 
-  /* Terminate animations prematurely */
+  /* Terminate animations */
   stopAnimation() {
     if (this._timer !== null) {
       Util.LogOnly(`Fanfare: stopping antimations with id ${this._timer}`);
       window.clearInterval(this._timer);
       this._timer = null;
+      this._running = [];
     }
   }
 
@@ -224,7 +225,6 @@ class Fanfare { /* exported Fanfare */
 
   /* Received a message from the client */
   _onChatEvent(client, event, override=false) {
-    Util.DebugOnly("Received onChatEvent", event);
     if (this._on || override) {
       if (event.bits > 0) {
         this.addEffect(new FanfareCheerEffect(this, this._config, event));
@@ -234,7 +234,6 @@ class Fanfare { /* exported Fanfare */
 
   /* Received a subscription event from the client */
   _onSubEvent(client, event, override=false) {
-    Util.DebugOnly("Received onSubEvent", event);
     if (this._on || override) {
       this.addEffect(new FanfareSubEffect(this, this._config, event));
     }
