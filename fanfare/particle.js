@@ -113,6 +113,8 @@ class FanfareParticle { /* exported FanfareParticle */
     }
   }
 
-  get alive() { return this.a > 0; }
+  get alive() {
+    return this.a > 0;
+  }
 }
 

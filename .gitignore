@@ -13,6 +13,7 @@ package-lock.json
 
 # Ignore reference material
 notes/
+notes.txt
 
 # Ignore swap/temporary/compiled files
 *.pyc

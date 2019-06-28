@@ -1,3 +1,4 @@
+"use strict";
 
 function SamplePlugin2(resolve, reject, client) { /* exported SamplePlugin2 */
   this.name = "SamplePlugin2";

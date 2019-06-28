@@ -1314,6 +1314,7 @@ function doLoadClient() { /* exported doLoadClient */
 
   /* Construct the HTML Generator and tell it and sync it with the client */
   client.set("HTMLGen", new HTMLGenerator(client, config));
+  client.set("Fanfare", new Fanfare(client, config));
 
   /* Function for syncing configuration with HTMLGen */
   function updateHTMLGenConfig() {
@@ -2076,6 +2077,6 @@ function doLoadClient() { /* exported doLoadClient */
 }
 
 /* globals AssetPaths Strings CSSCheerStyles GIT_URL CUR_URL LOG_KEY CFG_KEY */
-/* globals HTMLGenerator GetLayout ParseLayout FormatLayout */
+/* globals HTMLGenerator GetLayout ParseLayout FormatLayout Fanfare */
 
 /* vim: set ts=2 sts=2 sw=2 et: */

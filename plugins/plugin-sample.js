@@ -1,3 +1,4 @@
+"use strict";
 
 class SamplePlugin { /* exported SamplePlugin */
   constructor(resolve, reject, client, args) {

@@ -622,13 +622,17 @@ function onCommandEmotes(cmd, tokens, client) {
     to_display.push(`Channel: ${ch_emotes.join("")}`);
   }
   if (tokens.indexOf("bttv") > -1) {
-    let bttv_emotes = client.GetGlobalBTTVEmotes();
-    let bttv_imgs = [];
-    for (let [k, v] of Object.entries(bttv_emotes)) {
-      let kstr = k.escape();
-      bttv_imgs.push(`<img src="${v.url}" title="${kstr}" alt="${kstr}" />`);
+    if (!client.BTTVEnabled()) {
+      Content.addError("BTTV support is disabled");
+    } else {
+      let bttv_emotes = client.GetGlobalBTTVEmotes();
+      let bttv_imgs = [];
+      for (let [k, v] of Object.entries(bttv_emotes)) {
+        let kstr = k.escape();
+        bttv_imgs.push(`<img src="${v.url}" title="${kstr}" alt="${kstr}" />`);
+      }
+      to_display.push(`BTTV: ${bttv_imgs.join("")}`);
     }
-    to_display.push(`BTTV: ${bttv_imgs.join("")}`);
   }
   if (to_display.length === 0) {
     this.printHelp();

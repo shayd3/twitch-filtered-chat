@@ -1,5 +1,7 @@
 /* Twitch Filtered Chat: Plugin support */
 
+"use strict";
+
 /* TODO: Make a README.md */
 
 /** Plugin configuration

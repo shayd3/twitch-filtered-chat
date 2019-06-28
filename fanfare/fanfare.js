@@ -1,21 +1,14 @@
-/** Fanfare Plugin
- *
- * Demonstrates an example "Fanfare" plugin that displays a FrankerZ whenever
- * someone subscribes.
+/** Fanfare
  *
  * Commands:
  *   //ff on:       Enables fanfare
  *   //ff off:      Disables fanfare
  *   //ff:          Displays //ff usage and whether or not fanfare is enabled
  *
- * Configuration (plugin key: "fanfare") keys:
- *   enabled        If present and non-falsy, enable this plugin by default
+ * Configuration (key: "fanfare") keys:
+ *   enabled        If present and non-falsy, enable this by default
  *   particles      Number of particles to display (default: 25)
  *
- * TODO:
- * Simultaneous effects: one class per effect
- *   Each class would have .startAnimation, .stopAnimation, etc
- * IDEA: Move this to its own proper module, instead of a plugin?
  */
 
 "use strict";
@@ -64,34 +57,33 @@ const FanfareCSS = `
 }
 `;
 
-class FanfarePlugin { /* exported FanfarePlugin */
+class Fanfare { /* exported Fanfare */
   static get DEFAULT_NUM_PARTICLES() { return 25; }
   static get DEFAULT_TPS() { return 30; }
 
-  constructor(resolve, reject, client, args, config) {
-    this._args = args;
-
+  constructor(client, config) {
     /* Grab configuration */
     this._client = client;
-    this._config = config.PluginConfig.fanfare || {enable: false};
+    this._config = config.fanfare || {enable: false};
     this._on = this._config.enable;
-    this._n = this._config.particles || FanfarePlugin.DEFAULT_NUM_PARTICLES;
-    this._tick = this._config.tick || FanfarePlugin.DEFAULT_TPS;
-    this._particles = [];
+    this._tick = this._config.tick || Fanfare.DEFAULT_TPS;
 
-    /* Effects queued up */
-    this._queue = [];
+    /* DEBUGGING */
+    this._on = true;
+
+    /* Running effects */
+    this._running = [];
 
     /* Timer ID used with setInterval */
     this._timer = null;
 
     /* Create stylesheet */
-    let e = this._elem("style", "", {type: "text/css", id: "ff-styles"});
+    let e = this.elem("style", "", {type: "text/css", id: "ff-styles"});
     e.innerText = FanfareCSS;
     document.head.appendChild(e);
 
     /* Create canvas */
-    this._canvas = this._elem("canvas", "ff-canvas", {id: "ff-canvas"});
+    this._canvas = this.elem("canvas", "ff-canvas", {id: "ff-canvas"});
     this._cWidth = window.innerWidth;
     this._cHeight = window.innerHeight;
     this._canvas.width = this._cWidth;
@@ -100,12 +92,11 @@ class FanfarePlugin { /* exported FanfarePlugin */
     document.body.appendChild(this._canvas);
 
     /* Create chat commands */
-    let D = (s) => `From plugin ${this.name}: ${s}`;
-    ChatCommands.add("fanfare", this._onCmd, D("Enable or disable fanfare"), this);
-    ChatCommands.addUsage("fanfare", null, D("Show fanfare status"));
-    ChatCommands.addUsage("fanfare", "on", D("Enable fanfare"));
-    ChatCommands.addUsage("fanfare", "off", D("Disable fanfare"));
-    ChatCommands.addUsage("fanfare", "demo", D("Demonstrate fanfare"));
+    ChatCommands.add("fanfare", this._onCmd, "Enable or disable fanfare", this);
+    ChatCommands.addUsage("fanfare", null, "Show fanfare status");
+    ChatCommands.addUsage("fanfare", "on", "Enable fanfare");
+    ChatCommands.addUsage("fanfare", "off", "Disable fanfare");
+    ChatCommands.addUsage("fanfare", "demo", "Demonstrate fanfare");
     ChatCommands.addAlias("ff", "fanfare");
 
     /* Bind to the relevant client events */
@@ -114,129 +105,25 @@ class FanfarePlugin { /* exported FanfarePlugin */
     client.bind("twitch-resub", this._onSubEvent.bind(this, client));
     client.bind("twitch-giftsub", this._onSubEvent.bind(this, client));
     client.bind("twitch-anongiftsub", this._onSubEvent.bind(this, client));
-
-    /* Create the array of particles */
-    this.resetParticles();
-
-    /* And we're done */
-    resolve(this);
   }
 
-  get n() { return this._n; }
   get enable() { return this._on; }
+  set enable(e) { this._on = e; }
   get tps() { return this._tick; }
+  set tps(tps) { this._tick = tps; }
+  set tickTime(rate) { this._tick = rate * 1000; }
 
-  /* Canvas width and height */
+  get canvas() { return this._canvas; }
+  get context() { return this._context; }
   get width() { return this._canvas.width; }
   get height() { return this._canvas.height; }
 
-  /* Number of particles */
-  get pCount() { return this._particles.length; }
-
-  /* Number of "alive" particles (p.a > 0) */
-  get pLive() { return this._particles.filter((p) => p.alive).length; }
-
-  /* Return the emote used for the subscription fanfare */
-  get subEmote() {
-    if (this._config.subemote) {
-      return this._config.subemote;
-    } else {
-      return "FrankerZ";
-    }
-  }
-
-  /* Set the emote used for the subscription fanfare */
-  set subEmote(e) {
-    this._config.subemote = e;
-  }
-
-  /* Return the emote used for the cheer fanfare */
-  get cheerEmote() {
-    if (this._config.cheeremote) {
-      return this._config.cheeremote;
-    } else {
-      return "FrankerZ";
-    }
-  }
-
-  /* Set the emote used for the cheer fanfare */
-  set cheerEmote(e) {
-    this._config.cheeremote = e;
-  }
-
-  /* Map func over particles */
-  pMap(func) {
-    this._particles.map((p) => func(p));
-  }
-
-  /* Construct a particle given the configuration given (see resetParticles) */
-  pInit(config) {
-    return new FanfareParticle(config);
-  }
-
-  /* Reset the particles, optionally applying a configuration */
-  resetParticles(config=null, count=null) {
-    let newParticles = [];
-    let n = (count === null ? this._n : count);
-    for (let i = 0; i < n; ++i) {
-      let p = new FanfareParticle(config || {});
-      if (config && !config.image) {
-        if (this._particles[i] && this._particles[i].image) {
-          p.image = this._particles[i].image;
-        }
-      }
-      newParticles.push(p);
-    }
-    this._particles = newParticles;
-  }
-
-  /* Clears the canvas */
-  clearCanvas() {
-    this._context.clearRect(0, 0, this.width, this.height);
-  }
-
-  /* Begin animation */
-  startAnimation() {
-    if (this._timer === null) {
-      let fn = this._animate.bind(this);
-      let rate = 1000 / this._tick;
-      this._timer = window.setInterval(fn, rate);
-      Util.Log(`Fanfare: starting animation with id ${this._timer}`);
-    }
-  }
-
-  /* Animation function */
-  _animate() {
-    this.clearCanvas();
-    let numAlive = 0;
-    for (let p of this._particles) {
-      if (p.alive) {
-        p.draw(this._context);
-        numAlive += 1;
-      }
-      p.tick();
-    }
-    if (numAlive === 0) {
-      this.stopAnimation();
-    }
-  }
-
-  /* Terminate animation prematurely */
-  stopAnimation() {
-    if (this._timer !== null) {
-      Util.Log(`Fanfare: stopping antimation with id ${this._timer}`);
-      window.clearInterval(this._timer);
-      this._timer = null;
-    }
-  }
-
   /* Create an element with some default attributes */
-  _elem(type, classes, ...attrs) {
+  elem(type, classes, ...attrs) {
     let e = document.createElement(type);
     let cls = `ff ${classes}`.trim();
     e.setAttribute("class", cls);
-    e.setAttribute("data-from", "plugin");
-    e.setAttribute("data-from-plugin", this.name);
+    e.setAttribute("data-from", "fanfare");
     for (let aobj of attrs) {
       if (Util.IsArray(aobj) && aobj.length === 2) {
         let [k, v] = aobj;
@@ -251,49 +138,66 @@ class FanfarePlugin { /* exported FanfarePlugin */
   }
 
   /* Construct an img element */
-  _image(url, opts=null) {
+  image(url, opts=null) {
     let o = opts ? Util.JSONClone(opts) : {};
     o.src = url;
-    return this._elem("img", "ff-image ff-emote", o);
+    return this.elem("img", "ff-image ff-emote", o);
   }
 
   /* Construct an img element of a Twitch emote */
-  _twitchEmote(id, opts=null) {
-    return this._image(this._client.GetEmote(id), opts);
+  twitchEmote(id, opts=null) {
+    return this.image(this._client.GetEmote(id), opts);
   }
 
-  /* Trigger the cheer effect */
-  _doFanfareCheer(event) {
-    let bits = event.bits;
-    Util.DebugOnly(`Cheer fanfare for ${bits} bits`, event);
-    this.resetParticles({
-      xmin: 0,
-      xmax: this.width - 40,
-      ymin: this.height - 100,
-      ymax: this.height - 30,
-      xforcemin: -0.1,
-      xforcemax: 0.1,
-      yforcemin: -0.5,
-      yforcemax: 0,
-      image: this._twitchEmote(this.cheerEmote)
+  /* Clears the canvas */
+  clearCanvas() {
+    this._context.clearRect(0, 0, this.width, this.height);
+  }
+
+  /* Start a new animation */
+  addEffect(effect) {
+    effect.load().then(() => {
+      Util.LogOnly("Loaded effect, starting...", effect);
+      this._running.push(effect);
+      this.startAnimation();
+    }).catch((ev) => {
+      Util.Error("Failed to load effect", ev);
     });
   }
 
-  /* Trigger the sub event */
-  _doFanfareSub(event) {
-    let kind = event.kind;
-    Util.DebugOnly(`Sub fanfare for ${kind}`, event);
-    this.resetParticles({
-      xmin: 0,
-      xmax: this.width - 40,
-      ymin: this.height - 100,
-      ymax: this.height - 30,
-      xforcemin: -0.1,
-      xforcemax: 0.1,
-      yforcemin: -0.5,
-      yforcemax: 0,
-      image: this._twitchEmote(this.subEmote)
-    });
+  /* Begin animating */
+  startAnimation() {
+    if (this._timer === null) {
+      let fn = this._animate.bind(this);
+      let rate = 1000 / this._tick;
+      this._timer = window.setInterval(fn, rate);
+      Util.LogOnly(`Fanfare: starting animation with id ${this._timer}`);
+    }
+  }
+
+  /* Animation function */
+  _animate() {
+    let stillRunning = [];
+    this.clearCanvas();
+    for (let effect of this._running) {
+      if (effect.tick()) {
+        effect.draw(this._context);
+        stillRunning.push(effect);
+      }
+    }
+    this._running = stillRunning;
+    if (this._running.length === 0) {
+      this.stopAnimation();
+    }
+  }
+
+  /* Terminate animations prematurely */
+  stopAnimation() {
+    if (this._timer !== null) {
+      Util.LogOnly(`Fanfare: stopping antimations with id ${this._timer}`);
+      window.clearInterval(this._timer);
+      this._timer = null;
+    }
   }
 
   /* Handle //ff command */
@@ -311,6 +215,7 @@ class FanfarePlugin { /* exported FanfarePlugin */
       Content.addInfo("Fanfare is now disabled");
     } else if (t0 === "demo") {
       self._onChatEvent(self._client, {bits: 1000}, true);
+      self._onSubEvent(self._client, {}, true);
     } else {
       Content.addError(`Fanfare: unknown argument ${t0.escape()}`);
       this.printUsage();
@@ -319,24 +224,22 @@ class FanfarePlugin { /* exported FanfarePlugin */
 
   /* Received a message from the client */
   _onChatEvent(client, event, override=false) {
+    Util.DebugOnly("Received onChatEvent", event);
     if (this._on || override) {
       if (event.bits > 0) {
-        this._doFanfareCheer(event);
-        this.startAnimation();
+        this.addEffect(new FanfareCheerEffect(this, this._config, event));
       }
     }
   }
 
   /* Received a subscription event from the client */
   _onSubEvent(client, event, override=false) {
+    Util.DebugOnly("Received onSubEvent", event);
     if (this._on || override) {
-      this._doFanfareSub(event);
-      this.startAnimation();
+      this.addEffect(new FanfareSubEffect(this, this._config, event));
     }
   }
-
-  get name() { return "FanfarePlugin"; }
 }
 
-/* globals FanfareParticle FanfareCheerEffect FanfareSubEffect */
+/* globals FanfareCheerEffect FanfareSubEffect */
 /* vim: set ts=2 sts=2 sw=2 et: */
