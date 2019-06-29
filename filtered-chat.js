@@ -105,9 +105,16 @@ class Content { /* exported Content */
     Content.addPre($(`<div class="help"></div>`).text(s));
   }
   static addHelpLine(c, s) { /* does not escape */
-    Content.addPre(ChatCommands.helpLine(c, s));
+    Content.addHelp(ChatCommands.helpLine(c, s));
   }
 }
+
+/***
+ * ChatCommands help line
+ *  .pre .help .help-line div, div
+ * Content help line
+ *  .pre .help-line div, div
+ */
 
 /* End document writing functions 0}}} */
 
@@ -508,6 +515,11 @@ function getConfigObject(inclSensitive=false) {
   }
 
   return config;
+}
+
+/* Obtain singular configuration */
+function getConfigValue(key) {
+  return getConfigObject()[key];
 }
 
 /* Store configuration */
@@ -1028,7 +1040,7 @@ function doLoadClient() { /* exported doLoadClient */
     } else if (t0 === "help") {
       Content.addHelpLine("//config", "Show and manipulate configuration");
       Content.addHelpText("//config parameters:");
-      Content.addHelpLine("export", "Export *all* of localStorage to a new tab (contains secrets!)");
+      Content.addHelpLine("export", "Export *all* of localStorage to a new tab (contains passwords!)");
       Content.addHelpLine("purge", "Clear localStorage (cannot be undone!)");
       Content.addHelpLine("clientid", "Display ClientID");
       Content.addHelpLine("pass", "Dislay OAuth token (if one is present)");
@@ -1036,7 +1048,8 @@ function doLoadClient() { /* exported doLoadClient */
       Content.addHelpText("//config url parameters (can be used in any order):");
       Content.addHelpLine("git", "Force URL to target github.io");
       Content.addHelpLine("text", "Force URL to be un-encoded");
-      Content.addHelpLine("auth", "Include secrets in URL");
+      Content.addHelpLine("auth", "Include passwords in URL");
+      Content.addHelpLine("tag=&lt;value&gt;", "Set the tag to &lt;value&gt;");
       Content.addHelpText("//config set <key> <value>: Change <key> to <value> (dangerous!)");
       Content.addHelpText("//config setobj <key> <value>: Change <key> to JSON-encoded <value> (dangerous!)");
       Content.addHelpText("//config unset <key>: Remove <key> (dangerous!)");
@@ -1127,15 +1140,26 @@ function doLoadClient() { /* exported doLoadClient */
       } else if (cfg.ColorScheme === "light") {
         qsAdd("scheme", "light");
       }
-      if (cfg.tag) {
-        qsAdd("tag", cfg.tag);
-      }
       if (cfg.NoForce) {
         qsAdd("noforce", "1");
       }
+      if (cfg.Fanfare) {
+        qsAdd("fanfare", JSON.stringify(cfg.Fanfare));
+      }
+
+      /* Append a tag */
+      let customTag = cfg.tag ? cfg.tag : "";
+      for (let t of tokens.slice(1)) {
+        if (t.startsWith("tag=")) {
+          customTag = t.substr(4);
+        }
+      }
+      if (customTag) {
+        qsAdd("tag", customTag);
+      }
 
       /* Append query string to the URL */
-      if (tokens[tokens.length - 1] === "text") {
+      if (tokens.includes("text")) {
         url += "?" + qs.join("&");
       } else {
         url += "?base64=" + encodeURIComponent(btoa(qs.join("&")));
@@ -1203,7 +1227,7 @@ function doLoadClient() { /* exported doLoadClient */
       let tok = `"${t0}"`.escape();
       Content.addError(`Unknown config command or key ${tok}`, true);
     }
-  }, "Obtain and modify configuration information");
+  }, "Obtain and modify configuration information; use //config help for details");
 
   /* Obtain configuration, construct client */
   (function _configure_construct_client() {
@@ -1807,7 +1831,7 @@ function doLoadClient() { /* exported doLoadClient */
         Content.addInfo("Connected (unauthenticated)");
       }
     }
-    if (getConfigObject().Channels.length === 0) {
+    if (getConfigValue("Channels").length === 0) {
       Content.addInfo("No channels configured; type //join <channel> to join one!".escape());
     }
   });
@@ -1820,7 +1844,7 @@ function doLoadClient() { /* exported doLoadClient */
     if (reason) {
       msg = `(code ${code} ${Util.WSStatus[code]}: ${reason})`;
     }
-    if (getConfigObject().NoAutoReconnect) {
+    if (getConfigValue("NoAutoReconnect")) {
       Content.addError(`Connection closed ${msg} ${Strings.RECONNECT}`);
     } else {
       Content.addError(`Connection closed ${msg}`);
@@ -1832,7 +1856,7 @@ function doLoadClient() { /* exported doLoadClient */
 
   /* Client joined a channel */
   client.bind("twitch-joined", function _on_twitch_joined(e) {
-    let layout = getConfigObject().Layout;
+    let layout = getConfigValue("Layout");
     if (!layout.Slim) {
       Content.addInfo(`Joined ${Twitch.FormatChannel(e.channel)}`);
     }
@@ -1840,7 +1864,7 @@ function doLoadClient() { /* exported doLoadClient */
 
   /* Client left a channel */
   client.bind("twitch-parted", function _on_twitch_parted(e) {
-    let layout = getConfigObject().Layout;
+    let layout = getConfigValue("Layout");
     if (!layout.Slim) {
       Content.addInfo(`Left ${Twitch.FormatChannel(e.channel)}`);
     }
@@ -1875,7 +1899,7 @@ function doLoadClient() { /* exported doLoadClient */
       }
     }
     /* Avoid flooding the DOM with stale chat messages */
-    let max = getConfigObject().MaxMessages;
+    let max = getConfigValue("MaxMessages");
     /* FIXME: Causes flickering for some reason */
     for (let c of $(".content")) {
       while ($(c).find(".line-wrapper").length > max) {
@@ -1886,7 +1910,7 @@ function doLoadClient() { /* exported doLoadClient */
 
   /* Received streamer info */
   client.bind("twitch-streaminfo", function _on_twitch_streaminfo(e) {
-    let layout = getConfigObject().Layout;
+    let layout = getConfigValue("Layout");
     let cinfo = client.GetChannelInfo(e.channelString) || {};
     if (layout && !layout.Slim) {
       if (cinfo.online) {

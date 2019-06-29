@@ -284,6 +284,10 @@ body.light .loading {
 
 /* Help formatting {{{0 */
 
+.pre * {
+  font-family: monospace;
+}
+
 .help {
   font-size: 0.9em;
   font-family: monospace;
@@ -298,11 +302,6 @@ body.light .loading {
   display: grid;
   grid-template-columns: 20% auto;
   margin-left: 1.5em;
-}
-
-.help-line div {
-  font-size: 0.9em;
-  font-family: monospace;
 }
 
 /* End help formatting 0}}} */
