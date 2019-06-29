@@ -602,6 +602,63 @@ function onCommandBadges(cmd, tokens, client) {
   }
 }
 
+function onCommandCheers(cmd, tokens, client) {
+  let cheers = client.GetCheers();
+  let [bg, scale, state] = [null, null, null];
+  if (tokens.includes("dark")) bg = "dark";
+  else if (tokens.includes("light")) bg = "light";
+  if (tokens.includes("scale1")) scale = "1";
+  else if (tokens.includes("scale1.5")) scale = "1.5";
+  else if (tokens.includes("scale2")) scale = "2";
+  else if (tokens.includes("scale3")) scale = "3";
+  else if (tokens.includes("scale4")) scale = "4";
+  if (tokens.includes("static")) state = "static";
+  else if (tokens.includes("animated")) state = "animated";
+  let formatCheer = (ch, c) => {
+    let html = [];
+    let [img_bg, img_scale, img_state] = [bg, scale, state];
+    if (bg === null) {
+      img_bg = c.backgrounds.includes("dark") ? "dark" : c.backgrounds[0];
+    }
+    if (scale === null) {
+      img_scale = c.scales.map((n) => Util.ParseNumber(n)).min();
+    }
+    if (state === null) {
+      if ($("#cbAnimCheers").is(":checked")) {
+        img_state = c.states.includes("animated") ? "animated" : c.states[0];
+      } else {
+        img_state = c.states.includes("static") ? "static" : c.states[0];
+      }
+    }
+    for (let tdef of Object.values(c.tiers)) {
+      let nbits = tdef.min_bits;
+      let src = tdef.images[img_bg][img_state][img_scale];
+      let desc = `${ch} ${c.prefix} ${nbits}`.escape();
+      let e = `<img src="${src}" alt="${desc}" title="${desc}" />`;
+      html.push(e);
+    }
+    return html.join("");
+  };
+  let seen = {};
+  for (let [cname, cheerdefs] of Object.entries(cheers)) {
+    let html = [];
+    for (let [cheername, cheerdef] of Object.entries(cheerdefs)) {
+      if (!seen[cheername]) {
+        html.push(formatCheer(cname, cheerdef));
+        seen[cheername] = 1;
+      }
+    }
+    if (html.length > 0) {
+      if (cname === "GLOBAL") {
+        Content.addInfo(`Global cheermotes:`);
+      } else {
+        Content.addInfo(`Cheermotes for channel ${cname}:`);
+      }
+      Content.addInfo(html.join(""));
+    }
+  }
+}
+
 function onCommandEmotes(cmd, tokens, client) {
   let client_emotes = client.GetEmotes();
   let g_emotes = [];
@@ -873,6 +930,10 @@ function InitChatCommands() { /* exported InitChatCommands */
     "badges": {
       func: onCommandBadges,
       desc: "Display all known badges"
+    },
+    "cheers": {
+      func: onCommandCheers,
+      desc: "Display all known cheermotes"
     },
     "emotes": {
       func: onCommandEmotes,
