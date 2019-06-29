@@ -1848,9 +1848,9 @@ function doLoadClient() { /* exported doLoadClient */
     if (getConfigValue("NoAutoReconnect")) {
       Content.addError(`Connection closed ${msg} ${Strings.RECONNECT}`);
     } else {
-      Content.addError(`Connection closed ${msg}`);
+      Content.addError(`Connection closed ${msg}; reconnecting in 5 seconds...`);
       if (!client.connecting) {
-        client.Connect();
+        window.setTimeout(() => { client.Connect(); }, 5000);
       }
     }
   });
