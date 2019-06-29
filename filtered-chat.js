@@ -246,6 +246,26 @@ function parseQueryString(config, qs=null) {
     } else if (key === "noforce") {
       key = "NoForce";
       val = true;
+    } else if (key === "fanfare") {
+      key = "Fanfare";
+      val = {enable: false};
+      try {
+        let valobj = JSON.parse(v);
+        if (typeof(valobj) === "number") {
+          val.enable = (valobj !== 0);
+        } else if (typeof(valobj) === "boolean") {
+          val.enable = valobj;
+        } else if (typeof(valobj) === "object") {
+          val = valobj;
+          val.enable = true;
+        } else {
+          Util.Error("Don't know how to parse Fanfare value", valobj);
+          key = val = null;
+        }
+      } catch (e) {
+        Util.Error("Failed parsing Fanfare config; disabling", e);
+        key = val = null;
+      }
     }
     /* Skip items with a falsy key */
     if (key) {

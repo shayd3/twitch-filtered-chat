@@ -68,9 +68,6 @@ class Fanfare { /* exported Fanfare */
     this._on = this._config.enable;
     this._tick = this._config.tick || Fanfare.DEFAULT_TPS;
 
-    /* DEBUGGING */
-    this._on = true;
-
     /* Running effects */
     this._running = [];
 
