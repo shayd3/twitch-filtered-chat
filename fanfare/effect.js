@@ -2,16 +2,17 @@
 
 "use strict";
 
-class FanfareEffect { /* exported FanfareEffect */
-  constructor(plugin, config) {
-    this._plugin = plugin;
-    this._config = config;
+class FanfareEffect { /* {{{0 */
+  constructor(host, config) {
+    this._host = host;
+    this._config = config || {};
     this._particles = [];
 
     /* Event callbacks */
     this._cb = {};
   }
 
+  config(k) { return this._config[k]; }
   get count() { return this._particles.length; }
   get alive() { return this._particles.filter((p) => p.alive).length; }
 
@@ -36,7 +37,12 @@ class FanfareEffect { /* exported FanfareEffect */
 
   load() {
     return new Promise((function(resolve, reject) {
-      let img = this._plugin.twitchEmote(this.emote);
+      let img = null;
+      if (this.emote) {
+        img = this._host.twitchEmote(this.emote);
+      } else if (this.imageUrl) {
+        img = this._host.image(this.imageUrl);
+      }
       img.onload = (function(ev) {
         this._image = img;
         this.fire("load", this);
@@ -44,6 +50,7 @@ class FanfareEffect { /* exported FanfareEffect */
         resolve(ev);
       }).bind(this);
       img.onerror = (function(ev) {
+        Util.Error(ev);
         reject(ev);
       }).bind(this);
     }).bind(this));
@@ -77,26 +84,88 @@ class FanfareEffect { /* exported FanfareEffect */
     }
     this.fire("draw", this);
   }
-}
+} /* 0}}} */
 
-class FanfareCheerEffect extends FanfareEffect { /* exported FanfareCheerEffect */
-  constructor(plugin, config, event) {
-    super(plugin, config);
+class FanfareCheerEffect extends FanfareEffect { /* {{{0 */
+  constructor(host, config, event) {
+    super(host, config);
     this._event = event;
+    this._bits = event.bits || 1;
   }
 
   get num() {
-    if (this._config.numparticles) return this._config.numparticles;
-    if (this._image && this._image.width) {
-      return this._plugin.width / this._image.width;
+    if (this.config("numparticles")) {
+      return this.config("numparticles");
+    } else if (this._image && this._image.width) {
+      return this._host.width / this._image.width;
+    } else {
+      return 10;
     }
-    return 10;
+  }
+
+  static get background() {
+    if ($("body").hasClass("light")) {
+      return "light";
+    } else {
+      return "dark";
+    }
+  }
+
+  static get state() {
+    if ($("#cbAnimCheers").is(":checked")) {
+      return "animated";
+    } else {
+      return "static";
+    }
+  }
+
+  static get scale() {
+    return "1";
+  }
+
+  static cheerToURL(cdef, bits) {
+    let bg = FanfareCheerEffect.background;
+    let state = FanfareCheerEffect.state;
+    let scale = FanfareCheerEffect.scale;
+    if (!cdef.backgrounds.includes(bg)) {
+      Util.DebugOnly(`Background ${bg} not in ${JSON.stringify(cdef.backgrounds)}`);
+      bg = cdef.backgrounds[0];
+    }
+    if (!cdef.states.includes(state)) {
+      Util.DebugOnly(`State ${bg} not in ${JSON.stringify(cdef.states)}`);
+      state = cdef.states[0];
+    }
+    if (!cdef.scales.map((n) => `${n}`).includes(scale)) {
+      Util.DebugOnly(`Scale ${bg} not in ${JSON.stringify(cdef.scales)}`);
+      scale = cdef.scales[0];
+    }
+    /* Figure out the tier we're using */
+    let curr_bits = 0;
+    let tier = cdef.tiers[0];
+    for (let tdef of Object.values(cdef.tiers)) {
+      if (tdef.min_bits > curr_bits && bits >= tdef.min_bits) {
+        tier = tdef;
+      }
+    }
+    Util.DebugOnly(tier, `Using ${bg}, ${state}, ${scale}`);
+    try {
+      return tier.images[bg][state][scale];
+    }
+    catch (e) {
+      Util.ErrorOnly(e);
+      Util.ErrorOnly(tier, bg, state, scale);
+      return "";
+    }
   }
 
   get emote() {
-    if (this._config.cheeremote) return this._config.cheeremote;
-    if (this._config.emote) return this._config.emote;
-    return "FrankerZ";
+    /* null forces imageUrl to be called */
+    return null;
+  }
+
+  get imageUrl() {
+    let cdef = this._host._client.GetGlobalCheer("Cheer");
+    return FanfareCheerEffect.cheerToURL(cdef, this._bits);
   }
 
   /* Called by base class */
@@ -104,9 +173,9 @@ class FanfareCheerEffect extends FanfareEffect { /* exported FanfareCheerEffect 
     for (let i = 0; i < this.num; ++i) {
       this._particles.push(new FanfareParticle({
         xmin: 0,
-        xmax: this._plugin.width - 40,
-        ymin: this._plugin.height - 100,
-        ymax: this._plugin.height - 30,
+        xmax: this._host.width - 40,
+        ymin: this._host.height - 100,
+        ymax: this._host.height - 30,
         dxmin: 0,
         dxmax: 1,
         dymin: 0,
@@ -119,26 +188,40 @@ class FanfareCheerEffect extends FanfareEffect { /* exported FanfareCheerEffect 
       }));
     }
   }
-}
+} /* 0}}} */
 
-class FanfareSubEffect extends FanfareEffect { /* exported FanfareSubEffect */
-  constructor(plugin, config, event) {
-    super(plugin, config);
+class FanfareSubEffect extends FanfareEffect { /* {{{0 */
+  constructor(host, config, event) {
+    super(host, config);
     this._event = event;
+    this._kind = event.kind || TwitchSubEvent.SUB;
+    this._tier = event.plan || TwitchSubEvent.PLAN_TIER1;
   }
 
   get num() {
-    if (this._config.numparticles) return this._config.numparticles;
-    if (this._image && this._image.width) {
-      return this._plugin.width / this._image.width;
+    if (this.config("numparticles")) {
+      return this.config("numparticles");
+    } else if (this._image && this._image.width) {
+      return this._host.width / this._image.width;
+    } else {
+      return 10;
     }
-    return 10;
   }
 
   get emote() {
-    if (this._config.subemote) return this._config.subemote;
-    if (this._config.emote) return this._config.emote;
-    return "HolidayPresent";
+    if (this._kind === TwitchSubEvent.SUB) {
+      return "MrDestructoid";
+    } else if (this._kind === TwitchSubEvent.RESUB) {
+      return "PraiseIt";
+    } else if (this._kind === TwitchSubEvent.GIFTSUB) {
+      return "HolidayPresent";
+    } else if (this._kind === TwitchSubEvent.ANONGIFTSUB) {
+      return "HolidayPresent";
+    } else if (this.config("emote")) {
+      return this.config("emote");
+    } else {
+      return "HolidayPresent";
+    }
   }
 
   /* Called by base class */
@@ -146,9 +229,9 @@ class FanfareSubEffect extends FanfareEffect { /* exported FanfareSubEffect */
     for (let i = 0; i < this.num; ++i) {
       this._particles.push(new FanfareParticle({
         xmin: 0,
-        xmax: this._plugin.width - 40,
-        ymin: this._plugin.height - 100,
-        ymax: this._plugin.height - 30,
+        xmax: this._host.width - 40,
+        ymin: this._host.height - 100,
+        ymax: this._host.height - 30,
         dxrange: [-5, 5],
         dyrange: [-4, 1],
         xforcemin: -0.1,
@@ -159,6 +242,7 @@ class FanfareSubEffect extends FanfareEffect { /* exported FanfareSubEffect */
       }));
     }
   }
-}
+} /* 0}}} */
 
+/* exported FanfareEffect FanfareCheerEffect FanfareSubEffect */
 /* globals FanfareParticle */

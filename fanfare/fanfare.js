@@ -94,6 +94,8 @@ class Fanfare { /* exported Fanfare */
     ChatCommands.addUsage("fanfare", "on", "Enable fanfare");
     ChatCommands.addUsage("fanfare", "off", "Disable fanfare");
     ChatCommands.addUsage("fanfare", "demo", "Demonstrate fanfare");
+    ChatCommands.addUsage("fanfare", "cheerdemo", "Demonstrate cheer fanfare");
+    ChatCommands.addUsage("fanfare", "subdemo", "Demonstrate sub fanfare");
     ChatCommands.addAlias("ff", "fanfare");
 
     /* Bind to the relevant client events */
@@ -213,7 +215,29 @@ class Fanfare { /* exported Fanfare */
       Content.addInfo("Fanfare is now disabled");
     } else if (t0 === "demo") {
       self._onChatEvent(self._client, {bits: 1000}, true);
-      self._onSubEvent(self._client, {}, true);
+      self._onSubEvent(self._client, {kind: TwitchSubEvent.SUB, plan: TwitchSubEvent.PLAN_TIER1}, true);
+    } else if (t0 === "cheerdemo") {
+      let bits = 1000;
+      if (tokens.length === 2 && Util.IsNumber(tokens[1])) {
+        bits = Util.ParseNumber(tokens[1]);
+      }
+      self._onChatEvent(self._client, {bits: bits}, true);
+    } else if (t0 === "subdemo") {
+      let kind = TwitchSubEvent.SUB;
+      let plan = TwitchSubEvent.PLAN_TIER1;
+      if (tokens.length > 1) {
+        for (let k of TwitchSubEvent.KINDS) {
+          if (tokens.includes(k)) {
+            kind = k;
+          }
+        }
+        for (let p of TwitchSubEvent.PLANS) {
+          if (tokens.includes(p)) {
+            plan = p;
+          }
+        }
+      }
+      self._onSubEvent(self._client, {kind: kind, plan: plan}, true);
     } else {
       Content.addError(`Fanfare: unknown argument ${t0.escape()}`);
       this.printUsage();
