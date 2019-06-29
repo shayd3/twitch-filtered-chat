@@ -65,7 +65,8 @@ class Content { /* exported Content */
   static add(text) { /* escapes */
     Content.addHTML($(`<span class="message"></span>`).text(text));
   }
-  static addHTML(content, container=null) {
+
+  static addHTML(content, container=null) { /* does not escape */
     let $container = container ? $(container) : $(".module .content");
     let $line = $(`<div class="line line-wrapper"></div>`);
     if (typeof(content) === "string") {
@@ -80,41 +81,41 @@ class Content { /* exported Content */
       $container.scrollTop(Math.pow(2, 31) - 1);
     }
   }
+
   static addPre(content) { /* does not escape */
     Content.addHTML($(`<div class="pre"></div>`).html(content));
   }
+
   static addInfo(content, pre=false) { /* does not escape */
     let e = $(`<div class="info"></div>`).html(content);
     if (pre) e.addClass("pre");
     Content.addHTML(e);
   }
+
   static addNotice(content, pre=false) { /* does not escape */
     let e = $(`<div class="notice"></div>`).html(content);
     if (pre) e.addClass("pre");
     Content.addHTML(e);
   }
+
   static addError(content, pre=false) { /* does not escape */
     let e = $(`<div class="error"></div>`).html(content);
     if (pre) e.addClass("pre");
     Content.addHTML(e);
   }
+
   static addHelp(s) { /* does not escape */
     Content.addPre($(`<div class="help"></div>`).html(s));
   }
+
   static addHelpText(s) { /* escapes */
     Content.addPre($(`<div class="help"></div>`).text(s));
   }
+
   static addHelpLine(c, s) { /* does not escape */
     Content.addHelp(ChatCommands.helpLine(c, s));
   }
 }
-
-/***
- * ChatCommands help line
- *  .pre .help .help-line div, div
- * Content help line
- *  .pre .help-line div, div
- */
 
 /* End document writing functions 0}}} */
 
