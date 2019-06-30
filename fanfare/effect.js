@@ -93,6 +93,8 @@ class FanfareCheerEffect extends FanfareEffect { /* {{{0 */
     this._bits = event.bits || 1;
   }
 
+  get name() { return "FanfareCheerEffect"; }
+
   get num() {
     if (this.config("numparticles")) {
       return this.config("numparticles");
@@ -111,32 +113,20 @@ class FanfareCheerEffect extends FanfareEffect { /* {{{0 */
     }
   }
 
-  static get state() {
-    if ($("#cbAnimCheers").is(":checked")) {
-      return "animated";
-    } else {
-      return "static";
-    }
-  }
-
   static get scale() {
-    return "1";
+    return "2";
   }
 
-  static cheerToURL(cdef, bits) {
-    let bg = FanfareCheerEffect.background;
-    let state = FanfareCheerEffect.state;
-    let scale = FanfareCheerEffect.scale;
+  static cheerToURL(cdef, bits, pbg=null, pscale=null) {
+    let bg = pbg || FanfareCheerEffect.background;
+    let scale = pscale || FanfareCheerEffect.scale;
+    /* Determine background and scale */
     if (!cdef.backgrounds.includes(bg)) {
       Util.DebugOnly(`Background ${bg} not in ${JSON.stringify(cdef.backgrounds)}`);
       bg = cdef.backgrounds[0];
     }
-    if (!cdef.states.includes(state)) {
-      Util.DebugOnly(`State ${bg} not in ${JSON.stringify(cdef.states)}`);
-      state = cdef.states[0];
-    }
     if (!cdef.scales.map((n) => `${n}`).includes(scale)) {
-      Util.DebugOnly(`Scale ${bg} not in ${JSON.stringify(cdef.scales)}`);
+      Util.DebugOnly(`Scale ${scale} not in ${JSON.stringify(cdef.scales)}`);
       scale = cdef.scales[0];
     }
     /* Figure out the tier we're using */
@@ -147,13 +137,14 @@ class FanfareCheerEffect extends FanfareEffect { /* {{{0 */
         tier = tdef;
       }
     }
-    Util.DebugOnly(tier, `Using ${bg}, ${state}, ${scale}`);
+    /* Return the derived URL */
+    Util.DebugOnly(tier, `Using ${bg} ${scale}`);
     try {
-      return tier.images[bg][state][scale];
+      return tier.images[bg].static[scale];
     }
     catch (e) {
       Util.ErrorOnly(e);
-      Util.ErrorOnly(tier, bg, state, scale);
+      Util.ErrorOnly(tier, bg, scale);
       return "";
     }
   }
@@ -164,8 +155,19 @@ class FanfareCheerEffect extends FanfareEffect { /* {{{0 */
   }
 
   get imageUrl() {
-    let cdef = this._host._client.GetGlobalCheer("Cheer");
-    return FanfareCheerEffect.cheerToURL(cdef, this._bits);
+    let cheermote = "Cheer";
+    let [bg, scale] = [null, null];
+    if (this.config("cheermote")) {
+      cheermote = this.config("cheermote");
+    }
+    if (this.config("cheerbg")) {
+      bg = this.config("cheerbg");
+    }
+    if (this.config("cheerscale")) {
+      scale = this.config("cheerscale");
+    }
+    let cdef = this._host._client.GetGlobalCheer(cheermote);
+    return FanfareCheerEffect.cheerToURL(cdef, this._bits, bg, scale);
   }
 
   /* Called by base class */
@@ -198,6 +200,8 @@ class FanfareSubEffect extends FanfareEffect { /* {{{0 */
     this._tier = event.plan || TwitchSubEvent.PLAN_TIER1;
   }
 
+  get name() { return "FanfareSubEffect"; }
+
   get num() {
     if (this.config("numparticles")) {
       return this.config("numparticles");
@@ -209,19 +213,32 @@ class FanfareSubEffect extends FanfareEffect { /* {{{0 */
   }
 
   get emote() {
-    if (this._kind === TwitchSubEvent.SUB) {
-      return "MrDestructoid";
+    /* null forces imageUrl to be called */
+    return null;
+  }
+
+  get imageUrl() {
+    let emote = "HolidayPresent";
+    let size = "1.0";
+    if (this.config("subemote")) {
+      emote = this.config("subemote");
+    } else if (this._kind === TwitchSubEvent.SUB) {
+      emote = "MrDestructoid";
     } else if (this._kind === TwitchSubEvent.RESUB) {
-      return "PraiseIt";
+      emote = "PraiseIt";
     } else if (this._kind === TwitchSubEvent.GIFTSUB) {
-      return "HolidayPresent";
+      emote = "HolidayPresent";
     } else if (this._kind === TwitchSubEvent.ANONGIFTSUB) {
-      return "HolidayPresent";
+      emote = "HolidayPresent";
     } else if (this.config("emote")) {
-      return this.config("emote");
-    } else {
-      return "HolidayPresent";
+      emote = this.config("emote");
     }
+    if (this._tier === TwitchSubEvent.PLAN_TIER2) {
+      size = "2.0";
+    } else if (this._tier === TwitchSubEvent.PLAN_TIER3) {
+      size = "3.0";
+    }
+    return this._host._client.GetEmote(emote, size);
   }
 
   /* Called by base class */

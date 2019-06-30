@@ -47,16 +47,6 @@
  * Particles are "alive" if their opacity is greater than 0.
  */
 
-const FanfareCSS = `
-.ff.ff-canvas {
-  pointer-events: none;
-  position: absolute;
-  left: 0px;
-  top: 0px;
-  z-index: 100;
-}
-`;
-
 class Fanfare { /* exported Fanfare */
   static get DEFAULT_NUM_PARTICLES() { return 25; }
   static get DEFAULT_TPS() { return 30; }
@@ -74,13 +64,17 @@ class Fanfare { /* exported Fanfare */
     /* Timer ID used with setInterval */
     this._timer = null;
 
-    /* Create stylesheet */
-    let e = this.elem("style", "", {type: "text/css", id: "ff-styles"});
-    e.innerText = FanfareCSS;
-    document.head.appendChild(e);
-
     /* Create canvas */
-    this._canvas = this.elem("canvas", "ff-canvas", {id: "ff-canvas"});
+    this._canvas = this.elem("canvas", "ff-canvas", {
+      id: "ff-canvas",
+      style: [
+        "pointer-events: none;",
+        "position: absolute;",
+        "top: 0;",
+        "left: 0;",
+        "z-index: 100;"
+      ].join(" ")
+    });
     this._cWidth = window.innerWidth;
     this._cHeight = window.innerHeight;
     this._canvas.width = this._cWidth;
@@ -90,7 +84,8 @@ class Fanfare { /* exported Fanfare */
 
     /* Create chat commands */
     ChatCommands.add("fanfare", this._onCmd, "Enable or disable fanfare", this);
-    ChatCommands.addUsage("fanfare", null, "Show fanfare status");
+    ChatCommands.addUsage("fanfare", null, "Show fanfare status and help");
+    ChatCommands.addUsage("fanfare", "help", "Show fanfare help");
     ChatCommands.addUsage("fanfare", "on", "Enable fanfare");
     ChatCommands.addUsage("fanfare", "off", "Disable fanfare");
     ChatCommands.addUsage("fanfare", "demo", "Demonstrate fanfare");
@@ -112,6 +107,7 @@ class Fanfare { /* exported Fanfare */
   set tps(tps) { this._tick = tps; }
   set tickTime(rate) { this._tick = rate * 1000; }
 
+  /* Canvas attributes */
   get canvas() { return this._canvas; }
   get context() { return this._context; }
   get width() { return this._canvas.width; }
@@ -121,15 +117,20 @@ class Fanfare { /* exported Fanfare */
   elem(type, classes, ...attrs) {
     let e = document.createElement(type);
     let cls = `ff ${classes}`.trim();
-    e.setAttribute("class", cls);
-    e.setAttribute("data-from", "fanfare");
+    let setAttr = (k, v) => {
+      if (k === "innerHTML") e.innerHTML = v;
+      else if (k === "innerText") e.innerText = v;
+      else e.setAttribute(k, v);
+    };
+    setAttr("class", cls);
+    setAttr("data-from", "fanfare");
     for (let aobj of attrs) {
       if (Util.IsArray(aobj) && aobj.length === 2) {
         let [k, v] = aobj;
-        e.setAttribute(k, v);
+        setAttr(k, v);
       } else {
         for (let [k, v] of Object.entries(aobj)) {
-          e.setAttribute(k, v);
+          setAttr(k, v);
         }
       }
     }
@@ -200,13 +201,26 @@ class Fanfare { /* exported Fanfare */
     }
   }
 
-  /* Handle //ff command */
+  /* Handle //fanfare (or //ff) command */
   _onCmd(cmd, tokens, client, self) {
     /* Note: called as a command; `this` refers to a command object */
     let t0 = tokens.length === 0 ? null : tokens[0];
-    if (t0 === null) {
-      Content.addHelpText(`Fanfare is ${self._on ? "en" : "dis"}abled`);
+    if (t0 === null || t0 === "help") {
+      if (t0 === null) {
+        Content.addHelpText(`Fanfare is ${self._on ? "en" : "dis"}abled`);
+      }
       this.printUsage();
+      Content.addHelp("Add a number to cheerdemo to simulate that number of bits");
+      Content.addHelp("Available arguments for subdemo:");
+      for (let kind of TwitchSubEvent.KINDS) {
+        Content.addHelpLine(kind, `Demonstrate the ${kind} type of subscription`);
+      }
+      for (let plan of TwitchSubEvent.PLANS) {
+        let name = TwitchSubEvent.PlanName(plan);
+        Content.addHelpLine(plan, `Demonstrate a ${name} subscription`);
+      }
+      Content.addHelp(`Default kind: ${TwitchSubEvent.SUB}`);
+      Content.addHelp(`Default plan: ${TwitchSubEvent.PLAN_TIER1}`);
     } else if (t0 === "on") {
       self._on = true;
       Content.addInfo("Fanfare is now enabled");
@@ -215,7 +229,10 @@ class Fanfare { /* exported Fanfare */
       Content.addInfo("Fanfare is now disabled");
     } else if (t0 === "demo") {
       self._onChatEvent(self._client, {bits: 1000}, true);
-      self._onSubEvent(self._client, {kind: TwitchSubEvent.SUB, plan: TwitchSubEvent.PLAN_TIER1}, true);
+      self._onSubEvent(self._client, {
+        kind: TwitchSubEvent.SUB,
+        plan: TwitchSubEvent.PLAN_TIER1
+      }, true);
     } else if (t0 === "cheerdemo") {
       let bits = 1000;
       if (tokens.length === 2 && Util.IsNumber(tokens[1])) {
