@@ -29,26 +29,35 @@ class FanfareEffect { /* {{{0 */
   get oncomplete() { return this._cb.complete; }
   set oncomplete(fn) { this._cb.complete = fn; }
 
+  /* Fire one of the callbacks defined above */
   fire(name, ...args) {
     if (this._cb.hasOwnProperty(name)) {
       this._cb[name](...args);
     }
   }
 
+  /* Load the effect; returns a promise */
   load() {
     return new Promise((function(resolve, reject) {
       let img = null;
+      /* Determine the image to use */
       if (this.emote) {
+        /* Effect wants an emote used */
         img = this._host.twitchEmote(this.emote);
       } else if (this.imageUrl) {
+        /* Effect gave a URL */
         img = this._host.image(this.imageUrl);
       }
+
+      /* Resolve when ready */
       img.onload = (function(ev) {
         this._image = img;
         this.fire("load", this);
         this.initialize();
         resolve(ev);
       }).bind(this);
+
+      /* Reject on error */
       img.onerror = (function(ev) {
         Util.Error(ev);
         reject(ev);
@@ -56,11 +65,13 @@ class FanfareEffect { /* {{{0 */
     }).bind(this));
   }
 
+  /* Initialize the effect */
   start() {
     this.initialize();
     this.fire("start", this);
   }
 
+  /* Handle particle movement */
   tick() {
     this.fire("tick", this);
     let numAlive = 0;
@@ -77,6 +88,7 @@ class FanfareEffect { /* {{{0 */
     return numAlive > 0;
   }
 
+  /* Draw the particles to the given context */
   draw(context) {
     this.fire("predraw", this);
     for (let p of this._particles) {
@@ -138,7 +150,6 @@ class FanfareCheerEffect extends FanfareEffect { /* {{{0 */
       }
     }
     /* Return the derived URL */
-    Util.DebugOnly(tier, `Using ${bg} ${scale}`);
     try {
       return tier.images[bg].static[scale];
     }
@@ -155,19 +166,25 @@ class FanfareCheerEffect extends FanfareEffect { /* {{{0 */
   }
 
   get imageUrl() {
-    let cheermote = "Cheer";
-    let [bg, scale] = [null, null];
-    if (this.config("cheermote")) {
-      cheermote = this.config("cheermote");
+    if (this.config("cheerurl")) {
+      return this.config("cheerurl");
+    } else if (this.config("imageurl")) {
+      return this.config("imageurl");
+    } else {
+      let cheermote = "Cheer";
+      let [bg, scale] = [null, null];
+      if (this.config("cheermote")) {
+        cheermote = this.config("cheermote");
+      }
+      if (this.config("cheerbg")) {
+        bg = this.config("cheerbg");
+      }
+      if (this.config("cheerscale")) {
+        scale = this.config("cheerscale");
+      }
+      let cdef = this._host._client.GetGlobalCheer(cheermote);
+      return FanfareCheerEffect.cheerToURL(cdef, this._bits, bg, scale);
     }
-    if (this.config("cheerbg")) {
-      bg = this.config("cheerbg");
-    }
-    if (this.config("cheerscale")) {
-      scale = this.config("cheerscale");
-    }
-    let cdef = this._host._client.GetGlobalCheer(cheermote);
-    return FanfareCheerEffect.cheerToURL(cdef, this._bits, bg, scale);
   }
 
   /* Called by base class */
@@ -218,27 +235,33 @@ class FanfareSubEffect extends FanfareEffect { /* {{{0 */
   }
 
   get imageUrl() {
-    let emote = "HolidayPresent";
-    let size = "1.0";
-    if (this.config("subemote")) {
-      emote = this.config("subemote");
-    } else if (this._kind === TwitchSubEvent.SUB) {
-      emote = "MrDestructoid";
-    } else if (this._kind === TwitchSubEvent.RESUB) {
-      emote = "PraiseIt";
-    } else if (this._kind === TwitchSubEvent.GIFTSUB) {
-      emote = "HolidayPresent";
-    } else if (this._kind === TwitchSubEvent.ANONGIFTSUB) {
-      emote = "HolidayPresent";
-    } else if (this.config("emote")) {
-      emote = this.config("emote");
+    if (this.config("suburl")) {
+      return this.config("suburl");
+    } else if (this.config("imageurl")) {
+      return this.config("imageurl");
+    } else {
+      let emote = "HolidayPresent";
+      let size = "1.0";
+      if (this.config("subemote")) {
+        emote = this.config("subemote");
+      } else if (this._kind === TwitchSubEvent.SUB) {
+        emote = "MrDestructoid";
+      } else if (this._kind === TwitchSubEvent.RESUB) {
+        emote = "PraiseIt";
+      } else if (this._kind === TwitchSubEvent.GIFTSUB) {
+        emote = "HolidayPresent";
+      } else if (this._kind === TwitchSubEvent.ANONGIFTSUB) {
+        emote = "HolidayPresent";
+      } else if (this.config("emote")) {
+        emote = this.config("emote");
+      }
+      if (this._tier === TwitchSubEvent.PLAN_TIER2) {
+        size = "2.0";
+      } else if (this._tier === TwitchSubEvent.PLAN_TIER3) {
+        size = "3.0";
+      }
+      return this._host._client.GetEmote(emote, size);
     }
-    if (this._tier === TwitchSubEvent.PLAN_TIER2) {
-      size = "2.0";
-    } else if (this._tier === TwitchSubEvent.PLAN_TIER3) {
-      size = "3.0";
-    }
-    return this._host._client.GetEmote(emote, size);
   }
 
   /* Called by base class */

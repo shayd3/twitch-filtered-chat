@@ -1,51 +1,82 @@
 /** Fanfare
  *
  * Commands:
- *   //ff on:       Enables fanfare
- *   //ff off:      Disables fanfare
- *   //ff:          Displays //ff usage and whether or not fanfare is enabled
+ *   //ff           Displays //ff usage and whether or not fanfare is enabled
+ *   //ff help      Displays //ff usage
+ *   //ff on        Enables fanfare
+ *   //ff off       Disables fanfare
+ *   //ff demo      Demonstrates available fanfares
+ *   //ff cheerdemo Demonstrates the cheer effect (see //ff help for more)
+ *   //ff subdemo   Demonstrates the sub effect (see //ff help for more)
  *
- * Configuration (key: "fanfare") keys:
- *   enabled        If present and non-falsy, enable this by default
- *   particles      Number of particles to display (default: 25)
+ * Configuration keys:
+ *   fanfare        Query string key `&fanfare=<value>`
+ *   Fanfare        Config object key
  *
+ * The `&fanfare=<value>` value is either a number (non-zero for enable), a
+ * boolean, or a JSON-encoded object with the following attributes:
+ *   enable         boolean; whether or not fanfares are enabled
+ *   suburl         URL to the image to use for sub fanfares; overrides all
+ *                  other image settings
+ *   cheerurl       URL to the image to use for cheer fanfares; overrides all
+ *                  other image settings
+ *   imageurl       URL to the image to use for all fanfares; overrides all
+ *                  other image settings other than "suburl" and "cheerurl"
+ *   cheerbg        background: either "light" or "dark" (default: "dark")
+ *   cheermote      image name (default: "Cheer")
+ *   cheerscale     image scale (default: "1.0")
+ *   subemote       emote to use for sub events
+ *   emote          fallback emote if no other image is defined
+ *   numparticles   number of particles (default: window.width / image.width)
+ *
+ * Example configuration items:
+ *  The following all enable fanfares:
+ *   &fanfare=1
+ *   &fanfare=true
+ *   &fanfare=%7B%22enable%22%3Atrue%7D
+ *
+ *  The following enable fanfares and set specific emotes:
+ *   &fanfare=%7B%22subemote%22%3A%22FrankerZ%22%7D
+ *                  Use "FrankerZ" for all sub fanfares
+ *   &fanfare=%7Bemote%22%3A%22FrankerZ%22%7D
+ *                  Use "FrankerZ" for all fanfares
+ *
+ * For cheer fanfares, the URL to the image is derived via the following:
+ *  1) If config["cheerurl"] is defined, use it. We're done.
+ *  2) If config["imageurl"] is defined, use it. We're done.
+ *  3) Otherwise, determine the cheermote to use via the following steps:
+ *    a) If config["cheermote"] is given, use it. Otherwise, use "Cheer"
+ *    b) If config["bg"] is given, use it. Otherwise use the first background
+ *       defined in the cheer data (usually "dark")
+ *    c) If config["cheerscale"] is given, use it. Otherwise, use the first
+ *       scale defined in the cheer data (usually "1")
+ *  4) Given the cheermote, background, and scale, determine the exact image to
+ *     use based on the number of bits cheered.
+ *
+ * For sub fanfares, the URL to the image is derived via the following:
+ *  1) If config["suburl"] is defined, use it. We're done.
+ *  2) If config["imageurl"] is defined, use it. We're done.
+ *  3) Otherwise, determine the emote to use via the following steps:
+ *    a) If config["subemote"] is defined, use the URL to the emote given
+ *    b) If the sub kind is "sub", use the emote "MrDestructoid"
+ *    c) If the sub kind is "resub", use the emote "PraiseIt"
+ *    d) If the sub kind is "subgift", use the emote "HolidayPresent"
+ *    e) If the sub kind is "anonsubgift", use the emote "HolidayPresent"
+ *    f) Otherwise, if config["emote"] is given, use it.
+ *    g) Otherwise, use "HolidayPresent"
+ *  4) Determine the size of the emote:
+ *    a) If the sub is Tier 2, use "2.0" (80x60px)
+ *    b) If the sub is Tier 3, use "3.0" (120x90px)
+ *    c) Otherwise, use "1.0" (40x30px)
+ *  5) Use the URL to the emote and size chosen
+ */
+
+/* TODO:
+ * Somehow handle animated images
+ * Provide APIs to add effects from plugins
  */
 
 "use strict";
-
-/** Particle configuration
- *
- * Particles have the following attributes:
- *  x         Horizontal offset from the left side of the canvas
- *  y         Vertical offset from the top of the canvas
- *  dx        Horizontal starting velocity
- *  dy        Vertical starting velocity
- *  xforce    Horizontal deceleration (i.e. gravity/drag) factor
- *  yforce    Vertical deceleration (i.e. gravity/drag) factor
- *  force     Directionless force (i.e. drag) coefficient
- *  a         Opacity: decrements every tick and particles "die" at 0
- *  image     Image instance (via document.createElement("img"))
- *  width     Image width
- *  height    Image height
- *
- * Every "tick", "living" particles are animated according to the following:
- *  p.a -= 0.01
- *  p.x += p.dx
- *  p.y += p.dy
- *  p.dx += p.xforce (if p.xforce is given)
- *  p.dy += p.yforce (if p.yforce is given)
- *  If p.force is given:
- *    p.dx = p.force * Math.hypot(p.x, p.y) * Math.cos(Math.atan2(p.y, p.x))
- *    p.dy = p.force * Math.hypot(p.x, p.y) * Math.sin(Math.atan2(p.y, p.x))
- *
- * Particles "die" if any of the following are true:
- *  p.a <= 0
- *  p.x + p.width < 0
- *  p.y + p.height < 0
- *  p.x > canvas width
- *  p.y > canvas height
- * Particles are "alive" if their opacity is greater than 0.
- */
 
 class Fanfare { /* exported Fanfare */
   static get DEFAULT_NUM_PARTICLES() { return 25; }
@@ -112,6 +143,11 @@ class Fanfare { /* exported Fanfare */
   get context() { return this._context; }
   get width() { return this._canvas.width; }
   get height() { return this._canvas.height; }
+
+  /* Listen to a twitch event */
+  bindClient(event_name, event_func) {
+    this._client.bind(event_name, event_func);
+  }
 
   /* Create an element with some default attributes */
   elem(type, classes, ...attrs) {
@@ -181,7 +217,9 @@ class Fanfare { /* exported Fanfare */
     this.clearCanvas();
     for (let effect of this._running) {
       if (effect.tick()) {
-        effect.draw(this._context);
+        requestAnimationFrame(() => {
+          effect.draw(this._context);
+        });
         stillRunning.push(effect);
       }
     }
@@ -263,17 +301,29 @@ class Fanfare { /* exported Fanfare */
 
   /* Received a message from the client */
   _onChatEvent(client, event, override=false) {
+    Util.Debug("_onChatEvent", client, event, override);
     if (this._on || override) {
       if (event.bits > 0) {
-        this.addEffect(new FanfareCheerEffect(this, this._config, event));
+        let e = new FanfareCheerEffect(this, this._config, event);
+        e.load().then(() => {
+          this.addEffect(e);
+        }).catch((err) => {
+          Util.Error(`Failed to load effect ${e.name}:`, err, e);
+        });
       }
     }
   }
 
   /* Received a subscription event from the client */
   _onSubEvent(client, event, override=false) {
+    Util.Debug("_onSubEvent", client, event, override);
     if (this._on || override) {
-      this.addEffect(new FanfareSubEffect(this, this._config, event));
+      let e = new FanfareSubEffect(this, this._config, event);
+      e.load().then(() => {
+        this.addEffect(e);
+      }).catch((err) => {
+        Util.Error(`Failed to load effect ${e.name}:`, err, e);
+      });
     }
   }
 }
