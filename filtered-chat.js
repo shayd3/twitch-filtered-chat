@@ -5,7 +5,7 @@
 /* FIXME:
  * Username context window should slide rather than teleport to new names
  * Chat line backgrounds flicker unpredictably between messages
- * setModuleSettings template injection via malicious config string?
+ * Browser autofills prevent disabling authentication
  */
 
 /* TODO (in approximate decreasing priority):
@@ -92,14 +92,32 @@ class Content { /* exported Content */
     Content.addHTML(e);
   }
 
+  static addInfoText(content, pre=false) { /* escapes */
+    let e = $(`<div class="info"></div>`).text(content);
+    if (pre) e.addClass("pre");
+    Content.addHTML(e);
+  }
+
   static addNotice(content, pre=false) { /* does not escape */
     let e = $(`<div class="notice"></div>`).html(content);
     if (pre) e.addClass("pre");
     Content.addHTML(e);
   }
 
+  static addNoticeText(content, pre=false) { /* escapes */
+    let e = $(`<div class="notice"></div>`).text(content);
+    if (pre) e.addClass("pre");
+    Content.addHTML(e);
+  }
+
   static addError(content, pre=false) { /* does not escape */
     let e = $(`<div class="error"></div>`).html(content);
+    if (pre) e.addClass("pre");
+    Content.addHTML(e);
+  }
+
+  static addErrorText(content, pre=false) { /* escapes */
+    let e = $(`<div class="error"></div>`).text(content);
     if (pre) e.addClass("pre");
     Content.addHTML(e);
   }
@@ -368,9 +386,11 @@ function getConfigObject(inclSensitive=false) {
       }
     }
   }
+  /* FIXME: Stale values (autofill by browser) overrides qs */
   if (txtNick.val() && txtNick.val() !== Strings.NAME_AUTOGEN) {
     config.Name = txtNick.val();
   }
+  /* FIXME: Stale values (autofill by browser) overrides qs */
   if (txtPass.val() && txtPass.val() !== Strings.PASS_CACHED) {
     config.Pass = txtPass.val();
   }
