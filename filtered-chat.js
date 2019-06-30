@@ -271,7 +271,7 @@ function parseQueryString(config, qs=null) {
           key = val = null;
         }
       } catch (e) {
-        Util.Error("Failed parsing Fanfare config; disabling", e);
+        Util.Error("Failed parsing Fanfare config; disabling", e, v);
         key = val = null;
       }
     }
