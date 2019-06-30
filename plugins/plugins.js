@@ -65,10 +65,10 @@ class PluginStorageClass {
     }
   }
 
-  /* Return a copy of the added plugin objects */
+  /* Return the plugin objects */
   get plugins() {
     if (this.disabled || PluginStorageClass.disabled) { return null; }
-    return Util.JSONClone(this._plugins);
+    return this._plugins;
   }
 
   /* Load the given plugin object with the TwitchClient instance given */
@@ -150,6 +150,9 @@ class PluginStorageClass {
     }
     if (!Util.IsArray(plugin_def.args)) {
       plugin_def.args = [];
+    }
+    if (typeof(plugin_def.order) === "undefined") {
+      plugin_def.order = 1000;
     }
     this._plugins[plugin_def.ctor] = plugin_def;
     plugin_def._loaded = false;
