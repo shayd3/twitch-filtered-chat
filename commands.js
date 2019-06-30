@@ -26,6 +26,7 @@
 
 /* TODO
  * Implement ChatCommands.addComplete(command, func)
+ * Implement //plugins addremote <class> <url> [<config>]
  */
 
 var ChatCommands = null; /* exported ChatCommands */
@@ -702,27 +703,55 @@ function onCommandEmotes(cmd, tokens, client) {
 }
 
 function onCommandPlugins(cmd, tokens, client) {
-  try {
-    for (let [n, p] of Object.entries(Plugins.plugins)) {
-      let msg = `${n}: ${p.file} @ ${p.order}`.escape();
-      if (p._error) {
-        let estr = JSON.stringify(p._error_obj).escape();
-        Content.addError(`${msg}: Failed: ${estr}`);
-      } else if (p._loaded) {
-        msg = `${msg}: Loaded`;
-        if (p.commands) {
-          msg = `${msg}: Commands: ${p.commands.join(" ")}`;
+  let t0 = (tokens.length > 0 ? tokens[0] : null);
+  if (Plugins.plugins) {
+    if (t0 === null || t0 === "list") {
+      for (let [n, p] of Object.entries(Plugins.plugins)) {
+        let msg = `${n}: ${p.file} @ ${p.order}`.escape();
+        if (p._error) {
+          let estr = JSON.stringify(p._error_obj).escape();
+          Content.addError(`${msg}: Failed: ${estr}`);
+        } else if (p._loaded) {
+          msg = `${msg}: Loaded`;
+          if (p.commands) {
+            msg = `${msg}: Commands: ${p.commands.join(" ")}`;
+          }
+          Content.addPre(msg);
         }
-        Content.addPre(msg);
       }
-    }
-  }
-  catch (e) {
-    if (e.name === "ReferenceError") {
-      Content.addError("Plugin information unavailable");
+    } else if (t0 === "add" || t0 === "load") {
+      if (tokens.length >= 3) {
+        let cls = tokens[1];
+        let file = tokens[2];
+        let cfg = {};
+        Plugins.add({ctor: cls, file: file});
+        if (tokens.length >= 4) {
+          let cfgStr = tokens.slice(3).join(" ");
+          try {
+            cfg = JSON.parse(cfgStr);
+          } catch (err) {
+            Content.addErrorText(`Malformed JSON string "${cfgStr}"; ignoring`);
+          }
+        }
+        Plugins.load(cls, client, {PluginConfig: cfg}).then(() => {
+          Content.addInfoText(`Successfully loaded plugin ${cls}`);
+        }).catch((err) => {
+          Util.Error("Failed to load plugin", cls, err);
+          Content.addError(`Failed to load plugin ${cls}: ${err}`);
+        });
+        Content.addInfoText(`Added plugin ${cls} from ${file}`);
+      } else {
+        Content.addErrorText("//plugins add: not enough arguments");
+      }
     } else {
-      throw e;
+      if (t0 !== "help") {
+        Content.addErrorText(`Unknown command ${t0}`);
+      }
+      this.printHelp();
+      this.printUsage();
     }
+  } else {
+    Content.addError("Plugin information unavailable");
   }
 }
 
@@ -944,7 +973,15 @@ function InitChatCommands() { /* exported InitChatCommands */
     },
     "plugins": {
       func: onCommandPlugins,
-      desc: "Display plugin information, if plugins are enabled"
+      desc: "Display plugin information, if plugins are enabled",
+      alias: ["plugin"],
+      usage: [
+        [null, "Show loaded plugins and their status"],
+        ["help", "Show loaded plugins and command help"],
+        ["add <class> <file> [<config>]", "Add a plugin by class name and filename, optionally with a config object"],
+        ["load <class> <file> [<config>]", "Alias to `//plugin add`"]
+        /* TODO: //plugins addremote */
+      ]
     },
     "client": {
       func: onCommandClient,
