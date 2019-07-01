@@ -248,8 +248,8 @@ class Fanfare { /* exported Fanfare */
         Content.addHelpText(`Fanfare is ${self._on ? "en" : "dis"}abled`);
       }
       this.printUsage();
-      Content.addHelp("Add a number to cheerdemo to simulate that number of bits");
-      Content.addHelp("Available arguments for subdemo:");
+      Content.addHelpText("Add a number to cheerdemo to simulate that number of bits");
+      Content.addHelpText("Available arguments for subdemo:");
       for (let kind of TwitchSubEvent.KINDS) {
         Content.addHelpLine(kind, `Demonstrate the ${kind} type of subscription`);
       }
@@ -257,14 +257,14 @@ class Fanfare { /* exported Fanfare */
         let name = TwitchSubEvent.PlanName(plan);
         Content.addHelpLine(plan, `Demonstrate a ${name} subscription`);
       }
-      Content.addHelp(`Default kind: ${TwitchSubEvent.SUB}`);
-      Content.addHelp(`Default plan: ${TwitchSubEvent.PLAN_TIER1}`);
+      Content.addHelpText(`Default kind: ${TwitchSubEvent.SUB}`);
+      Content.addHelpText(`Default plan: ${TwitchSubEvent.PLAN_TIER1}`);
     } else if (t0 === "on") {
       self._on = true;
-      Content.addInfo("Fanfare is now enabled");
+      Content.addInfoText("Fanfare is now enabled");
     } else if (t0 === "off") {
       self._on = false;
-      Content.addInfo("Fanfare is now disabled");
+      Content.addInfoText("Fanfare is now disabled");
     } else if (t0 === "demo") {
       self._onChatEvent(self._client, {bits: 1000}, true);
       self._onSubEvent(self._client, {
@@ -294,7 +294,7 @@ class Fanfare { /* exported Fanfare */
       }
       self._onSubEvent(self._client, {kind: kind, plan: plan}, true);
     } else {
-      Content.addError(`Fanfare: unknown argument ${t0.escape()}`);
+      Content.addErrorText(`Fanfare: unknown argument ${t0}`);
       this.printUsage();
     }
   }
