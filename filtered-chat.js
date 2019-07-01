@@ -5,7 +5,7 @@
 /* FIXME:
  * Username context window should slide rather than teleport to new names
  * Chat line backgrounds flicker unpredictably between messages
- * setModuleSettings template injection via malicious config string?
+ * Browser autofills prevent disabling authentication
  */
 
 /* TODO (in approximate decreasing priority):
@@ -24,11 +24,6 @@
  * Add layout selection box to #settings (reloads page on change)?
  * Allow for a configurable number of columns?
  * Add re-include (post-exclude) filtering options for Mods, Bits, Subs, etc?
- */
-
-/* Filtering out JOIN/PART or PRIVMSG logged messages
- *   Util.Logger.add_filter(/^ws recv.*\b(JOIN|PART)\b/)
- *   Util.Logger.add_filter(/^ws recv.*\bPRIVMSG\b/)
  */
 
 /* Utility functions {{{0 */
@@ -65,7 +60,8 @@ class Content { /* exported Content */
   static add(text) { /* escapes */
     Content.addHTML($(`<span class="message"></span>`).text(text));
   }
-  static addHTML(content, container=null) {
+
+  static addHTML(content, container=null) { /* does not escape */
     let $container = container ? $(container) : $(".module .content");
     let $line = $(`<div class="line line-wrapper"></div>`);
     if (typeof(content) === "string") {
@@ -80,32 +76,61 @@ class Content { /* exported Content */
       $container.scrollTop(Math.pow(2, 31) - 1);
     }
   }
+
   static addPre(content) { /* does not escape */
     Content.addHTML($(`<div class="pre"></div>`).html(content));
   }
+
+  static addPreText(content) { /* escapes */
+    Content.addHTML($(`<div class="pre"></div>`).text(content));
+  }
+
   static addInfo(content, pre=false) { /* does not escape */
     let e = $(`<div class="info"></div>`).html(content);
     if (pre) e.addClass("pre");
     Content.addHTML(e);
   }
+
+  static addInfoText(content, pre=false) { /* escapes */
+    let e = $(`<div class="info"></div>`).text(content);
+    if (pre) e.addClass("pre");
+    Content.addHTML(e);
+  }
+
   static addNotice(content, pre=false) { /* does not escape */
     let e = $(`<div class="notice"></div>`).html(content);
     if (pre) e.addClass("pre");
     Content.addHTML(e);
   }
+
+  static addNoticeText(content, pre=false) { /* escapes */
+    let e = $(`<div class="notice"></div>`).text(content);
+    if (pre) e.addClass("pre");
+    Content.addHTML(e);
+  }
+
   static addError(content, pre=false) { /* does not escape */
     let e = $(`<div class="error"></div>`).html(content);
     if (pre) e.addClass("pre");
     Content.addHTML(e);
   }
+
+  static addErrorText(content, pre=false) { /* escapes */
+    let e = $(`<div class="error"></div>`).text(content);
+    if (pre) e.addClass("pre");
+    Content.addHTML(e);
+  }
+
   static addHelp(s) { /* does not escape */
     Content.addPre($(`<div class="help"></div>`).html(s));
   }
+
   static addHelpText(s) { /* escapes */
     Content.addPre($(`<div class="help"></div>`).text(s));
   }
+
   static addHelpLine(c, s) { /* does not escape */
-    Content.addPre(ChatCommands.helpLine(c, s));
+    Content.addHelp(ChatCommands.helpLine(c, s));
   }
 }
 
@@ -246,6 +271,26 @@ function parseQueryString(config, qs=null) {
     } else if (key === "noforce") {
       key = "NoForce";
       val = true;
+    } else if (key === "fanfare") {
+      key = "Fanfare";
+      val = {enable: false};
+      try {
+        let valobj = JSON.parse(v);
+        if (typeof(valobj) === "number") {
+          val.enable = (valobj !== 0);
+        } else if (typeof(valobj) === "boolean") {
+          val.enable = valobj;
+        } else if (typeof(valobj) === "object") {
+          val = valobj;
+          val.enable = true;
+        } else {
+          Util.Error("Don't know how to parse Fanfare value", valobj);
+          key = val = null;
+        }
+      } catch (e) {
+        Util.Error("Failed parsing Fanfare config; disabling", e, v);
+        key = val = null;
+      }
     }
     /* Skip items with a falsy key */
     if (key) {
@@ -299,12 +344,15 @@ function getConfigObject(inclSensitive=false) {
     config.key = config_key;
 
     /* Purge obsolete configuration items */
-    let shouldStore = false;
-    if (config.hasOwnProperty("AutoReconnect")) {
-      delete config["AutoReconnect"];
-      shouldStore = true;
+    const obsolete_props = ["AutoReconnect"];
+    let should_store = false;
+    for (let prop of obsolete_props) {
+      if (config.hasOwnProperty(prop)) {
+        should_store = true;
+        delete config[prop];
+      }
     }
-    if (shouldStore) {
+    if (should_store) {
       Util.SetWebStorage(config);
     }
   }
@@ -340,11 +388,15 @@ function getConfigObject(inclSensitive=false) {
       }
     }
   }
+
   if (txtNick.val() && txtNick.val() !== Strings.NAME_AUTOGEN) {
     config.Name = txtNick.val();
   }
-  if (txtPass.val() && txtPass.val() !== Strings.PASS_CACHED) {
-    config.Pass = txtPass.val();
+
+  if (inclSensitive) {
+    if (txtPass.val() && txtPass.val() !== Strings.PASS_CACHED) {
+      config.Pass = txtPass.val();
+    }
   }
 
   if (!config.hasOwnProperty("Scroll")) {
@@ -429,15 +481,6 @@ function getConfigObject(inclSensitive=false) {
     config.Name = "";
   }
 
-  /* Default password is no password */
-  if (inclSensitive) {
-    if (typeof(config.Pass) !== "string") {
-      config.Pass = "";
-    }
-  } else {
-    config.Pass = null;
-  }
-
   /* Plugins are an opt-in feature */
   if (!config.hasOwnProperty("Plugins")) {
     config.Plugins = false;
@@ -479,15 +522,17 @@ function getConfigObject(inclSensitive=false) {
     }
   } else {
     config.ClientID = null;
-  }
-
-  /* Should be null by this point, but delete them anyway */
-  if (!inclSensitive) {
+    /* Should be null by this point, but delete them anyway */
     delete config["ClientID"];
     delete config["Pass"];
   }
 
   return config;
+}
+
+/* Obtain singular configuration */
+function getConfigValue(key) {
+  return getConfigObject()[key];
 }
 
 /* Store configuration */
@@ -665,12 +710,12 @@ function setChannels(client, channels) {
   /* Join all the channels added */
   for (let ch of to_join) {
     client.JoinChannel(ch);
-    Content.addNotice(`Joining ${ch}`);
+    Content.addNoticeText(`Joining ${ch}`);
   }
   /* Leave all the channels removed */
   for (let ch of to_part) {
     client.LeaveChannel(ch);
-    Content.addNotice(`Leaving ${ch}`);
+    Content.addNoticeText(`Leaving ${ch}`);
   }
 }
 
@@ -939,35 +984,48 @@ function doLoadClient() { /* exported doLoadClient */
   let client;
   let config = {};
 
-  /* Hook Logger messages */
+  /* Hook Logger messages to display in chat */
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
     if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
       let msg = Util.Logger.stringify(...args);
-      Content.addError("ERROR: " + msg.escape());
+      Content.addErrorText("ERROR: " + msg);
     }
   }, "ERROR");
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
     let msg = Util.Logger.stringify(...args);
     if (args.length === 1 && args[0] instanceof TwitchEvent) {
       if (Util.DebugLevel >= Util.LEVEL_TRACE) {
-        Content.addNotice("WARNING: " + JSON.stringify(args[0]));
+        Content.addNoticeText("WARNING: " + JSON.stringify(args[0]));
       }
     } else if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
-      Content.addNotice("WARNING: " + msg.escape());
+      Content.addNoticeText("WARNING: " + msg);
     }
   }, "WARN");
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
       let msg = Util.Logger.stringify(...args);
-      Content.addHTML("DEBUG: " + msg.escape());
+      Content.add("DEBUG: " + msg);
     }
   }, "DEBUG");
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
       let msg = Util.Logger.stringify(...args);
-      Content.addHTML("TRACE: " + msg.escape());
+      Content.add("TRACE: " + msg);
     }
   }, "TRACE");
+
+  if (Util.DebugLevel < Util.LEVEL_TRACE) {
+    /* Filter out PING/PONG messages */
+    Util.Logger.add_filter(/^ws recv> "PING :tmi.twitch.tv"$/);
+    Util.Logger.add_filter(/^ws send> "PONG :tmi.twitch.tv"$/);
+
+    /* Filter out users joining/parting channels */
+    Util.Logger.add_filter(/tmi.twitch.tv (JOIN|PART) #/);
+  }
+
+  /* Clear txtName and txtPass (to fix problems with browser autofills) */
+  $("#txtNick").val();
+  $("#txtPass").val();
 
   /* Add the //config command */
   ChatCommands.add("config", function(cmd, tokens, client_) {
@@ -998,7 +1056,7 @@ function doLoadClient() { /* exported doLoadClient */
         let quote = (e) => `&quot;${e}&quot`;
         let kstr = `<span class="arg">${k}</span>`;
         let vstr = `&quot;${v.Name}&quot;`;
-        Content.addHelp(`Module ${kstr}: ${vstr}`);
+        Content.addHelpText(`Module ${kstr}: ${vstr}`);
         for (let [ck, cv] of Object.entries(v)) {
           if (ck !== "Name") {
             Content.addHelpLine(ck, quote(cv));
@@ -1008,7 +1066,7 @@ function doLoadClient() { /* exported doLoadClient */
     } else if (t0 === "help") {
       Content.addHelpLine("//config", "Show and manipulate configuration");
       Content.addHelpText("//config parameters:");
-      Content.addHelpLine("export", "Export *all* of localStorage to a new tab (contains secrets!)");
+      Content.addHelpLine("export", "Export *all* of localStorage to a new tab (contains passwords!)");
       Content.addHelpLine("purge", "Clear localStorage (cannot be undone!)");
       Content.addHelpLine("clientid", "Display ClientID");
       Content.addHelpLine("pass", "Dislay OAuth token (if one is present)");
@@ -1016,7 +1074,8 @@ function doLoadClient() { /* exported doLoadClient */
       Content.addHelpText("//config url parameters (can be used in any order):");
       Content.addHelpLine("git", "Force URL to target github.io");
       Content.addHelpLine("text", "Force URL to be un-encoded");
-      Content.addHelpLine("auth", "Include secrets in URL");
+      Content.addHelpLine("auth", "Include passwords in URL");
+      Content.addHelpLine("tag=&lt;value&gt;", "Set the tag to &lt;value&gt;");
       Content.addHelpText("//config set <key> <value>: Change <key> to <value> (dangerous!)");
       Content.addHelpText("//config setobj <key> <value>: Change <key> to JSON-encoded <value> (dangerous!)");
       Content.addHelpText("//config unset <key>: Remove <key> (dangerous!)");
@@ -1025,7 +1084,7 @@ function doLoadClient() { /* exported doLoadClient */
     } else if (t0 === "purge") {
       Util.SetWebStorage({});
       window.liveStorage = {};
-      Content.addNotice(`Purged storage "${Util.GetWebStorageKey()}"`);
+      Content.addNoticeText(`Purged storage "${Util.GetWebStorageKey()}"`);
     } else if (t0 === "clientid") {
       Content.addHelpLine("ClientID", cfg.ClientID);
     } else if (t0 === "pass") {
@@ -1107,15 +1166,26 @@ function doLoadClient() { /* exported doLoadClient */
       } else if (cfg.ColorScheme === "light") {
         qsAdd("scheme", "light");
       }
-      if (cfg.tag) {
-        qsAdd("tag", cfg.tag);
-      }
       if (cfg.NoForce) {
         qsAdd("noforce", "1");
       }
+      if (cfg.Fanfare) {
+        qsAdd("fanfare", JSON.stringify(cfg.Fanfare));
+      }
+
+      /* Append a tag */
+      let custom_tag = cfg.tag ? cfg.tag : "";
+      for (let t of tokens.slice(1)) {
+        if (t.startsWith("tag=")) {
+          custom_tag = t.substr(4);
+        }
+      }
+      if (custom_tag) {
+        qsAdd("tag", custom_tag);
+      }
 
       /* Append query string to the URL */
-      if (tokens[tokens.length - 1] === "text") {
+      if (tokens.includes("text")) {
         url += "?" + qs.join("&");
       } else {
         url += "?base64=" + encodeURIComponent(btoa(qs.join("&")));
@@ -1180,10 +1250,10 @@ function doLoadClient() { /* exported doLoadClient */
       Content.addHelpText("Configuration:");
       Content.addHelpLine(t0, JSON.stringify(Util.ObjectGet(cfg, t0)));
     } else {
-      let tok = `"${t0}"`.escape();
-      Content.addError(`Unknown config command or key ${tok}`, true);
+      let tok = `"${t0}"`;
+      Content.addErrorText(`Unknown config command or key ${tok}`, true);
     }
-  }, "Obtain and modify configuration information");
+  }, "Obtain and modify configuration information; use //config help for details");
 
   /* Obtain configuration, construct client */
   (function _configure_construct_client() {
@@ -1312,8 +1382,9 @@ function doLoadClient() { /* exported doLoadClient */
     $("#txtTag").val(config.tag);
   }
 
-  /* Construct the HTML Generator and tell it and sync it with the client */
+  /* Construct the HTMLGenerator and Fanfare objects */
   client.set("HTMLGen", new HTMLGenerator(client, config));
+  client.set("Fanfare", new Fanfare(client, config));
 
   /* Function for syncing configuration with HTMLGen */
   function updateHTMLGenConfig() {
@@ -1764,7 +1835,7 @@ function doLoadClient() { /* exported doLoadClient */
 
     /* Clicking on a "Reconnect" link */
     if ($t.attr("data-reconnect") === "1") {
-      Content.addNotice("Reconnecting...");
+      Content.addNoticeText("Reconnecting...");
       client.Connect();
     }
 
@@ -1781,13 +1852,13 @@ function doLoadClient() { /* exported doLoadClient */
     $("#debug").hide();
     if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
       if (client.IsAuthed()) {
-        Content.addInfo("Connected (authenticated)");
+        Content.addInfoText("Connected (authenticated)");
       } else {
-        Content.addInfo("Connected (unauthenticated)");
+        Content.addInfoText("Connected (unauthenticated)");
       }
     }
-    if (getConfigObject().Channels.length === 0) {
-      Content.addInfo("No channels configured; type //join <channel> to join one!".escape());
+    if (getConfigValue("Channels").length === 0) {
+      Content.addInfoText("No channels configured; type //join <channel> to join one!");
     }
   });
 
@@ -1799,39 +1870,39 @@ function doLoadClient() { /* exported doLoadClient */
     if (reason) {
       msg = `(code ${code} ${Util.WSStatus[code]}: ${reason})`;
     }
-    if (getConfigObject().NoAutoReconnect) {
-      Content.addError(`Connection closed ${msg} ${Strings.RECONNECT}`);
+    if (getConfigValue("NoAutoReconnect")) {
+      Content.addErrorText(`Connection closed ${msg} ${Strings.RECONNECT}`);
     } else {
-      Content.addError(`Connection closed ${msg}`);
+      Content.addErrorText(`Connection closed ${msg}; reconnecting in 5 seconds...`);
       if (!client.connecting) {
-        client.Connect();
+        window.setTimeout(() => { client.Connect(); }, 5000);
       }
     }
   });
 
   /* Client joined a channel */
   client.bind("twitch-joined", function _on_twitch_joined(e) {
-    let layout = getConfigObject().Layout;
+    let layout = getConfigValue("Layout");
     if (!layout.Slim) {
-      Content.addInfo(`Joined ${Twitch.FormatChannel(e.channel)}`);
+      Content.addInfoText(`Joined ${Twitch.FormatChannel(e.channel)}`);
     }
   });
 
   /* Client left a channel */
   client.bind("twitch-parted", function _on_twitch_parted(e) {
-    let layout = getConfigObject().Layout;
+    let layout = getConfigValue("Layout");
     if (!layout.Slim) {
-      Content.addInfo(`Left ${Twitch.FormatChannel(e.channel)}`);
+      Content.addInfoText(`Left ${Twitch.FormatChannel(e.channel)}`);
     }
   });
 
   /* Notice (or warning) from Twitch */
   client.bind("twitch-notice", function _on_twitch_notice(e) {
     let channel = Twitch.FormatChannel(e.channel);
-    let message = e.message.escape();
-    Content.addNotice(`${channel}: ${message}`);
+    let message = e.message;
+    Content.addNoticeText(`${channel}: ${message}`);
     if (e.noticeMsgId === "cmds_available") {
-      Content.addInfo("Use //help to see Twitch Filtered Chat commands");
+      Content.addInfoText("Use //help to see Twitch Filtered Chat commands");
     }
   });
 
@@ -1840,21 +1911,21 @@ function doLoadClient() { /* exported doLoadClient */
     Util.Error(e);
     let user = e.user;
     let command = e.values.command;
-    let message = e.message.escape();
-    Content.addError(`Error for ${user}: ${command}: ${message}`);
+    let message = e.message;
+    Content.addErrorText(`Error for ${user}: ${command}: ${message}`);
   });
 
   /* Message received from Twitch */
   client.bind("twitch-message", function _on_twitch_message(e) {
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
       if (e instanceof TwitchEvent) {
-        Content.addPre(e.repr());
+        Content.addPreText(e.repr());
       } else {
-        Content.addPre(JSON.stringify(e));
+        Content.addPreText(JSON.stringify(e));
       }
     }
     /* Avoid flooding the DOM with stale chat messages */
-    let max = getConfigObject().MaxMessages;
+    let max = getConfigValue("MaxMessages");
     /* FIXME: Causes flickering for some reason */
     for (let c of $(".content")) {
       while ($(c).find(".line-wrapper").length > max) {
@@ -1865,7 +1936,7 @@ function doLoadClient() { /* exported doLoadClient */
 
   /* Received streamer info */
   client.bind("twitch-streaminfo", function _on_twitch_streaminfo(e) {
-    let layout = getConfigObject().Layout;
+    let layout = getConfigValue("Layout");
     let cinfo = client.GetChannelInfo(e.channelString) || {};
     if (layout && !layout.Slim) {
       if (cinfo.online) {
@@ -1876,7 +1947,7 @@ function doLoadClient() { /* exported doLoadClient */
           let viewers = cinfo.stream.viewers;
           Content.addNotice(Strings.StreamInfo(url, name, game, viewers));
           if (cinfo.stream.channel.status) {
-            Content.addNotice(cinfo.stream.channel.status);
+            Content.addNoticeText(cinfo.stream.channel.status);
           }
         }
         catch (err) {
@@ -2076,6 +2147,6 @@ function doLoadClient() { /* exported doLoadClient */
 }
 
 /* globals AssetPaths Strings CSSCheerStyles GIT_URL CUR_URL LOG_KEY CFG_KEY */
-/* globals HTMLGenerator GetLayout ParseLayout FormatLayout */
+/* globals HTMLGenerator GetLayout ParseLayout FormatLayout Fanfare */
 
 /* vim: set ts=2 sts=2 sw=2 et: */

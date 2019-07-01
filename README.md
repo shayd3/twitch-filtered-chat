@@ -34,8 +34,8 @@ URL: `https://kaedenn.github.io/twitch-filtered-chat/index.html?<OPTIONS>`
 
 | Option Key     | Option Value |
 |----------------|--------------|
-|  `layout`      | Layout to use, explained below |
-|  `config_key`  | Config key override (default: `tfc-config`) |
+|  `layout`      | Layout (see below) |
+|  `config_key`  | Custom configuration key (see below) |
 |  `config`      | Alias for `config_key` |
 |  `key`         | Alias for `config_key` |
 |  `clientid`    | ClientID override to use for Twitch asset loading |
@@ -61,8 +61,15 @@ URL: `https://kaedenn.github.io/twitch-filtered-chat/index.html?<OPTIONS>`
 |  `clips`       | If non-empty, show clip information in chat (default: hidden) |
 |  `nols`        | Forcibly disable `localStorage` support. Note that this disables `pass` support entirely, as `localStorage` is needed to store passwords |
 |  `scheme`      | Color scheme to use. Valid values: `light` and `dark`. Default: `dark` |
+|  `noforce`     | Disable mod antics (see below) |
+|  `fanfare`     | Fanfare configuration: either `1` or `true` to enable, or a JSON-encoded string to set specific options |
+|  `tag`         | Set a specific name for the chat, for debugging and antics usage (highly recommended!) |
+
+The default configuration key is `tfc-config`. If `config_key` is present, then `tfc-config-${config_key}` is used instead.
 
 Note that `user` and `pass` must be supplied together: if a username is given, then a password must be given via either `pass` or stored in `localStorage`.
+
+`tag` is used to identify unique chats for debugging and antics use. It is highly recommended to have a `tag` present in your query string!
 
 All option values must be URL-encoded.
 
@@ -125,7 +132,7 @@ The following cheer effects are available and cost one bit each.
 | `small` | Message is smaller than normal |
 | `rainbow` | Message is rainbow (red -> yellow -> green -> cyan -> blue -> purple -> red) |
 | `disco` | Message cycles through the rainbow colors in order |
-| color | Message will use the color specified, by name (won't work with rainbow). Almost every color you can think of should work (see `config.js` `ColorNames`) |
+| _color_ | Message will use the color specified, by name (won't work with rainbow). Almost every color you can think of should work (see `config.js` `ColorNames`) |
 
 To use them, add them to the message after the cheer:
 
@@ -153,7 +160,7 @@ Connect to `#dwangoAC` in slim mode, filtering `TAS9000` and messages starting w
 
 Connect to `#dwangoAC` and `#pangaeapanga`, showing `#dwangoAC` chat in the left column and `#pangaeapanga` in the right column. Filter out `Stay_Hydrated_Bot`, `Nightbot`, and `TAS9000`.
 
-  `?channels=%23dwangoac%2C%23pangaeapanga&module1=dwangoAC's%2520Chat%2C1111111%2C%2C%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=pangaeapanga's%2520Chat%2C1111111%2C%2C%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Anochat`
+  `?channels=%23dwangoac%2C%23pangaeapanga&module1=dwangoAC's%2520Chat%2C1111111%2C%2C%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=pangaeapanga's%2520Chat%2C1111111%2C%2C%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Anochat&tag=sample1`
 
 ### Hotkeys
 
@@ -215,11 +222,11 @@ Be sure to disable antics if you don't quite trust your moderators.
 
 Please test the filtered chat in your own browser. Load it up and ensure you can change settings and that things work as you'd expect.
 
-[https://kaedenn.github.io/twitch-filtered-chat/index.html?debug=1&channels=%23dwangoac&module1=DwangoAC%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=Main%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Achat](https://kaedenn.github.io/twitch-filtered-chat/index.html?debug=1&channels=%23dwangoac&module1=DwangoAC%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=Main%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Achat)
+[https://kaedenn.github.io/twitch-filtered-chat/index.html?debug=1&channels=%23dwangoac&module1=DwangoAC%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=Main%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Achat&tag=sample1&fanfare=true](https://kaedenn.github.io/twitch-filtered-chat/index.html?debug=1&channels=%23dwangoac&module1=DwangoAC%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=Main%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Achat&tag=sample1&fanfare=true)
 
 If you have errors loading that, try the following link which forces ES5 via `usedist=1`:
 
-[https://kaedenn.github.io/twitch-filtered-chat/index.html?debug=1&channels=%23dwangoac&module1=DwangoAC%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=Main%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Achat&usedist=1](https://kaedenn.github.io/twitch-filtered-chat/index.html?debug=1&channels=%23dwangoac&module1=DwangoAC%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=Main%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Achat&usedist=1)
+[https://kaedenn.github.io/twitch-filtered-chat/index.html?debug=1&channels=%23dwangoac&module1=DwangoAC%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=Main%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Achat&usedist=1&tag=sample2&fanfare=true](https://kaedenn.github.io/twitch-filtered-chat/index.html?debug=1&channels=%23dwangoac&module1=DwangoAC%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C%252523dwangoAC&module2=Main%2520Chat%2C1111111%2C%2CKaedenn_%2CTAS9000%252CNightbot%252CStay_Hydrated_Bot%2C!%2C&layout=double%3Achat&usedist=1&tag=sample2&fanfare=true)
 
 The test URLs above have the following configuration:
 
@@ -244,6 +251,8 @@ The test URLs above have the following configuration:
 <li>Module shows messages from all channels</li>
 <li>Module is otherwise identical to module 1</li>
 </ol>
+<li>Chat is tagged <code>sample1</code> and <code>sample2</code> (<code>tag=sample1</code>, <code>tag=sample2</code>)</li>
+<li>Fanfare effects are enabled (<code>fanfare=1</code>)</li>
 </ol>
 
 ## Vim Support
