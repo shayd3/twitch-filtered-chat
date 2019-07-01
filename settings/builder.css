@@ -190,6 +190,11 @@ a, a:hover, a:focus {
     margin: 5px auto;
 }
 
+
+.input-group-prepend, .input-group-prepend span {
+    min-width: 100px;
+}
+
 @media (max-width: 768px) {
     #content {
         margin-left: 0;
