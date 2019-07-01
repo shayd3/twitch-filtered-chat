@@ -3,7 +3,7 @@
 function SamplePlugin2(resolve, reject, client) { /* exported SamplePlugin2 */
   this.name = "SamplePlugin2";
   ChatCommands.add("hi", function() {
-    Content.addPre("Hello there!");
+    Content.addPreText("Hello there!");
   }, "From plugin SamplePlugin2: Say hello");
   resolve(this);
 }

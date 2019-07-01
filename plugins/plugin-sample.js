@@ -9,12 +9,12 @@ class SamplePlugin { /* exported SamplePlugin */
   }
 
   _say_hi(cmd, tokens, client) {
-    Content.addPre(`Hi from ${this.name} ${client.GetName()}!`);
+    Content.addPreText(`Hi from ${this.name} ${client.GetName()}!`);
     if (tokens && tokens.length > 0) {
-      Content.addPre("Command arguments: " + JSON.stringify(tokens).escape());
+      Content.addPreText("Command arguments: " + JSON.stringify(tokens));
     }
     if (this._args && this._args.length > 0) {
-      Content.addPre("Plugin args: " + JSON.stringify(this._args).escape());
+      Content.addPreText("Plugin args: " + JSON.stringify(this._args));
     }
   }
 
