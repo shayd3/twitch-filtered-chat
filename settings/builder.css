@@ -34,7 +34,7 @@ html, body {
     border-bottom-style: solid;
 }
 .settings-box p {
-    margin: 0;
+    margin: 0 0 5px 0;
 }
 
 .settings-box .list-group-item {
@@ -192,7 +192,7 @@ a, a:hover, a:focus {
 
 
 .input-group-prepend, .input-group-prepend span {
-    min-width: 100px;
+    min-width: 110px;
 }
 
 @media (max-width: 768px) {
