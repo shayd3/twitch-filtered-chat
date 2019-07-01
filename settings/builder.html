@@ -41,6 +41,9 @@
           <a href="#">Global Settings</a>
         </li>
         <li>
+          <a href="#">Filtered Chat CSS</a>
+        </li>
+        <li>
           <a href="#">Module Settings</a>
         </li>
       </ul>
@@ -58,6 +61,7 @@
       <div class="container">
         <div class="row justify-content-center">
           <div id="settings-main" class="col-md-8 col-sm-10 align-self-center">
+            <!-- Config Settings Section -->
             <div class="settings-section">
               <div class="settings-section-header">
                 <p>Config</p>
@@ -67,6 +71,7 @@
                 if no saved configs found, display default message saying so
                 When new config is saved, update dropdown with new config
               -->
+              <!-- Load Config Settings Box -->
               <div class="settings-box">
                 <div class="input-group">
                   <select class="custom-select" id="selectLoadConfig" aria-label="Pick previously saved config">
@@ -84,6 +89,7 @@
                 If config has same name, error out to change name
                 If config was successfully/failed to save, display message
               -->
+              <!-- Save New Config Settings Box -->
               <div class="settings-box">
                 <div class="input-group">
                   <input type="text" class="form-control" placeholder="my-rad-config" aria-label="my-rad-config"
@@ -94,10 +100,12 @@
                 </div>
               </div>
             </div>
+            <!-- Global Settings Section -->
             <div class="settings-section">
               <div class="settings-section-header">
                 <p>Global Settings</p>
               </div>
+              <!-- Add Channel Settings Box -->
               <div class="settings-box">
                 <div class="input-group">
                   <input type="text" class="form-control" placeholder="Add Channel..." aria-label="Add Channel..."
@@ -113,6 +121,7 @@
                   <li class="list-group-item">#shayd3tv</li>
                 </ul>
               </div>
+              <!-- Username Settings Box -->
               <div class="settings-box">
                 <div class="input-group">
                   <div class="input-group-prepend">
@@ -121,6 +130,7 @@
                   <input type="text" class="form-control" id="inputUsername" aria-describedby="addonUsername">
                 </div>
               </div>
+              <!-- Password Settings Box -->
               <div class="settings-box">
                 <div class="input-group">
                   <div class="input-group-prepend">
@@ -129,6 +139,7 @@
                   <input type="text" class="form-control" id="inputPassword" aria-describedby="addonPassword">
                 </div>
               </div>
+              <!-- Toggle Chat Features Settings Box -->
               <div class="settings-box">
                 <div class="row align-items-center mx-auto">
                   <div class="col-6 text-center">
@@ -154,15 +165,24 @@
                   </div>
                 </div>
               </div>
+              <!-- Debug Settings Box -->
               <div class="settings-box">
-                  <div class="form-group">
-                      <label for="selectDebugMode">Debug Mode</label>
-                      <select class="form-control" id="selectDebugMode">
-                        <option>Disabled</option>
-                        <option>DEBUG</option>
-                        <option>TRACE</option>
-                      </select>
-                    </div>
+                <div class="form-group">
+                  <label for="selectDebugMode">Debug Mode</label>
+                  <select class="form-control" id="selectDebugMode">
+                    <option>Disabled</option>
+                    <option>DEBUG</option>
+                    <option>TRACE</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="settings-section">
+              <div class="settings-section-header">
+                <p>Filtered Chat CSS</p>
+              </div>
+              <div class="settings-box">
+                
               </div>
             </div>
           </div>
