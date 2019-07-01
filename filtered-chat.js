@@ -26,11 +26,6 @@
  * Add re-include (post-exclude) filtering options for Mods, Bits, Subs, etc?
  */
 
-/* Filtering out JOIN/PART or PRIVMSG logged messages
- *   Util.Logger.add_filter(/^ws recv.*\b(JOIN|PART)\b/)
- *   Util.Logger.add_filter(/^ws recv.*\bPRIVMSG\b/)
- */
-
 /* Utility functions {{{0 */
 
 /* Call func when the input element is changed */
@@ -84,6 +79,10 @@ class Content { /* exported Content */
 
   static addPre(content) { /* does not escape */
     Content.addHTML($(`<div class="pre"></div>`).html(content));
+  }
+
+  static addPreText(content) { /* escapes */
+    Content.addHTML($(`<div class="pre"></div>`).text(content));
   }
 
   static addInfo(content, pre=false) { /* does not escape */
@@ -345,12 +344,15 @@ function getConfigObject(inclSensitive=false) {
     config.key = config_key;
 
     /* Purge obsolete configuration items */
-    let shouldStore = false;
-    if (config.hasOwnProperty("AutoReconnect")) {
-      delete config["AutoReconnect"];
-      shouldStore = true;
+    const obsolete_props = ["AutoReconnect"];
+    let should_store = false;
+    for (let prop of obsolete_props) {
+      if (config.hasOwnProperty(prop)) {
+        should_store = true;
+        delete config[prop];
+      }
     }
-    if (shouldStore) {
+    if (should_store) {
       Util.SetWebStorage(config);
     }
   }
@@ -386,13 +388,15 @@ function getConfigObject(inclSensitive=false) {
       }
     }
   }
-  /* FIXME: Stale values (autofill by browser) overrides qs */
+
   if (txtNick.val() && txtNick.val() !== Strings.NAME_AUTOGEN) {
     config.Name = txtNick.val();
   }
-  /* FIXME: Stale values (autofill by browser) overrides qs */
-  if (txtPass.val() && txtPass.val() !== Strings.PASS_CACHED) {
-    config.Pass = txtPass.val();
+
+  if (inclSensitive) {
+    if (txtPass.val() && txtPass.val() !== Strings.PASS_CACHED) {
+      config.Pass = txtPass.val();
+    }
   }
 
   if (!config.hasOwnProperty("Scroll")) {
@@ -477,15 +481,6 @@ function getConfigObject(inclSensitive=false) {
     config.Name = "";
   }
 
-  /* Default password is no password */
-  if (inclSensitive) {
-    if (typeof(config.Pass) !== "string") {
-      config.Pass = "";
-    }
-  } else {
-    config.Pass = null;
-  }
-
   /* Plugins are an opt-in feature */
   if (!config.hasOwnProperty("Plugins")) {
     config.Plugins = false;
@@ -527,10 +522,7 @@ function getConfigObject(inclSensitive=false) {
     }
   } else {
     config.ClientID = null;
-  }
-
-  /* Should be null by this point, but delete them anyway */
-  if (!inclSensitive) {
+    /* Should be null by this point, but delete them anyway */
     delete config["ClientID"];
     delete config["Pass"];
   }
@@ -718,12 +710,12 @@ function setChannels(client, channels) {
   /* Join all the channels added */
   for (let ch of to_join) {
     client.JoinChannel(ch);
-    Content.addNotice(`Joining ${ch}`);
+    Content.addNoticeText(`Joining ${ch}`);
   }
   /* Leave all the channels removed */
   for (let ch of to_part) {
     client.LeaveChannel(ch);
-    Content.addNotice(`Leaving ${ch}`);
+    Content.addNoticeText(`Leaving ${ch}`);
   }
 }
 
@@ -992,35 +984,48 @@ function doLoadClient() { /* exported doLoadClient */
   let client;
   let config = {};
 
-  /* Hook Logger messages */
+  /* Hook Logger messages to display in chat */
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
     if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
       let msg = Util.Logger.stringify(...args);
-      Content.addError("ERROR: " + msg.escape());
+      Content.addErrorText("ERROR: " + msg);
     }
   }, "ERROR");
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
     let msg = Util.Logger.stringify(...args);
     if (args.length === 1 && args[0] instanceof TwitchEvent) {
       if (Util.DebugLevel >= Util.LEVEL_TRACE) {
-        Content.addNotice("WARNING: " + JSON.stringify(args[0]));
+        Content.addNoticeText("WARNING: " + JSON.stringify(args[0]));
       }
     } else if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
-      Content.addNotice("WARNING: " + msg.escape());
+      Content.addNoticeText("WARNING: " + msg);
     }
   }, "WARN");
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
       let msg = Util.Logger.stringify(...args);
-      Content.addHTML("DEBUG: " + msg.escape());
+      Content.add("DEBUG: " + msg);
     }
   }, "DEBUG");
   Util.Logger.add_hook(function(sev, with_stack, ...args) {
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
       let msg = Util.Logger.stringify(...args);
-      Content.addHTML("TRACE: " + msg.escape());
+      Content.add("TRACE: " + msg);
     }
   }, "TRACE");
+
+  if (Util.DebugLevel < Util.LEVEL_TRACE) {
+    /* Filter out PING/PONG messages */
+    Util.Logger.add_filter(/^ws recv> "PING :tmi.twitch.tv"$/);
+    Util.Logger.add_filter(/^ws send> "PONG :tmi.twitch.tv"$/);
+
+    /* Filter out users joining/parting channels */
+    Util.Logger.add_filter(/tmi.twitch.tv (JOIN|PART) #/);
+  }
+
+  /* Clear txtName and txtPass (to fix problems with browser autofills) */
+  $("#txtNick").val();
+  $("#txtPass").val();
 
   /* Add the //config command */
   ChatCommands.add("config", function(cmd, tokens, client_) {
@@ -1051,7 +1056,7 @@ function doLoadClient() { /* exported doLoadClient */
         let quote = (e) => `&quot;${e}&quot`;
         let kstr = `<span class="arg">${k}</span>`;
         let vstr = `&quot;${v.Name}&quot;`;
-        Content.addHelp(`Module ${kstr}: ${vstr}`);
+        Content.addHelpText(`Module ${kstr}: ${vstr}`);
         for (let [ck, cv] of Object.entries(v)) {
           if (ck !== "Name") {
             Content.addHelpLine(ck, quote(cv));
@@ -1079,7 +1084,7 @@ function doLoadClient() { /* exported doLoadClient */
     } else if (t0 === "purge") {
       Util.SetWebStorage({});
       window.liveStorage = {};
-      Content.addNotice(`Purged storage "${Util.GetWebStorageKey()}"`);
+      Content.addNoticeText(`Purged storage "${Util.GetWebStorageKey()}"`);
     } else if (t0 === "clientid") {
       Content.addHelpLine("ClientID", cfg.ClientID);
     } else if (t0 === "pass") {
@@ -1169,14 +1174,14 @@ function doLoadClient() { /* exported doLoadClient */
       }
 
       /* Append a tag */
-      let customTag = cfg.tag ? cfg.tag : "";
+      let custom_tag = cfg.tag ? cfg.tag : "";
       for (let t of tokens.slice(1)) {
         if (t.startsWith("tag=")) {
-          customTag = t.substr(4);
+          custom_tag = t.substr(4);
         }
       }
-      if (customTag) {
-        qsAdd("tag", customTag);
+      if (custom_tag) {
+        qsAdd("tag", custom_tag);
       }
 
       /* Append query string to the URL */
@@ -1245,8 +1250,8 @@ function doLoadClient() { /* exported doLoadClient */
       Content.addHelpText("Configuration:");
       Content.addHelpLine(t0, JSON.stringify(Util.ObjectGet(cfg, t0)));
     } else {
-      let tok = `"${t0}"`.escape();
-      Content.addError(`Unknown config command or key ${tok}`, true);
+      let tok = `"${t0}"`;
+      Content.addErrorText(`Unknown config command or key ${tok}`, true);
     }
   }, "Obtain and modify configuration information; use //config help for details");
 
@@ -1377,7 +1382,7 @@ function doLoadClient() { /* exported doLoadClient */
     $("#txtTag").val(config.tag);
   }
 
-  /* Construct the HTML Generator and tell it and sync it with the client */
+  /* Construct the HTMLGenerator and Fanfare objects */
   client.set("HTMLGen", new HTMLGenerator(client, config));
   client.set("Fanfare", new Fanfare(client, config));
 
@@ -1830,7 +1835,7 @@ function doLoadClient() { /* exported doLoadClient */
 
     /* Clicking on a "Reconnect" link */
     if ($t.attr("data-reconnect") === "1") {
-      Content.addNotice("Reconnecting...");
+      Content.addNoticeText("Reconnecting...");
       client.Connect();
     }
 
@@ -1847,13 +1852,13 @@ function doLoadClient() { /* exported doLoadClient */
     $("#debug").hide();
     if (Util.DebugLevel >= Util.LEVEL_DEBUG) {
       if (client.IsAuthed()) {
-        Content.addInfo("Connected (authenticated)");
+        Content.addInfoText("Connected (authenticated)");
       } else {
-        Content.addInfo("Connected (unauthenticated)");
+        Content.addInfoText("Connected (unauthenticated)");
       }
     }
     if (getConfigValue("Channels").length === 0) {
-      Content.addInfo("No channels configured; type //join <channel> to join one!".escape());
+      Content.addInfoText("No channels configured; type //join <channel> to join one!");
     }
   });
 
@@ -1866,9 +1871,9 @@ function doLoadClient() { /* exported doLoadClient */
       msg = `(code ${code} ${Util.WSStatus[code]}: ${reason})`;
     }
     if (getConfigValue("NoAutoReconnect")) {
-      Content.addError(`Connection closed ${msg} ${Strings.RECONNECT}`);
+      Content.addErrorText(`Connection closed ${msg} ${Strings.RECONNECT}`);
     } else {
-      Content.addError(`Connection closed ${msg}; reconnecting in 5 seconds...`);
+      Content.addErrorText(`Connection closed ${msg}; reconnecting in 5 seconds...`);
       if (!client.connecting) {
         window.setTimeout(() => { client.Connect(); }, 5000);
       }
@@ -1879,7 +1884,7 @@ function doLoadClient() { /* exported doLoadClient */
   client.bind("twitch-joined", function _on_twitch_joined(e) {
     let layout = getConfigValue("Layout");
     if (!layout.Slim) {
-      Content.addInfo(`Joined ${Twitch.FormatChannel(e.channel)}`);
+      Content.addInfoText(`Joined ${Twitch.FormatChannel(e.channel)}`);
     }
   });
 
@@ -1887,17 +1892,17 @@ function doLoadClient() { /* exported doLoadClient */
   client.bind("twitch-parted", function _on_twitch_parted(e) {
     let layout = getConfigValue("Layout");
     if (!layout.Slim) {
-      Content.addInfo(`Left ${Twitch.FormatChannel(e.channel)}`);
+      Content.addInfoText(`Left ${Twitch.FormatChannel(e.channel)}`);
     }
   });
 
   /* Notice (or warning) from Twitch */
   client.bind("twitch-notice", function _on_twitch_notice(e) {
     let channel = Twitch.FormatChannel(e.channel);
-    let message = e.message.escape();
-    Content.addNotice(`${channel}: ${message}`);
+    let message = e.message;
+    Content.addNoticeText(`${channel}: ${message}`);
     if (e.noticeMsgId === "cmds_available") {
-      Content.addInfo("Use //help to see Twitch Filtered Chat commands");
+      Content.addInfoText("Use //help to see Twitch Filtered Chat commands");
     }
   });
 
@@ -1906,17 +1911,17 @@ function doLoadClient() { /* exported doLoadClient */
     Util.Error(e);
     let user = e.user;
     let command = e.values.command;
-    let message = e.message.escape();
-    Content.addError(`Error for ${user}: ${command}: ${message}`);
+    let message = e.message;
+    Content.addErrorText(`Error for ${user}: ${command}: ${message}`);
   });
 
   /* Message received from Twitch */
   client.bind("twitch-message", function _on_twitch_message(e) {
     if (Util.DebugLevel >= Util.LEVEL_TRACE) {
       if (e instanceof TwitchEvent) {
-        Content.addPre(e.repr());
+        Content.addPreText(e.repr());
       } else {
-        Content.addPre(JSON.stringify(e));
+        Content.addPreText(JSON.stringify(e));
       }
     }
     /* Avoid flooding the DOM with stale chat messages */
@@ -1942,7 +1947,7 @@ function doLoadClient() { /* exported doLoadClient */
           let viewers = cinfo.stream.viewers;
           Content.addNotice(Strings.StreamInfo(url, name, game, viewers));
           if (cinfo.stream.channel.status) {
-            Content.addNotice(cinfo.stream.channel.status);
+            Content.addNoticeText(cinfo.stream.channel.status);
           }
         }
         catch (err) {
