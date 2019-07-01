@@ -200,14 +200,14 @@ class ChatCommandManager {
           }
         }
         catch (e) {
-          Content.addError(`${cmd}: ${e.name}: ${e.message}`);
+          Content.addErrorText(`${cmd}: ${e.name}: ${e.message}`);
           Util.Error(e);
         }
       } else {
-        Content.addError(`${cmd}: unknown command`);
+        Content.addErrorText(`${cmd}: unknown command`);
       }
     } else {
-      Content.addError(`${JSON.stringify(msg)}: not a command string`);
+      Content.addErrorText(`${JSON.stringify(msg)}: not a command string`);
     }
   }
 
@@ -299,7 +299,7 @@ class ChatCommandManager {
         Content.addHelp(line);
       }
     } else {
-      Content.addError(`Invalid command ${tokens[0].escape()}`);
+      Content.addErrorText(`Invalid command ${tokens[0]}`);
     }
   }
 }
@@ -454,11 +454,11 @@ function onCommandLog(cmd, tokens, client) {
           if (line && line._cmd && line._raw) {
             replay.push(line._raw);
           } else {
-            let l = `${line}`.escape();
-            Content.addError(`Item ${l} doesn't seem to be a chat message`);
+            let l = `${line}`;
+            Content.addErrorText(`Item ${l} doesn't seem to be a chat message`);
           }
         } else {
-          Content.addError(`Index ${idx} not between 0 and ${logs.length}`);
+          Content.addErrorText(`Index ${idx} not between 0 and ${logs.length}`);
         }
         for (let line of replay) {
           Content.addHelpText(`Replaying ${line}`);
@@ -513,7 +513,7 @@ function onCommandJoin(cmd, tokens, client) {
         let rid = cinfo.rooms[rname].uid;
         toJoin = Twitch.FormatRoom(cid, rid);
       } else {
-        Content.addError(`No such room ${cname} ${rname}`);
+        Content.addErrorText(`No such room ${cname} ${rname}`);
         Util.LogOnlyOnce(cname, rname, cdef, cinfo);
       }
     }
@@ -522,7 +522,7 @@ function onCommandJoin(cmd, tokens, client) {
       if (!client.IsInChannel(toJoin)) {
         client.JoinChannel(toJoin);
       } else {
-        Content.addNotice(`Failed joining ${toJoin}: already in channel`);
+        Content.addNoticeText(`Failed joining ${toJoin}: already in channel`);
       }
     }
   } else {
@@ -550,7 +550,7 @@ function onCommandPart(cmd, tokens, client) {
         let rid = cinfo.rooms[rname].uid;
         toPart = Twitch.FormatRoom(cid, rid);
       } else {
-        Content.addError(`No such room ${cname} ${rname}`);
+        Content.addErrorText(`No such room ${cname} ${rname}`);
         Util.LogOnlyOnce(cname, rname, cdef, cinfo);
       }
     }
@@ -559,7 +559,7 @@ function onCommandPart(cmd, tokens, client) {
       if (client.IsInChannel(toPart)) {
         client.LeaveChannel(toPart);
       } else {
-        Content.addNotice(`Failed leaving ${toPart}: not in channel`);
+        Content.addNoticeText(`Failed leaving ${toPart}: not in channel`);
       }
     }
   } else {
@@ -651,9 +651,9 @@ function onCommandCheers(cmd, tokens, client) {
     }
     if (html.length > 0) {
       if (cname === "GLOBAL") {
-        Content.addInfo(`Global cheermotes:`);
+        Content.addInfoText(`Global cheermotes:`);
       } else {
-        Content.addInfo(`Cheermotes for channel ${cname}:`);
+        Content.addInfoText(`Cheermotes for channel ${cname}:`);
       }
       Content.addInfo(html.join(""));
     }
@@ -681,7 +681,7 @@ function onCommandEmotes(cmd, tokens, client) {
   }
   if (tokens.indexOf("bttv") > -1) {
     if (!client.BTTVEnabled()) {
-      Content.addError("BTTV support is disabled");
+      Content.addErrorText("BTTV support is disabled");
     } else {
       let bttv_emotes = client.GetGlobalBTTVEmotes();
       let bttv_imgs = [];
@@ -707,16 +707,16 @@ function onCommandPlugins(cmd, tokens, client) {
   if (Plugins.plugins) {
     if (t0 === null || t0 === "list") {
       for (let [n, p] of Object.entries(Plugins.plugins)) {
-        let msg = `${n}: ${p.file} @ ${p.order}`.escape();
+        let msg = `${n}: ${p.file} @ ${p.order}`;
         if (p._error) {
-          let estr = JSON.stringify(p._error_obj).escape();
-          Content.addError(`${msg}: Failed: ${estr}`);
+          let estr = JSON.stringify(p._error_obj);
+          Content.addErrorText(`${msg}: Failed: ${estr}`);
         } else if (p._loaded) {
           msg = `${msg}: Loaded`;
           if (p.commands) {
             msg = `${msg}: Commands: ${p.commands.join(" ")}`;
           }
-          Content.addPre(msg);
+          Content.addPreText(msg);
         }
       }
     } else if (t0 === "add" || t0 === "load") {
@@ -737,7 +737,7 @@ function onCommandPlugins(cmd, tokens, client) {
           Content.addInfoText(`Successfully loaded plugin ${cls}`);
         }).catch((err) => {
           Util.Error("Failed to load plugin", cls, err);
-          Content.addError(`Failed to load plugin ${cls}: ${err}`);
+          Content.addErrorText(`Failed to load plugin ${cls}: ${err}`);
         });
         Content.addInfoText(`Added plugin ${cls} from ${file}`);
       } else {
@@ -751,7 +751,7 @@ function onCommandPlugins(cmd, tokens, client) {
       this.printUsage();
     }
   } else {
-    Content.addError("Plugin information unavailable");
+    Content.addErrorText("Plugin information unavailable");
   }
 }
 
@@ -865,7 +865,7 @@ function onCommandHighlight(cmd, tokens, client) {
       H.addHighlightMatch(pat);
       Content.addHelpText(`Added pattern ${pat}`);
     } else {
-      Content.addError(`"//highlight add" requires argument`);
+      Content.addErrorText(`"//highlight add" requires argument`);
       this.printUsage();
     }
   } else if (tokens[0] === "remove") {
@@ -885,10 +885,10 @@ function onCommandHighlight(cmd, tokens, client) {
         }
         Content.addHelpText(`Now storing ${H.highlightMatches.length} patterns`);
       } else {
-        Content.addError(`Invalid index ${idx}; must be between 1 and ${max}`);
+        Content.addErrorText(`Invalid index ${idx}; must be between 1 and ${max}`);
       }
     } else {
-      Content.addError(`"//highlight remove" requires argument`);
+      Content.addErrorText(`"//highlight remove" requires argument`);
       this.printUsage();
     }
   } else {
