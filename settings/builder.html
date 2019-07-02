@@ -41,6 +41,9 @@
           <a href="#">Global Settings</a>
         </li>
         <li>
+          <a href="#">Filtered Chat CSS</a>
+        </li>
+        <li>
           <a href="#">Module Settings</a>
         </li>
       </ul>
@@ -57,8 +60,9 @@
       </nav>
       <div class="container">
         <div class="row justify-content-center">
-          <div id="settings-main" class="col-md-8 col-sm-10 align-self-center">
-            <div class="settings-section">
+          <div id="settings-main" class="col-md-8 col-sm-12 align-self-center">
+            <!-- Config Settings Section -->
+            <div id="settingsConfig" class="settings-section">
               <div class="settings-section-header">
                 <p>Config</p>
               </div>
@@ -67,6 +71,7 @@
                 if no saved configs found, display default message saying so
                 When new config is saved, update dropdown with new config
               -->
+              <!-- Load Config Settings Box -->
               <div class="settings-box">
                 <div class="input-group">
                   <select class="custom-select" id="selectLoadConfig" aria-label="Pick previously saved config">
@@ -84,6 +89,7 @@
                 If config has same name, error out to change name
                 If config was successfully/failed to save, display message
               -->
+              <!-- Save New Config Settings Box -->
               <div class="settings-box">
                 <div class="input-group">
                   <input type="text" class="form-control" placeholder="my-rad-config" aria-label="my-rad-config"
@@ -94,10 +100,12 @@
                 </div>
               </div>
             </div>
-            <div class="settings-section">
+            <!-- Global Settings Section -->
+            <div id="sectionGlobalSettings" class="settings-section">
               <div class="settings-section-header">
                 <p>Global Settings</p>
               </div>
+              <!-- Add Channel Settings Box -->
               <div class="settings-box">
                 <div class="input-group">
                   <input type="text" class="form-control" placeholder="Add Channel..." aria-label="Add Channel..."
@@ -113,6 +121,7 @@
                   <li class="list-group-item">#shayd3tv</li>
                 </ul>
               </div>
+              <!-- Username Settings Box -->
               <div class="settings-box">
                 <div class="input-group">
                   <div class="input-group-prepend">
@@ -121,6 +130,7 @@
                   <input type="text" class="form-control" id="inputUsername" aria-describedby="addonUsername">
                 </div>
               </div>
+              <!-- Password Settings Box -->
               <div class="settings-box">
                 <div class="input-group">
                   <div class="input-group-prepend">
@@ -129,6 +139,7 @@
                   <input type="text" class="form-control" id="inputPassword" aria-describedby="addonPassword">
                 </div>
               </div>
+              <!-- Toggle Chat Features Settings Box -->
               <div class="settings-box">
                 <div class="row align-items-center mx-auto">
                   <div class="col-6 text-center">
@@ -154,6 +165,167 @@
                   </div>
                 </div>
               </div>
+              <!-- Debug Settings Box -->
+              <div class="settings-box">
+                <div class="form-group">
+                  <label for="selectDebugMode">Debug Mode</label>
+                  <select class="form-control" id="selectDebugMode">
+                    <option>Disabled</option>
+                    <option>DEBUG</option>
+                    <option>TRACE</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <!-- Module Settings Section -->
+            <div id="sectionModuleSettings" class="settings-section">
+              <div class="settings-section-header">
+                <p>Module Settings</p>
+              </div>
+              <!-- Module Include Settings Box -->
+              <div class="settings-box">
+                <div class="row align-items-center mx-auto">
+                  <div class="col-6 text-center">
+                    <span>Include:</span>
+                  </div>
+                  <div class="col-6">
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="checkNonSubscribers">
+                      <label class="custom-control-label" for="checkNonSubscribers">Non-subscribers</label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="checkSubscribers">
+                      <label class="custom-control-label" for="checkSubscribers">Subscribers</label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="checkVips">
+                      <label class="custom-control-label" for="checkVips">VIPs</label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="checkModerators">
+                      <label class="custom-control-label" for="checkModerators">Moderators</label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="checkEvents">
+                      <label class="custom-control-label" for="checkEvents">Events</label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="checkCheers">
+                      <label class="custom-control-label" for="checkCheers">Cheers</label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="checkMe">
+                      <label class="custom-control-label" for="checkMe">/me</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="settings-box">
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" id="inputFromUserAddon">From User</span>
+                  </div>
+                  <input id="inputFromUser" type="text" class="form-control" placeholder="Kaedenn" aria-label="Kaedenn"
+                    aria-describedby="inputFromUserAddon">
+                </div>
+              </div>
+              <div class="settings-box">
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" id="inputContainsAddon">Contains</span>
+                  </div>
+                  <input id="inputContains" type="text" class="form-control" placeholder="Pog" aria-label="Pog"
+                    aria-describedby="inputContainsAddon">
+                </div>
+              </div>
+              <div class="settings-box">
+                <p>Limit to:</p>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" id="inputLimitToChannelAddon">Channel</span>
+                  </div>
+                  <input id="inputLimitToChannel" type="text" class="form-control" placeholder="shayd3tv" aria-label="shayd3tv"
+                    aria-describedby="inputLimitToChannelAddon">
+                </div>
+              </div>
+              <div class="settings-box">
+                  <p>Exclude:</p>
+                  <div class="input-group">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text" id="inputExcludeFromUserAddon">From User</span>
+                    </div>
+                    <input id="inputExcludeFromUser" type="text" class="form-control" placeholder="Dont_Wanna_See_You" aria-label="Dont_Wanna_See_You"
+                      aria-describedby="inputExcludeFromUserAddon">
+                  </div>
+                  <br>
+                  <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text" id="inputExcludeStartsWithAddon">Starts With</span>
+                      </div>
+                      <input id="inputExcludeStartsWith" type="text" class="form-control" placeholder="Starts with this string" aria-label="Starts with this string"
+                        aria-describedby="inputExcludeStartsWithAddon">
+                    </div>
+                </div>
+            </div>
+            <!-- Filtered Chat CSS Section-->
+            <div id="sectionFilteredChatCssSettings" class="settings-section">
+              <div class="settings-section-header">
+                <p>Filtered Chat CSS</p>
+              </div>
+              <!-- Animated Cheers -->
+              <div class="settings-box">
+                <div class="row align-items-center mx-auto">
+                  <div class="col-6 text-center">
+                    <span>Enable:</span>
+                  </div>
+                  <div class="col-6">
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="checkAnimatedCheers">
+                      <label class="custom-control-label" for="checkAnimatedCheers">Animated Cheers</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- Background Image Settings Box -->
+              <div class="settings-box">
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" id="inputBgImageAddon">BG Image</span>
+                  </div>
+                  <input id="inputBgImage" type="text" class="form-control" placeholder="Background Image"
+                    aria-label="Background Image" aria-describedby="inputBgImageAddon">
+                </div>
+              </div>
+              <!-- Fonts Settings Box -->
+              <div class="settings-box">
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" id="inputFontAddon">Fonts</span>
+                  </div>
+                  <input id="inputFont" type="text" class="form-control" placeholder="'Arial'" aria-label="'Arial'"
+                    aria-describedby="inputFontAddon">
+                </div>
+              </div>
+              <!-- Fonts Size Settings Box -->
+              <div class="settings-box">
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" id="inputFontSizeAddon">Font Size</span>
+                  </div>
+                  <input id="inputFontSize" type="text" class="form-control" placeholder="12pt" aria-label="12pt"
+                    aria-describedby="inputFontSizeAddon">
+                </div>
+              </div>
+              <!-- Tag Settings Box -->
+              <div class="settings-box">
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" id="inputTagAddon">Tag</span>
+                  </div>
+                  <input id="inputTag" type="text" class="form-control" placeholder="" aria-label=""
+                    aria-describedby="inputTagAddon">
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -163,26 +335,6 @@
 
   <!--
 IDEAS:
-
-Selection box for saved configurations
-  Load Config
-  Save Config <input type="text" /> (for name)
-
-Global settings:
-  Channels
-  Username
-  OAuth
-  BG CSS
-  Scrollbars
-  Transparent
-  Enable Clips
-  Disable Mod Overrides
-  Debug Level
-
-Layout:
-  Radio buttons for "single", "double"
-  Radio buttons for "chat", "no chat", "slim"
-  Auto-updates module configuration section
 
 One or two columns based on layout choice:
   Name

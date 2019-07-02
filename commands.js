@@ -26,6 +26,7 @@
 
 /* TODO
  * Implement ChatCommands.addComplete(command, func)
+ * Implement //plugins addremote <class> <url> [<config>]
  */
 
 var ChatCommands = null; /* exported ChatCommands */
@@ -199,14 +200,14 @@ class ChatCommandManager {
           }
         }
         catch (e) {
-          Content.addError(`${cmd}: ${e.name}: ${e.message}`);
+          Content.addErrorText(`${cmd}: ${e.name}: ${e.message}`);
           Util.Error(e);
         }
       } else {
-        Content.addError(`${cmd}: unknown command`);
+        Content.addErrorText(`${cmd}: unknown command`);
       }
     } else {
-      Content.addError(`${JSON.stringify(msg)}: not a command string`);
+      Content.addErrorText(`${JSON.stringify(msg)}: not a command string`);
     }
   }
 
@@ -298,7 +299,7 @@ class ChatCommandManager {
         Content.addHelp(line);
       }
     } else {
-      Content.addError(`Invalid command ${tokens[0].escape()}`);
+      Content.addErrorText(`Invalid command ${tokens[0]}`);
     }
   }
 }
@@ -453,11 +454,11 @@ function onCommandLog(cmd, tokens, client) {
           if (line && line._cmd && line._raw) {
             replay.push(line._raw);
           } else {
-            let l = `${line}`.escape();
-            Content.addError(`Item ${l} doesn't seem to be a chat message`);
+            let l = `${line}`;
+            Content.addErrorText(`Item ${l} doesn't seem to be a chat message`);
           }
         } else {
-          Content.addError(`Index ${idx} not between 0 and ${logs.length}`);
+          Content.addErrorText(`Index ${idx} not between 0 and ${logs.length}`);
         }
         for (let line of replay) {
           Content.addHelpText(`Replaying ${line}`);
@@ -512,7 +513,7 @@ function onCommandJoin(cmd, tokens, client) {
         let rid = cinfo.rooms[rname].uid;
         toJoin = Twitch.FormatRoom(cid, rid);
       } else {
-        Content.addError(`No such room ${cname} ${rname}`);
+        Content.addErrorText(`No such room ${cname} ${rname}`);
         Util.LogOnlyOnce(cname, rname, cdef, cinfo);
       }
     }
@@ -521,7 +522,7 @@ function onCommandJoin(cmd, tokens, client) {
       if (!client.IsInChannel(toJoin)) {
         client.JoinChannel(toJoin);
       } else {
-        Content.addNotice(`Failed joining ${toJoin}: already in channel`);
+        Content.addNoticeText(`Failed joining ${toJoin}: already in channel`);
       }
     }
   } else {
@@ -549,7 +550,7 @@ function onCommandPart(cmd, tokens, client) {
         let rid = cinfo.rooms[rname].uid;
         toPart = Twitch.FormatRoom(cid, rid);
       } else {
-        Content.addError(`No such room ${cname} ${rname}`);
+        Content.addErrorText(`No such room ${cname} ${rname}`);
         Util.LogOnlyOnce(cname, rname, cdef, cinfo);
       }
     }
@@ -558,7 +559,7 @@ function onCommandPart(cmd, tokens, client) {
       if (client.IsInChannel(toPart)) {
         client.LeaveChannel(toPart);
       } else {
-        Content.addNotice(`Failed leaving ${toPart}: not in channel`);
+        Content.addNoticeText(`Failed leaving ${toPart}: not in channel`);
       }
     }
   } else {
@@ -602,6 +603,63 @@ function onCommandBadges(cmd, tokens, client) {
   }
 }
 
+function onCommandCheers(cmd, tokens, client) {
+  let cheers = client.GetCheers();
+  let [bg, scale, state] = [null, null, null];
+  if (tokens.includes("dark")) bg = "dark";
+  else if (tokens.includes("light")) bg = "light";
+  if (tokens.includes("scale1")) scale = "1";
+  else if (tokens.includes("scale1.5")) scale = "1.5";
+  else if (tokens.includes("scale2")) scale = "2";
+  else if (tokens.includes("scale3")) scale = "3";
+  else if (tokens.includes("scale4")) scale = "4";
+  if (tokens.includes("static")) state = "static";
+  else if (tokens.includes("animated")) state = "animated";
+  let formatCheer = (ch, c) => {
+    let html = [];
+    let [img_bg, img_scale, img_state] = [bg, scale, state];
+    if (bg === null) {
+      img_bg = c.backgrounds.includes("dark") ? "dark" : c.backgrounds[0];
+    }
+    if (scale === null) {
+      img_scale = c.scales.map((n) => Util.ParseNumber(n)).min();
+    }
+    if (state === null) {
+      if ($("#cbAnimCheers").is(":checked")) {
+        img_state = c.states.includes("animated") ? "animated" : c.states[0];
+      } else {
+        img_state = c.states.includes("static") ? "static" : c.states[0];
+      }
+    }
+    for (let tdef of Object.values(c.tiers)) {
+      let nbits = tdef.min_bits;
+      let src = tdef.images[img_bg][img_state][img_scale];
+      let desc = `${ch} ${c.prefix} ${nbits}`.escape();
+      let e = `<img src="${src}" alt="${desc}" title="${desc}" />`;
+      html.push(e);
+    }
+    return html.join("");
+  };
+  let seen = {};
+  for (let [cname, cheerdefs] of Object.entries(cheers)) {
+    let html = [];
+    for (let [cheername, cheerdef] of Object.entries(cheerdefs)) {
+      if (!seen[cheername]) {
+        html.push(formatCheer(cname, cheerdef));
+        seen[cheername] = 1;
+      }
+    }
+    if (html.length > 0) {
+      if (cname === "GLOBAL") {
+        Content.addInfoText(`Global cheermotes:`);
+      } else {
+        Content.addInfoText(`Cheermotes for channel ${cname}:`);
+      }
+      Content.addInfo(html.join(""));
+    }
+  }
+}
+
 function onCommandEmotes(cmd, tokens, client) {
   let client_emotes = client.GetEmotes();
   let g_emotes = [];
@@ -622,13 +680,17 @@ function onCommandEmotes(cmd, tokens, client) {
     to_display.push(`Channel: ${ch_emotes.join("")}`);
   }
   if (tokens.indexOf("bttv") > -1) {
-    let bttv_emotes = client.GetGlobalBTTVEmotes();
-    let bttv_imgs = [];
-    for (let [k, v] of Object.entries(bttv_emotes)) {
-      let kstr = k.escape();
-      bttv_imgs.push(`<img src="${v.url}" title="${kstr}" alt="${kstr}" />`);
+    if (!client.BTTVEnabled()) {
+      Content.addErrorText("BTTV support is disabled");
+    } else {
+      let bttv_emotes = client.GetGlobalBTTVEmotes();
+      let bttv_imgs = [];
+      for (let [k, v] of Object.entries(bttv_emotes)) {
+        let kstr = k.escape();
+        bttv_imgs.push(`<img src="${v.url}" title="${kstr}" alt="${kstr}" />`);
+      }
+      to_display.push(`BTTV: ${bttv_imgs.join("")}`);
     }
-    to_display.push(`BTTV: ${bttv_imgs.join("")}`);
   }
   if (to_display.length === 0) {
     this.printHelp();
@@ -641,27 +703,55 @@ function onCommandEmotes(cmd, tokens, client) {
 }
 
 function onCommandPlugins(cmd, tokens, client) {
-  try {
-    for (let [n, p] of Object.entries(Plugins.plugins)) {
-      let msg = `${n}: ${p.file} @ ${p.order}`.escape();
-      if (p._error) {
-        let estr = JSON.stringify(p._error_obj).escape();
-        Content.addError(`${msg}: Failed: ${estr}`);
-      } else if (p._loaded) {
-        msg = `${msg}: Loaded`;
-        if (p.commands) {
-          msg = `${msg}: Commands: ${p.commands.join(" ")}`;
+  let t0 = (tokens.length > 0 ? tokens[0] : null);
+  if (Plugins.plugins) {
+    if (t0 === null || t0 === "list") {
+      for (let [n, p] of Object.entries(Plugins.plugins)) {
+        let msg = `${n}: ${p.file} @ ${p.order}`;
+        if (p._error) {
+          let estr = JSON.stringify(p._error_obj);
+          Content.addErrorText(`${msg}: Failed: ${estr}`);
+        } else if (p._loaded) {
+          msg = `${msg}: Loaded`;
+          if (p.commands) {
+            msg = `${msg}: Commands: ${p.commands.join(" ")}`;
+          }
+          Content.addPreText(msg);
         }
-        Content.addPre(msg);
       }
-    }
-  }
-  catch (e) {
-    if (e.name === "ReferenceError") {
-      Content.addError("Plugin information unavailable");
+    } else if (t0 === "add" || t0 === "load") {
+      if (tokens.length >= 3) {
+        let cls = tokens[1];
+        let file = tokens[2];
+        let cfg = {};
+        Plugins.add({ctor: cls, file: file});
+        if (tokens.length >= 4) {
+          let cfgStr = tokens.slice(3).join(" ");
+          try {
+            cfg = JSON.parse(cfgStr);
+          } catch (err) {
+            Content.addErrorText(`Malformed JSON string "${cfgStr}"; ignoring`);
+          }
+        }
+        Plugins.load(cls, client, {PluginConfig: cfg}).then(() => {
+          Content.addInfoText(`Successfully loaded plugin ${cls}`);
+        }).catch((err) => {
+          Util.Error("Failed to load plugin", cls, err);
+          Content.addErrorText(`Failed to load plugin ${cls}: ${err}`);
+        });
+        Content.addInfoText(`Added plugin ${cls} from ${file}`);
+      } else {
+        Content.addErrorText("//plugins add: not enough arguments");
+      }
     } else {
-      throw e;
+      if (t0 !== "help") {
+        Content.addErrorText(`Unknown command ${t0}`);
+      }
+      this.printHelp();
+      this.printUsage();
     }
+  } else {
+    Content.addErrorText("Plugin information unavailable");
   }
 }
 
@@ -775,7 +865,7 @@ function onCommandHighlight(cmd, tokens, client) {
       H.addHighlightMatch(pat);
       Content.addHelpText(`Added pattern ${pat}`);
     } else {
-      Content.addError(`"//highlight add" requires argument`);
+      Content.addErrorText(`"//highlight add" requires argument`);
       this.printUsage();
     }
   } else if (tokens[0] === "remove") {
@@ -795,10 +885,10 @@ function onCommandHighlight(cmd, tokens, client) {
         }
         Content.addHelpText(`Now storing ${H.highlightMatches.length} patterns`);
       } else {
-        Content.addError(`Invalid index ${idx}; must be between 1 and ${max}`);
+        Content.addErrorText(`Invalid index ${idx}; must be between 1 and ${max}`);
       }
     } else {
-      Content.addError(`"//highlight remove" requires argument`);
+      Content.addErrorText(`"//highlight remove" requires argument`);
       this.printUsage();
     }
   } else {
@@ -870,6 +960,10 @@ function InitChatCommands() { /* exported InitChatCommands */
       func: onCommandBadges,
       desc: "Display all known badges"
     },
+    "cheers": {
+      func: onCommandCheers,
+      desc: "Display all known cheermotes"
+    },
     "emotes": {
       func: onCommandEmotes,
       desc: "Display the requested emotes",
@@ -879,7 +973,15 @@ function InitChatCommands() { /* exported InitChatCommands */
     },
     "plugins": {
       func: onCommandPlugins,
-      desc: "Display plugin information, if plugins are enabled"
+      desc: "Display plugin information, if plugins are enabled",
+      alias: ["plugin"],
+      usage: [
+        [null, "Show loaded plugins and their status"],
+        ["help", "Show loaded plugins and command help"],
+        ["add <class> <file> [<config>]", "Add a plugin by class name and filename, optionally with a config object"],
+        ["load <class> <file> [<config>]", "Alias to `//plugin add`"]
+        /* TODO: //plugins addremote */
+      ]
     },
     "client": {
       func: onCommandClient,

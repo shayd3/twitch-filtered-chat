@@ -625,6 +625,34 @@ class HTMLGenerator { /* exported HTMLGenerator */
     return result;
   }
 
+  /* Returns whether or not the event contains mod antics */
+  hasAntics(event) {
+    let hasForce = false;
+    if (this.enableAntics && event.ismod && event.message.length > 0) {
+      let t0 = event.message.split(" ")[0];
+      switch (t0.replace(/-/g, "")) {
+        case "force":
+        case "!tfcforce":
+        case "forceeval":
+        case "!tfceval":
+        case "!tfcforceeval":
+        case "forcejs":
+        case "!tfcjs":
+        case "!tfcforcejs":
+        case "forcejsonly":
+        case "!tfcjsonly":
+        case "!tfcforcejsonly":
+        case "forcebits":
+        case "forcecheer":
+          hasForce = true;
+          break;
+        default:
+          hasForce = false;
+      }
+    }
+    return hasForce;
+  }
+
   /* Returns msginfo object */
   _genMsgInfo(event) {
     let $msg = $(`<span class="message" data-message="1"></span>`);

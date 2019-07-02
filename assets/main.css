@@ -284,6 +284,14 @@ body.light .loading {
 
 /* Help formatting {{{0 */
 
+.pre * {
+  font-family: monospace;
+}
+
+.help * {
+  font-family: monospace;
+}
+
 .help {
   font-size: 0.9em;
   font-family: monospace;
@@ -298,11 +306,6 @@ body.light .loading {
   display: grid;
   grid-template-columns: 20% auto;
   margin-left: 1.5em;
-}
-
-.help-line div {
-  font-size: 0.9em;
-  font-family: monospace;
 }
 
 /* End help formatting 0}}} */
@@ -434,8 +437,13 @@ body.light .module .content .line .message {
 
 /* Specific effect overrides {{{1 */
 
-.module .content .line .message.effect-rainbow { text-shadow: none; }
-.module .content .line .message.effect-disco { text-shadow: none; }
+.module .content .line .message.effect-rainbow {
+  text-shadow: none;
+}
+
+.module .content .line .message.effect-disco {
+  text-shadow: none;
+}
 
 /* End of specific effect overrides 1}}} */
 
@@ -698,7 +706,8 @@ body.light #chat textarea {
   font-size: 0.9em;
 }
 
-#settings ul li input { }
+#settings ul li input {
+}
 
 #settings ul li input.middle {
   vertical-align: text-bottom;
